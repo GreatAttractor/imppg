@@ -1,0 +1,808 @@
+# ImPPG: Polish translation
+# Copyright (C) 2015, 2016 Filip Szczerek <ga.software@yahoo.com>
+# This file is distributed under the same license as the ImPPG package.
+# Filip Szczerek <ga.software@yahoo.com>, 2015.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: ImPPG 0.5\n"
+"Report-Msgid-Bugs-To: Filip Szczerek <ga.software@yahoo.com>\n"
+"POT-Creation-Date: 2016-01-02 20:00+0200\n"
+"PO-Revision-Date: 2016-01-02 20:00+0200\n"
+"Last-Translator: Filip Szczerek <ga.software@yahoo.com>\n"
+"Language-Team: \n"
+"Language: Polish\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: about.cpp:99
+msgid "Library versions:"
+msgstr "Wersje bibliotek:"
+
+#: about.cpp:109
+msgid "Libraries"
+msgstr "Biblioteki"
+
+#: about.cpp:131
+msgid "About ImPPG"
+msgstr "O ImPPG"
+
+#: about.cpp:139
+#, c-format
+msgid "Cannot load bitmap: %s"
+msgstr "Nie można wczytać bitmapy: %s"
+
+#: about.cpp:139 align_params.cpp:196 align_params.cpp:198 batch.cpp:217
+#: batch.cpp:263 batch.cpp:369 batch.cpp:496 batch_params.cpp:116
+#: batch_params.cpp:118 batch_params.cpp:120 main_window.cpp:278
+#: main_window.cpp:996 main_window.cpp:1601 main_window.cpp:1621
+msgid "Error"
+msgstr "Błąd"
+
+#: about.cpp:160
+#, c-format
+msgid "version %s "
+msgstr "wersja %s "
+
+#: about.cpp:162
+msgid ""
+"This program comes with ABSOLUTELY NO WARRANTY. This is free software,\n"
+"licensed under GNU General Public License v3 or any later version.\n"
+"See the LICENSE file for details."
+msgstr ""
+"Ten program ABSOLUTNIE nie jest objęty JAKĄKOLWIEK GWARANCJĄ.\n"
+"Jest to wolne oprogramowanie na licencji GNU GPL w wersji 3\n"
+"lub dowolnej późniejszej. Szczegóły w pliku LICENSE."
+
+#: about.cpp:169
+#, c-format
+msgid "Using %d logical CPU(s)."
+msgstr "Liczba używanych procesorów logicznych: %d."
+
+#: about.cpp:170
+msgid "Libraries..."
+msgstr "Biblioteki..."
+
+#: align_params.cpp:71
+msgid ""
+"A general-purpose method. Keeps the high-contrast features\n"
+"(e.g. sunspots, filaments, prominences, craters) stationary."
+msgstr ""
+"Metoda uniwersalna. Minimalizuje ruch kontrastowych obszarów\n"
+"(np. plam słonecznych, filamentów, protuberancji, kraterów)."
+
+#: align_params.cpp:75
+msgid ""
+"Keeps the solar limb stationary. The more of the limb is visible\n"
+"in input images, the better the results. Requirements:\n"
+"– the disc has to be brighter than the background\n"
+"– no vignetting or limb darkening exaggerated by post-processing\n"
+"– the disc must not be eclipsed by the Moon"
+msgstr ""
+"Utrzymuje krawędź tarczy słonecznej nieruchomo. Im większa część\n"
+"krawędzi jest widoczna, tym skuteczniejsze wyrównanie. Wymagania:\n"
+"– tarcza musi być jaśniejsza niż tło\n"
+"– brak winietowania i uwydatnionego obróbką pociemnienia brzegowego\n"
+"– tarcza nie może być przesłonięta przez Księżyc"
+
+#: align_params.cpp:161 batch_params.cpp:141
+msgid "Choose input file(s)"
+msgstr "Wybierz pliki wejściowe"
+
+#: align_params.cpp:196 batch_params.cpp:118
+msgid "No input files selected."
+msgstr "Nie wybrano plików wejściowych."
+
+#: align_params.cpp:198 batch_params.cpp:116
+msgid "Selected output folder does not exist."
+msgstr "Wybrany folder docelowy nie istnieje."
+
+#: align_params.cpp:211
+msgid "Image alignment"
+msgstr "Wyrównywanie obrazów"
+
+#: align_params.cpp:228 batch_params.cpp:179
+msgid "Add files..."
+msgstr "Dodaj pliki..."
+
+#: align_params.cpp:229
+msgid "Sort"
+msgstr "Sortuj"
+
+#: align_params.cpp:230
+msgid "Remove all"
+msgstr "Usuń wszystkie"
+
+#: align_params.cpp:234
+msgid "Input image files"
+msgstr "Obrazy wejściowe"
+
+#: align_params.cpp:239
+msgid "Sub-pixel alignment"
+msgstr "Wyrównywanie subpikselowe"
+
+#: align_params.cpp:241
+msgid ""
+"Enable sub-pixel alignment for smoother motion and less drift. Saving of "
+"output files will be somewhat slower; sharp, 1-pixel details (if present) "
+"may get very slightly blurred"
+msgstr ""
+"Włącz wyrównywanie subpikselowe w celu uzyskania płynniejszego ruchu i mniejszego dryfu obrazu. "
+"Zapisywanie obrazów wyjściowych będzie nieco wolniejsze; ostre, 1-pikselowe szczegóły "
+"(jeśli występują) mogą ulec bardzo nieznacznemu rozmyciu."
+
+#: align_params.cpp:248
+msgid "Crop to intersection"
+msgstr "Obetnij do części wspólnej"
+
+#: align_params.cpp:249
+msgid "Pad to bounding box"
+msgstr "Rozszerz do prostokąta obejmującego"
+
+#: align_params.cpp:259
+msgid "Stabilize high-contrast features"
+msgstr "Stabilizuj kontrastowe obszary"
+
+#: align_params.cpp:260
+msgid "Align on the solar limb"
+msgstr "Stabilizuj krawędź tarczy słonecznej"
+
+#: align_params.cpp:270 batch_params.cpp:207
+msgid "Output folder:"
+msgstr "Folder docelowy:"
+
+#: align_params.cpp:271 batch_params.cpp:208
+msgid "Select output folder"
+msgstr "Wybierz folder docelowy"
+
+#: align_params.cpp:276
+msgid ""
+"Processed files will be saved under names appended with \"_aligned\".\n"
+"Number of channels and bit depth will be preserved."
+msgstr ""
+"Wyrównane pliki zostaną zapisane pod nazwami z sufiksem \"_aligned\".\n"
+"Liczba kanałów i głębia bitowa będą zachowane."
+
+#: align_params.cpp:284 batch_params.cpp:229
+msgid "Start processing"
+msgstr "Rozpocznij pracę"
+
+#: align_proc.cpp:134 align_proc.cpp:183 align_proc.cpp:418 align_proc.cpp:487
+#: align_proc.cpp:668
+#, c-format
+msgid "Could not read %s."
+msgstr "Nie można wczytać %s."
+
+#: align_proc.cpp:140
+#, c-format
+msgid "Unsupported file or image type: %s"
+msgstr "Nieobsługiwany typ pliku lub obrazu: %s"
+
+#: align_proc.cpp:155
+#, c-format
+msgid "Unsupported pixel format: %s"
+msgstr "Nieobsługiwany format pikseli: %s"
+
+#: align_proc.cpp:167
+msgid "FreeImage_AllocateExT failed to allocate an output bitmap."
+msgstr "Nie udało się zaalokować bitmapy wyjściowej za pomocą FreeImage_AllocateExT."
+
+#: align_proc.cpp:244
+#, c-format
+msgid "Failed to save output file: %s"
+msgstr "Zapis pliku wyjściowego nie powiódł się: %s"
+
+#: align_proc.cpp:268
+#, c-format
+msgid "Failed to obtain image dimensions from %s."
+msgstr "Sprawdzenie rozmiaru obrazu nie powiodło się: %s."
+
+#: align_proc.cpp:551
+msgid "Could not fit a circle to points during final stabilization."
+msgstr "Nie udało się dopasować okręgu do punktów podczas stabilizacji końcowej."
+
+#: align_proc.cpp:772 align_proc.cpp:782
+#, c-format
+msgid "Could not find the limb in %s."
+msgstr "Nie udało się wykryć krawędzi tarczy w %s."
+
+#: align_proc.cpp:835
+msgid "Could not determine valid disc radius in every image."
+msgstr "Nie udało się ustalić poprawnego promienia tarczy na każdym obrazie."
+
+#: align_proc.cpp:853
+#, c-format
+msgid "Could not find the limb with forced radius in %s."
+msgstr "Nie udało się wykryć tarczy z wymuszonym promieniem w %s."
+
+#: align_proc.cpp:1006
+msgid "Aborted per user request."
+msgstr "Przerwano na życzenie użytkownika."
+
+#: align_progress.cpp:87
+msgid "Determining translation vectors..."
+msgstr "Określanie wektorów translacji..."
+
+#: align_progress.cpp:119
+msgid "Aborted"
+msgstr "Przerwano"
+
+#: align_progress.cpp:124 batch.cpp:274
+msgid "Processing completed."
+msgstr "Przetwarzanie zakończone."
+
+#: align_progress.cpp:124 batch.cpp:274 main_window.cpp:208 main_window.cpp:249
+msgid "Information"
+msgstr "Informacja"
+
+#: align_progress.cpp:132
+#, c-format
+msgid "Image %d/%d: translated by %.2f, %.2f."
+msgstr "Obraz %d/%d: translacja o %.2f; %.2f"
+
+#: align_progress.cpp:142
+msgid "Translating and saving output images..."
+msgstr "Translacja i zapisywanie obrazów wyjściowych..."
+
+#: align_progress.cpp:150
+#, c-format
+msgid "Translated and saved image %d/%d."
+msgstr "Dokonano translacji i zapisano obraz %d/%d."
+
+#: align_progress.cpp:157
+#, c-format
+msgid "Using average radius %.2f."
+msgstr "Przyjęto średni promień %.2f."
+
+#: align_progress.cpp:163
+msgid "Performing final stabilization..."
+msgstr "Stabilizacja końcowa..."
+
+#: align_progress.cpp:179
+msgid "Determining disc radius in images..."
+msgstr "Ustalanie promienia tarczy na obrazach wejściowych..."
+
+#: align_progress.cpp:185
+#, c-format
+msgid "Image %d/%d: disc radius = %.2f"
+msgstr "Obraz %d/%d: promień tarczy = %.2f"
+
+#: align_progress.cpp:203
+msgid "Image alignment progress"
+msgstr "Postęp wyrównywania obrazów"
+
+#: batch.cpp:217
+#, c-format
+msgid "Could not save output file: %s"
+msgstr "Nie można zapisać pliku wyjściowego: %s"
+
+#: batch.cpp:261
+msgid "Done"
+msgstr "Gotowe"
+
+#: batch.cpp:304 batch.cpp:400 main_window.cpp:1285
+msgid "L–R deconvolution"
+msgstr "Dekonwolucja Lucy-Richardson"
+
+#: batch.cpp:306 main_window.cpp:623 main_window.cpp:1768
+msgid "Unsharp masking"
+msgstr "Unsharp masking"
+
+#: batch.cpp:308 batch.cpp:449 main_window.cpp:625
+msgid "Applying tone curve"
+msgstr "Aplikowanie krzywej tonalnej"
+
+#: batch.cpp:344
+msgid "According to the settings file, no processing is needed."
+msgstr "Według pliku ustawień nie ma nic do zrobienia."
+
+#: batch.cpp:344 main_window.cpp:223
+msgid "Warning"
+msgstr "Ostrzeżenie"
+
+#: batch.cpp:368
+#, c-format
+msgid "Could not open file: %s."
+msgstr "Nie można otworzyć pliku %s."
+
+#: batch.cpp:425
+msgid "Unsharp masking..."
+msgstr "Unsharp masking..."
+
+#: batch.cpp:478 batch_params.cpp:166
+msgid "Batch processing"
+msgstr "Przetwarzanie wsadowe"
+
+#: batch.cpp:496
+msgid "Could not load processing settings."
+msgstr "Nie udało się wczytać ustawień obróbki."
+
+#: batch.cpp:520
+msgid "File"
+msgstr "Plik"
+
+#: batch.cpp:521
+msgid "Progress"
+msgstr "Postęp"
+
+#: batch.cpp:525
+msgid "Waiting"
+msgstr "Oczekiwanie"
+
+#: batch.cpp:532
+msgid "Close"
+msgstr "Zamknij"
+
+#: batch_params.cpp:120
+msgid "Settings file not specified or does not exist."
+msgstr "Nie podano pliku ustawień lub plik nie istnieje."
+
+#: batch_params.cpp:185
+msgid "Remove selected from list"
+msgstr "Usuń wybrane z listy"
+
+#: batch_params.cpp:186
+msgid ""
+"Use a click, Shift+click, Ctrl+click or Shift+up/down to select list items."
+msgstr "Zaznaczanie pozycji na liście: klik, Shift+klik, Ctrl+klik lub Shift+góra/dół."
+
+#: batch_params.cpp:192
+msgid "Settings file:"
+msgstr "Plik ustawień:"
+
+#: batch_params.cpp:193
+msgid "Choose the file with processing settings"
+msgstr "Wybierz plik z ustawieniami obróbki"
+
+#: batch_params.cpp:194 main_window.cpp:1586 main_window.cpp:1610
+msgid "XML files (*.xml)"
+msgstr "Pliki XML (*.xml)"
+
+#: batch_params.cpp:198
+msgid "Select the XML file with processing settings."
+msgstr "Wybierz plik XML z ustawieniami obróbki."
+
+#: batch_params.cpp:203
+msgid ""
+"A settings file can be created using the main window's \"Save processing "
+"settings\" function."
+msgstr "Plik ustawień można stworzyć używając funkcji „Zapisz ustawienia obróbki” w oknie głównym."
+
+#: batch_params.cpp:212
+msgid "Processed files will be saved under names appended with \"_out\"."
+msgstr "Pliki wyjściowe zostaną zapisane pod nazwami z sufiksem „_out”."
+
+#: batch_params.cpp:215
+msgid "Output format:"
+msgstr "Format wyjściowy:"
+
+#: formats.cpp:53
+msgid "BMP 8-bit"
+msgstr "BMP 8-bitowy"
+
+#: formats.cpp:58
+msgid "TIFF 16-bit"
+msgstr "TIFF 16-bitowy"
+
+#: formats.cpp:65
+msgid "PNG 8-bit"
+msgstr "PNG 8-bitowy"
+
+#: formats.cpp:70
+msgid "TIFF 8-bit (LZW compression)"
+msgstr "TIFF 8-bitowy (kompresja LZW)"
+
+#: formats.cpp:75
+msgid "TIFF 16-bit (ZIP compression)"
+msgstr "TIFF 16-bitowy (kompresja ZIP)"
+
+#: formats.cpp:80
+msgid "TIFF 32-bit floating-point"
+msgstr "TIFF 32-bitowy zmiennoprzecinkowy"
+
+#: formats.cpp:85
+msgid "TIFF 32-bit floating-point (ZIP compression)"
+msgstr "TIFF 32-bitowy zmiennoprzecinkowy (kompresja ZIP)"
+
+#: formats.cpp:93
+msgid "FITS 8-bit"
+msgstr "FITS 8-bitowy"
+
+#: formats.cpp:98
+msgid "FITS 16-bit"
+msgstr "FITS 16-bitowy"
+
+#: formats.cpp:103
+msgid "FITS 32-bit floating point"
+msgstr "FITS 32-bitowy zmiennoprzecinkowy"
+
+#: main_window.cpp:194
+msgid "Choose the user interface language:"
+msgstr "Wybierz język interfejsu użytkownika:"
+
+#: main_window.cpp:194
+msgid "Language"
+msgstr "Język"
+
+#: main_window.cpp:208
+msgid "You have to restart ImPPG for the changes to take effect."
+msgstr "By zmiany odniosły skutek, należy uruchomić ImPPG ponownie."
+
+#: main_window.cpp:223
+msgid "Processing in progress, abort it?"
+msgstr "Obróbka w toku, przerwać ją?"
+
+#: main_window.cpp:249
+msgid "You have not selected and processed the whole image, do it now?"
+msgstr "Nie zaznaczono i nie poddano obróbce całego obrazu, zrobić to teraz?"
+
+#: main_window.cpp:273
+msgid "Save image"
+msgstr "Zapisz obraz"
+
+#: main_window.cpp:278
+#, c-format
+msgid "Could not save output file %s."
+msgstr "Nie można zapisać pliku wyjściowego %s."
+
+#: main_window.cpp:483
+msgid "ImPPG"
+msgstr "ImPPG"
+
+#: main_window.cpp:543 main_window.cpp:554
+msgid "Idle"
+msgstr "Bezczynny"
+
+#: main_window.cpp:621 main_window.cpp:1816
+msgid "Lucy–Richardson deconvolution"
+msgstr "Dekonwolucja Lucy-Richardson"
+
+#: main_window.cpp:995
+#, c-format
+msgid "Could not open %s."
+msgstr "Nie można otworzyć %s."
+
+#: main_window.cpp:1076 main_window.cpp:1978
+msgid "Open image file"
+msgstr "Otwórz plik graficzny"
+
+#: main_window.cpp:1329
+#, c-format
+msgid "Unsharp masking: %d%%"
+msgstr "Unsharp masking: %d%%"
+
+#: main_window.cpp:1370
+#, c-format
+msgid "Applying tone curve: %d%%"
+msgstr "Aplikowanie krzywej tonalnej: %d%%"
+
+#: main_window.cpp:1465
+msgid "Amount max:"
+msgstr "Poziom max.:"
+
+#: main_window.cpp:1467 main_window.cpp:1782
+msgid "Amount:"
+msgstr "Poziom:"
+
+#: main_window.cpp:1585 main_window.cpp:2021
+msgid "Save processing settings"
+msgstr "Zapisz ustawienia obróbki"
+
+#: main_window.cpp:1601
+msgid "Failed to save processing settings."
+msgstr "Nie można zapisać ustawień obróbki."
+
+#: main_window.cpp:1609 main_window.cpp:2023
+msgid "Load processing settings"
+msgstr "Wczytaj ustawienia obróbki"
+
+#: main_window.cpp:1621
+msgid "Failed to load processing settings."
+msgstr "Nie można wczytać ustawień obróbki."
+
+#: main_window.cpp:1705
+msgid "Enter zoom factor in %"
+msgstr "Podaj powiększenie w %"
+
+#: main_window.cpp:1705
+msgid "Custom zoom factor"
+msgstr "Wybierz powiększenie"
+
+#: main_window.cpp:1738 main_window.cpp:1772
+msgid "Sigma:"
+msgstr "Sigma:"
+
+#: main_window.cpp:1743
+msgid "Iterations:"
+msgstr "Iteracje:"
+
+#: main_window.cpp:1746
+msgid "Suggested value: 30 to 70. Specify 0 to disable L–R deconvolution."
+msgstr "Zalecana wartość: 30 do 70. Podanie 0 wyłącza dekonwolucję L-R."
+
+#: main_window.cpp:1749
+msgid "Prevent ringing"
+msgstr "Ogranicz ringing"
+
+#: main_window.cpp:1750
+msgid ""
+"Prevents ringing (halo) around overexposed areas, e.g. a solar disc in a "
+"prominence image (experimental feature)."
+msgstr ""
+"Ogranicza ringing (halo) wokół prześwietlonych obszarów, np. tarczy słonecznej "
+"na obrazie protuberancji (funkcja eksperymentalna)."
+
+#: main_window.cpp:1753 main_window.cpp:1803 tcrv_edit.cpp:418
+msgid "reset"
+msgstr "reset"
+
+#: main_window.cpp:1755
+msgid "disable"
+msgstr "wyłącz"
+
+#: main_window.cpp:1776
+msgid "Amount min:"
+msgstr "Poziom min.:"
+
+#: main_window.cpp:1777 main_window.cpp:1783
+msgid "Value 1.0: no effect, <1.0: blur, >1.0: sharpen"
+msgstr "Wartość 1: bez zmian, <1: rozmycie, >1: wyostrzenie"
+
+#: main_window.cpp:1787
+msgid "Threshold:"
+msgstr "Próg:"
+
+#: main_window.cpp:1788
+msgid "Input brightness threshold of transition from amount min to amount max"
+msgstr "Próg jasności wejściowej dla przejścia od poziomu min. do max."
+
+#: main_window.cpp:1793
+msgid "Transition width:"
+msgstr "Szerokość granicy:"
+
+#: main_window.cpp:1794
+msgid ""
+"Amount will be set to amount min for input brightness <= threshold-width and "
+"amount max for brightness >= threshold+width"
+msgstr "Poziom zostanie ustawiony na poziom min. dla jasności wejściowej <= próg−szerokość granicy "
+"i na poziom max. dla jasności >= próg+szerokość granicy"
+
+#: main_window.cpp:1798
+msgid "Adaptive"
+msgstr "Adaptatywny"
+
+#: main_window.cpp:1801
+msgid ""
+"Enable adaptive mode: amount changes from min to max depending on input "
+"brightness"
+msgstr "Włącz tryb adaptatywny: poziom zmienia się od min. do max. w zależności "
+"od jasności wejściowej"
+
+#: main_window.cpp:1983
+msgid "Save image file"
+msgstr "Zapisz obraz"
+
+#: main_window.cpp:1988
+msgid "Show processing controls"
+msgstr "Pokaż panel ustawień obróbki"
+
+#: main_window.cpp:1992
+msgid "Show tone curve editor"
+msgstr "Pokaż edytor krzywej tonalnej"
+
+#: main_window.cpp:2001
+msgid "Select and process the whole image"
+msgstr "Zaznacz i poddaj obróbce cały obraz"
+
+#: main_window.cpp:2008 main_window.cpp:2054
+msgid "Fit image in window"
+msgstr "Dopasuj obraz do okna"
+
+#: main_window.cpp:2010
+msgid "Actual size (100%)"
+msgstr "Rozmiar rzeczywisty (100%)"
+
+#: main_window.cpp:2012 main_window.cpp:2055
+msgid "Zoom in"
+msgstr "Powiększ"
+
+#: main_window.cpp:2014 main_window.cpp:2056
+msgid "Zoom out"
+msgstr "Pomniejsz"
+
+#: main_window.cpp:2016 main_window.cpp:2062
+msgid "Custom zoom factor..."
+msgstr "Wybierz powiększenie..."
+
+#: main_window.cpp:2034
+msgid "Load processing settings..."
+msgstr "Wczytaj ustawienia obróbki..."
+
+#: main_window.cpp:2035
+msgid "Save processing settings..."
+msgstr "Zapisz ustawienia obróbki..."
+
+#: main_window.cpp:2037
+msgid "Batch processing..."
+msgstr "Przetwarzanie wsadowe..."
+
+#: main_window.cpp:2042
+msgid "Select (and process) all\tCtrl+A"
+msgstr "Zaznacz (i poddaj obróbce) wszystko\tCtrl+A"
+
+#: main_window.cpp:2045
+msgid "Normalize brightness levels..."
+msgstr "Normalizacja poziomu jasności..."
+
+#: main_window.cpp:2046
+msgid "Language..."
+msgstr "Język..."
+
+#: main_window.cpp:2050
+msgid "Processing settings"
+msgstr "Ustawienia obróbki"
+
+#: main_window.cpp:2051 main_window.cpp:2161
+msgid "Tone curve"
+msgstr "Krzywa tonalna"
+
+#: main_window.cpp:2052
+msgid "Panels"
+msgstr "Panele"
+
+#: main_window.cpp:2057
+msgid "1:3 (33%)"
+msgstr "1:3 (33%)"
+
+#: main_window.cpp:2058
+msgid "1:2 (50%)"
+msgstr "1:2 (50%)"
+
+#: main_window.cpp:2059
+msgid "1:1 (100%)"
+msgstr "1:1 (100%)"
+
+#: main_window.cpp:2060
+msgid "3:2 (150%)"
+msgstr "3:2 (150%)"
+
+#: main_window.cpp:2061
+msgid "2:1 (200%)"
+msgstr "2:1 (200%)"
+
+#: main_window.cpp:2065
+msgid "Nearest neighbor (fastest)"
+msgstr "Najbliższe sąsiednie (najszybsze)"
+
+#: main_window.cpp:2066
+msgid "Linear"
+msgstr "Liniowe"
+
+#: main_window.cpp:2067
+msgid "Cubic (best quality)"
+msgstr "Sześcienne (najlepsza jakość)"
+
+#: main_window.cpp:2068
+msgid "Scaling method"
+msgstr "Metoda skalowania"
+
+#: main_window.cpp:2071
+msgid "Align image sequence..."
+msgstr "Wyrównaj sekwencję obrazów..."
+
+#: main_window.cpp:2081
+msgid "About ImPPG..."
+msgstr "O ImPPG..."
+
+#: main_window.cpp:2084
+msgid "&File"
+msgstr "&Plik"
+
+#: main_window.cpp:2085
+msgid "&Edit"
+msgstr "&Edycja"
+
+#: main_window.cpp:2086
+msgid "&Settings"
+msgstr "&Ustawienia"
+
+#: main_window.cpp:2087
+msgid "&View"
+msgstr "&Widok"
+
+#: main_window.cpp:2088
+msgid "&Tools"
+msgstr "&Narzędzia"
+
+#: main_window.cpp:2089
+msgid "About"
+msgstr "O programie"
+
+#: normalize.cpp:42
+msgid "Brightness Normalization"
+msgstr "Normalizacja jasności"
+
+#: normalize.cpp:83
+msgid ""
+"Normalization of image brightness is performed prior\n"
+"to all other processing steps."
+msgstr ""
+"Normalizacja jasności ma miejsce przed wszystkimi pozostałymi\n"
+"etapami obróbki."
+
+#: normalize.cpp:87
+msgid "Normalization enabled"
+msgstr "Normalizacja włączona"
+
+#: normalize.cpp:91
+msgid "Set the darkest input pixels to:"
+msgstr "Ustaw jasność najciemniejszych pikseli wejściowych na:"
+
+#: normalize.cpp:98
+msgid "Set the brightest input pixels to:"
+msgstr "Ustaw jasność najjaśniejszych pikseli wejściowych na:"
+
+#: normalize.cpp:105
+#, c-format
+msgid ""
+"Values below 0% and above 100% are allowed (they may result\n"
+"in a clipped histogram). The second value may be lower than\n"
+"the first (brightness levels will be inverted)."
+msgstr ""
+"Wartości poniżej 0% i powyżej 100% są dopuszczalne (mogą skutkować\n"
+"obcięciem histogramu). Druga wartość może być mniejsza od pierwszej\n"
+"(poziomy jasności zostaną odwrócone)."
+
+#: tcrv_edit.cpp:410
+msgid "Left click: add/move point, right click: delete point"
+msgstr "Kliknięcie lewym: dodaj/przesuń punkt, prawym: usuń punkt"
+
+#: tcrv_edit.cpp:416
+msgid "log"
+msgstr "log"
+
+#: tcrv_edit.cpp:420
+msgid "inv"
+msgstr "inw"
+
+#: tcrv_edit.cpp:422
+msgid "stretch"
+msgstr "rozc"
+
+#: tcrv_edit.cpp:424
+msgid "smooth"
+msgstr "gładka"
+
+#: tcrv_edit.cpp:425
+msgid "gamma"
+msgstr "gamma"
+
+#: tcrv_edit.cpp:446
+msgid "Reset the curve to identity map: a line from (0,0) to (1,1)"
+msgstr "Resetuj krzywą do odwzorowania tożsamościowego: linii od (0,0) do (1,1)"
+
+#: tcrv_edit.cpp:447
+msgid "Smooth curve"
+msgstr "Gładka krzywa"
+
+#: tcrv_edit.cpp:448
+msgid "Use logarithmic scale for histogram values"
+msgstr "Wartości histogramu w skali logarytmicznej"
+
+#: tcrv_edit.cpp:449
+msgid "Use gamma curve (overrules graph)"
+msgstr "Użyj krzywej gamma (zastępuje obecną)"
+
+#: tcrv_edit.cpp:450
+msgid ""
+"Invert brightness levels\n"
+"(reflect curve points horizontally)"
+msgstr ""
+"Odwróć poziomy jasności\n"
+"(odbija punkty krzywej w poziomie)"
+
+#: tcrv_edit.cpp:451
+msgid "Stretch the curve to cover the histogram only"
+msgstr "Rozciągnij krzywą, by pokrywała tylko histogram"

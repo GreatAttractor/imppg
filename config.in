@@ -1,0 +1,43 @@
+#
+# ImPPG
+#
+# User-configurable build variables
+#
+
+# To disable CFITSIO (FITS format support), change 1 to 0 below
+set(USE_CFITSIO 1)
+
+# To disable FreeImage (multiple image formats support), change 1 to 0 below
+set(USE_FREEIMAGE 1)
+
+
+#----------------------------------------------------------------------------------
+#
+# The paths below need to be set only if building on Windows (use \\ for backslash).
+#
+
+# Boost root directory
+set(BOOST_ROOT "..\\boost_1_57_0")
+
+# wxWidgets include directory
+set(WX_INCLUDE_DIR "..\\wxWidgets-3.0.2\\include")
+# wxWidgets libraries directory
+set(WX_LIB_DIR     "..\\wxWidgets-3.0.2\\lib\\gcc_x64_lib")
+
+#
+# Set if USE_FREEIMAGE is enabled.
+#
+
+# path to directory containing FreeImage.h
+set(FREEIMAGE_INCLUDE_DIR "..\\FreeImage")
+# path to directory containing freeimage.h
+set(FREEIMAGE_LIB_DIR     "..\\FreeImage\\64") 
+
+#
+# Set if USE_CFITSIO is enabled.
+#
+
+# Include directory (parent of "cfitsio" directory)
+set(CFITSIO_INCLUDE_DIR "..\\")
+# Library directory
+set(CFITSIO_LIB_DIR     "..\\cfitsio\\64")

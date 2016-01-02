@@ -1,0 +1,6 @@
+// Enable MS Windows Common Controls 6.0.0.0 (for Windows XP and above), i.e. the nicer-looking, themed ones.
+//
+// This file is needed only for MinGW build (MSVC generates and embeds a manifest automatically).
+// NOTE: to perform a 64-bit build, replace wx.manifest below by amd64.manifest
+//
+1 24 "wx/msw/wx.manifest"
