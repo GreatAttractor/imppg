@@ -1,0 +1,24 @@
+body {
+    background-color: #DFDFDF;
+}
+
+h1, h2, h3, h4 {
+  font-family: arial, sans-serif;
+}
+
+p {
+  width: 55em;
+}
+
+p, table {
+  font-family: serif;
+}
+
+.centeredElement {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+ul {
+    list-style-type: none;
+}

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+  <title>ImPPG (Image Post-Processor)</title>
+  <meta charset="UTF-8">
+  <meta name="description" content="ImPPG Processing Tutorial">
+  <meta name="keywords" content="ImPPG,Lucy-Richardson deconvolution,Unsharp masking">
+  <meta name="author" content="Filip Szczerek">
+</head> 
+
+<body>
+
+<h1>ImPPG (Image Post-Processor)</h1>
+
+<p>ImPPG performs Lucy-Richardson deconvolution, unsharp masking, brightness normalization and tone curve adjustment. It can also apply previously specified processing settings to multiple images. All operations are performed using 32-bit floating-point arithmetic.</p>
+
+<p>Supported input formats: FITS, BMP, JPEG, PNG, TIFF (most of bit depths and compression methods), TGA and more. Images are processed in grayscale and can be saved as: BMP 8-bit; PNG 8-bit; TIFF 8-bit, 16-bit, 32-bit floating-point (no compression, LZW- or ZIP-compressed), FITS 8-bit, 16-bit, 32-bit floating-point.</p>
+
+<p>ImPPG can also align an image sequence, with possibly large and chaotic translations between images (aligned output images preserve number of channels and bit depth). This can be useful, for example, when preparing a solar time-lapse animation, where subsequent frames are offset due to inaccurate tracking of the telescope mount. Other possible applications are smoothing out of terrestrial landscape time-lapses or preparing raw frames (with serious image jitter) for stacking.</p>
+
+<p>ImPPG is free and open-source, licensed under GNU GPL v3 (or later). Building from source code (C++) requires Boost, wxWidgets and (optionally) FreeImage & CFITSIO libraries and is possible on multiple platforms. Windows executables (32- and 64-bit) can be downloaded using the links below. See the README file for details on usage and building.</p>
+
+<hr>
+
+<p>
+Screenshots: <a href="img/main_wnd.png">main window</a>, <a href="img/alignment.png">alignment options</a>
+</p>
+
+<hr>
+
+<p>Sample results (processing and animation alignment):</p>
+
+<p>
+<a href="http://astrob.in/186944/0"><img src="http://astrob.in/186944/0/rawthumb/gallery/get.jpg"></img></a>
+
+<a href="http://astrob.in/185304/0/"><img src="http://astrob.in/185304/0/rawthumb/gallery/get.jpg"></img></a>
+
+<a href="http://astrob.in/187007/0/"><img src="http://astrob.in/187007/0/rawthumb/gallery/get.jpg"></img></a>
+
+<a href="http://astrob.in/225581/0/"><img src="http://astrob.in/225581/0/rawthumb/gallery/get.jpg"></img></a>
+
+<a href="http://astrob.in/23205/C/"><img src="http://astrob.in/23205/C/rawthumb/gallery/get.jpg"></img></a>
+
+<a href="http://astrob.in/84389/B/"><img src="http://astrob.in/84389/B/rawthumb/gallery/get.jpg"></img></a>
+
+<a href="http://astrob.in/157380/0/"><img src="http://astrob.in/157380/0/rawthumb/gallery/get.jpg"></img></a>
+
+<a href="http://astrob.in/114314/B/"><img src="http://astrob.in/114314/B/rawthumb/gallery/get.jpg"></img></a>
+</p>
+
+<hr>
+
+<p><b><a href="tutorial/tutorial_en.html">Image processing tutorial</a></b></p>
+
+<p><a href="http://stargazerslounge.com/topic/242304-a-short-guide-to-my-solar-image-processing-from-raw-data-to-single-pane/">Solar processing tutorial by Michael H.F. Wilkinson</a></p>
+
+<p><a href="http://www.astrobin.com">Astrobin</a> users can add ImPPG to their “Gear” list: <a href="http://www.astrobin.com/gear/39061/imppg/">imppg</a>
+
+
+
+
+</body>
+</html>

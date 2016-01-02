@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+  <title>ImPPG Processing Tutorial</title>
+  <meta charset="UTF-8">
+  <meta name="description" content="ImPPG Processing Tutorial">
+  <meta name="keywords" content="ImPPG,Lucy-Richardson deconvolution,Unsharp masking">
+  <meta name="author" content="Filip Szczerek">
+</head> 
+
+<body>
+
+<link href="stylesheet.css" rel="stylesheet">
+
+<h1>ImPPG &mdash; Processing Tutorial</h1>
+<p>based on ImPPG version 0.5</p>
+<p>Copyright &copy; 2015 Filip Szczerek (ga.software &lt;at&gt; yahoo.com)</p>
+
+<p><i>This document can be freely distributed and modified (modified versions must be marked as such and must retain this copyright notice).</i></p>
+
+<hr>
+
+<h1>Table of Contents</h1>
+
+<ul>
+    <li><h2><a href="#introduction">Introduction</a></h2></li>
+    <li><h2><a href="#sharpening">Sharpening</a></h2>
+        <ul>
+        <li><h3><a href="#l-r">Lucy&ndash;Richardson deconvolution</a></h3></li>
+        <li><h3><a href="#unsh_masking">Unsharp masking</a></h3>
+            <ul>
+                <li><h4><a href="#unsh_mask_adaptive">Adaptive unsharp masking</a></h4></li>
+            </ul>
+        </li>
+        </ul>
+    </li>
+
+</ul>
+
+<hr>
+
+<h1 id="introduction">Introduction</h1>
+
+<p>ImPPG has been written with post-processing of solar images in mind &mdash; this should explain the choice of examples in this tutorial. Of course ImPPG can be used for any kind of source material. The tutorial is based on my usual workflow; if your processing approach and tastes are different, you might still find ImPPG useful (e.g. for tone curve adjustments alone or for final touching up with unsharp masking).</p>
+
+<p>For best results, you should operate on high-bit depth images (16 bits per channel or more).</p>
+
+<p>Examples of ImPPG processing results (click the images for full size):</p>
+
+<table class="centeredElement">
+<tr>
+    <td><a href="img/fd_raw.png"><img style="width:100%" src="img/fd_raw.png"></a></td>
+    <td><a href="img/fd.png"><img style="width:100%" src="img/fd.png"></a></td>
+</tr>
+</table>
+
+<table class="centeredElement">
+<tr>
+    <td><a href="img/flare_raw.png"><img style="width:100%" src="img/flare_raw.png"></a></td>
+    <td><a href="img/flare.png"><img style="width:100%" src="img/flare.png"></a></td>
+</tr>
+</table>
+
+<table class="centeredElement">
+<tr>
+    <td><a href="img/fila_raw.png"><img style="width:100%" src="img/fila_raw.png"></a></td>
+    <td><a href="img/fila.png"><img style="width:100%" src="img/fila.png"></a></td>
+</tr>
+</table>
+
+<table class="centeredElement">
+<tr>
+    <td><a href="img/prom_raw.png"><img style="width:100%" src="img/prom_raw.png"></a></td>
+    <td><a href="img/prom.png"><img style="width:100%" src="img/prom.png"></a></td>
+</tr>
+</table>
+
+<h1 id="sharpening">Sharpening</h1>
+
+<p>ImPPG operates on image stacks produced by lucky imaging software (e.g. AutoStakkert!, AviStack, Registax). Image details in such stacks are blurred due to deformation and blurring of the source raw frames. A&nbsp;note of caution: sometimes default settings in those tools will create an&nbsp;already sharpened (or in other ways processed) stack; trying to sharpen it again in ImPPG may give suboptimal results. In such case make sure you are operating on the raw, untouched stack.</p>
+
+<p>ImPPG implements two sharpening algorithms: Lucy&ndash;Richardson deconvolution (non-blind with Gaussian kernel) and unsharp masking. L&ndash;R deconvolution is a&nbsp;&ldquo;smart&rdquo; algorithm &mdash; it attempts to take into account and suppress the existing image noise. On the other hand, unsharp masking simply increases amplitude of the small-scale details (including noise, if any). Therefore in most cases it is L&ndash;R deconvolution that should be used for primary sharpening, with unsharp masking applied optionally as a&nbsp;final enhancement.</p>
+
+<h2 id="l-r">Lucy&ndash;Richardson deconvolution</h2>
+
+<img src="img/lr_settings.png">
+
+<p>Sharpening via L&ndash;R is defined by the following parameters:</p>
+
+<h3>Number of iterations</h3>
+<p>Higher values strengthen the sharpening effect (and increase the processing time). Suggested value is 30 to 70. Specifying 0 disables L&ndash;R deconvolution.</p>
+
+<h3><i>Sigma</i></h3>
+
+<p><i>Sigma</i> (<i>&sigma;</i>) defines the width of Gaussian kernel. Larger values correspond with more coarse sharpening. In order to find the optimal value, select a&nbsp;relatively small area (to ensure fast processing) and use the slider for <i>sigma</i> fine-tuning. Locally stretching the histogram using the tone curve editor increases contrast and can help in assessing the L&ndash;R deconvolution results (you can do it simply by pressing "stretch" in the tone curve editor window).</p>
+
+<img src="img/lr_prereq.png">
+
+<p>You can use the zoom function to see the changes more easily. The below animation (150% zoom) shows effects of increasing the <i>sigma</i>; note how using too high a&nbsp;value causes bloating and loss of fine details:</p>
+
+<img src="img/lr_sigma.gif"/>
+
+<p>The best value will depend on the imaging setup&rsquo;s sampling rate &mdash; which in turn depends on focal ratio and imaging sensor&rsquo;s pixel size (or, more precisely, pixel pitch), and also on seeing conditions during capture.</p>
+
+<p>Once the optimal <i>sigma</i> is determined, the image can be further sharpened (or blurred) using unsharp masking.</p>
+
+<h3>Ringing prevention</h3>
+
+<p>L&ndash;R deconvolution can produce noticeable <i>ringing</i> around high-contrast transitions. The &ldquo;Prevent ringing&rdquo; checkbox enables slight blurring of borders of overexposed (solid white) areas &mdash; e.g. the solar disc in a&nbsp;prominence image &mdash; prior to deconvolution. This is an&nbsp;experimental function and its effectiveness may vary. Example:</p>
+
+<img src="img/deringing.gif">
+
+<h2 id="unsh_masking">Unsharp masking</h2>
+
+<img src="img/unsh_params.png">
+
+<p>Unsharp masking can be applied as an additional sharpening or blurring step (or both&nbsp;&mdash; see <a href="#unsh_mask_adaptive">adaptive</a> below). As in the case of L&ndash;R deconvolution, the <i>sigma</i> parameter controls how coarse is the sharpening/blurring effect. It is often a&nbsp;good idea to use <i>sigma</i> value close to the one used for L&ndash;R deconvolution.</p>
+
+<p>&ldquo;Amount&rdquo; specifies how much the small-scale details are amplified. Value 1.0 does nothing, values &geq;1.0 sharpen the image, values &leq;1.0 blur it (can be useful if the input stack was very noisy and the noise has not been suppressed during L&ndash;R deconvolution).</p>
+
+<table>
+<tr style="text-align: center">
+    <td>raw stack</td>
+    <td>L&ndash;R</td>
+    <td>L&ndash;R & unsharp masking</td>
+</tr>
+<tr>
+    <td><a href="img/sh_none.png"><img style="width:100%" src="img/sh_none.png"></a></td>
+    <td><a href="img/sh_lr.png"><img style="width:100%" src="img/sh_lr.png"></a></td>
+    <td><a href="img/sh_lr_unshmsk.png"><img style="width:100%" src="img/sh_lr_unshmsk.png"></a></td>
+</tr>
+</table>
+
+
+<h3>Scaled view</h3>
+
+<p>Some imaging setups produce images with significant oversampling (the smallest captured details are much larger than 1&nbsp;pixel), e.g. those using telecentric H&alpha; optics. If such an&nbsp;image will be scaled down for publication, it is useful to zoom out the view to the target scale when applying unsharp mask in order to see the final result.</p>
+
+<h3 id="unsh_mask_adaptive">Adaptive unsharp masking</h3>
+
+<img src="img/unsh_params_adaptive.png">
+
+<p>There are situations where applying a constant-amount unsharp mask to the whole image is undesirable. Consider the following unprocessed stack:</p>
+
+<img src="img/adapt_raw.png">
+
+<p>When we apply L&ndash;R deconvolution and unsharp masking and then try to bring out (stretch) the prominences by applying the following tone curve:</p>
+
+<img src="img/prom_stretch.png">
+
+<p>we also underline the image noise (L&ndash;R deconvolution does not remove it entirely). Ideally, we would like to avoid oversharpening the areas with a&nbsp;low signal-to-noise ratio &mdash; in this case this is the dark background and the faint prominence layer. Or, better yet, apply some smoothing to them. All this without affecting other regions (the disc interior).</p>
+
+<p>This is where adaptive unsharp masking comes to the rescue. In this mode the unsharp masking amount varies smoothly, depending on the input (unprocessed) image brightness. For areas darker than &ldquo;threshold&rdquo; the amount is set to &ldquo;amount min&rdquo;. For brighter areas it is set to &ldquo;amount max&rdquo;. The transition between those values is smooth and takes place over an&nbsp;interval given by &ldquo;transition width&rdquo;.
+</p>
+
+<p>Dependence of the amount on input brightness is as follows:</p>
+
+<img src="img/adaptive.svg" alt="Brightness/unsharp masking amount dependence graph.">
+<p><i><a href="img/adaptive.svg.png">(click to see a bitmap version)</a></i></p>
+
+<p>Note that the brightness, threshold & width are specified using normalized values: zero is black, 1.0 is white.</p>
+
+<p>For our example, we will set <i>amount<sub>min</sub></i> to 0.4 to apply some smoothing to the stretched prominences, but <i>amount<sub>max</sub></i> to 1.8 for a&nbsp;pretty strong sharpening of the disc (where noise is not a&nbsp;problem). Transition width will be left at its default value.</p>
+
+<p>The animation below shows the effects of increasing the threshold from 0.01 to 0.05. We can see how the region of smoothing (where amount &lt; 1.0) is moving from the (originally) darkest parts of the image towards the brighter disc.</p>
+
+<img src="img/adaptive_threshold.gif">
+
+<p>The values of <i>amount<sub>min</sub></i> and <i>amount<sub>max</sub></i> can be changed freely depending on what is needed. For example, <i>amount<sub>min</sub></i> &lt; 1.0 and <i>amount<sub>max</sub></i> = 1.0 will smooth dark areas only; <i>amount<sub>min</sub></i> = 1.0 and <i>amount<sub>max</sub></i> > 1.0 will sharpen only the bright areas. It is also allowed to set <i>amount<sub>min</sub></i> &gt; <i>amount<sub>max</sub></i>, if you ever need to sharpen the dark areas and leave unchanged (or smooth out) the bright ones.
+
+
+</body>
+</html>
