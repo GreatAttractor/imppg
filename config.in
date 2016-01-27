@@ -30,7 +30,7 @@ set(WX_LIB_DIR     "..\\wxWidgets-3.0.2\\lib\\gcc_x64_lib")
 
 # path to directory containing FreeImage.h
 set(FREEIMAGE_INCLUDE_DIR "..\\FreeImage")
-# path to directory containing freeimage.h
+# path to directory containing the import library
 set(FREEIMAGE_LIB_DIR     "..\\FreeImage\\64") 
 
 #
