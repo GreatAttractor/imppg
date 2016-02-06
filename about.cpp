@@ -38,12 +38,14 @@ File description:
 #include <wx/stattext.h>
 #include <wx/gdicmn.h>
 #include <wx/panel.h>
+#include <wx/stdpaths.h>
 #if (USE_FREEIMAGE)
 #include <FreeImage.h>
 #endif
 #if USE_CFITSIO
 #include <cfitsio/fitsio.h>
 #endif
+#include "common.h"
 #include "ctrl_ids.h"
 
 const char *VERSION_STR = "0.5";   ///< Current version
@@ -132,17 +134,7 @@ c_AboutDialog::c_AboutDialog(wxWindow *parent)
 {
     SetBackgroundColour(*wxWHITE);
 
-    wxFileName logoFileName("images", "about", "png");
-    wxImage img(logoFileName.GetFullPath());
-    if (!img.IsOk())
-    {
-        wxMessageBox(wxString::Format(_("Cannot load bitmap: %s"), logoFileName.GetFullName()), _("Error"), wxICON_ERROR);
-        m_Bmp = wxBitmap(1, 1);
-    }
-    else
-    {
-        m_Bmp = wxBitmap(img);
-    }
+    m_Bmp = LoadBitmap("about");
 
     wxSizer *szTop = new wxBoxSizer(wxVERTICAL);
 

@@ -27,7 +27,7 @@ File description:
 #include <algorithm>
 #include <cmath>
 #include <boost/scoped_ptr.hpp>
-#include <wx/intl.h> 
+#include <wx/intl.h>
 #include <wx/aui/framemanager.h>
 #include <wx/textctrl.h>
 #include <wx/dcclient.h>
@@ -55,6 +55,7 @@ File description:
 #include <wx/choicdlg.h>
 #include <wx/numdlg.h>
 #include <wx/valgen.h>
+#include <wx/stdpaths.h>
 #include "main_window.h"
 #include "bmp.h"
 #include "tiff.h"
@@ -504,7 +505,7 @@ c_MainWindow::c_MainWindow()
 
     m_Processing.processingScheduled = false;
 
-    s.selection.x = s.selection.y = -1; 
+    s.selection.x = s.selection.y = -1;
     s.selection.width = s.selection.height = 0;
 
     s.output.sharpening.img = 0;
@@ -552,7 +553,7 @@ c_MainWindow::c_MainWindow()
 void c_MainWindow::OnProcessingStepCompleted(CompletionStatus_t status)
 {
     SetActionText(_("Idle"));
-    
+
     if (m_Processing.processingRequest == ProcessingRequest::TONE_CURVE ||
         status == RESULT_ABORTED)
     {
@@ -772,7 +773,7 @@ void c_MainWindow::OnImageViewMouseMove(wxMouseEvent &event)
                                   std::max(m_MouseOps.View.start.y, m_MouseOps.View.end.y));
         int oldSelWidth = oldSelBottomRight.x - oldSelTopLeft.x + 1,
             oldSelHeight = oldSelBottomRight.y - oldSelTopLeft.y + 1;
-        
+
         m_ImageView->RefreshRect(wxRect(oldSelTopLeft.x, oldSelTopLeft.y, oldSelWidth, 1),
              false);
         m_ImageView->RefreshRect(wxRect(oldSelTopLeft.x, oldSelBottomRight.y, oldSelWidth, 1),
@@ -888,7 +889,7 @@ void c_MainWindow::OnNewSelection(
         wxSize viewSize = m_ImageView->GetSize();
 
         selectionRst.Intersect(wxRect(scrollPos, viewSize));
-        
+
         wxRect scaledSelectionRst = selectionRst; // Scaled area in 'm_ImgView' (logical coords) to restore
 
         // Second, scale it back to 'm_ImgBmp' pixels.
@@ -911,14 +912,14 @@ void c_MainWindow::OnNewSelection(
             GetResizeQuality(s.scalingMethod)));
 
         wxMemoryDC dcRestoredScaled(restoredScaled), dcScaled(*s.view.bmpScaled);
-        
+
         wxPoint destPt = scaledSelectionRst.GetTopLeft();
         destPt.x -= s.view.scaledArea.x * s.view.zoomFactor;
         destPt.y -= s.view.scaledArea.y * s.view.zoomFactor;
         dcScaled.Blit(destPt, restoredScaled.GetSize(),
                 &dcRestoredScaled,
                 wxPoint(0, 0));
-        
+
         wxRect updateReg(m_ImageView->CalcScrolledPosition(scaledSelectionRst.GetTopLeft()),
                          m_ImageView->CalcScrolledPosition(scaledSelectionRst.GetBottomRight()));
         m_ImageView->RefreshRect(updateReg, false);
@@ -987,7 +988,7 @@ void c_MainWindow::OpenFile(wxFileName path, bool resetSelection)
     wxString ext = path.GetExt().Lower();
 
     std::string errorMsg;
-    
+
     c_Image *newImg = LoadImageFileAsMono32f(path.GetFullPath().ToStdString(), path.GetExt().Lower().ToStdString(), &errorMsg);
 
     if (newImg == 0)
@@ -1224,7 +1225,7 @@ void c_MainWindow::StartProcessing()
     }
 
     m_Processing.processingScheduled = false;
-    
+
     ProcessingSettings_t &s = *m_CurrentSettings;
 
     // Make sure that if there are outdated thread events out there, they will be recognized
@@ -1285,7 +1286,7 @@ void c_MainWindow::StartProcessing()
             SetActionText(wxString::Format(_(L"L\u2013R deconvolution") + ": %d%%", 0));
             m_Processing.worker->Run();
         }
-        
+
         break;
 
     case ProcessingRequest::UNSHARP_MASKING:
@@ -1956,46 +1957,37 @@ void c_MainWindow::OnPaintImageArea(wxPaintEvent &event)
     }
 }
 
-wxBitmap LoadTransparentBitmap(wxString name)
-{
-    wxBitmap result(wxFileName("images", name, "png").GetFullPath(), wxBITMAP_TYPE_ANY);
-    if (!result.IsOk())
-        result = wxBitmap(16, 16); //TODO: show some warning/working path suggestion message
-
-    return result; // Return by value; it's fast, because wxBitmap's copy constructor uses reference counting
-}
-
 void c_MainWindow::InitToolbar()
 {
     CreateToolBar();
     wxToolBar *tb = GetToolBar();
-	
+
     // File operations controls
 	tb->AddTool(wxID_OPEN, wxEmptyString,
-	        LoadTransparentBitmap("open_file"),
+	        LoadBitmap("open_file"),
 	        wxNullBitmap,
 	        wxITEM_NORMAL,
 	        _("Open image file"));
     tb->AddTool(wxID_SAVE, wxEmptyString,
-        LoadTransparentBitmap("save_file"),
+        LoadBitmap("save_file"),
         wxNullBitmap,
         wxITEM_NORMAL,
         _("Save image file"));
     tb->AddSeparator();
 
     // User interface controls
-    tb->AddCheckTool(ID_ToggleProcessingPanel, wxEmptyString, LoadTransparentBitmap("toggle_proc"),
+    tb->AddCheckTool(ID_ToggleProcessingPanel, wxEmptyString, LoadBitmap("toggle_proc"),
         wxNullBitmap, _("Show processing controls"));
     tb->FindById(ID_ToggleProcessingPanel)->Toggle(true);
 
-    tb->AddCheckTool(ID_ToggleToneCurveEditor, wxEmptyString, LoadTransparentBitmap("toggle_tcrv"),
+    tb->AddCheckTool(ID_ToggleToneCurveEditor, wxEmptyString, LoadBitmap("toggle_tcrv"),
         wxNullBitmap, _("Show tone curve editor"));
 
     tb->AddSeparator();
 
     // Processing controls
     tb->AddTool(ID_SelectAndProcessAll, wxEmptyString,
-                LoadTransparentBitmap("select_all"),
+                LoadBitmap("select_all"),
                 wxNullBitmap,
                 wxITEM_NORMAL,
                 _("Select and process the whole image"));
@@ -2004,22 +1996,22 @@ void c_MainWindow::InitToolbar()
 
     // Zoom controls
 
-    tb->AddCheckTool(ID_FitInWindow, wxEmptyString, LoadTransparentBitmap("fit_wnd"),
+    tb->AddCheckTool(ID_FitInWindow, wxEmptyString, LoadBitmap("fit_wnd"),
             wxNullBitmap, _("Fit image in window"));
-    tb->AddTool(ID_Zoom100, wxEmptyString, LoadTransparentBitmap("zoom_none"),
+    tb->AddTool(ID_Zoom100, wxEmptyString, LoadBitmap("zoom_none"),
             wxNullBitmap, wxITEM_NORMAL, _("Actual size (100%)"));
-    tb->AddTool(ID_ZoomIn, wxEmptyString, LoadTransparentBitmap("zoom_in"),
+    tb->AddTool(ID_ZoomIn, wxEmptyString, LoadBitmap("zoom_in"),
             wxNullBitmap, wxITEM_NORMAL, _("Zoom in"));
-    tb->AddTool(ID_ZoomOut, wxEmptyString, LoadTransparentBitmap("zoom_out"),
+    tb->AddTool(ID_ZoomOut, wxEmptyString, LoadBitmap("zoom_out"),
             wxNullBitmap, wxITEM_NORMAL, _("Zoom out"));
-    tb->AddTool(ID_ZoomCustom, wxEmptyString, LoadTransparentBitmap("zoom_custom"),
+    tb->AddTool(ID_ZoomCustom, wxEmptyString, LoadBitmap("zoom_custom"),
             wxNullBitmap, wxITEM_NORMAL, _("Custom zoom factor..."));
 
     tb->AddSeparator();
 
-    tb->AddTool(ID_SaveSettings, wxEmptyString, LoadTransparentBitmap("save_settings"),
+    tb->AddTool(ID_SaveSettings, wxEmptyString, LoadBitmap("save_settings"),
             wxNullBitmap, wxITEM_NORMAL, _("Save processing settings"));
-    tb->AddTool(ID_LoadSettings, wxEmptyString, LoadTransparentBitmap("load_settings"),
+    tb->AddTool(ID_LoadSettings, wxEmptyString, LoadBitmap("load_settings"),
             wxNullBitmap, wxITEM_NORMAL, _("Load processing settings"));
 
     tb->Realize();
@@ -2060,7 +2052,7 @@ void c_MainWindow::InitMenu()
     menuView->Append(ID_Zoom150, _("3:2 (150%)"));
     menuView->Append(ID_Zoom200, _("2:1 (200%)"));
     menuView->Append(ID_ZoomCustom, _("Custom zoom factor..."));
-    
+
         wxMenu *menuScaling = new wxMenu();
         menuScaling->AppendRadioItem(ID_ScalingNearest, _("Nearest neighbor (fastest)"));
         menuScaling->AppendRadioItem(ID_ScalingLinear, _("Linear"));

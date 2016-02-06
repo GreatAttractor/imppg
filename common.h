@@ -24,6 +24,7 @@ File description:
 #ifndef IMPGG_COMMON_HEADER
 #define IMPGG_COMMON_HEADER
 
+#include <wx/bitmap.h>
 #include <wx/window.h>
 
 template<typename T>
@@ -55,5 +56,8 @@ typedef struct strRectangle
 
 /// Checks if a window is visible on any display; if not, sets its size and position to default
 void FixWindowPosition(wxWindow *wnd);
+
+/// Loads a bitmap from the "images" subdirectory
+wxBitmap LoadBitmap(wxString name);
 
 #endif //  IMPGG_COMMON_HEADER
