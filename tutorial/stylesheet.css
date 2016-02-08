@@ -7,7 +7,7 @@ h1, h2, h3, h4 {
 }
 
 p {
-  width: 55em;
+  max-width: 55em;
 }
 
 p, table {
