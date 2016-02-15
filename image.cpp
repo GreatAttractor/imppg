@@ -28,6 +28,7 @@ File description:
 #include <cassert>
 #include <algorithm>
 #include <boost/cstdint.hpp>
+#include <boost/format.hpp>
 
 #include "image.h"
 #if (USE_FREEIMAGE)
@@ -579,18 +580,32 @@ c_Image *LoadFitsImage(std::string fname)
     c_Image *result = 0;
     fitsfile *fptr;
     int status = 0;
-    fits_open_file(&fptr, fname.c_str(), READONLY, &status);
-
     long dimensions[3] = { 0 };
     int naxis;
     int bitsPerPixel;
-    fits_read_imghdr(fptr, 3, 0, &bitsPerPixel, &naxis, dimensions, 0, 0, 0, &status);
-    if (naxis > 3 || status)
+    int imgIndex = 0;
+    while (0 == status)
     {
-        fits_close_file(fptr, &status);
-        return 0;
+        // The i-th image in FITS file is accessed by appending [i] to file name; try image [0] first
+        fits_open_file(&fptr, boost::str(boost::format("%s[%d]") % fname % imgIndex).c_str(), READONLY, &status);
+        fits_read_imghdr(fptr, 3, 0, &bitsPerPixel, &naxis, dimensions, 0, 0, 0, &status);
+        if (0 == status && (naxis > 3 || naxis <= 0))
+        {
+            // Try opening a subsequent image; sometimes image [0] has 0 size (e.g. in some files from SDO)
+            fits_close_file(fptr, &status);
+            imgIndex++;
+            continue;
+        }
+        else if (status)
+        {
+            fits_close_file(fptr, &status);
+            return 0;
+        }
+        else
+            break;
+        
+        //TODO: if 3 axes are detected, convert RGB to grayscale; now we only load the first channel
     }
-    //TODO: if 3 axes are detected, convert RGB to grayscale; now we only load the first channel
 
     int numPixels = dimensions[0]*dimensions[1];
     void *fitsPixels = 0;
