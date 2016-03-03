@@ -78,6 +78,8 @@ Obrazy wyjściowe po użyciu funkcji wyrównywania sekwencji zapisywane są w fo
 ----------------------------------------
 ## 4. Przetwarzanie obrazów
 
+Ilustrowany samouczek dostępny jest pod adresem http://greatattractor.github.io/imppg/tutorial/tutorial_en.html
+
 ----------------------------------------
 ### 4.1. Normalizacja jasności
 
@@ -206,7 +208,7 @@ Rozwiązanie: zmienić motyw GTK na „Raleigh” (np. w Fedorze użyć narzędz
 ## 10. Pobieranie
 
 Kod źródłowy ImPPG i pliki wykonywalne dla MS Windows można pobrać pod adresem:  
-    https://github.com/GreatAttractor/imppg/
+    https://github.com/GreatAttractor/imppg/releases
 
 
 ----------------------------------------

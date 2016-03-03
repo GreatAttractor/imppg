@@ -19,8 +19,8 @@ version 0.5 (2016-01-02)
 - 5\. Saving/loading settings
 - 6\. Batch processing
 - 7\. Image sequence alignment
-  - 1\. High-contrast features stablization (phase correlation)
-  - 2\. Solar limb stabilization
+  - 7\.1\. High-contrast features stablization (phase correlation)
+  - 7\.2\. Solar limb stabilization
 - 8\. Misc
 - 9\. Known problems
 - 10\. Downloading
@@ -74,6 +74,8 @@ Output images produces by the sequence alignment function are saved as uncompres
 
 ----------------------------------------
 ## 4. Image processing
+
+An illustrated processing tutorial can be found at http://greatattractor.github.io/imppg/tutorial/tutorial_en.html
 
 ----------------------------------------
 ### 4.1. Brightness normalization
@@ -202,7 +204,7 @@ Solution: change the GTK theme to "Raleigh" (e.g. in Fedora use the "GTK+ Appear
 ## 10. Downloading
 
 ImPPG source code and MS Windows executables can be downloaded from:  
-    https://github.com/GreatAttractor/imppg/
+    https://github.com/GreatAttractor/imppg/releases
 
 
 ----------------------------------------
