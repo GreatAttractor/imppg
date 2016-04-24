@@ -155,38 +155,38 @@ c_Image *ReadBmp(const char *fileName)
         // Seek to the beginning of pixel values
         file.seekg(SWAP32cnd(bmpFileHdr.bfOffBits, isMBE), std::ios_base::beg);
 
-        uint8_t *row = 0;
-        if (srcBytesPerPixel == 4)
-            row = new uint8_t[imgWidth*4];
+        uint8_t *row = new uint8_t[imgWidth*srcBytesPerPixel];
 
         // read the lines directly into the buffer
         for (int y = imgHeight - 1; y >= 0; y--) // lines in BMP are stored bottom to top
         {
+            file.read((char *)row, imgWidth*srcBytesPerPixel);
+            
             if (srcBytesPerPixel == 3)
             {
-                file.read((char *)((uint8_t *)img->GetRow(y)), imgWidth*3);
-                if (skip > 0)
-                    file.seekg(skip, std::ios_base::cur);
+                for (int x = 0; x < imgWidth; x++)
+                {
+                    ((uint8_t *)img->GetRow(y))[x*3+0] = row[3*x + 2];
+                    ((uint8_t *)img->GetRow(y))[x*3+1] = row[3*x + 1];
+                    ((uint8_t *)img->GetRow(y))[x*3+2] = row[3*x + 0];
+                }
             }
             else if (srcBytesPerPixel == 4)
             {
-                file.read((char *)row, imgWidth*4);
-                
                 // Remove the unused 4th byte from each pixel and rearrange the channels to RGB order
                 for (int x = 0; x < imgWidth; x++)
                 {
-                    ((uint8_t *)img->GetRow(y))[x*3] = row[x*4+3];
+                    ((uint8_t *)img->GetRow(y))[x*3+0] = row[x*4+3];
                     ((uint8_t *)img->GetRow(y))[x*3+1] = row[x*4+2];
                     ((uint8_t *)img->GetRow(y))[x*3+2] = row[x*4+1];
                 }
-
-                if (skip > 0)
-                    file.seekg(skip, std::ios_base::cur);
             }
+            
+            if (skip > 0)
+                file.seekg(skip, std::ios_base::cur);
         }
 
-        if (row)
-            delete[] row;
+        delete[] row;
     }
 
     return img;
@@ -270,12 +270,32 @@ bool SaveBmp(const char *fileName, c_Image &img)
 
     int skip = bmpLineWidth - img.GetWidth()*bytesPP;
 
+    uint8_t *row = 0;
+    if (pixFmt == PIX_RGB8)
+    {
+        row = new uint8_t[img.GetWidth()*bytesPP];
+    }
+    
     for (i = img.GetHeight() - 1; i >= 0; i--) // lines in a BMP are stored bottom to top
     {
-        file.write((const char*)img.GetRow(i), img.GetWidth()*bytesPP);
+        if (pixFmt == PIX_RGB8)
+        {
+            for (int x = 0; x < img.GetWidth(); x++)
+            {
+                uint8_t temp = row[3*x + 0];
+                row[3*x + 0] = row[3*x + 2];
+                row[3*x + 2] = temp;
+            }
+            file.write((const char*)row, img.GetWidth()*bytesPP);
+        }
+        else
+            file.write((const char*)img.GetRow(i), img.GetWidth()*bytesPP);
+        
         if (skip > 0)
             file.write((const char *)img.GetRow(i), skip); //this is just padding, so write anything
     }
+    
+    delete[] row;
 
     file.close();
 
