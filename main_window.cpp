@@ -29,6 +29,7 @@ File description:
 #include <boost/scoped_ptr.hpp>
 #include <wx/intl.h>
 #include <wx/aui/framemanager.h>
+#include <wx/aui/dockart.h>
 #include <wx/textctrl.h>
 #include <wx/dcclient.h>
 #include <wx/toolbar.h>
@@ -2122,6 +2123,8 @@ void c_MainWindow::InitControls()
     InitMenu();
 
     m_AuiMgr.SetManagedWindow(this);
+    if (m_AuiMgr.GetArtProvider()->GetMetric(wxAUI_DOCKART_SASH_SIZE) < 3)
+        m_AuiMgr.GetArtProvider()->SetMetric(wxAUI_DOCKART_SASH_SIZE, 3);
 
     wxWindow *processingPanel = CreateProcessingControlsPanel();
 
