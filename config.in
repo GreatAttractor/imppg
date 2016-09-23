@@ -13,16 +13,22 @@ set(USE_FREEIMAGE 1)
 
 #----------------------------------------------------------------------------------
 #
-# The paths below need to be set only if building on Windows (use \\ for backslash).
+# The paths below need to be set only if building on Windows (use \\ for backslash),
+# not under MSYS. For an MSYS build all the below definitions must be commented out.
 #
 
 # Boost root directory
 set(BOOST_ROOT "..\\boost_1_57_0")
 
-# wxWidgets include directory
-set(WX_INCLUDE_DIR "..\\wxWidgets-3.0.2\\include")
+# wxWidgets root directory
+set(wxWidgets_ROOT_DIR "..\\wxWidgets-3.0.2")
+
 # wxWidgets libraries directory
-set(WX_LIB_DIR     "..\\wxWidgets-3.0.2\\lib\\gcc_x64_lib")
+set(wxWidgets_LIB_DIR  "..\\wxWidgets-3.0.2\\lib\\gcc_lib")
+#   Note that CMake (as of 3.6) may incorrectly detect libraries for 64-bit MinGW.
+#   If "wxWidgets_ROOT_DIR/lib/gcc_lib" exists, it will be used even if you specify
+#   e.g. "wxWidgets_ROOT_DIR/lib/some_other_dir". In such case, rename "some_other_dir"
+#   to "gcc_lib".
 
 #
 # Set if USE_FREEIMAGE is enabled.
@@ -37,7 +43,7 @@ set(FREEIMAGE_LIB_DIR     "..\\FreeImage\\64")
 # Set if USE_CFITSIO is enabled.
 #
 
-# Include directory (parent of "cfitsio" directory)
-set(CFITSIO_INCLUDE_DIR "..\\")
+# Include directory
+set(CFITSIO_INCLUDE_DIR "..\\cfitsio")
 # Library directory
-set(CFITSIO_LIB_DIR     "..\\cfitsio\\64")
+set(CFITSIO_LIB_DIR     "..\\cfitsio.build64")

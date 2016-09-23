@@ -15,13 +15,11 @@
 
 project("ImPPG")
 
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.1)
 
 include(config.in)
 
 if(WIN32)
-    link_directories("${WX_LIB_DIR}")
-
     if(USE_FREEIMAGE EQUAL 1)
         link_directories("${FREEIMAGE_LIB_DIR}")
     endif()
@@ -31,39 +29,42 @@ if(WIN32)
     endif()
 endif()
 add_executable(imppg WIN32
-    about.cpp
-    align_disc.cpp
-    align_params.cpp
-    align_phasecorr.cpp
-    align_proc.cpp
-    align_progress.cpp
-    appconfig.cpp
-    batch.cpp
-    batch_params.cpp
-    bmp.cpp
-    common.cpp
-    cursors.cpp
-    formats.cpp
-    fft.cpp
-    gauss.cpp
-    image.cpp
-    logging.cpp
-    lrdeconv.cpp
-    main.cpp
-    main_window.cpp
-    normalize.cpp
-    num_ctrl.cpp
-    scrollable_dlg.cpp
-    settings.cpp
-    tcrv.cpp
-    tcrv_edit.cpp
-    tiff.cpp
-    w_lrdeconv.cpp
-    w_tcurve.cpp
-    w_unshmask.cpp
-    worker.cpp
-    wxapp.cpp
+    src/about.cpp
+    src/align_disc.cpp
+    src/align_params.cpp
+    src/align_phasecorr.cpp
+    src/align_proc.cpp
+    src/align_progress.cpp
+    src/appconfig.cpp
+    src/batch.cpp
+    src/batch_params.cpp
+    src/bmp.cpp
+    src/common.cpp
+    src/cursors.cpp
+    src/formats.cpp
+    src/fft.cpp
+    src/gauss.cpp
+    src/image.cpp
+    src/logging.cpp
+    src/lrdeconv.cpp
+    src/main.cpp
+    src/main_window.cpp
+    src/normalize.cpp
+    src/num_ctrl.cpp
+    src/scrollable_dlg.cpp
+    src/settings.cpp
+    src/tcrv.cpp
+    src/tcrv_edit.cpp
+    src/tiff.cpp
+    src/w_lrdeconv.cpp
+    src/w_tcurve.cpp
+    src/w_unshmask.cpp
+    src/worker.cpp
+    src/wxapp.cpp
 )
+
+set_property(TARGET imppg PROPERTY CXX_STANDARD 11)
+set_property(TARGET imppg PROPERTY CXX_STANDARD_REQUIRED ON)
 
 # The imppg(64).rc files include the manifest that enables MS Windows Common Controls 6.0.0.0
 # (for Windows XP and above), i.e. the nicer-looking, themed ones. This is needed only for MinGW,
@@ -73,63 +74,21 @@ if(MINGW)
 
     if(CMAKE_SIZEOF_VOID_P EQUAL 4)
         # 32-bit build
-        target_sources(imppg PUBLIC imppg.rc)
+        target_sources(imppg PUBLIC src/imppg.rc)
     else()
         # 64-bit build
-        target_sources(imppg PUBLIC imppg64.rc)
-
-        # option required by wxWidgets 3.0.2 as of g++ 5.2.0
-        target_compile_options(imppg PUBLIC "-std=gnu++11")
+        target_sources(imppg PUBLIC src/imppg64.rc)
     endif()
 endif()
 
 find_package(Boost REQUIRED)
 target_include_directories(imppg PUBLIC ${Boost_INCLUDE_DIRS})
 
-if(NOT WIN32)
-
-    # wxWidgets is found via wx-config (e.g. on Linux)
-    find_package(wxWidgets REQUIRED COMPONENTS adv aui xml core base)
-    set(wxWidgets_USE_UNICODE TRUE)
-    set(wxWidgets_USE_DEBUG FALSE)
-    include(${wxWidgets_USE_FILE})
-    target_link_libraries(imppg ${wxWidgets_LIBRARIES})
-    
-else()
-
-    # I couldn't get FindwxWidgets.cmake module to work as of CMake 3.4.1/wxWidgets 3.0.2/MinGW-64 (g++ 5.2.0)
-    # (though it worked fine for MinGW 32-bit libs) and didn't spend too much time debugging it.
-    # For now let's specify everything manually instead.
-    message("Using user-supplied wxWidgets paths.")
-    target_include_directories(imppg PUBLIC "${WX_INCLUDE_DIR}")
-    target_include_directories(imppg PUBLIC "${WX_LIB_DIR}\\mswu") # needed for setup.h
-    add_definitions(-D_UNICODE -D__WXMSW__)
-    target_link_libraries(imppg
-        wxmsw30u_aui
-        wxmsw30u_adv
-        wxmsw30u_core
-        wxbase30u_xml
-        wxexpat
-        wxbase30u
-        wxtiff
-        wxjpeg
-        wxpng
-        wxzlib
-        rpcrt4
-        oleaut32
-        ole32
-        uuid
-        winspool
-        winmm
-        shell32
-        comctl32
-        comdlg32
-        advapi32
-        wsock32
-        gdi32
-        user32
-    )
-endif()
+set(wxWidgets_USE_UNICODE TRUE)
+set(wxWidgets_USE_DEBUG FALSE)
+find_package(wxWidgets REQUIRED COMPONENTS adv aui xml core base)
+include(${wxWidgets_USE_FILE})
+target_link_libraries(imppg ${wxWidgets_LIBRARIES})
 
 find_package(OpenMP)
 if(OPENMP_FOUND)
@@ -146,6 +105,7 @@ endif()
 
 if (MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fp:fast")
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS=1)
 elseif(GNU_FFAST_MATH_SUPPORTED)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
 endif()

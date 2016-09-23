@@ -214,7 +214,7 @@ Kod źródłowy ImPPG i pliki wykonywalne dla MS Windows można pobrać pod adre
 ----------------------------------------
 ## 11. Budowanie ze źródeł
 
-Budowanie ze źródeł wymaga narzędzi do kompilacji C++, CMake, bibliotek Boost w wersji 1.57.0 lub późniejszej (choć wcześniejsze też mogą działać) oraz wxWidgets 3.0. Do obsługi większej liczby formatów graficznych potrzebna jest biblioteka FreeImage w wersji co najmniej 3.14.0. Bez niej obsługiwane są jedynie: BMP 8-, 24- i 32-bitowe, TIFF mono lub RGB, 8 lub 16 bitów na kanał (bez kompresji). Obsługę plików FITS (opcjonalną) zapewnia biblioteka CFITSIO. Przetwarzanie wielowątkowe wymaga kompilatora obsługującego OpenMP (np. GCC 4.2 lub nowsze, MS Visual C++ 2008 lub nowsze (wersje płatne), MS Visual C++ 2012 Express lub nowsze).
+Budowanie ze źródeł wymaga narzędzi do kompilacji C++ (zgodnych z C++11), CMake, bibliotek Boost w wersji 1.57.0 lub późniejszej (choć wcześniejsze też mogą działać) oraz wxWidgets 3.0. Do obsługi większej liczby formatów graficznych potrzebna jest biblioteka FreeImage w wersji co najmniej 3.14.0. Bez niej obsługiwane są jedynie: BMP 8-, 24- i 32-bitowe, TIFF mono lub RGB, 8 lub 16 bitów na kanał (bez kompresji). Obsługę plików FITS (opcjonalną) zapewnia biblioteka CFITSIO. Przetwarzanie wielowątkowe wymaga kompilatora obsługującego OpenMP (np. GCC 4.2 lub nowsze, MS Visual C++ 2008 lub nowsze (wersje płatne), MS Visual C++ 2012 Express lub nowsze).
 
 Obsługę CFITSIO i FreeImage można wyłączyć edytując plik `config.in` (domyślnie są włączone).
 

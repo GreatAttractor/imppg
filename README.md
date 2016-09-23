@@ -210,7 +210,7 @@ ImPPG source code and MS Windows executables can be downloaded from:
 ----------------------------------------
 ## 11. Building from source code
 
-Building from source code requires a C++ compiler toolchain, CMake, Boost libraries v. 1.57.0 or later (though earlier versions may work) and wxWidgets 3.0. Support for more image formats requires the FreeImage library, version 3.14.0 or newer. Without FreeImage the only supported formats are: BMP 8-, 24- and 32-bit, TIFF mono and RGB, 8 or 16 bits per channel (no compression). FITS support (optional) requires the CFITSIO library. Multithreaded processing requires compiler supporting OpenMP (e.g. GCC 4.2 or newer, MS Visual C++ 2008 or newer (non-free editions), MS Visual C++ 2012 Express or newer).
+Building from source code requires a C++ compiler toolchain (with C++11 support), CMake, Boost libraries v. 1.57.0 or later (though earlier versions may work) and wxWidgets 3.0. Support for more image formats requires the FreeImage library, version 3.14.0 or newer. Without FreeImage the only supported formats are: BMP 8-, 24- and 32-bit, TIFF mono and RGB, 8 or 16 bits per channel (no compression). FITS support (optional) requires the CFITSIO library. Multithreaded processing requires compiler supporting OpenMP (e.g. GCC 4.2 or newer, MS Visual C++ 2008 or newer (non-free editions), MS Visual C++ 2012 Express or newer).
 
 To enable/disable usage of CFITSIO/FreeImage (they are enabled by default), edit the `config.in` file.
 
@@ -223,7 +223,7 @@ The ImPPG executable has to be placed in the same location as the `images` and l
 
 ### 11.1. Building under Linux and similar systems using GNU (or compatible) toolchain
 
-*Note: CMake relies on the presence of the `wx-config` tool to detect and configure wxWidgets-related build options. Sometimes this tool can be named differently, e.g. in Fedora 23 with wxGTK3 packages from repository it is `wx-config-3.0`. This can be remedied e.g. by creating a symlink:*
+*Note: CMake relies on the presence of the `wx-config` tool to detect and configure wxWidgets-related build options. Sometimes this tool can be named differently, e.g. in Fedora 23 with wxGTK3 packages from repository it is `wx-config-3.0`. Older versions of CMake may not accept it. This can be remedied e.g. by creating a symlink:*
 ```
     $ sudo ln -s /usr/bin/wx-config-3.0 /usr/bin/wx-config  
 ```
