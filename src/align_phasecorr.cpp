@@ -256,7 +256,6 @@ bool DetermineTranslationVectors(
 
     // Use 'operator new[]' instead of new[] to avoid Nwidth*Nheight std::complex constructor calls. All the elements will be assigned to before use.
 
-    //c_InPlaceArrayDeleter<std::complex<float> > prevFFT(operator new[](Nwidth * Nheight * sizeof(std::complex<float>)));
     std::unique_ptr<std::complex<float>, void (*)(void *)> prevFFT((std::complex<float> *)(operator new[](Nwidth * Nheight * sizeof(std::complex<float>))),
                                                                    operator delete[]);
 
