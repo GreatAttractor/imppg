@@ -235,11 +235,11 @@ void c_ImageAlignmentProgress::EndModal(int retCode)
 bool AlignImages(wxWindow *parent, AlignmentParameters_t &params)
 {
     c_ImageAlignmentProgress dlg(parent, wxID_ANY, params);
-    wxRect r = Configuration::GetAlignProgressDialogPosSize();
+    wxRect r = Configuration::AlignProgressDialogPosSize;
     dlg.SetPosition(r.GetPosition());
     dlg.SetSize(r.GetSize());
     FixWindowPosition(dlg);
     int result = dlg.ShowModal();
-    Configuration::SetAlignProgressDialogPosSize(wxRect(dlg.GetPosition(), dlg.GetSize()));
+    Configuration::AlignProgressDialogPosSize = wxRect(dlg.GetPosition(), dlg.GetSize());
     return wxID_OK == result;
 }

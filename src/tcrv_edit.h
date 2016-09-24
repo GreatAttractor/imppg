@@ -99,6 +99,9 @@ private:
     /// 'True' if histogram is displayed using logarithmic scale (values only)
     bool m_LogarithmicHistogram;
 
+    /// Number of curve and histogram segments to draw
+    size_t m_NumDrawSegments;
+
 public:
     c_ToneCurveEditor(wxWindow *parent, c_ToneCurve *curve, int id = wxID_ANY,
         unsigned updateEvtDelay = 0, ///< Delay in milliseconds between sending subsequent EVT_TONE_CURVE events

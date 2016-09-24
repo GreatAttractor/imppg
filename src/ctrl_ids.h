@@ -24,6 +24,9 @@ File description:
 #ifndef IMPPG_CTRL_IDS_HEADER
 #define IMPPG_CTRL_IDS_HEADER
 
+
+#include "appconfig.h"
+
 // Control IDs must be unique to avoid problems with FindWindowById(); since we are using wxAui,
 // a control (containing children) may get undocked, becoming one of top-level windows and
 // changing the order FindWindowById() performs its search. If there were several control series
@@ -66,6 +69,7 @@ enum
     // Settings menu items
     ID_NormalizeImage,
     ID_ChooseLanguage,
+    ID_ToolIconSize,
 
     // View menu items
     ID_Panels,
@@ -127,6 +131,15 @@ enum
 
     ID_FINISHED_PROCESSING, // used by image processing worker threads
     ID_PROCESSING_PROGRESS, //
+
+//----------------------------------------------------------------------
+// Other items
+    ID_MruSettings, ///< Dropdown list of the most recently used proc. settings
+    ID_MruListItem,
+    ID_MruListItemLast = ID_MruListItem + Configuration::MAX_MRU_SETTINGS_ITEMS,
+    ID_MruListClear = ID_MruListItemLast,
+
+
 };
 
 #endif // IMPPG_CTRL_IDS_HEADER

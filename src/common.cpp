@@ -17,8 +17,8 @@ void FixWindowPosition(wxWindow &wnd)
     }
 }
 
-/// Loads a bitmap from the "images" subdirectory
-wxBitmap LoadBitmap(wxString name)
+/// Loads a bitmap from the "images" subdirectory, optionally scaling it
+wxBitmap LoadBitmap(wxString name, bool scale, wxSize scaledSize)
 {
     wxFileName fName = wxFileName(wxStandardPaths::Get().GetExecutablePath());
     fName.AppendDir("images");
@@ -28,6 +28,10 @@ wxBitmap LoadBitmap(wxString name)
     wxBitmap result(fName.GetFullPath(), wxBITMAP_TYPE_ANY);
     if (!result.IsOk())
         result = wxBitmap(16, 16); //TODO: show some warning/working path suggestion message
+    else if (scale)
+    {
+        result = wxBitmap(result.ConvertToImage().Scale(scaledSize.GetWidth(), scaledSize.GetHeight(), wxIMAGE_QUALITY_BICUBIC));
+    }
 
     return result; // Return by value; it's fast, because wxBitmap's copy constructor uses reference counting
 }

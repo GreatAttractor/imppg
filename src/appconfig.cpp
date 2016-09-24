@@ -55,36 +55,45 @@ wxFileConfig *appConfig;
 
 namespace Keys
 {
-    const char *FILE_OPEN_PATH =         "/UserInterface/FileOpenPath";
-    const char *FILE_SAVE_PATH =         "/UserInterface/FileSavePath";
-    const char *MAIN_WND_POS_SIZE =      "/UserInterface/MainWindowPosSize";
-    const char *MAIN_WND_MAXIMIZED =     "/UserInterface/MainWindowMaximized";
-    const char *TCURVE_EDITOR_POS_SIZE = "/UserInterface/ToneCurveEditorPosSize";
-    const char *TCURVE_EDITOR_VISIBLE =  "/UserInterface/ToneCurveEditorVisible";
-    const char *SAVE_SETTINGS_PATH =     "/UserInterface/SaveSettingsPath";
-    const char *LOAD_SETTINGS_PATH =     "/UserInterface/LoadSettingsPath";
-    const char *PROC_PANEL_WIDTH =       "/UserInterace/ProcessingPanelWidth";
+#define UserInterfaceGroup "/UserInterface"
 
-    const char *BATCH_FILES_OPEN_PATH =       "/UserInterface/BatchFilesOpenPath";
-    const char *BATCH_LOAD_SETTINGS_PATH =    "/UserInterface/BatchLoadSettingsPath";
-    const char *BATCH_OUTPUT_PATH =           "/UserInterface/BatchOutputPath";
-    const char *BATCH_DLG_POS_SIZE =          "/UserInterface/BatchDlgPosSize";
-    const char *BATCH_PROGRESS_DLG_POS_SIZE = "/UserInterface/BatchProgressDlgPosSize";
-    const char *BATCH_OUTPUT_FORMAT =         "/UserInterface/BatchOutputFormat";
+    const char *FileOpenPath =           UserInterfaceGroup"/FileOpenPath";
+    const char *FileSavePath =           UserInterfaceGroup"/FileSavePath";
+    const char *MainWindowPosSize =      UserInterfaceGroup"/MainWindowPosSize";
+    const char *MainWindowMaximized =    UserInterfaceGroup"/MainWindowMaximized";
+    const char *ToneCurveEditorPosSize = UserInterfaceGroup"/ToneCurveEditorPosSize";
+    const char *ToneCurveEditorVisible = UserInterfaceGroup"/ToneCurveEditorVisible";
+    const char *SaveSettingsPath =       UserInterfaceGroup"/SaveSettingsPath";
+    const char *LoadSettingsPath =       UserInterfaceGroup"/LoadSettingsPath";
+    const char *ProcessingPanelWidth =   UserInterfaceGroup"/ProcessingPanelWidth";
+    const char *ToolIconSize =           UserInterfaceGroup"/ToolIconSize";
+    const char *ToneCurveEditorNumDrawSegments = UserInterfaceGroup"/ToneCurveEditorNumDrawSegments";
+
+    const char *BatchFileOpenPath =          UserInterfaceGroup"/BatchFilesOpenPath";
+    const char *BatchLoadSettingsPath =      UserInterfaceGroup"/BatchLoadSettingsPath";
+    const char *BatchOutputPath =            UserInterfaceGroup"/BatchOutputPath";
+    const char *BatchDialogPosSize =         UserInterfaceGroup"/BatchDlgPosSize";
+    const char *BatchProgressDialogPosSize = UserInterfaceGroup"/BatchProgressDlgPosSize";
+    const char *BatchOutputFormat =          UserInterfaceGroup"/BatchOutputFormat";
 
 
-    const char *ALIGN_INPUT_PATH =            "/UserInterface/AlignInputPath";
-    const char *ALIGN_OUTPUT_PATH =           "/UserInterface/AlignOutputPath";
-    const char *ALIGN_PROGRESS_DLG_POS_SIZE = "/UserInterface/AlignProgressDlgPosSize";
-    const char *ALIGN_PARAMS_DLG_POS_SIZE =   "/UserInterface/AlignParamsDlgPosSize";
+    const char *AlignInputPath =             UserInterfaceGroup"/AlignInputPath";
+    const char *AlignOutputPath =            UserInterfaceGroup"/AlignOutputPath";
+    const char *AlignProgressDialogPosSize = UserInterfaceGroup"/AlignProgressDlgPosSize";
+    const char *AlignParamsDialogPosSize =   UserInterfaceGroup"/AlignParamsDlgPosSize";
 
     /// Indicates maximum frequency (in Hz) of issuing new processing requests by tone curve editor and numerical control sliders
-    const char *MAX_PROCESSING_REQUESTS_PER_SEC =  "/UserInterface/MaxProcessingRequestsPerSecond";
+    const char *MAX_PROCESSING_REQUESTS_PER_SEC =  UserInterfaceGroup"/MaxProcessingRequestsPerSecond";
 
     /// Standard language code (e.g. "en", "pl") or Configuration::USE_DEFAULT_SYS_LANG for the system default
-    const char *UI_LANGUAGE = "/UserInterface/Language";
+    const char *UiLanguage = UserInterfaceGroup"/Language";
 
-    const char *LOGARITHMIC_HISTOGRAM =   "/UserInterface/LogHistogram";
+    /// Histogram values in logarithmic scale
+    const char *LogHistogram =   UserInterfaceGroup"/LogHistogram";
+
+    /// Most recently used settings files
+    const char *MruSettingsGroup = "/MostRecentSettings";
+    const char *MruSettingsItem = "item";
 }
 
 void Initialize(wxFileConfig *_appConfig)
@@ -103,235 +112,110 @@ int GetMaxProcessingRequestsPerSec()
     return val;
 }
 
-wxString GetFileOpenPath()
-{
-    return appConfig->Read(Keys::FILE_OPEN_PATH, "");
-}
+#define PROPERTY_STRING(Name)                                          \
+    c_Property<wxString> Name(                                         \
+        []() { return appConfig->Read(Keys::Name, ""); },              \
+        [](const wxString &str) { appConfig->Write(Keys::Name, str); } \
+    )
 
-void SetFileOpenPath(wxString path)
-{
-    appConfig->Write(Keys::FILE_OPEN_PATH, path);
-}
+PROPERTY_STRING(FileOpenPath);
+PROPERTY_STRING(FileSavePath);
+PROPERTY_STRING(LoadSettingsPath);
+PROPERTY_STRING(SaveSettingsPath);
+PROPERTY_STRING(BatchFileOpenPath);
+PROPERTY_STRING(BatchLoadSettingsPath);
+PROPERTY_STRING(BatchOutputPath);
+PROPERTY_STRING(AlignInputPath);
+PROPERTY_STRING(AlignOutputPath);
+PROPERTY_STRING(UiLanguage);
 
-wxString GetFileSavePath()
-{
-    return appConfig->Read(Keys::FILE_SAVE_PATH, "");
-}
+#define PROPERTY_BOOL(Name)                                        \
+    c_Property<bool> Name(                                         \
+        []() { return appConfig->ReadBool(Keys::Name, ""); },      \
+        [](const bool &val) { appConfig->Write(Keys::Name, val); } \
+    )
 
-void SetFileSavePath(wxString path)
-{
-    appConfig->Write(Keys::FILE_SAVE_PATH, path);
-}
+PROPERTY_BOOL(MainWindowMaximized);
+PROPERTY_BOOL(ToneCurveEditorVisible);
+PROPERTY_BOOL(LogHistogram);
 
-bool IsMainWindowMaximized()
-{
-    return appConfig->ReadBool(Keys::MAIN_WND_MAXIMIZED, false);
-}
+// Finds and uses wxFromString() and wxToString() defined above
+#define PROPERTY_RECT(Name)                                               \
+    c_Property<wxRect> Name(                                              \
+        []()                                                              \
+        {                                                                 \
+            wxRect result;                                                \
+            appConfig->Read(Keys::Name, &result, wxRect(-1, -1, -1, -1)); \
+            return result;                                                \
+        },                                                                \
+        [](const wxRect &r) { appConfig->Write(Keys::Name, r); }          \
+    )
 
-void SetMainWindowMaximized(bool maximized)
-{
-    appConfig->Write(Keys::MAIN_WND_MAXIMIZED, maximized);
-}
+PROPERTY_RECT(MainWindowPosSize);
+PROPERTY_RECT(ToneCurveEditorPosSize);
+PROPERTY_RECT(BatchDialogPosSize);
+PROPERTY_RECT(BatchProgressDialogPosSize);
+PROPERTY_RECT(AlignProgressDialogPosSize);
+PROPERTY_RECT(AlignParamsDialogPosSize);
 
-wxRect GetMainWindowPosSize()
-{
-    wxRect result;
-    appConfig->Read(Keys::MAIN_WND_POS_SIZE, &result, wxRect(-1, -1, -1, -1));
-    return result;
+c_Property<OutputFormat_t> BatchOutputFormat(
+    []()
+    {
+        long result = appConfig->ReadLong(Keys::BatchOutputFormat, (long)OUTF_BMP_MONO_8);
+        if (result < 0 || result >= OUTF_LAST)
+            result = OUTF_BMP_MONO_8;
 
-}
+        return (OutputFormat_t)result;
+    },
+    [](const OutputFormat_t &val) { appConfig->Write(Keys::BatchOutputFormat, (long)val); }
+);
 
-void SetMainWindowPosSize(wxRect r)
-{
-    appConfig->Write(Keys::MAIN_WND_POS_SIZE, r);
-}
+c_Property<int> ProcessingPanelWidth(
+    [](){ return (int)appConfig->ReadLong(Keys::ProcessingPanelWidth, -1); },
+    [](const int &width) { appConfig->Write(Keys::ProcessingPanelWidth, width); }
+);
 
-wxRect GetToneCurveEditorPosSize()
-{
-    wxRect result;
-    appConfig->Read(Keys::TCURVE_EDITOR_POS_SIZE, &result, wxRect(-1, -1, -1, -1));
-    return result;
-}
+c_Property<unsigned> ToolIconSize(
+    [](){ return (unsigned)appConfig->ReadLong(Keys::ToolIconSize, DEFAULT_TOOL_ICON_SIZE); },
+    [](const unsigned &ts) { appConfig->Write(Keys::ToolIconSize, ts); }
+);
 
-void SetToneCurveEditorPosSize(wxRect r)
-{
-    appConfig->Write(Keys::TCURVE_EDITOR_POS_SIZE, r);
-}
+c_Property<unsigned> ToneCurveEditorNumDrawSegments(
+    []()
+    {
+        unsigned num = (unsigned)appConfig->ReadLong(Keys::ToneCurveEditorNumDrawSegments, DEFAULT_TONE_CURVE_EDITOR_NUM_DRAW_SEGMENTS);
+        if (DEFAULT_TONE_CURVE_EDITOR_NUM_DRAW_SEGMENTS == num)
+            appConfig->Write(Keys::ToneCurveEditorNumDrawSegments, num);
+        return num;
+    },
+    [](const unsigned &num) { appConfig->Write(Keys::ToneCurveEditorNumDrawSegments, num); }
+);
 
-bool GetToneCurveEditorVisible()
+/// Returns a list of the most recently used saved/loaded settings files
+wxArrayString GetMruSettings()
 {
-    bool result = true;
-    appConfig->Read(Keys::TCURVE_EDITOR_VISIBLE, &result, true);
-    return result;
-}
-
-void SetToneCurveEditorVisible(bool visible)
-{
-    appConfig->Write(Keys::TCURVE_EDITOR_VISIBLE, visible);
-}
-
-wxString GetSaveSettingsPath()
-{
-    return appConfig->Read(Keys::SAVE_SETTINGS_PATH, wxFileName::GetHomeDir());
-}
-
-void SetSaveSettingsPath(wxString path)
-{
-    appConfig->Write(Keys::SAVE_SETTINGS_PATH, path);
-}
-
-wxString GetLoadSettingsPath()
-{
-    return appConfig->Read(Keys::LOAD_SETTINGS_PATH, wxFileName::GetHomeDir());
-}
-
-void SetLoadSettingsPath(wxString path)
-{
-    appConfig->Write(Keys::LOAD_SETTINGS_PATH, path);
-}
-
-wxString GetBatchFileOpenPath()
-{
-    return appConfig->Read(Keys::BATCH_FILES_OPEN_PATH, GetFileOpenPath());
-}
-
-void SetBatchFileOpenPath(wxString path)
-{
-    appConfig->Write(Keys::BATCH_FILES_OPEN_PATH, path);
-}
-
-wxString GetBatchLoadSettingsPath()
-{
-    return appConfig->Read(Keys::BATCH_LOAD_SETTINGS_PATH, GetLoadSettingsPath());
-}
-
-void SetBatchLoadSettingsPath(wxString path)
-{
-    appConfig->Write(Keys::BATCH_LOAD_SETTINGS_PATH, path);
-}
-
-wxString GetBatchOutputPath()
-{
-    return appConfig->Read(Keys::BATCH_OUTPUT_PATH, GetFileSavePath());
-}
-
-void SetBatchOutputPath(wxString path)
-{
-    appConfig->Write(Keys::BATCH_OUTPUT_PATH, path);
-}
-
-wxRect GetBatchDialogPosSize()
-{
-    wxRect result;
-    appConfig->Read(Keys::BATCH_DLG_POS_SIZE, &result, wxRect(-1, -1, -1, -1));
+    int index = 1;
+    wxString val;
+    wxArrayString result;
+    while (index <= MAX_MRU_SETTINGS_ITEMS
+           && appConfig->Read(wxString::Format("%s/%s%d", Keys::MruSettingsGroup, Keys::MruSettingsItem, index), &val))
+    {
+        result.Add(val);
+        index++;
+    }
     return result;
 }
 
-void SetBatchDialogPosSize(wxRect r)
+void StoreMruSettings(const wxArrayString &settings)
 {
-    appConfig->Write(Keys::BATCH_DLG_POS_SIZE, r);
+    appConfig->DeleteGroup(Keys::MruSettingsGroup);
+    for (size_t i = 0; i < settings.Count(); i++)
+        appConfig->Write(wxString::Format("%s/%s%zu", Keys::MruSettingsGroup, Keys::MruSettingsItem, i+1u), settings[i]);
 }
 
-wxRect GetBatchProgressDialogPosSize()
+void EmptyMruList()
 {
-    wxRect result;
-    appConfig->Read(Keys::BATCH_PROGRESS_DLG_POS_SIZE, &result, wxRect(-1, -1, -1, -1));
-    return result;
+    appConfig->DeleteGroup(Keys::MruSettingsGroup);
 }
-
-void SetBatchProgressDialogPosSize(wxRect r)
-{
-    appConfig->Write(Keys::BATCH_PROGRESS_DLG_POS_SIZE, r);
-}
-
-wxRect GetAlignProgressDialogPosSize()
-{
-    wxRect result;
-    appConfig->Read(Keys::ALIGN_PROGRESS_DLG_POS_SIZE, &result, wxRect(-1, -1, -1, -1));
-    return result;
-}
-
-void SetAlignProgressDialogPosSize(wxRect r)
-{
-    appConfig->Write(Keys::ALIGN_PROGRESS_DLG_POS_SIZE, r);
-}
-
-wxString GetAlignInputPath()
-{
-    return appConfig->Read(Keys::ALIGN_INPUT_PATH);
-}
-
-void SetAlignInputPath(wxString path)
-{
-    appConfig->Write(Keys::ALIGN_INPUT_PATH, path);
-}
-
-wxString GetAlignOutputPath()
-{
-    return appConfig->Read(Keys::ALIGN_OUTPUT_PATH);
-}
-
-void SetAlignOutputPath(wxString path)
-{
-    appConfig->Write(Keys::ALIGN_OUTPUT_PATH, path);
-}
-
-wxRect GetAlignParamsDialogPosSize()
-{
-    wxRect result;
-    appConfig->Read(Keys::ALIGN_PARAMS_DLG_POS_SIZE, &result, wxRect(-1, -1, -1, -1));
-    return result;
-}
-
-void SetAlignParamsDialogPosSize(wxRect r)
-{
-    appConfig->Write(Keys::ALIGN_PARAMS_DLG_POS_SIZE, r);
-}
-
-/// Returns code of UI language to use or an empty string (then the system default will used)
-wxString GetUiLanguage()
-{
-    return appConfig->Read(Keys::UI_LANGUAGE, wxEmptyString);
-}
-
-void SetUiLanguage(wxString lang)
-{
-    appConfig->Write(Keys::UI_LANGUAGE, lang);
-}
-
-bool GetLogHistogram()
-{
-    return appConfig->ReadBool(Keys::LOGARITHMIC_HISTOGRAM, false);
-}
-
-void SetLogHistogram(bool value)
-{
-    appConfig->Write(Keys::LOGARITHMIC_HISTOGRAM, value);
-}
-
-OutputFormat_t GetBatchOutputFormat()
-{
-    long result = appConfig->ReadLong(Keys::BATCH_OUTPUT_FORMAT, (long)OUTF_BMP_MONO_8);
-    if (result < 0 || result >= OUTF_LAST)
-        result = OUTF_BMP_MONO_8;
-
-    return (OutputFormat_t)result;
-}
-
-void SetBatchOutputFormat(OutputFormat_t outFmt)
-{
-    appConfig->Write(Keys::BATCH_OUTPUT_FORMAT, (long)outFmt);
-}
-
-int GetProcessingPanelWidth()
-{
-    return (int)appConfig->ReadLong(Keys::PROC_PANEL_WIDTH, -1);
-}
-
-void SetProcessingPanelWidth(int width)
-{
-    appConfig->Write(Keys::PROC_PANEL_WIDTH, width);
-}
-
 
 }

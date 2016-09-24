@@ -52,13 +52,36 @@ typedef struct strRectangle
     strRectangle(int x, int y, int width, int height): x(x), y(y), width(width), height(height) { }
 } Rectangle_t;
 
+/// Encapsulates a setter/getter of type T
+template <typename T>
+class c_Property
+{
+    T (*m_Getter)();
+    void (*m_Setter)(const T&);
+
+public:
+    c_Property(T getter(), void setter(const T&))
+      : m_Getter(getter), m_Setter(setter)
+    { }
+
+    void operator =(const T &value) { m_Setter(value); }
+    operator T() const { return m_Getter(); }
+};
+
+class IValidatedInput
+{
+public:
+    virtual bool HasCorrectInput() = 0;
+};
+
+
 #define SQR(x) ((x)*(x))
 
 /// Checks if a window is visible on any display; if not, sets its size and position to default
 void FixWindowPosition(wxWindow &wnd);
 
-/// Loads a bitmap from the "images" subdirectory
-wxBitmap LoadBitmap(wxString name);
+/// Loads a bitmap from the "images" subdirectory, optionally scaling it
+wxBitmap LoadBitmap(wxString name, bool scale = false, wxSize scaledSize = wxDefaultSize);
 
 template<class T>
 void BindAllScrollEvents(wxEvtHandler &evtHandler, void(T::* evtFunc)(wxScrollWinEvent &), T *parent)

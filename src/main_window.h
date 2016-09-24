@@ -72,6 +72,7 @@ class c_MainWindow: public wxFrame
     void OnImageViewScroll(wxScrollWinEvent &event);
     void OnImageViewMouseWheel(wxMouseEvent &event);
     void OnProcessingPanelScrolled(wxScrollWinEvent &event);
+    void OnSettingsFile(wxCommandEvent &event);
     //--------------------------
 
     void OnNewSelection(
@@ -125,12 +126,19 @@ class c_MainWindow: public wxFrame
     float CalcZoomOut(float currentZoom);
     void CreateScaledPreview(bool eraseBackground);
     void SetUnsharpMaskingControlsVisibility();
+    /// Adds or moves 'settingsFile' to the beginning of the most recently used list
+    /** Also updates m_MruSettingsIdx. */
+    void SetAsMRU(wxString settingsFile);
+    void LoadSettingsFromFile(wxString settingsFile, bool moveToMruListStart);
 
     wxAuiManager m_AuiMgr;
     wxScrolledCanvas m_ImageView; ///< Displays 'm_ImgBmp' or 'm_ImgBmpScaled' (i.e. the current image)
     wxFrame m_ToneCurveEditorWindow;
 
     bool m_FitImageInWindow; ///< If 'true', image view is scaled to fit the program window
+
+    /// Index of the most recently used item from Configuration::GetMruSettings(); on program start equals wxNOT_FOUND
+    int m_MruSettingsIdx;
 
     /// Wraps an image and all associated processing settings
     typedef struct

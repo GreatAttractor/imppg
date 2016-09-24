@@ -39,6 +39,7 @@ File description:
 #include <wx/gdicmn.h>
 #include <wx/panel.h>
 #include <wx/stdpaths.h>
+#include <wx/utils.h>
 #if (USE_FREEIMAGE)
 #include <FreeImage.h>
 #endif
@@ -52,8 +53,8 @@ File description:
 #include "common.h"
 #include "ctrl_ids.h"
 
-const char *VERSION_STR = "0.5";   ///< Current version
-const char *DATE_STR = "2016-01-02"; ///< Release date of the current version
+const char *VERSION_STR = "0.5.1";   ///< Current version
+const char *DATE_STR = "2016-10-02"; ///< Release date of the current version
 
 #if !defined(_OPENMP)
 int omp_get_num_procs() { return 1; }
@@ -62,24 +63,13 @@ int omp_get_num_procs() { return 1; }
 class c_AboutDialog: public wxDialog
 {
     void OnPaintImgPanel(wxPaintEvent &event);
-    void OnLeftDown(wxMouseEvent &event);
-    void OnKeyDown(wxKeyEvent &event);
     void OnLibrariesClick(wxCommandEvent &event);
 
-    wxPanel m_ImgPanel;
     wxBitmap m_Bmp;
 
 public:
     c_AboutDialog(wxWindow *parent);
-
-    DECLARE_EVENT_TABLE()
 };
-
-BEGIN_EVENT_TABLE(c_AboutDialog, wxDialog)
-    EVT_LEFT_DOWN(c_AboutDialog::OnLeftDown)
-    EVT_KEY_DOWN(c_AboutDialog::OnKeyDown)
-    EVT_BUTTON(ID_Libraries, c_AboutDialog::OnLibrariesClick)
-END_EVENT_TABLE()
 
 //-----------------------------------------------------------
 
@@ -95,6 +85,7 @@ void c_AboutDialog::OnLibrariesClick(wxCommandEvent &event)
 #if USE_CFITSIO
                          "\nCFITSIO %s" // version of CFITSIO
 #endif
+                        "\n\n" + wxGetOsDescription()
     ;
 
 #if USE_CFITSIO
@@ -115,59 +106,84 @@ void c_AboutDialog::OnLibrariesClick(wxCommandEvent &event)
         _("Libraries"), wxOK, this);
 }
 
-void c_AboutDialog::OnKeyDown(wxKeyEvent &event)
-{
-    if (event.GetKeyCode() == WXK_ESCAPE)
-        Close();
-}
-
-void c_AboutDialog::OnLeftDown(wxMouseEvent &event)
-{
-    Close();
-}
-
-void c_AboutDialog::OnPaintImgPanel(wxPaintEvent &event)
-{
-    wxPaintDC dc(&m_ImgPanel);
-    wxMemoryDC bmpDC(m_Bmp);
-    dc.Blit(wxPoint(0, 0), GetClientSize(), &bmpDC, wxPoint(0, 0));
-}
+#include <iostream> //TESTING ###############
 
 c_AboutDialog::c_AboutDialog(wxWindow *parent)
 : wxDialog(parent, wxID_ANY, _("About ImPPG"))
 {
-    SetBackgroundColour(*wxWHITE);
+    SetBackgroundColour(*wxBLACK);
 
     m_Bmp = LoadBitmap("about");
+    SetMinClientSize(m_Bmp.GetSize());
 
-    wxSizer *szTop = new wxBoxSizer(wxVERTICAL);
+    wxSizer *szTop = new wxBoxSizer(wxHORIZONTAL);
+    szTop->AddStretchSpacer(1);
 
-    m_ImgPanel.Create(this);
-    m_ImgPanel.SetMinClientSize(m_Bmp.GetSize());
-    m_ImgPanel.Bind(wxEVT_PAINT, &c_AboutDialog::OnPaintImgPanel, this);
-    szTop->Add(&m_ImgPanel, 0, wxALIGN_CENTER_HORIZONTAL | wxALL, 0);
+    wxSizer *szContents = new wxBoxSizer(wxVERTICAL);
+    szContents->AddStretchSpacer(1);
+
+    Bind(wxEVT_PAINT,
+         [this](wxPaintEvent &evt)
+         {
+            wxPaintDC dc(this);
+            wxMemoryDC bmpDC(m_Bmp);
+            dc.Blit(wxPoint(0, 0), GetClientSize(), &bmpDC, wxPoint(0, 0));
+         },
+         wxID_ANY);
+
 
     wxStaticText *title = new wxStaticText(this, wxID_ANY, "ImPPG");
     title->SetFont(title->GetFont().MakeLarger().MakeBold());
-    szTop->Add(title, 0, wxALIGN_LEFT | (wxLEFT | wxRIGHT | wxTOP), 5);
+    title->SetForegroundColour(*wxWHITE);
+    szContents->Add(title, 0, wxALIGN_LEFT | (wxLEFT | wxRIGHT | wxTOP), 5);
 
-    szTop->Add(new wxStaticText(this, wxID_ANY,
+    wxStaticText *info = new wxStaticText(this, wxID_ANY,
         wxString::Format(wxString(L"Copyright \u00A9 2015, 2016 Filip Szczerek (ga.software@yahoo.com)\n") +
                          _("version %s ") + " (%s)\n\n" +
 
                          _("This program comes with ABSOLUTELY NO WARRANTY. This is free software,\n"
                            "licensed under GNU General Public License v3 or any later version.\n"
-                           "See the LICENSE file for details."), VERSION_STR, DATE_STR)),
-        0, wxALIGN_LEFT | wxALL, 5);
-
+                           "See the LICENSE file for details."), VERSION_STR, DATE_STR));
+    info->SetForegroundColour(*wxWHITE);
+    szContents->Add(info, 0, wxALIGN_LEFT | wxALL, 5);
 
     wxSizer *szSysInfo = new wxBoxSizer(wxHORIZONTAL);
-    szSysInfo->Add(new wxStaticText(this, wxID_ANY, wxString::Format(_("Using %d logical CPU(s)."), omp_get_num_procs())), 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
-    szSysInfo->Add(new wxButton(this, ID_Libraries, _("Libraries..."), wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT), 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
-    szTop->Add(szSysInfo, 0, wxALIGN_LEFT, 0);
+    wxStaticText *cpuInfo = new wxStaticText(this, wxID_ANY, wxString::Format(_("Using %d logical CPU(s)."), omp_get_num_procs()));
+    cpuInfo->SetForegroundColour(*wxWHITE);
+    szSysInfo->Add(cpuInfo, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+
+    wxButton *btnLibs = new wxButton(this, ID_Libraries, _("Libraries..."), wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT);
+    btnLibs->SetForegroundColour(*wxWHITE);
+    btnLibs->SetBackgroundColour(*wxBLACK);
+    btnLibs->Bind(wxEVT_BUTTON, &c_AboutDialog::OnLibrariesClick, this);
+    szSysInfo->Add(btnLibs, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+    szContents->Add(szSysInfo, 0, wxALIGN_LEFT, 0);
+
+    szContents->AddStretchSpacer(3);
+
+    szTop->Add(szContents, 0, wxALIGN_TOP | wxGROW);
+    szTop->AddStretchSpacer(3);
 
     SetSizer(szTop);
     Fit();
+
+    int sizerMinWidth = GetSizer()->GetMinSize().GetWidth(); // min. width based on combined children's sizes
+
+    if (sizerMinWidth > m_Bmp.GetWidth()/2)
+    {
+        m_Bmp = wxBitmap(m_Bmp.ConvertToImage().Scale(2*sizerMinWidth,
+                                                      2*sizerMinWidth*m_Bmp.GetHeight() / m_Bmp.GetWidth(),
+                                                      wxIMAGE_QUALITY_BICUBIC));
+
+        SetMinClientSize(m_Bmp.GetSize());
+    }
+
+    Fit();
+
+    /* We had to call SetMinClientSize() (as SetClientSize() is not sufficient under MS Windows) to make sure the dialog
+       is as large as the bitmap. However, on GTK3 it makes the dialog resizable. Need to prevent this: */
+    SetMaxClientSize(GetMinClientSize());
+
     // Center on the parent window
     if (parent)
         SetPosition(
@@ -177,10 +193,18 @@ c_AboutDialog::c_AboutDialog(wxWindow *parent)
 
     for (size_t i = 0; i < GetChildren().GetCount(); i++)
     {
-        GetChildren()[i]->Bind(wxEVT_KEY_DOWN, &c_AboutDialog::OnKeyDown, this);
+        GetChildren()[i]->Bind(wxEVT_KEY_DOWN,
+                               [this](wxKeyEvent &event)
+                               {
+                                    if (event.GetKeyCode() == WXK_ESCAPE)
+                                        Close();
+                               });
+
         if (GetChildren()[i]->GetId() != ID_Libraries)
-            GetChildren()[i]->Bind(wxEVT_LEFT_DOWN, &c_AboutDialog::OnLeftDown, this);
+            GetChildren()[i]->Bind(wxEVT_LEFT_DOWN, [this](wxMouseEvent &event) { Close(); });
     }
+
+    Bind(wxEVT_LEFT_DOWN, [this](wxMouseEvent &event) { Close(); });
 }
 void ShowAboutDialog(wxWindow *parent)
 {

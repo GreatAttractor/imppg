@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ImPPG 0.5\n"
 "Report-Msgid-Bugs-To: Filip Szczerek <ga.software@yahoo.com>\n"
-"POT-Creation-Date: 2016-02-06 20:13+0100\n"
-"PO-Revision-Date: 2016-02-06 20:13+0100\n"
+"POT-Creation-Date: 2016-10-01 22:00+0100\n"
+"PO-Revision-Date: 2016-10-01 22:00+0100\n"
 "Last-Translator: Filip Szczerek <ga.software@yahoo.com>\n"
 "Language-Team: \n"
 "Language: Polish\n"
@@ -801,3 +801,18 @@ msgstr ""
 #: tcrv_edit.cpp:451
 msgid "Stretch the curve to cover the histogram only"
 msgstr "Rozciągnij krzywą, by pokrywała tylko histogram"
+
+msgid "Tool icons’ size..."
+msgstr "Wielkość ikon narzędziowych..."
+
+msgid "Tool icons’ size"
+msgstr "Wielkość ikon narzędziowych"
+
+msgid "Size of toolbar icons in pixels:"
+msgstr "Wielkość ikon na pasku narzędziowym (w pikselach):"
+
+msgid "Show list of recently used settings"
+msgstr "Pokaż listę ostatnio używanych ustawień"
+
+msgid "Clear list"
+msgstr "Wyczyść listę"

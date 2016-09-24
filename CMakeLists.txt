@@ -66,19 +66,21 @@ add_executable(imppg WIN32
 set_property(TARGET imppg PROPERTY CXX_STANDARD 11)
 set_property(TARGET imppg PROPERTY CXX_STANDARD_REQUIRED ON)
 
-# The imppg(64).rc files include the manifest that enables MS Windows Common Controls 6.0.0.0
-# (for Windows XP and above), i.e. the nicer-looking, themed ones. This is needed only for MinGW,
-# MSVC generates and embeds the manifest automatically.
 if(MINGW)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINK_FLAGS} -Wl,--strip-all")
+endif()
 
-    if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-        # 32-bit build
-        target_sources(imppg PUBLIC src/imppg.rc)
-    else()
-        # 64-bit build
-        target_sources(imppg PUBLIC src/imppg64.rc)
-    endif()
+if(WIN32)
+	# The imppg(64).rc files include the manifest that enables MS Windows Common Controls 6.0.0.0
+	# (for Windows XP and above), i.e. the nicer-looking, themed ones (this is needed only for MinGW,
+	# MSVC generates and embeds the manifest automatically). It also defines the application icon.
+	if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+		# 32-bit build
+		target_sources(imppg PUBLIC src/imppg.rc)
+	else()
+		# 64-bit build
+		target_sources(imppg PUBLIC src/imppg64.rc)
+	endif()
 endif()
 
 find_package(Boost REQUIRED)

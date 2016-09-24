@@ -24,85 +24,66 @@ File description:
 #ifndef IMPPG_APPCONFIG_H
 #define IMPPG_APPCONFIG_H
 
+#include <wx/arrstr.h>
 #include <wx/fileconf.h>
 #include <wx/gdicmn.h>
+#include "common.h"
 #include "formats.h"
+
 
 namespace Configuration
 {
-    // Default maximum frequency (in Hz) of issuing new processing requests by the tone curve editor and numerical control sliders (0 means: no limit)
+    /// Default maximum frequency (in Hz) of issuing new processing requests by the tone curve editor and numerical control sliders (0 means: no limit)
     const int DEFAULT_MAX_PROCESSING_REQUESTS_PER_SEC = 30;
 
+    /// Max number of items in the most recently used list of processing settings files
+    const size_t MAX_MRU_SETTINGS_ITEMS = 16;
+
     const wxString USE_DEFAULT_SYS_LANG = "default";
+
+    const unsigned DEFAULT_TOOL_ICON_SIZE = 32;
+
+    /// Number of tone curve and histogram segments to draw
+    const unsigned DEFAULT_TONE_CURVE_EDITOR_NUM_DRAW_SEGMENTS = 512;
 
     void Initialize(wxFileConfig *appConfig);
 
     /// Returns maximum frequency (in Hz) of issuing new processing requests by the tone curve editor and numerical control sliders (0 means: no limit)
     int GetMaxProcessingRequestsPerSec();
 
-    wxString GetFileOpenPath();
-    void SetFileOpenPath(wxString path);
+    /// Returns a list of the most recently used saved/loaded settings files
+    wxArrayString GetMruSettings();
+    void StoreMruSettings(const wxArrayString &settings);
+    void EmptyMruList();
 
-    wxString GetFileSavePath();
-    void SetFileSavePath(wxString path);
+    extern c_Property<wxString> FileOpenPath;
+    extern c_Property<wxString> FileSavePath;
+    extern c_Property<bool>     MainWindowMaximized;
+    extern c_Property<wxRect>   MainWindowPosSize;
+    extern c_Property<wxRect>   ToneCurveEditorPosSize;
+    extern c_Property<bool>     ToneCurveEditorVisible;
+    extern c_Property<wxString> LoadSettingsPath;
+    extern c_Property<wxString> SaveSettingsPath;
+    extern c_Property<wxString> BatchFileOpenPath;
+    extern c_Property<wxString> BatchLoadSettingsPath;
+    extern c_Property<wxString> BatchOutputPath;
+    extern c_Property<wxRect>   BatchDialogPosSize;
+    extern c_Property<wxRect>   BatchProgressDialogPosSize;
+    extern c_Property<wxRect>   AlignProgressDialogPosSize;
+    extern c_Property<wxString> AlignInputPath;
+    extern c_Property<wxString> AlignOutputPath;
+    extern c_Property<wxRect>   AlignParamsDialogPosSize;
+    /// Code of UI language to use or an empty string (then the system default will used)
+    extern c_Property<wxString> UiLanguage;
+    extern c_Property<bool>     LogHistogram;
+    extern c_Property<OutputFormat_t> BatchOutputFormat;
+    extern c_Property<int>      ProcessingPanelWidth;
+    extern c_Property<unsigned> ToolIconSize;
 
-    bool IsMainWindowMaximized();
-    void SetMainWindowMaximized(bool maximized);
-
-    wxRect GetMainWindowPosSize();
-    void SetMainWindowPosSize(wxRect r);
-
-    wxRect GetToneCurveEditorPosSize();
-    void SetToneCurveEditorPosSize(wxRect r);
-
-    bool GetToneCurveEditorVisible();
-    void SetToneCurveEditorVisible(bool visible);
-
-    wxString GetLoadSettingsPath();
-    void SetLoadSettingsPath(wxString path);
-
-    wxString GetSaveSettingsPath();
-    void SetSaveSettingsPath(wxString path);
-
-    wxString GetBatchFileOpenPath();
-    void SetBatchFileOpenPath(wxString path);
-
-    wxString GetBatchLoadSettingsPath();
-    void SetBatchLoadSettingsPath(wxString path);
-
-    wxString GetBatchOutputPath();
-    void SetBatchOutputPath(wxString path);
-
-    wxRect GetBatchDialogPosSize();
-    void SetBatchDialogPosSize(wxRect r);
-
-    wxRect GetBatchProgressDialogPosSize();
-    void SetBatchProgressDialogPosSize(wxRect r);
-
-    wxRect GetAlignProgressDialogPosSize();
-    void SetAlignProgressDialogPosSize(wxRect r);
-
-    wxString GetAlignInputPath();
-    void SetAlignInputPath(wxString path);
-
-    wxString GetAlignOutputPath();
-    void SetAlignOutputPath(wxString path);
-
-    wxRect GetAlignParamsDialogPosSize();
-    void SetAlignParamsDialogPosSize(wxRect r);
-
-    /// Returns code of UI language to use or an empty string (then the system default will used)
-    wxString GetUiLanguage();
-    void SetUiLanguage(wxString lang);
-
-    bool GetLogHistogram();
-    void SetLogHistogram(bool value);
-
-    OutputFormat_t GetBatchOutputFormat();
-    void SetBatchOutputFormat(OutputFormat_t outFmt);
-
-    int GetProcessingPanelWidth();
-    void SetProcessingPanelWidth(int width);
+    /// If zero, draw 1 segment per pixel
+    /** NOTE: drawing 1 segment per pixel may be slow for large widths of the tone curve editor window
+        (e.g. on a 3840x2160 display). */
+    extern c_Property<unsigned> ToneCurveEditorNumDrawSegments;
 }
 
 #endif

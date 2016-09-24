@@ -153,8 +153,11 @@ BEGIN_EVENT_TABLE(c_MainWindow, wxFrame)
     EVT_MENU(ID_FitInWindow, c_MainWindow::OnCommandEvent)
     EVT_AUI_PANE_CLOSE(c_MainWindow::OnAuiPaneClose)
     EVT_TIMER(ID_ScalingTimer, c_MainWindow::OnTimer)
-    EVT_TOOL(ID_LoadSettings, c_MainWindow::OnCommandEvent)
-    EVT_TOOL(ID_SaveSettings, c_MainWindow::OnCommandEvent)
+
+    EVT_TOOL(ID_LoadSettings, c_MainWindow::OnSettingsFile)
+    EVT_TOOL(ID_SaveSettings, c_MainWindow::OnSettingsFile)
+    EVT_TOOL(ID_MruSettings,  c_MainWindow::OnSettingsFile)
+
     EVT_MENU(ID_BatchProcessing, c_MainWindow::OnCommandEvent)
     EVT_CHECKBOX(ID_LucyRichardsonDeringing, c_MainWindow::OnCommandEvent)
     EVT_MENU(ID_NormalizeImage, c_MainWindow::OnCommandEvent)
@@ -168,6 +171,139 @@ BEGIN_EVENT_TABLE(c_MainWindow, wxFrame)
 END_EVENT_TABLE()
 
 void ShowAboutDialog(wxWindow *parent);
+
+/// Adds or moves 'settingsFile' to the beginning of the most recently used list
+/** Also updates m_MruSettingsIdx. */
+void c_MainWindow::SetAsMRU(wxString settingsFile)
+{
+    wxArrayString slist = Configuration::GetMruSettings();
+
+    bool exists = false;
+    if ((m_MruSettingsIdx = slist.Index(settingsFile)) != wxNOT_FOUND)
+    {
+        exists = true;
+        slist.RemoveAt(m_MruSettingsIdx);
+    }
+
+    if (slist.GetCount() < Configuration::MAX_MRU_SETTINGS_ITEMS || exists)
+    {
+        slist.Insert(settingsFile, 0);
+        m_MruSettingsIdx = 0;
+    }
+
+    Configuration::StoreMruSettings(slist);
+}
+
+void c_MainWindow::LoadSettingsFromFile(wxString settingsFile, bool moveToMruListStart)
+{
+    ProcessingSettings_t &s = *m_CurrentSettings;
+
+    if (!LoadSettings(settingsFile,
+          s.LucyRichardson.sigma, s.LucyRichardson.iterations, s.LucyRichardson.deringing.enabled,
+          s.UnsharpMasking.adaptive, s.UnsharpMasking.sigma, s.UnsharpMasking.amountMin, s.UnsharpMasking.amountMax, s.UnsharpMasking.threshold, s.UnsharpMasking.width,
+          s.toneCurve, s.normalization.enabled, s.normalization.min, s.normalization.max))
+    {
+        wxMessageBox(_("Failed to load processing settings."), _("Error"), wxOK | wxCENTRE | wxICON_ERROR);
+    }
+    else
+    {
+        if (moveToMruListStart)
+            SetAsMRU(settingsFile);
+
+        ((c_NumericalCtrl *)FindWindowById(ID_LucyRichardsonSigma))->SetValue(s.LucyRichardson.sigma);
+        ((wxSpinCtrl *)FindWindowById(ID_LucyRichardsonIters))->SetValue(s.LucyRichardson.iterations);
+        ((wxCheckBox *)FindWindowById(ID_LucyRichardsonDeringing))->SetValue(s.LucyRichardson.deringing.enabled);
+
+        ((wxCheckBox *)FindWindowById(ID_UnsharpMaskingAdaptive))->SetValue(s.UnsharpMasking.adaptive);
+        ((c_NumericalCtrl *)FindWindowById(ID_UnsharpMaskingSigma))->SetValue(s.UnsharpMasking.sigma);
+        ((c_NumericalCtrl *)FindWindowById(ID_UnsharpMaskingAmountMin))->SetValue(s.UnsharpMasking.amountMin);
+        ((c_NumericalCtrl *)FindWindowById(ID_UnsharpMaskingAmountMax))->SetValue(s.UnsharpMasking.amountMax);
+        ((c_NumericalCtrl *)FindWindowById(ID_UnsharpMaskingThreshold))->SetValue(s.UnsharpMasking.threshold);
+        ((c_NumericalCtrl *)FindWindowById(ID_UnsharpMaskingWidth))->SetValue(s.UnsharpMasking.width);
+
+        ((c_ToneCurveEditor *)FindWindowById(ID_ToneCurveEditor, this))->SetToneCurve(&s.toneCurve);
+
+        OnUpdateLucyRichardsonSettings(); // Perform all processing steps, starting with L-R deconvolution
+    }
+}
+
+void c_MainWindow::OnSettingsFile(wxCommandEvent &event)
+{
+    ProcessingSettings_t &s = *m_CurrentSettings;
+
+    switch (event.GetId())
+    {
+    case ID_LoadSettings:
+        {
+            wxFileDialog dlg(this, _("Load processing settings"), Configuration::LoadSettingsPath, "",
+                _("XML files (*.xml)") + "|*.xml|*.*|*.*", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+
+            if (dlg.ShowModal() == wxID_OK)
+            {
+                Configuration::LoadSettingsPath = dlg.GetDirectory();
+                LoadSettingsFromFile(dlg.GetPath(), true);
+            }
+        }
+        break;
+
+    case ID_SaveSettings:
+        {
+            wxFileDialog dlg(this, _("Save processing settings"), Configuration::SaveSettingsPath, "",
+                _("XML files (*.xml)") + "|*.xml", wxFD_SAVE);
+
+            if (dlg.ShowModal() == wxID_OK)
+            {
+                Configuration::SaveSettingsPath = dlg.GetDirectory();
+
+                wxFileName fname(dlg.GetPath());
+                if (fname.GetExt() == wxEmptyString)
+                    fname.SetExt("xml");
+
+                if (!SaveSettings(fname.GetFullPath(),
+                        s.LucyRichardson.sigma, s.LucyRichardson.iterations, s.LucyRichardson.deringing.enabled,
+                        s.UnsharpMasking.adaptive, s.UnsharpMasking.sigma, s.UnsharpMasking.amountMin, s.UnsharpMasking.amountMax, s.UnsharpMasking.threshold, s.UnsharpMasking.width,
+                        s.toneCurve, s.normalization.enabled, s.normalization.min, s.normalization.max))
+                {
+                    wxMessageBox(_("Failed to save processing settings."), _("Error"), wxOK | wxCENTRE | wxICON_ERROR);
+                }
+                else
+                    SetAsMRU(fname.GetFullPath());
+            }
+        }
+        break;
+
+    case ID_MruSettings:
+        {
+            wxMenu mruList;
+
+            wxArrayString settings = Configuration::GetMruSettings();
+            for (int i = 0; i < (int)settings.Count(); i++)
+            {
+                mruList.AppendCheckItem(ID_MruListItem + i, settings[i]);
+                if (i == m_MruSettingsIdx)
+                    mruList.FindItemByPosition(i)->Check();
+            }
+            mruList.AppendSeparator();
+            mruList.Append(ID_MruListClear, _("Clear list"), wxEmptyString, false);
+
+            mruList.Bind(wxEVT_MENU,
+                         [this](wxCommandEvent &evt)
+                         {
+                             if (evt.GetId() < ID_MruListClear)
+                             {
+                                 m_MruSettingsIdx = evt.GetId() - ID_MruListItem;
+                                 LoadSettingsFromFile(Configuration::GetMruSettings()[m_MruSettingsIdx], false);
+                             }
+                             else
+                                Configuration::EmptyMruList();
+                         },
+                         ID_MruListItem, ID_MruListItemLast);
+
+            PopupMenu(&mruList);
+        }
+        break;
+    }
+}
 
 void c_MainWindow::OnImageViewScroll(wxScrollWinEvent &event)
 {
@@ -205,7 +341,7 @@ void c_MainWindow::SelectLanguage()
         const wxLanguageInfo *info = wxLocale::GetLanguageInfo(langIds[dlg.GetSelection()]);
         if (info)
         {
-            Configuration::SetUiLanguage(info->CanonicalName);
+            Configuration::UiLanguage = info->CanonicalName;
             wxMessageBox(_("You have to restart ImPPG for the changes to take effect."), _("Information"), wxOK | wxICON_INFORMATION, this);
         }
     }
@@ -271,10 +407,10 @@ void c_MainWindow::OnSaveFile()
         s.output.toneCurve.preciseValuesApplied = true;
     }
 
-    wxFileDialog dlg(this, _("Save image"), Configuration::GetFileSavePath(), wxEmptyString, GetOutputFilters(), wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+    wxFileDialog dlg(this, _("Save image"), Configuration::FileSavePath, wxEmptyString, GetOutputFilters(), wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
     if (wxID_OK == dlg.ShowModal())
     {
-        Configuration::SetFileSavePath(wxFileName(dlg.GetPath()).GetPath());
+        Configuration::FileSavePath = wxFileName(dlg.GetPath()).GetPath();
         if (!SaveImageFile(dlg.GetPath().ToStdString(), *s.output.toneCurve.img, (OutputFormat_t)dlg.GetFilterIndex()))
             wxMessageBox(wxString::Format(_("Could not save output file %s."), dlg.GetFilename()), _("Error"), wxICON_ERROR, this);
     }
@@ -479,7 +615,7 @@ bool c_MainWindow::ToneCurveEnabled()
 
 c_MainWindow::c_MainWindow()
 {
-    wxRect wndPos = Configuration::GetMainWindowPosSize();
+    wxRect wndPos = Configuration::MainWindowPosSize;
     Create(NULL, wxID_ANY, _("ImPPG"), wndPos.GetTopLeft(), wndPos.GetSize());
 
     SetExtraStyle(GetExtraStyle() | wxWS_EX_VALIDATE_RECURSIVELY); // Make sure all validators are run
@@ -539,9 +675,11 @@ c_MainWindow::c_MainWindow()
 
     m_FitImageInWindow = false;
 
+    m_MruSettingsIdx = wxNOT_FOUND;
+
     InitControls();
     SetStatusText(_("Idle"));
-    if (Configuration::IsMainWindowMaximized())
+    if (Configuration::MainWindowMaximized)
         Maximize();
 
     FixWindowPosition(*this);
@@ -1060,12 +1198,12 @@ void c_MainWindow::OpenFile(wxFileName path, bool resetSelection)
 
 void c_MainWindow::OnOpenFile(wxCommandEvent &event)
 {
-    wxFileDialog dlg(this, _("Open image file"), Configuration::GetFileOpenPath(), "",
+    wxFileDialog dlg(this, _("Open image file"), Configuration::FileOpenPath, "",
         INPUT_FILE_FILTERS, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 
     if (dlg.ShowModal() == wxID_OK)
     {
-        Configuration::SetFileOpenPath(dlg.GetDirectory());
+        Configuration::FileOpenPath = dlg.GetDirectory();
         wxFileName path = dlg.GetPath();
         OpenFile(path, true);
     }
@@ -1410,14 +1548,14 @@ float c_MainWindow::CalcZoomOut(float currentZoom)
 void c_MainWindow::OnClose(wxCloseEvent &event)
 {
     if (!IsMaximized())
-        Configuration::SetMainWindowPosSize(wxRect(this->GetPosition(), this->GetSize()));
-    Configuration::SetMainWindowMaximized(IsMaximized());
-    Configuration::SetToneCurveEditorPosSize(
+        Configuration::MainWindowPosSize = wxRect(this->GetPosition(), this->GetSize());
+    Configuration::MainWindowMaximized = IsMaximized();
+    Configuration::ToneCurveEditorPosSize =
             wxRect(m_ToneCurveEditorWindow.GetPosition(),
-                   m_ToneCurveEditorWindow.GetSize()));
-    Configuration::SetToneCurveEditorVisible(m_ToneCurveEditorWindow.IsShown());
-    Configuration::SetLogHistogram(((c_ToneCurveEditor *)FindWindowById(ID_ToneCurveEditor, this))->IsHistogramLogarithmic());
-    Configuration::SetProcessingPanelWidth(FindWindowById(ID_ProcessingControlsPanel, this)->GetSize().GetWidth());
+                   m_ToneCurveEditorWindow.GetSize());
+    Configuration::ToneCurveEditorVisible = m_ToneCurveEditorWindow.IsShown();
+    Configuration::LogHistogram = ((c_ToneCurveEditor *)FindWindowById(ID_ToneCurveEditor, this))->IsHistogramLogarithmic();
+    Configuration::ProcessingPanelWidth = FindWindowById(ID_ProcessingControlsPanel, this)->GetSize().GetWidth();
 
     // Signal the worker thread to finish ASAP.
     { wxCriticalSectionLocker lock(m_Processing.guard);
@@ -1557,67 +1695,6 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent &event)
         }
         m_ImageView.Thaw();
         break;
-
-    case ID_SaveSettings:
-        {
-            wxFileDialog dlg(this, _("Save processing settings"), Configuration::GetSaveSettingsPath(), "",
-                _("XML files (*.xml)") + "|*.xml", wxFD_SAVE);
-
-            if (dlg.ShowModal() == wxID_OK)
-            {
-                Configuration::SetSaveSettingsPath(dlg.GetDirectory());
-
-                wxFileName fname(dlg.GetPath());
-                if (fname.GetExt() == wxEmptyString)
-                    fname.SetExt("xml");
-
-                if (!SaveSettings(fname.GetFullPath(),
-                        s.LucyRichardson.sigma, s.LucyRichardson.iterations, s.LucyRichardson.deringing.enabled,
-                        s.UnsharpMasking.adaptive, s.UnsharpMasking.sigma, s.UnsharpMasking.amountMin, s.UnsharpMasking.amountMax, s.UnsharpMasking.threshold, s.UnsharpMasking.width,
-                        s.toneCurve, s.normalization.enabled, s.normalization.min, s.normalization.max))
-                {
-                    wxMessageBox(_("Failed to save processing settings."), _("Error"), wxOK | wxCENTRE | wxICON_ERROR);
-                }
-            }
-            break;
-        }
-
-    case ID_LoadSettings:
-        {
-            wxFileDialog dlg(this, _("Load processing settings"), Configuration::GetLoadSettingsPath(), "",
-                _("XML files (*.xml)") + "|*.xml", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
-
-            if (dlg.ShowModal() == wxID_OK)
-            {
-                Configuration::SetLoadSettingsPath(dlg.GetDirectory());
-
-                if (!LoadSettings(dlg.GetPath(),
-                      s.LucyRichardson.sigma, s.LucyRichardson.iterations, s.LucyRichardson.deringing.enabled,
-                      s.UnsharpMasking.adaptive, s.UnsharpMasking.sigma, s.UnsharpMasking.amountMin, s.UnsharpMasking.amountMax, s.UnsharpMasking.threshold, s.UnsharpMasking.width,
-                      s.toneCurve, s.normalization.enabled, s.normalization.min, s.normalization.max))
-                {
-                    wxMessageBox(_("Failed to load processing settings."), _("Error"), wxOK | wxCENTRE | wxICON_ERROR);
-                }
-                else
-                {
-                    ((c_NumericalCtrl *)FindWindowById(ID_LucyRichardsonSigma))->SetValue(s.LucyRichardson.sigma);
-                    ((wxSpinCtrl *)FindWindowById(ID_LucyRichardsonIters))->SetValue(s.LucyRichardson.iterations);
-                    ((wxCheckBox *)FindWindowById(ID_LucyRichardsonDeringing))->SetValue(s.LucyRichardson.deringing.enabled);
-
-                    ((wxCheckBox *)FindWindowById(ID_UnsharpMaskingAdaptive))->SetValue(s.UnsharpMasking.adaptive);
-                    ((c_NumericalCtrl *)FindWindowById(ID_UnsharpMaskingSigma))->SetValue(s.UnsharpMasking.sigma);
-                    ((c_NumericalCtrl *)FindWindowById(ID_UnsharpMaskingAmountMin))->SetValue(s.UnsharpMasking.amountMin);
-                    ((c_NumericalCtrl *)FindWindowById(ID_UnsharpMaskingAmountMax))->SetValue(s.UnsharpMasking.amountMax);
-                    ((c_NumericalCtrl *)FindWindowById(ID_UnsharpMaskingThreshold))->SetValue(s.UnsharpMasking.threshold);
-                    ((c_NumericalCtrl *)FindWindowById(ID_UnsharpMaskingWidth))->SetValue(s.UnsharpMasking.width);
-
-                    ((c_ToneCurveEditor *)FindWindowById(ID_ToneCurveEditor, this))->SetToneCurve(&s.toneCurve);
-
-                    OnUpdateLucyRichardsonSettings(); // Perform all processing steps, starting with L-R deconvolution
-                }
-            }
-            break;
-        }
 
     case wxID_SAVE:
         OnSaveFile();
@@ -1927,35 +2004,43 @@ void c_MainWindow::OnPaintImageArea(wxPaintEvent &event)
 
 void c_MainWindow::InitToolbar()
 {
-    CreateToolBar();
     wxToolBar *tb = GetToolBar();
+    if (!tb)
+        tb = CreateToolBar();
+
+    tb->ClearTools();
+
+    wxSize iconSize(Configuration::ToolIconSize,
+                    Configuration::ToolIconSize);
+
+    tb->SetToolBitmapSize(iconSize);
 
     // File operations controls
 	tb->AddTool(wxID_OPEN, wxEmptyString,
-	        LoadBitmap("open_file"),
+	        LoadBitmap("open_file", true, iconSize),
 	        wxNullBitmap,
 	        wxITEM_NORMAL,
 	        _("Open image file"));
     tb->AddTool(wxID_SAVE, wxEmptyString,
-        LoadBitmap("save_file"),
+        LoadBitmap("save_file", true, iconSize),
         wxNullBitmap,
         wxITEM_NORMAL,
         _("Save image file"));
     tb->AddSeparator();
 
     // User interface controls
-    tb->AddCheckTool(ID_ToggleProcessingPanel, wxEmptyString, LoadBitmap("toggle_proc"),
+    tb->AddCheckTool(ID_ToggleProcessingPanel, wxEmptyString, LoadBitmap("toggle_proc", true, iconSize),
         wxNullBitmap, _("Show processing controls"));
     tb->FindById(ID_ToggleProcessingPanel)->Toggle(true);
 
-    tb->AddCheckTool(ID_ToggleToneCurveEditor, wxEmptyString, LoadBitmap("toggle_tcrv"),
+    tb->AddCheckTool(ID_ToggleToneCurveEditor, wxEmptyString, LoadBitmap("toggle_tcrv", true, iconSize),
         wxNullBitmap, _("Show tone curve editor"));
 
     tb->AddSeparator();
 
     // Processing controls
     tb->AddTool(ID_SelectAndProcessAll, wxEmptyString,
-                LoadBitmap("select_all"),
+                LoadBitmap("select_all", true, iconSize),
                 wxNullBitmap,
                 wxITEM_NORMAL,
                 _("Select and process the whole image"));
@@ -1964,23 +2049,26 @@ void c_MainWindow::InitToolbar()
 
     // Zoom controls
 
-    tb->AddCheckTool(ID_FitInWindow, wxEmptyString, LoadBitmap("fit_wnd"),
+    tb->AddCheckTool(ID_FitInWindow, wxEmptyString, LoadBitmap("fit_wnd", true, iconSize),
             wxNullBitmap, _("Fit image in window"));
-    tb->AddTool(ID_Zoom100, wxEmptyString, LoadBitmap("zoom_none"),
+    tb->AddTool(ID_Zoom100, wxEmptyString, LoadBitmap("zoom_none", true, iconSize),
             wxNullBitmap, wxITEM_NORMAL, _("Actual size (100%)"));
-    tb->AddTool(ID_ZoomIn, wxEmptyString, LoadBitmap("zoom_in"),
+    tb->AddTool(ID_ZoomIn, wxEmptyString, LoadBitmap("zoom_in", true, iconSize),
             wxNullBitmap, wxITEM_NORMAL, _("Zoom in"));
-    tb->AddTool(ID_ZoomOut, wxEmptyString, LoadBitmap("zoom_out"),
+    tb->AddTool(ID_ZoomOut, wxEmptyString, LoadBitmap("zoom_out", true, iconSize),
             wxNullBitmap, wxITEM_NORMAL, _("Zoom out"));
-    tb->AddTool(ID_ZoomCustom, wxEmptyString, LoadBitmap("zoom_custom"),
+    tb->AddTool(ID_ZoomCustom, wxEmptyString, LoadBitmap("zoom_custom", true, iconSize),
             wxNullBitmap, wxITEM_NORMAL, _("Custom zoom factor..."));
 
     tb->AddSeparator();
 
-    tb->AddTool(ID_SaveSettings, wxEmptyString, LoadBitmap("save_settings"),
+    tb->AddTool(ID_SaveSettings, wxEmptyString, LoadBitmap("save_settings", true, iconSize),
             wxNullBitmap, wxITEM_NORMAL, _("Save processing settings"));
-    tb->AddTool(ID_LoadSettings, wxEmptyString, LoadBitmap("load_settings"),
+    tb->AddTool(ID_LoadSettings, wxEmptyString, LoadBitmap("load_settings", true, iconSize),
             wxNullBitmap, wxITEM_NORMAL, _("Load processing settings"));
+
+    tb->AddTool(ID_MruSettings, wxEmptyString, LoadBitmap("mru_settings", true, iconSize),
+            wxNullBitmap, wxITEM_NORMAL, _("Show list of recently used settings"));
 
     tb->Realize();
 }
@@ -2004,6 +2092,21 @@ void c_MainWindow::InitMenu()
     wxMenu *menuSettings = new wxMenu();
     menuSettings->Append(ID_NormalizeImage, _("Normalize brightness levels..."), wxEmptyString, false);
     menuSettings->Append(ID_ChooseLanguage, _("Language..."), wxEmptyString, false);
+    menuSettings->Append(ID_ToolIconSize, _(L"Tool icons\u2019 size..."), wxEmptyString, false); // u2019 = apostrophe
+
+    menuSettings->Bind(wxEVT_MENU,
+                       [this](wxCommandEvent &evt)
+                       {
+                           long result = wxGetNumberFromUser(_("Size of toolbar icons in pixels:"), wxEmptyString,
+                                                             _(L"Tool icons\u2019 size"), Configuration::ToolIconSize,
+                                                             16, 128, this);
+                            if (result != -1)
+                            {
+                                Configuration::ToolIconSize = result;
+                                InitToolbar();
+                            }
+                       },
+                       ID_ToolIconSize);
 
     wxMenu *menuView = new wxMenu();
         wxMenu *menuPanels = new wxMenu();
@@ -2096,7 +2199,7 @@ void c_MainWindow::InitControls()
     wxWindow *processingPanel = CreateProcessingControlsPanel();
 
     wxSize procPanelSize = processingPanel->GetSizer()->GetMinSize();
-    int procPanelSavedWidth = Configuration::GetProcessingPanelWidth();
+    int procPanelSavedWidth = Configuration::ProcessingPanelWidth;
     if (procPanelSavedWidth != -1)
         procPanelSize.SetWidth(procPanelSavedWidth);
 
@@ -2119,19 +2222,19 @@ void c_MainWindow::InitControls()
     m_AuiMgr.GetPane(PaneNames::processing).MinSize(wxSize(1, 1));
     m_AuiMgr.Update();
 
-    wxRect tcrvEditorPos = Configuration::GetToneCurveEditorPosSize();
+    wxRect tcrvEditorPos = Configuration::ToneCurveEditorPosSize;
     m_ToneCurveEditorWindow.Create(this, wxID_ANY, _("Tone curve"), tcrvEditorPos.GetTopLeft(), tcrvEditorPos.GetSize(),
         wxCAPTION | wxCLOSE_BOX | wxRESIZE_BORDER | wxFRAME_TOOL_WINDOW | wxFRAME_FLOAT_ON_PARENT);
     m_ToneCurveEditorWindow.SetSizer(new wxBoxSizer(wxHORIZONTAL));
     int maxfreq = Configuration::GetMaxProcessingRequestsPerSec();
     m_ToneCurveEditorWindow.GetSizer()->Add(
         new c_ToneCurveEditor(&m_ToneCurveEditorWindow, &m_CurrentSettings->toneCurve, ID_ToneCurveEditor,
-        maxfreq ? 1000 / maxfreq : 0, Configuration::GetLogHistogram()),
+        maxfreq ? 1000 / maxfreq : 0, Configuration::LogHistogram),
         1, wxGROW | wxALL);
     m_ToneCurveEditorWindow.Bind(wxEVT_CLOSE_WINDOW, &c_MainWindow::OnCloseToneCurveEditorWindow, this);
     if (tcrvEditorPos.GetSize().GetWidth() == -1) // Perform the initial Fit() only if previous position & size have not been loaded
         m_ToneCurveEditorWindow.Fit();
-    if (Configuration::GetToneCurveEditorVisible())
+    if (Configuration::ToneCurveEditorVisible)
         m_ToneCurveEditorWindow.Show();
 
     FixWindowPosition(m_ToneCurveEditorWindow);

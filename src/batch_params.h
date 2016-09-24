@@ -37,6 +37,7 @@ class c_BatchParamsDialog : public c_ScrollableDialog
     void OnSettingsFileChanged(wxFileDirPickerEvent &event);
 
     virtual void DoInitControls();
+    void StoreConfiguration();
 
     /// Lists the chosen input files
     wxListBox *m_FileList;

@@ -107,6 +107,14 @@ void c_BatchParamsDialog::OnOutputDirChanged(wxFileDirPickerEvent &event)
 #endif
 }
 
+void c_BatchParamsDialog::StoreConfiguration()
+{
+    Configuration::BatchLoadSettingsPath = wxFileName(((wxFilePickerCtrl *)FindWindowById(ID_SettingsFilePicker, this))->GetPath()).GetPath();
+    Configuration::BatchDialogPosSize = wxRect(GetPosition(), GetSize());
+    Configuration::BatchOutputPath = ((wxDirPickerCtrl *)FindWindowById(ID_OutputDir, this))->GetPath();
+    Configuration::BatchOutputFormat = (OutputFormat_t)((wxChoice *)FindWindowById(ID_OutputFormat, this))->GetSelection();
+}
+
 void c_BatchParamsDialog::OnCommandEvent(wxCommandEvent &event)
 {
     switch (event.GetId())
@@ -120,28 +128,22 @@ void c_BatchParamsDialog::OnCommandEvent(wxCommandEvent &event)
             wxMessageBox(_("Settings file not specified or does not exist."), _("Error"), wxICON_ERROR, this);
         else
         {
-            Configuration::SetBatchLoadSettingsPath(wxFileName(((wxFilePickerCtrl *)FindWindowById(ID_SettingsFilePicker, this))->GetPath()).GetPath());
-            Configuration::SetBatchDialogPosSize(wxRect(GetPosition(), GetSize()));
-            Configuration::SetBatchOutputPath(((wxDirPickerCtrl *)FindWindowById(ID_OutputDir, this))->GetPath());
-            Configuration::SetBatchOutputFormat((OutputFormat_t)((wxChoice *)FindWindowById(ID_OutputFormat, this))->GetSelection());
+            StoreConfiguration();
             EndModal(wxID_OK);
         }
         break;
 
     case wxID_CANCEL:
-        Configuration::SetBatchLoadSettingsPath(wxFileName(((wxFilePickerCtrl *)FindWindowById(ID_SettingsFilePicker, this))->GetPath()).GetPath());
-        Configuration::SetBatchDialogPosSize(wxRect(GetPosition(), GetSize()));
-        Configuration::SetBatchOutputPath(((wxDirPickerCtrl *)FindWindowById(ID_OutputDir, this))->GetPath());
-        Configuration::SetBatchOutputFormat((OutputFormat_t)((wxChoice *)FindWindowById(ID_OutputFormat, this))->GetSelection());
+        StoreConfiguration();
         EndModal(wxID_CANCEL);
         break;
 
     case ID_AddFiles:
         {
-            wxFileDialog fileDlg(this, _("Choose input file(s)"), Configuration::GetBatchFileOpenPath(), wxEmptyString, INPUT_FILE_FILTERS, wxFD_OPEN | wxFD_MULTIPLE);
+            wxFileDialog fileDlg(this, _("Choose input file(s)"), Configuration::BatchFileOpenPath, wxEmptyString, INPUT_FILE_FILTERS, wxFD_OPEN | wxFD_MULTIPLE);
             if (fileDlg.ShowModal() == wxID_OK)
             {
-                Configuration::SetBatchFileOpenPath(wxFileName(fileDlg.GetPath()).GetPath());
+                Configuration::BatchFileOpenPath = wxFileName(fileDlg.GetPath()).GetPath();
 
                 wxArrayString files;
                 fileDlg.GetPaths(files);
@@ -166,7 +168,7 @@ c_BatchParamsDialog::c_BatchParamsDialog(wxWindow *parent)
 : c_ScrollableDialog(parent, wxID_ANY, _("Batch processing"))
 {
     InitControls(BORDER);
-    wxRect r = Configuration::GetBatchDialogPosSize();
+    wxRect r = Configuration::BatchDialogPosSize;
     SetPosition(r.GetPosition());
     SetSize(r.GetSize());
     FixWindowPosition(*this);
@@ -193,7 +195,7 @@ void c_BatchParamsDialog::DoInitControls()
     szProcSettings->Add(new wxFilePickerCtrl(GetContainer(), ID_SettingsFilePicker, "", _("Choose the file with processing settings"),
         _("XML files (*.xml)") + "|*.xml", wxDefaultPosition, wxDefaultSize, wxFD_OPEN | wxFD_FILE_MUST_EXIST),
         0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
-    ((wxFilePickerCtrl *)FindWindowById(ID_SettingsFilePicker, GetContainer()))->SetInitialDirectory(Configuration::GetBatchLoadSettingsPath());
+    ((wxFilePickerCtrl *)FindWindowById(ID_SettingsFilePicker, GetContainer()))->SetInitialDirectory(Configuration::BatchLoadSettingsPath);
     szProcSettings->Add(new wxStaticText(GetContainer(), ID_SettingsFile,
         _("Select the XML file with processing settings."),
         wxDefaultPosition, wxDefaultSize),
@@ -205,7 +207,7 @@ void c_BatchParamsDialog::DoInitControls()
 
     wxSizer *szOutputDir = new wxBoxSizer(wxHORIZONTAL);
     szOutputDir->Add(new wxStaticText(GetContainer(), wxID_ANY, _("Output folder:")), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
-    szOutputDir->Add(new wxDirPickerCtrl(GetContainer(), ID_OutputDir, Configuration::GetBatchOutputPath(), _("Select output folder")),
+    szOutputDir->Add(new wxDirPickerCtrl(GetContainer(), ID_OutputDir, Configuration::BatchOutputPath, _("Select output folder")),
         1, wxALIGN_CENTER_VERTICAL | wxGROW | wxALL, BORDER);
     szTop->Add(szOutputDir, 0, wxGROW | wxALL, BORDER);
 
@@ -217,7 +219,7 @@ void c_BatchParamsDialog::DoInitControls()
     for (int i = 0; i < OUTF_LAST; i++)
         formatStr.Add(GetOutputFormatDescription((OutputFormat_t)i));
     wxChoice *outFormats = new wxChoice(GetContainer(), ID_OutputFormat, wxDefaultPosition, wxDefaultSize, formatStr);
-    outFormats->SetSelection((int)Configuration::GetBatchOutputFormat());
+    outFormats->SetSelection((int)Configuration::BatchOutputFormat);
     szOutFmt->Add(outFormats, 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
     szTop->Add(szOutFmt, 0, wxALIGN_LEFT | wxALL, BORDER);
 

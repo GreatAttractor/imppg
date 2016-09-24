@@ -308,7 +308,14 @@ void c_ToneCurveEditor::DrawCurve(
 
     wxPoint prev(0, r.height - r.height * m_Curve->GetPreciseValue(0.0f));
 
-    for (int x = 1; x < r.width; x++)
+    int step = 1;
+    if (m_NumDrawSegments != 0)
+        step = r.width/m_NumDrawSegments;
+
+    if (step == 0)
+        step = 1;
+
+    for (int x = 1; x < r.width; x += step)
     {
         int y = r.height - r.height * m_Curve->GetPreciseValue((float)x / r.width);
         dc.DrawLine(prev.x, prev.y, x, y);
@@ -326,9 +333,14 @@ void c_ToneCurveEditor::DrawHistogram(
 {
     if (!m_Histogram.values.empty())
     {
-        dc.SetPen(wxPen(CL_HISTOGRAM));
+        dc.SetPen(*wxTRANSPARENT_PEN);
+        dc.SetBrush(wxBrush(CL_HISTOGRAM, wxBRUSHSTYLE_SOLID));
 
-        for (int x = 0; x < r.width; x++)
+        int step = 1;
+        if (m_NumDrawSegments != 0)
+            step = r.width/m_NumDrawSegments;
+
+        for (int x = 0; x < r.width; x += step)
         {
             int displayedValue;
             int histogramValue = m_Histogram.values[x * m_Histogram.values.size() / r.width];
@@ -343,8 +355,9 @@ void c_ToneCurveEditor::DrawHistogram(
             else
                 displayedValue = (r.height-1) * histogramValue / m_Histogram.maxCount;
 
-            dc.DrawLine(x, r.height - 1, x,
-                (r.height-1) - displayedValue);
+//            dc.DrawLine(x, r.height - 1, x,
+//                (r.height-1) - displayedValue);
+            dc.DrawRectangle(x, (r.height-1) - displayedValue, step, displayedValue);
         }
     }
 }
@@ -394,6 +407,7 @@ c_ToneCurveEditor::c_ToneCurveEditor(wxWindow *parent, c_ToneCurve *curve, int i
     Create(parent, id, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE | wxFULL_REPAINT_ON_RESIZE);
 
     m_MouseOps.draggedPointIdx = -1;
+    m_NumDrawSegments = Configuration::ToneCurveEditorNumDrawSegments;
 
     SetActionDelay(updateEvtDelay);
 

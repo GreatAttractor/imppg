@@ -1,7 +1,7 @@
 # ImPPG (Image Post-Processor)
 Copyright (C) 2015, 2016 Filip Szczerek (ga.software@yahoo.com)
 
-version 0.5 (2016-01-02)
+version 0.5.1 (2016-10-02)
 
 *This program comes with ABSOLUTELY NO WARRANTY. This is free software, licensed under GNU General Public License v3 or any later version and you are welcome to redistribute it under certain conditions. See the LICENSE file for details.*
 
@@ -63,6 +63,8 @@ The alignment is performed (with sub-pixel accuracy) either via phase correlatio
   - The view can be zoomed in/out by using toolbar buttons, `View` menu items or `Ctrl+mouse wheel`.
 
   - The view can be scrolled by dragging with the middle mouse button.
+
+  - Size of toolbar icons can be changed via the `Settings` menu.
     
 ----------------------------------------
 ## 3. Supported image file formats
@@ -307,6 +309,14 @@ Binary distribution of ImPPG needs only the MO (binary) language files. Beside t
 ## 12. Change log
 
 ```
+0.5.1 (2016-10-02)
+    New features:
+    - List of most recently used settings files
+
+    Enhancements:
+    - High-resolution toolbar icons
+    - Improved tone curve drawing performance on high-resolution displays
+
 0.5 (2016-01-02)
     New features:
     - Adaptive unsharp masking

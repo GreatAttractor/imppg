@@ -69,7 +69,7 @@ bool c_MyApp::OnInit()
 
     // Setup the UI language to use
     m_Language = wxLANGUAGE_DEFAULT;
-    wxString requestedLangCode = Configuration::GetUiLanguage();
+    wxString requestedLangCode = Configuration::UiLanguage;
     if (requestedLangCode != wxEmptyString && requestedLangCode != Configuration::USE_DEFAULT_SYS_LANG)
     {
         const wxLanguageInfo *langInfo = wxLocale::FindLanguageInfo(requestedLangCode);
@@ -94,8 +94,13 @@ bool c_MyApp::OnInit()
     Cursors::InitCursors();
     wxToolTip::Enable(true);
     c_MainWindow *mainWnd = new c_MainWindow();
+
+    wxIcon appIcon;
+    appIcon.CopyFromBitmap(LoadBitmap("imppg-app"));
+    mainWnd->SetIcon(appIcon);
+
     SetTopWindow(mainWnd);
-   
+
     return true;
 }
 

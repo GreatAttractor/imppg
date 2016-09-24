@@ -1,7 +1,7 @@
 # ImPPG (Image Post-Processor)
 Copyright (C) 2015, 2016 Filip Szczerek (ga.software@yahoo.com)
 
-wersja 0.5 (2016-01-02)
+wersja 0.5.1 (2016-10-02)
 
 *Niniejszy program ABSOLUTNIE nie jest objęty JAKĄKOLWIEK GWARANCJĄ. Jest to wolne oprogramowanie na licencji GNU GPL w wersji 3 (lub dowolnej późniejszej) i można je swobodnie rozpowszechniać pod pewnymi warunkami: zob. pełny tekst licencji w pliku LICENSE.*
 
@@ -65,6 +65,8 @@ Wyrównywanie (z subpikselową dokładnością) odbywa się metodą korelacji fa
   - Powiększenie widoku można zmieniać przyciskami paska narzędziowego, pozycjami w menu `Widok` bądź kombinacją `Ctrl+rolka myszy`.
     
   - Widok można przewijać przeciągając go z wciśniętym środkowym przyciskiem myszy.
+
+  - Wielkość ikon narzędziowych można zmienić w menu `Ustawienia`.
 
     
 ----------------------------------------
@@ -310,6 +312,14 @@ Dystrybucja binarna ImPPG potrzebuje jedynie plików MO (binarnych). Oprócz pli
 ----------------------------------------
 ## 12. Historia zmian
 ```
+0.5.1 (2016-10-02)
+    Nowe funkcje:
+    – Lista ostatnio używanych ustawień
+
+    Ulepszenia:
+    – Ikony narzędziowe o wysokiej rozdzielczości
+    – Usprawnienie rysowania krzywej tonalnej na ekranach o wysokiej rozdzielczości
+
 0.5 (2016-01-02)
     Nowe funkcje:
     – Adaptatywny unsharp masking

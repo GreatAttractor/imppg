@@ -550,12 +550,12 @@ void BatchProcessing(
             batchParamsDlg.GetSettingsFileName(),
             batchParamsDlg.GetOutputDirectory(),
             batchParamsDlg.GetOutputFormat());
-        wxRect r = Configuration::GetBatchProgressDialogPosSize();
+        wxRect r = Configuration::BatchProgressDialogPosSize;
         batchDlg.SetPosition(r.GetPosition());
         batchDlg.SetSize(r.GetSize());
         FixWindowPosition(batchDlg);
         batchDlg.ShowModal();
-        Configuration::SetBatchProgressDialogPosSize(wxRect(batchDlg.GetPosition(), batchDlg.GetSize()));
+        Configuration::BatchProgressDialogPosSize = wxRect(batchDlg.GetPosition(), batchDlg.GetSize());
     }
     return;
 }

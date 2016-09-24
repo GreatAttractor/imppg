@@ -160,10 +160,10 @@ void c_ImageAlignmentParams::OnCommandEvent(wxCommandEvent &event)
 
     case ID_AddFiles:
         {
-            wxFileDialog fileDlg(this, _("Choose input file(s)"), Configuration::GetAlignInputPath(), wxEmptyString, INPUT_FILE_FILTERS, wxFD_OPEN | wxFD_MULTIPLE);
+            wxFileDialog fileDlg(this, _("Choose input file(s)"), Configuration::AlignInputPath, wxEmptyString, INPUT_FILE_FILTERS, wxFD_OPEN | wxFD_MULTIPLE);
             if (fileDlg.ShowModal() == wxID_OK)
             {
-                Configuration::SetAlignInputPath(wxFileName(fileDlg.GetPath()).GetPath());
+                Configuration::AlignInputPath = wxFileName(fileDlg.GetPath()).GetPath();
                 wxArrayString files;
                 m_FileList.GetStrings(files);
 
@@ -270,7 +270,7 @@ void c_ImageAlignmentParams::DoInitControls()
 
         wxSizer *szOutputDir = new wxBoxSizer(wxHORIZONTAL);
         szOutputDir->Add(new wxStaticText(GetContainer(), wxID_ANY, _("Output folder:")), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
-        szOutputDir->Add(new wxDirPickerCtrl(GetContainer(), ID_OutputDir, Configuration::GetAlignOutputPath(), _("Select output folder")),
+        szOutputDir->Add(new wxDirPickerCtrl(GetContainer(), ID_OutputDir, Configuration::AlignOutputPath, _("Select output folder")),
             1, wxALIGN_CENTER_VERTICAL | wxGROW | wxALL, BORDER);
         szContents->Add(szOutputDir, 0, wxGROW | wxALL, BORDER);
 
@@ -294,7 +294,7 @@ bool GetAlignmentParameters(wxWindow *parent,
 )
 {
     c_ImageAlignmentParams dlg(parent);
-    wxRect r = Configuration::GetAlignParamsDialogPosSize();
+    wxRect r = Configuration::AlignParamsDialogPosSize;
     dlg.SetPosition(r.GetPosition());
     dlg.SetSize(r.GetSize());
 
@@ -304,9 +304,9 @@ bool GetAlignmentParameters(wxWindow *parent,
     if (result)
     {
         dlg.GetAlignmentParameters(params);
-        Configuration::SetAlignOutputPath(params.outputDir);
+        Configuration::AlignOutputPath = params.outputDir;
     }
-    Configuration::SetAlignParamsDialogPosSize(wxRect(dlg.GetPosition(), dlg.GetSize()));
+    Configuration::AlignParamsDialogPosSize = wxRect(dlg.GetPosition(), dlg.GetSize());
 
     return result;
 }
