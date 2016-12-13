@@ -21,11 +21,11 @@ File description:
     Lucy-Richardson deconvolution worker thread implementation.
 */
 
-#include <boost/bind.hpp>
 #include <wx/datetime.h>
 #include "w_lrdeconv.h"
 #include "lrdeconv.h"
 #include "logging.h"
+
 
 c_LucyRichardsonThread::c_LucyRichardsonThread(
     wxWindow &parent,             ///< Object to receive notification messages from this worker thread
@@ -76,9 +76,9 @@ void c_LucyRichardsonThread::DoWork()
     }
 
     LucyRichardsonGaussian(*preprocessedInput, output, numIterations, lrSigma, CONV_AUTO,
-        boost::bind(&c_LucyRichardsonThread::IterationNotification, this, _1, _2),
-        boost::bind(&c_LucyRichardsonThread::IsAbortRequested, this)
-        );
+        [this](int currentIter, int totalIters) { IterationNotification(currentIter, totalIters); },
+        [this]() { return IsAbortRequested(); }
+    );
     Log::Print(wxString::Format("L-R deconvolution finished in %s s\n", (wxDateTime::UNow() - tstart).Format("%S.%l")));
     Clamp((float *)output.GetRow(0), output.GetWidth(), output.GetHeight(), output.GetBytesPerRow());
     

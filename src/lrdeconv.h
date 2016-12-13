@@ -25,8 +25,10 @@ File description:
 #define IMPP_LRDECONV_H
 
 #include <cstdint>
-#include <boost/function.hpp>
+#include <functional>
+
 #include "image.h"
+
 
 typedef enum
 {
@@ -77,9 +79,14 @@ void LucyRichardsonGaussian(
         int numIters,  ///< Number of iterations
         float sigma,   ///< sigma of the Gaussian kernel
         ConvolutionMethod_t convMethod,
+
         /// Called after every iteration; arguments: current iteration, total iterations
-        boost::function<void(int, int)> progressCallback,
-        boost::function<bool()> checkAbort ///< Called periodically to check if there was an "abort processing" request
+        //boost::function<void(int, int)> progressCallback,
+        std::function<void (int, int)> progressCallback,
+
+        /// Called periodically to check if there was an "abort processing" request
+        //boost::function<bool()> checkAbort
+        std::function<bool ()> checkAbort
 );
 
 /// Blurs pixels around borders of brightness areas defined by 'threshold'

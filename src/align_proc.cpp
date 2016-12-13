@@ -28,7 +28,6 @@ File description:
 #include <map>
 #include <memory>
 #include <algorithm>
-#include <boost/bind.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <wx/filename.h>
 #include "logging.h"
@@ -283,8 +282,8 @@ void c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment()
 
     if (!DetermineTranslationVectors(Nwidth, Nheight, m_Parameters.inputFiles,
         translation, bbox, &m_CompletionMessage, m_Parameters.subpixelAlignment,
-        boost::bind(&c_ImageAlignmentWorkerThread::PhaseCorrImgTranslationCallback, this, _1, _2, _3),
-        boost::bind(&c_ImageAlignmentWorkerThread::IsAbortRequested, this)))
+        [this](int imgIdx, float tX, float tY) { PhaseCorrImgTranslationCallback(imgIdx, tX, tY); },
+        [this]() { return IsAbortRequested(); }))
     {
         return;
     }

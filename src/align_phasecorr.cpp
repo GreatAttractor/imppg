@@ -236,8 +236,8 @@ bool DetermineTranslationVectors(
         wxString *errorMsg, ///< If not null, receives error message (if any)
         /// Called after determining an image's translation; argument: index of the current image
         bool subpixelAlignment,
-        boost::function<void(int, float, float)> progressCallback, ///< Called after determining translation of an image; arguments: image index, trans. vector
-        boost::function<bool()> checkAbort ///< Called periodically to check if there was an "abort processing" request
+        std::function<void (int, float, float)> progressCallback, ///< Called after determining translation of an image; arguments: image index, trans. vector
+        std::function<bool ()> checkAbort ///< Called periodically to check if there was an "abort processing" request
 )
 {
     bool result = true;
