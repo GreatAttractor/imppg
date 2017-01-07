@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2015, 2016 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2015-2017 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -53,8 +53,8 @@ File description:
 #include "common.h"
 #include "ctrl_ids.h"
 
-const char *VERSION_STR = "0.5.1";   ///< Current version
-const char *DATE_STR = "2016-10-02"; ///< Release date of the current version
+const char *VERSION_STR = "0.5.2";   ///< Current version
+const char *DATE_STR = "2017-01-07"; ///< Release date of the current version
 
 #if !defined(_OPENMP)
 int omp_get_num_procs() { return 1; }
@@ -106,8 +106,6 @@ void c_AboutDialog::OnLibrariesClick(wxCommandEvent &event)
         _("Libraries"), wxOK, this);
 }
 
-#include <iostream> //TESTING ###############
-
 c_AboutDialog::c_AboutDialog(wxWindow *parent)
 : wxDialog(parent, wxID_ANY, _("About ImPPG"))
 {
@@ -138,7 +136,7 @@ c_AboutDialog::c_AboutDialog(wxWindow *parent)
     szContents->Add(title, 0, wxALIGN_LEFT | (wxLEFT | wxRIGHT | wxTOP), 5);
 
     wxStaticText *info = new wxStaticText(this, wxID_ANY,
-        wxString::Format(wxString(L"Copyright \u00A9 2015, 2016 Filip Szczerek (ga.software@yahoo.com)\n") +
+        wxString::Format(wxString(L"Copyright \u00A9 2015-2017 Filip Szczerek (ga.software@yahoo.com)\n") +
                          _("version %s ") + " (%s)\n\n" +
 
                          _("This program comes with ABSOLUTELY NO WARRANTY. This is free software,\n"

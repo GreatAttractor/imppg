@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2015, 2016 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2016-2017 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -338,7 +338,7 @@ void c_ToneCurveEditor::DrawHistogram(
 
         int step = 1;
         if (m_NumDrawSegments != 0)
-            step = r.width/m_NumDrawSegments;
+            step = std::max((size_t)1, r.width/m_NumDrawSegments);
 
         for (int x = 0; x < r.width; x += step)
         {
@@ -350,13 +350,11 @@ void c_ToneCurveEditor::DrawHistogram(
                 if (m_Histogram.maxCount == 0)
                     displayedValue = 0;
                 else
-                    displayedValue = (r.height-1) * logf(histogramValue) / logf(m_Histogram.maxCount);
+                    displayedValue = (r.height-1) * (histogramValue > 0 ? logf(histogramValue) : 0) / logf(m_Histogram.maxCount);
             }
             else
                 displayedValue = (r.height-1) * histogramValue / m_Histogram.maxCount;
 
-//            dc.DrawLine(x, r.height - 1, x,
-//                (r.height-1) - displayedValue);
             dc.DrawRectangle(x, (r.height-1) - displayedValue, step, displayedValue);
         }
     }
