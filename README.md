@@ -1,7 +1,7 @@
 # ImPPG (Image Post-Processor)
 Copyright (C) 2015-2017 Filip Szczerek (ga.software@yahoo.com)
 
-version 0.5.2 (2017-01-07)
+version 0.5.3 (2017-03-12)
 
 *This program comes with ABSOLUTELY NO WARRANTY. This is free software, licensed under GNU General Public License v3 or any later version and you are welcome to redistribute it under certain conditions. See the LICENSE file for details.*
 
@@ -309,6 +309,10 @@ Binary distribution of ImPPG needs only the MO (binary) language files. Beside t
 ## 12. Change log
 
 ```
+0.5.3 (2017-03-12)
+    Bug fixes:
+    - Fixed filling the list of recently used settings under Windows
+
 0.5.2 (2017-01-07)
     Bug fixes:
     - Fixed drawing of histogram and tone curve

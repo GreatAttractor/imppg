@@ -210,7 +210,7 @@ void StoreMruSettings(const wxArrayString &settings)
 {
     appConfig->DeleteGroup(Keys::MruSettingsGroup);
     for (size_t i = 0; i < settings.Count(); i++)
-        appConfig->Write(wxString::Format("%s/%s%zu", Keys::MruSettingsGroup, Keys::MruSettingsItem, i+1u), settings[i]);
+        appConfig->Write(wxString::Format("%s/%s%d", Keys::MruSettingsGroup, Keys::MruSettingsItem, (int)i+1), settings[i]);
 }
 
 void EmptyMruList()

@@ -53,8 +53,8 @@ File description:
 #include "common.h"
 #include "ctrl_ids.h"
 
-const char *VERSION_STR = "0.5.2";   ///< Current version
-const char *DATE_STR = "2017-01-07"; ///< Release date of the current version
+const char *VERSION_STR = "0.5.3";   ///< Current version
+const char *DATE_STR = "2017-03-12"; ///< Release date of the current version
 
 #if !defined(_OPENMP)
 int omp_get_num_procs() { return 1; }
