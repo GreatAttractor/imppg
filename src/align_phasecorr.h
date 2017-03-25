@@ -41,7 +41,7 @@ unsigned GetClosestGPowerOf2(unsigned n);
 bool DetermineTranslationVectors(
         unsigned Nwidth, ///< FFT width
         unsigned Nheight, ///< FFT height
-        wxArrayString &inputFiles, ///< List of input file names
+        const wxArrayString &inputFiles, ///< List of input file names
         /// Receives list of translation vectors between files in 'inputFiles'; each vector is a translation relative to the first image
         std::vector<FloatPoint_t> &translation,
         /// Receives the bounding box (within the NxN working area) of all images after alignment
@@ -59,14 +59,14 @@ Rectangle_t DetermineImageIntersection(
         unsigned Nwidth,    ///< Width of the working buffer (i.e. FFT arrays)
         unsigned Nheight,   ///< Height of the working buffer (i.e. FFT arrays)
         const Rectangle_t &bBox, ///< Bounding box of all aligned images
-        std::vector<FloatPoint_t> &translation, ///< Translation vectors relative to the first image
-        std::vector<Point_t> imgSize       ///< Image sizes
+        const std::vector<FloatPoint_t> &translation, ///< Translation vectors relative to the first image
+        const std::vector<Point_t> &imgSize       ///< Image sizes
 );
 
 /// Determines translation vector between specified images; the images have to be already multiplied by window function
 FloatPoint_t DetermineTranslationVector(
-    c_Image &img1, ///< Width and height have to be the same as 'img2' and be powers of two
-    c_Image &img2  ///< Width and height have to be the same as 'img1' and be powers of two
+    const c_Image &img1, ///< Width and height have to be the same as 'img2' and be powers of two
+    const c_Image &img2  ///< Width and height have to be the same as 'img1' and be powers of two
 );
 
 /// Calculates window function (Blackman) and returns its values as a PIX_MONO32F image

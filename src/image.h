@@ -95,13 +95,14 @@ const size_t NumChannels[PIX_NUM_FORMATS] =
 class IImageBuffer
 {
 public:
-    virtual unsigned GetWidth() = 0; ///< Returns image width in pixels
-    virtual unsigned GetHeight() = 0; ///< Returns image height in pixels
-    virtual size_t GetBytesPerRow() = 0; ///< Returns number of bytes per row (including padding, if any)
-    virtual size_t GetBytesPerPixel() = 0; ///< Returns number of bytes per pixel
+    virtual unsigned GetWidth() const = 0; ///< Returns image width in pixels
+    virtual unsigned GetHeight() const = 0; ///< Returns image height in pixels
+    virtual size_t GetBytesPerRow() const = 0; ///< Returns number of bytes per row (including padding, if any)
+    virtual size_t GetBytesPerPixel() const = 0; ///< Returns number of bytes per pixel
     virtual void *GetRow(size_t row) = 0; ///< Returns pointer to the specified row
-    virtual std::unique_ptr<IImageBuffer> GetCopy() = 0; ///< Creates and returns a copy
-    virtual PixelFormat_t GetPixelFormat() = 0;
+    virtual const void *GetRow(size_t row) const = 0; ///< Returns pointer to the specified row
+    virtual std::unique_ptr<IImageBuffer> GetCopy() const = 0; ///< Creates and returns a copy
+    virtual PixelFormat_t GetPixelFormat() const = 0;
     virtual ~IImageBuffer() { }
 };
 
@@ -128,16 +129,25 @@ public:
     void ClearToZero(); ///< Clears all pixels to zero value
 
     /// Provides read/write access to the palette
-    uint8_t *GetPalette() { return palette.get(); };
+    uint8_t *GetPalette() { return palette.get(); }
 
-    unsigned GetWidth() { return width; }
-    unsigned GetHeight() { return height; }
-    unsigned GetNumPixels() { return width * height; }
-    PixelFormat_t GetPixelFormat() { return pixels->GetPixelFormat(); }
+    /// Provides read-only access to the palette
+    const uint8_t *GetPalette() const { return palette.get(); }
+
+    unsigned GetWidth() const { return width; }
+    unsigned GetHeight() const { return height; }
+    unsigned GetNumPixels() const { return width * height; }
+    PixelFormat_t GetPixelFormat() const { return pixels->GetPixelFormat(); }
+
     /// Returns pointer to the specified row
     void *GetRow(size_t row) { return pixels->GetRow(row); }
 
+    /// Returns pointer to the specified row
+    const void *GetRow(size_t row) const { return pixels->GetRow(row); }
+
     IImageBuffer &GetBuffer() { return *pixels; }
+
+    const IImageBuffer &GetBuffer() const { return *pixels; }
 
     void SetPalette(uint8_t palette[]);
 
@@ -184,24 +194,27 @@ public:
     { }
 
     /// Returns image width in pixels
-    virtual unsigned GetWidth() { return width; }
+    virtual unsigned GetWidth() const { return width; }
 
     /// Returns image height in pixels
-    virtual unsigned GetHeight() { return height; }
+    virtual unsigned GetHeight() const { return height; }
 
     /// Returns number of bytes per row (including padding, if any)
-    virtual size_t GetBytesPerRow() { return buf.GetBytesPerRow(); }
+    virtual size_t GetBytesPerRow() const { return buf.GetBytesPerRow(); }
 
     /// Returns number of bytes per pixel
-    virtual size_t GetBytesPerPixel() { return buf.GetBytesPerPixel(); }
+    virtual size_t GetBytesPerPixel() const { return buf.GetBytesPerPixel(); }
 
     /// Returns pointer to the specified row
     virtual void *GetRow(size_t row) { return (uint8_t *)buf.GetRow(y0 + row) + x0 * buf.GetBytesPerPixel(); }
 
-    virtual PixelFormat_t GetPixelFormat() { return buf.GetPixelFormat(); }
+    /// Returns pointer to the specified row
+    virtual const void *GetRow(size_t row) const { return (const uint8_t *)buf.GetRow(y0 + row) + x0 * buf.GetBytesPerPixel(); }
+
+    virtual PixelFormat_t GetPixelFormat() const { return buf.GetPixelFormat(); }
 
     /// Creating a copy of a view is not supported
-    virtual std::unique_ptr<IImageBuffer> GetCopy() { return nullptr; }
+    virtual std::unique_ptr<IImageBuffer> GetCopy() const { return nullptr; }
 };
 
 #if USE_FREEIMAGE
@@ -226,21 +239,24 @@ public:
     }
 
     /// Returns image width in pixels
-    virtual unsigned GetWidth() { return FreeImage_GetWidth(fibmp); }
+    virtual unsigned GetWidth() const { return FreeImage_GetWidth(fibmp); }
 
     /// Returns image height in pixels
-    virtual unsigned GetHeight() { return FreeImage_GetHeight(fibmp); }
+    virtual unsigned GetHeight() const { return FreeImage_GetHeight(fibmp); }
 
     /// Returns number of bytes per row (including padding, if any)
-    virtual size_t GetBytesPerRow() { return FreeImage_GetLine(fibmp); }
+    virtual size_t GetBytesPerRow() const { return FreeImage_GetLine(fibmp); }
 
     /// Returns number of bytes per pixel
-    virtual size_t GetBytesPerPixel() { return FreeImage_GetBPP(fibmp) / 8; }
+    virtual size_t GetBytesPerPixel() const { return FreeImage_GetBPP(fibmp) / 8; }
 
     /// Returns pointer to the specified row; FreeImage stores rows in reverse order
     virtual void *GetRow(size_t row) { return pixels + (GetHeight() - 1 - row) * stride; }
 
-    virtual PixelFormat_t GetPixelFormat()
+    /// Returns pointer to the specified row; FreeImage stores rows in reverse order
+    virtual const void *GetRow(size_t row) const { return pixels + (GetHeight() - 1 - row) * stride; }
+
+    virtual PixelFormat_t GetPixelFormat() const
     {
         switch (FreeImage_GetImageType(fibmp))
         {
@@ -265,7 +281,7 @@ public:
     }
 
     /// Creating a copy is not supported
-    virtual std::unique_ptr<IImageBuffer> GetCopy() { return nullptr; }
+    virtual std::unique_ptr<IImageBuffer> GetCopy() const { return nullptr; }
 };
 #endif // USE_FREEIMAGE
 

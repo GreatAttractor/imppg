@@ -376,7 +376,7 @@ void ConvolveGaussianRecursiveTranspose(
 
 /// Calculates convolution of 'input' with a Gaussian kernel
 void ConvolveSeparable(
-        c_PaddedArrayPtr<float> input,  ///< Input array
+        const c_PaddedArrayPtr<float> input,  ///< Input array
         c_PaddedArrayPtr<float> output, ///< Output array having as much rows and columns as 'input' does
         float sigma              ///< Gaussian sigma
 )
@@ -411,7 +411,7 @@ void ConvolveSeparable(
 
 /// Reproduces original image from image in 'input' convolved with Gaussian kernel and writes it to 'output'.
 void LucyRichardsonGaussian(
-    IImageBuffer &input, ///< Contains a single 'float' value per pixel; size the same as 'output'
+    const IImageBuffer &input, ///< Contains a single 'float' value per pixel; size the same as 'output'
     IImageBuffer &output, ///< Contains a single 'float' value per pixel; size the same as 'input'
     int numIters,  ///< Number of iterations
     float sigma,   ///< sigma of the Gaussian kernel
@@ -515,7 +515,7 @@ inline unsigned encodeXY(unsigned x, unsigned y) { return x + (y<<16); }
 inline void decodeXY(unsigned encoded, unsigned &x, unsigned &y) { x = encoded & 0xFFFF; y = encoded >> 16; }
 
 void BlurThresholdVicinity(
-    IImageBuffer &input,
+    const IImageBuffer &input,
     IImageBuffer &output,
     float threshold, ///< Threshold to qualify pixels as "border pixels"
     bool greaterThan,

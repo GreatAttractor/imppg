@@ -92,7 +92,7 @@ public:
     /// Removes the specified point. If there are only 2 points, does nothing.
     void RemovePoint(int index);
 
-    bool GetSmooth() { return m_Smooth; }
+    bool GetSmooth() const { return m_Smooth; }
     void SetSmooth(bool smooth);
 
     /// Applies an approximated curve value (one of the pre-calculated values) to 'input'
@@ -100,7 +100,7 @@ public:
         after any update to the curve before using this method. */
     float GetApproximatedValue(
         float input ///< Value from [0.0f; 1.0f]
-    )
+    ) const
     {
         //TODO: perform a quicker shift when LUT size is a power of 2
         return m_LUT[(int)(input * (m_LutSize - 1))];
@@ -109,13 +109,13 @@ public:
     /// Applies the tone curve to 'input' using a precise curve value
     float GetPreciseValue(
         float input ///< Value from [0.0f; 1.0f]
-    );
+    ) const;
 
     /// Returns index of the curve point closest to (x, y)
     int GetIdxOfClosestPoint(
         float x, ///< X coordinate, range [0; 1]
         float y  ///< Y coordinate, range [0; 1]
-        );
+        ) const;
 
     const FloatPoint_t &GetPoint(int idx) const
     {

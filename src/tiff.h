@@ -36,6 +36,6 @@ c_Image *ReadTiff(
 );
 
 /// Saves image in TIFF format; returns 'false' on error
-bool SaveTiff(const char *fileName, c_Image &img);
+bool SaveTiff(const char *fileName, const c_Image &img);
 
 #endif // ImPPG_TIFF_H

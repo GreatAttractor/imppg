@@ -188,7 +188,7 @@ c_Image *ReadBmp(const char *fileName)
 }
 
 /// Saves image in BMP format; returns 'false' on error
-bool SaveBmp(const char *fileName, c_Image &img)
+bool SaveBmp(const char *fileName, const c_Image &img)
 {
     PixelFormat_t pixFmt = img.GetPixelFormat();
     assert(pixFmt == PIX_PAL8 ||

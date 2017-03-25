@@ -28,7 +28,7 @@ File description:
 /// Calculates 2-dimensional discrete Fourier transform
 /** Uses the row-column algorithm. */
 void CalcFFT2D(
-    float input[], ///< Input array containing rows*cols elements
+    const float input[], ///< Input array containing rows*cols elements
     unsigned rows, ///< Number of rows, has to be a power of two
     unsigned cols, ///< Number of columns, has to be a power of two
     int stride,    ///< Number of bytes per row in 'input'
@@ -38,7 +38,7 @@ void CalcFFT2D(
 /// Calculates 2-dimensional inverse discrete Fourier transform
 /** Uses the row-column algorithm. */
 void CalcFFTinv2D(
-    std::complex<float> input[], ///< Input array containing rows*cols elements
+    const std::complex<float> input[], ///< Input array containing rows*cols elements
     unsigned rows, ///< Number of rows, has to be a power of two
     unsigned cols, ///< Number of columns, has to be a power of two
     std::complex<float> output[] ///< Output array containing rows*cols elements
@@ -46,8 +46,8 @@ void CalcFFTinv2D(
 
 /// Calculates cross-power spectrum of two 2D discrete Fourier transforms
 void CalcCrossPowerSpectrum2D(
-    std::complex<float> F1[], ///< First discrete Fourier transform (N elements)
-    std::complex<float> F2[], ///< Second discrete Fourier transform (N elements)
+    const std::complex<float> F1[], ///< First discrete Fourier transform (N elements)
+    const std::complex<float> F2[], ///< Second discrete Fourier transform (N elements)
     std::complex<float> output[], ///< Cross-power spectrum of F1 and F2 (N elements)
     unsigned N ///< Number of array elements
 );

@@ -39,7 +39,7 @@ File description:
 using namespace boost::numeric::ublas;
 
 /// Calculates the centroid of a PIX_MONO8 image
-Point_t CalcCentroid(c_Image &img)
+Point_t CalcCentroid(const c_Image &img)
 {
     // We use 64-bit accumulators which is enough for an 8-bit image with 2^28 x 2^28 pixels.
     assert(img.GetPixelFormat() == PIX_MONO8);
@@ -61,7 +61,7 @@ Point_t CalcCentroid(c_Image &img)
 }
 
 /// Returns subsequent points of a line from 'origin' along direction 'dir' to border of 'img'
-void GetRayPoints(Point_t origin, Point_t dir, c_Image &img, Ray_t &result)
+void GetRayPoints(const Point_t &origin, const Point_t &dir, const c_Image &img, Ray_t &result)
 {
     result.clear();
 
@@ -188,7 +188,7 @@ void CullToConvexHull(std::vector<Point_t> &points)
 
 //TODO: add header comment
 float GetSumSqrDiffsFromHistogram(
-        uint32_t histogram[], ///< 256 elements
+        const uint32_t histogram[], ///< 256 elements
         size_t iMin, size_t iMax)
 {
     float avg = 0.0f;
@@ -208,7 +208,7 @@ float GetSumSqrDiffsFromHistogram(
 }
 
 /// Finds the brightness threshold separating the disc from the background
-uint8_t FindDiscBackgroundThreshold(c_Image &img,
+uint8_t FindDiscBackgroundThreshold(const c_Image &img,
     uint8_t *avgDisc,  ///< If not null, receives average disc brightness
     uint8_t *avgBkgrnd ///< If not null, receives average background brightness
 )
@@ -278,7 +278,7 @@ uint8_t FindDiscBackgroundThreshold(c_Image &img,
 }
 
 /// Finds a point ('result') where 'ray' crosses the limb; returns steepness of the transition
-int FindLimbCrossing(Ray_t &ray, c_Image &img, uint8_t threshold, Point_t &result)
+int FindLimbCrossing(Ray_t &ray, const c_Image &img, uint8_t threshold, Point_t &result)
 {
     // If the image was wavelet-sharpened, there may be a bright border left. To avoid
     // its influence, replace the first NUM_BORDER_AVG pixels on each end of the ray
@@ -405,7 +405,7 @@ void Invert2x2(matrix<double> &M)
 
 /// Uses Gauss-Newton method to fit a circle to specified points; returns 'true' on success
 bool FitCircleToPoints(
-    std::vector<FloatPoint_t> &points,
+    const std::vector<FloatPoint_t> &points,
     float *centerX, ///< If not null, receives circle center's X
     float *centerY, ///< If not null, receives circle center's Y
     float *radius,  ///< If not null and 'forceRadius' is zero, receives radius
@@ -440,7 +440,7 @@ bool FitCircleToPoints(
     int xmin = INT_MAX, xmax = INT_MIN, ymin = INT_MAX, ymax = INT_MIN;
     for (i = 0; i < points.size(); i++)
     {
-        FloatPoint_t &p = points[i];
+        const FloatPoint_t &p = points[i];
         B(0, 0) += p.x;
         B(1, 0) += p.y;
 

@@ -44,16 +44,16 @@ typedef std::vector<PointVal_t> Ray_t;
 const int DIFF_SIZE = 20;
 
 /// Calculates the centroid of a PIX_MONO8 image
-Point_t CalcCentroid(c_Image &img);
+Point_t CalcCentroid(const c_Image &img);
 
 /// Returns subsequent points of a line from 'origin' along direction 'dir' to border of 'img'
-void GetRayPoints(Point_t origin, Point_t dir, c_Image &img, Ray_t &result);
+void GetRayPoints(const Point_t &origin, const Point_t &dir, const c_Image &img, Ray_t &result);
 
 /// Finds a point ('result') where 'ray' crosses the limb; returns steepness of the transition
-int FindLimbCrossing(Ray_t &ray, c_Image &img, uint8_t threshold, Point_t &result);
+int FindLimbCrossing(Ray_t &ray, const c_Image &img, uint8_t threshold, Point_t &result);
 
 /// Finds the brightness threshold separating the disc from the background
-uint8_t FindDiscBackgroundThreshold(c_Image &img,
+uint8_t FindDiscBackgroundThreshold(const c_Image &img,
     uint8_t *avgDisc = 0,  ///< If not null, receives average disc brightness
     uint8_t *avgBkgrnd = 0 ///< If not null, receives average background brightness
 );
@@ -63,7 +63,7 @@ void CullToConvexHull(std::vector<Point_t> &points);
 
 /// Uses Gauss-Newton method to fit a circle to specified points; returns 'true' on success
 bool FitCircleToPoints(
-    std::vector<FloatPoint_t> &points,
+    const std::vector<FloatPoint_t> &points,
     float *centerX, ///< If not null, receives circle center's X
     float *centerY, ///< If not null, receives circle center's Y
     float *radius,  ///< If not null and 'forceRadius' is zero, receives radius

@@ -35,7 +35,7 @@ c_ToneCurveThread::c_ToneCurveThread(
     IImageBuffer &output,         ///< Output image
     unsigned threadId,            ///< Unique thread id (not reused by new threads)
 
-    c_ToneCurve &toneCurve, ///< Tone curve to apply to 'output'; an internal copy will be created
+    const c_ToneCurve &toneCurve, ///< Tone curve to apply to 'output'; an internal copy will be created
     bool usePreciseValues ///< If 'false', the approximated curve's values will be used
 )
 : c_WorkerThread(parent, guard, instancePtr, taskId, input, output, threadId), toneCurve(toneCurve), m_UsePreciseValues(usePreciseValues)
@@ -47,7 +47,7 @@ void c_ToneCurveThread::DoWork()
     wxDateTime tstart = wxDateTime::UNow();
     toneCurve.RefreshLut();
 
-    float (c_ToneCurve::* valueGetter)(float);
+    float (c_ToneCurve::* valueGetter)(float) const;
     if (m_UsePreciseValues)
         valueGetter = &c_ToneCurve::GetPreciseValue;
     else

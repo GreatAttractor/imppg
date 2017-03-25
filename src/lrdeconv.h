@@ -57,9 +57,9 @@ public:
     /// Returns pointer to the specified row
     T *row(int row) { return (T *)((uint8_t *)m_Array + row*m_BytesPerRow); }
 
-    int width() { return m_Width; }
-    int height() { return m_Height; }
-    int GetBytesPerRow() { return m_BytesPerRow; }
+    int width() const { return m_Width; }
+    int height() const { return m_Height; }
+    int GetBytesPerRow() const { return m_BytesPerRow; }
 };
 
 /// Clamps the values of the specified floating-point buffer to [0.0, 1.0]
@@ -67,14 +67,14 @@ void Clamp(float array[], int width, int height, int bytesPerRow);
 
 /// Calculates convolution of 'input' with a Gaussian kernel
 void ConvolveSeparable(
-        c_PaddedArrayPtr<float> input,  ///< Input array
+        const c_PaddedArrayPtr<float> input,  ///< Input array
         c_PaddedArrayPtr<float> output, ///< Output array having as much rows and columns as 'input' does
         float sigma              ///< Gaussian sigma
 );
 
 /// Reproduces original image from image in 'input' convolved with Gaussian kernel and writes it to 'output'.
 void LucyRichardsonGaussian(
-        IImageBuffer &input, ///< Contains a single 'float' value per pixel; size the same as 'output'
+        const IImageBuffer &input, ///< Contains a single 'float' value per pixel; size the same as 'output'
         IImageBuffer &output, ///< Contains a single 'float' value per pixel; size the same as 'input'
         int numIters,  ///< Number of iterations
         float sigma,   ///< sigma of the Gaussian kernel
@@ -91,7 +91,7 @@ void LucyRichardsonGaussian(
 
 /// Blurs pixels around borders of brightness areas defined by 'threshold'
 void BlurThresholdVicinity(
-    IImageBuffer &input,
+    const IImageBuffer &input,
     IImageBuffer &output,
     float threshold, ///< Threshold to qualify pixels as "border pixels"
     bool greaterThan,

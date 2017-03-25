@@ -36,7 +36,7 @@ struct strPoint
     strPoint(T x, T y) : x(x), y(y) { }
 
     // Used for binary search via std::lower_bound()
-    bool operator <(const strPoint &p) { return x < p.x; }
+    bool operator <(const strPoint &p) const { return x < p.x; }
 };
 
 typedef strPoint<int> Point_t;

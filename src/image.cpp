@@ -1,4 +1,4 @@
-    /*
+/*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
 Copyright (C) 2016-2017 Filip Szczerek <ga.software@yahoo.com>
 
@@ -88,13 +88,14 @@ public:
         buffer = operator new[](width * height * bytesPerPixel);
     }
 
-    virtual unsigned GetWidth() { return width; }
-    virtual unsigned GetHeight() { return height; }
-    virtual size_t GetBytesPerRow() { return width * bytesPerPixel; }
-    virtual size_t GetBytesPerPixel() { return bytesPerPixel; }
+    virtual unsigned GetWidth() const { return width; }
+    virtual unsigned GetHeight() const { return height; }
+    virtual size_t GetBytesPerRow() const { return width * bytesPerPixel; }
+    virtual size_t GetBytesPerPixel() const { return bytesPerPixel; }
     virtual void *GetRow(size_t row) { return (uint8_t *)buffer + row * width * bytesPerPixel; }
-    virtual PixelFormat_t GetPixelFormat() { return pixFmt; }
-    virtual std::unique_ptr<IImageBuffer> GetCopy()
+    virtual const void *GetRow(size_t row) const { return (uint8_t *)buffer + row * width * bytesPerPixel; }
+    virtual PixelFormat_t GetPixelFormat() const { return pixFmt; }
+    virtual std::unique_ptr<IImageBuffer> GetCopy() const
     {
         std::unique_ptr<c_SimpleBuffer> copy(new c_SimpleBuffer(width, height, pixFmt));
         memcpy(copy->buffer, buffer, width * height * bytesPerPixel);

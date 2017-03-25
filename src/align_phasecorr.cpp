@@ -77,8 +77,8 @@ std::unique_ptr<c_Image> CalcWindowFunction(
 FloatPoint_t DetermineImageTranslation(
     unsigned Nwidth,  ///< FFT columns
     unsigned Nheight, ///< FFT rows
-    std::complex<float> *img1FFT, ///< FFT of the first image (Nwidth*Nheight elements)
-    std::complex<float> *img2FFT, ///< FFT of the second image (Nwidth*Nheight elements)
+    const std::complex<float> *img1FFT, ///< FFT of the first image (Nwidth*Nheight elements)
+    const std::complex<float> *img2FFT, ///< FFT of the second image (Nwidth*Nheight elements)
     bool subpixelAccuracy ///< If 'true', the translation is determined down to sub-pixel accuracy
 )
 {
@@ -199,8 +199,8 @@ FloatPoint_t DetermineImageTranslation(
 
 /// Determines translation vector between specified images; the images have to be already multiplied by window function
 FloatPoint_t DetermineTranslationVector(
-    c_Image &img1, ///< Width and height have to be the same as 'img2' and be powers of two
-    c_Image &img2  ///< Width and height have to be the same as 'img1' and be powers of two
+    const c_Image &img1, ///< Width and height have to be the same as 'img2' and be powers of two
+    const c_Image &img2  ///< Width and height have to be the same as 'img1' and be powers of two
 )
 {
     // For details of this function's operation see comments in 'DetermineTranslationVectors()'
@@ -217,8 +217,8 @@ FloatPoint_t DetermineTranslationVector(
     std::unique_ptr<std::complex<float>, void (*)(void *)> fft2((std::complex<float> *)(operator new[](width * height * sizeof(std::complex<float>))),
                                                                 operator delete[]);
 
-    CalcFFT2D((float *)img1.GetRow(0), height, width, img1.GetBuffer().GetBytesPerRow(), fft1.get());
-    CalcFFT2D((float *)img2.GetRow(0), height, width, img2.GetBuffer().GetBytesPerRow(), fft2.get());
+    CalcFFT2D((const float *)img1.GetRow(0), height, width, img1.GetBuffer().GetBytesPerRow(), fft1.get());
+    CalcFFT2D((const float *)img2.GetRow(0), height, width, img2.GetBuffer().GetBytesPerRow(), fft2.get());
 
     return DetermineImageTranslation(width, height, fft1.get(), fft2.get(), true);
 }
@@ -227,7 +227,7 @@ FloatPoint_t DetermineTranslationVector(
 bool DetermineTranslationVectors(
         unsigned Nwidth, ///< FFT width
         unsigned Nheight, ///< FFT height
-        wxArrayString &inputFiles, ///< List of input file names
+        const wxArrayString &inputFiles, ///< List of input file names
         /// Receives list of translation vectors between files in 'inputFiles'; each vector is a translation relative to the first image
         std::vector<FloatPoint_t> &translation,
         /// Receives the bounding box (within the Nwidth x Nheight working area) of all images after alignment
@@ -387,8 +387,8 @@ Rectangle_t DetermineImageIntersection(
         unsigned Nwidth,    ///< Width of the working buffer (i.e. FFT arrays)
         unsigned Nheight,   ///< Height of the working buffer (i.e. FFT arrays)
         const Rectangle_t &bBox, ///< Bounding box of all aligned images
-        std::vector<FloatPoint_t> &translation, ///< Translation vectors relative to the first image
-        std::vector<Point_t> imgSize       ///< Image sizes
+        const std::vector<FloatPoint_t> &translation, ///< Translation vectors relative to the first image
+        const std::vector<Point_t> &imgSize           ///< Image sizes
 )
 {
     // Image intersection to be returned. Coordinates are relative to the NxN working buffer,

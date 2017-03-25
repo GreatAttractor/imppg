@@ -187,7 +187,7 @@ bool GetTiffDimensions(const char *fileName, unsigned &imgWidth, unsigned &imgHe
 }
 
 /// Saves image in TIFF format; returns 'false' on error
-bool SaveTiff(const char *fileName, c_Image &img)
+bool SaveTiff(const char *fileName, const c_Image &img)
 {
     assert(img.GetPixelFormat() == PIX_MONO8 ||
            img.GetPixelFormat() == PIX_MONO16 ||

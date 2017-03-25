@@ -44,7 +44,7 @@ public:
         IImageBuffer &output,         ///< Output image
         unsigned threadId,            ///< Unique thread id (not reused by new threads)
 
-        c_ToneCurve &toneCurve,       ///< Tone curve to apply to 'output'; an internal copy will be created
+        const c_ToneCurve &toneCurve,       ///< Tone curve to apply to 'output'; an internal copy will be created
         bool usePreciseValues         ///< If 'false', the approximated curve's values will be used
         );
 

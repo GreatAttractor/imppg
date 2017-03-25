@@ -190,7 +190,7 @@ c_ToneCurve::~c_ToneCurve()
 int c_ToneCurve::GetIdxOfClosestPoint(
     float x, ///< X coordinate, range [0; 1]
     float y  ///< Y coordinate, range [0; 1]
-    )
+) const
 {
     float minDistSq = 1.0e+6f;
     unsigned minIdx = -1;
@@ -219,7 +219,7 @@ void c_ToneCurve::RefreshLut()
 /// Applies the tone curve to 'input' using a precise curve value
 float c_ToneCurve::GetPreciseValue(
     float input ///< Value from [0.0f; 1.0f]
-    )
+) const
 {
     float result;
 
@@ -238,7 +238,7 @@ float c_ToneCurve::GetPreciseValue(
     else
     {
         // Index of the point with X >= input
-        unsigned nextIdx = std::lower_bound<FloatPointsVector_t::iterator, FloatPoint_t>(m_Points.begin(), m_Points.end(), FloatPoint_t(input, 0)) - m_Points.begin();
+        unsigned nextIdx = std::lower_bound(m_Points.cbegin(), m_Points.cend(), FloatPoint_t(input, 0)) - m_Points.begin();
 
         // If 'input' is at or past the last point, return the value at the last point
         if (nextIdx == m_Points.size() && input >= m_Points.back().x)
@@ -260,7 +260,7 @@ float c_ToneCurve::GetPreciseValue(
         {
             float t = (input - m_Points[nextIdx-1].x) / deltaX;
 
-            SplineParams_t &sp = m_Spline[nextIdx-1];
+            const SplineParams_t &sp = m_Spline[nextIdx-1];
             result = t*(t*(t * sp.a + sp.b) + sp.c) + sp.d;
         }
     }
@@ -285,7 +285,7 @@ void c_ToneCurve::RemovePoint(int index)
 /// Adds a curve point; returns its index
 int c_ToneCurve::AddPoint(float x, float y)
 {
-    FloatPointsVector_t::iterator insertAt = std::lower_bound<FloatPointsVector_t::iterator, FloatPoint_t>(m_Points.begin(), m_Points.end(), FloatPoint_t(x, 0.0f));
+    auto insertAt = std::lower_bound(m_Points.cbegin(), m_Points.cend(), FloatPoint_t(x, 0.0f));
     int result = insertAt - m_Points.begin();
     m_Points.insert(insertAt, FloatPoint_t(x, y));
     if (m_Smooth)
