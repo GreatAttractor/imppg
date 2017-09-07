@@ -70,4 +70,5 @@ void c_ScrollableDialog::OnContentsResized(wxSizeEvent &event)
 void c_ScrollableDialog::OnContentsScrolled(wxScrollWinEvent &event)
 {
     RefreshContents();
+    event.Skip();
 }

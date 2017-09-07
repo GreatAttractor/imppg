@@ -308,6 +308,7 @@ void c_MainWindow::OnSettingsFile(wxCommandEvent &event)
 void c_MainWindow::OnImageViewScroll(wxScrollWinEvent &event)
 {
     ScheduleScalingRequest();
+    event.Skip();
 }
 
 /// Displays the UI language selection dialog
@@ -2332,4 +2333,5 @@ void c_MainWindow::OnProcessingPanelScrolled(wxScrollWinEvent &event)
 {
     // As of wxWidgets 3.0.2, sometimes some child controls remain unrefreshed (graphically corrupted), so refresh everything
     FindWindowById(ID_ProcessingControlsPanel)->Refresh(false);
+    event.Skip();
 }
