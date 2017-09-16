@@ -350,7 +350,7 @@ void c_MainWindow::SelectLanguage()
 
 void c_MainWindow::OnSaveFile()
 {
-    if (!m_CurrentSettings || !m_CurrentSettings->m_Img)
+    if (!m_CurrentSettings || !m_CurrentSettings->m_Img.IsValid())
         return;
 
     m_Processing.usePreciseTCurveVals = false;
@@ -381,14 +381,14 @@ void c_MainWindow::OnSaveFile()
 
     if (s.selection.x != 0 ||
         s.selection.y != 0 ||
-        (unsigned)s.selection.width != s.m_Img->GetWidth() ||
-        (unsigned)s.selection.height != s.m_Img->GetHeight())
+        (unsigned)s.selection.width != s.m_Img.GetWidth() ||
+        (unsigned)s.selection.height != s.m_Img.GetHeight())
     {
         if (wxYES == wxMessageBox(_("You have not selected and processed the whole image, do it now?"), _("Information"), wxICON_QUESTION | wxYES_NO, this))
         {
             // Current selection is smaller than the image. Need to select and process all.
             s.selection.SetPosition(wxPoint(0, 0));
-            s.selection.SetSize(wxSize(s.m_Img->GetWidth(), s.m_Img->GetHeight()));
+            s.selection.SetSize(wxSize(s.m_Img.GetWidth(), s.m_Img.GetHeight()));
             s.m_FileSaveScheduled = true; // thanks to this flag, OnSaveFile() will get called once the processing scheduled below completes
             m_Processing.usePreciseTCurveVals = true;
             ScheduleProcessing(ProcessingRequest::SHARPENING);
@@ -400,9 +400,9 @@ void c_MainWindow::OnSaveFile()
         (!s.output.toneCurve.preciseValuesApplied || !s.output.toneCurve.valid))
     {
         // If precise tone curve has not been applied yet, do it
-        for (unsigned y = 0; y < s.output.toneCurve.img->GetHeight(); y++)
-            for (unsigned x = 0; x < s.output.toneCurve.img->GetWidth(); x++)
-                ((float *)s.output.toneCurve.img->GetRow(y))[x] = s.toneCurve.GetPreciseValue(((float *)s.output.unsharpMasking.img->GetRow(y))[x]);
+        for (unsigned y = 0; y < s.output.toneCurve.img.GetHeight(); y++)
+            for (unsigned x = 0; x < s.output.toneCurve.img.GetWidth(); x++)
+                ((float *)s.output.toneCurve.img.GetRow(y))[x] = s.toneCurve.GetPreciseValue(((float *)s.output.unsharpMasking.img.GetRow(y))[x]);
 
         s.output.toneCurve.valid = true;
         s.output.toneCurve.preciseValuesApplied = true;
@@ -412,7 +412,7 @@ void c_MainWindow::OnSaveFile()
     if (wxID_OK == dlg.ShowModal())
     {
         Configuration::FileSavePath = wxFileName(dlg.GetPath()).GetPath();
-        if (!SaveImageFile(dlg.GetPath().ToStdString(), *s.output.toneCurve.img, (OutputFormat_t)dlg.GetFilterIndex()))
+        if (!SaveImageFile(dlg.GetPath().ToStdString(), s.output.toneCurve.img, (OutputFormat_t)dlg.GetFilterIndex()))
             wxMessageBox(wxString::Format(_("Could not save output file %s."), dlg.GetFilename()), _("Error"), wxICON_ERROR, this);
     }
 }
@@ -584,7 +584,7 @@ void c_MainWindow::OnCloseToneCurveEditorWindow(wxCloseEvent &event)
 
 void c_MainWindow::OnToneCurveChanged(wxCommandEvent &event)
 {
-    if (m_CurrentSettings->m_Img)
+    if (m_CurrentSettings->m_Img.IsValid())
         ScheduleProcessing(ProcessingRequest::TONE_CURVE);
 }
 
@@ -644,29 +644,25 @@ c_MainWindow::c_MainWindow()
     s.selection.x = s.selection.y = -1;
     s.selection.width = s.selection.height = 0;
 
-    s.output.sharpening.img = 0;
     s.output.sharpening.valid = false;
 
-    s.output.unsharpMasking.img = 0;
     s.output.unsharpMasking.valid = false;
 
-    s.output.toneCurve.img = 0;
     s.output.toneCurve.valid = false;
     s.output.toneCurve.preciseValuesApplied = false;
 
-    s.m_Img = 0;
-    s.m_ImgBmp = 0;
+    s.m_ImgBmp = nullptr;
 
     s.m_FileSaveScheduled = false;
 
     s.scalingMethod = S_CUBIC;
 
     s.view.zoomFactor = ZOOM_NONE;
-    s.view.bmpScaled = 0;
+    s.view.bmpScaled = nullptr;
     s.view.zoomFactorChanged = false;
     s.view.scalingTimer.SetOwner(this, ID_ScalingTimer);
 
-    m_Processing.worker = 0;
+    m_Processing.worker = nullptr;
     m_Processing.currentThreadId = 0;
     m_Processing.processingRequest = ProcessingRequest::NONE;
     m_Processing.usePreciseTCurveVals = false;
@@ -822,7 +818,7 @@ void c_MainWindow::MarkSelection(wxRect &selection, wxDC &dc)
 
 void c_MainWindow::OnImageViewMouseDragStart(wxMouseEvent &event)
 {
-    if (m_CurrentSettings->m_Img)
+    if (m_CurrentSettings->m_Img.IsValid())
     {
         m_MouseOps.dragging = true;
 
@@ -1000,7 +996,7 @@ void c_MainWindow::OnNewSelection(
         newSelection.x, newSelection.y, newSelection.width, newSelection.height));
 
     // Restore unprocessed image contents in the previous selection
-    std::unique_ptr<wxBitmap> restored(ImageToRgbBitmap(*s.m_Img, s.selection.x, s.selection.y, s.selection.width, s.selection.height));
+    std::unique_ptr<wxBitmap> restored(ImageToRgbBitmap(s.m_Img, s.selection.x, s.selection.y, s.selection.width, s.selection.height));
     wxMemoryDC restoredDc(*restored);
     wxMemoryDC(*s.m_ImgBmp).Blit(s.selection.GetTopLeft(), s.selection.GetSize(), &restoredDc, wxPoint(0, 0));
 
@@ -1092,8 +1088,8 @@ void c_MainWindow::OnImageViewMouseDragEnd(wxMouseEvent &event)
 
         if (m_MouseOps.dragStart != m_MouseOps.dragEnd)
             OnNewSelection(m_MouseOps.GetSelection(wxRect(0, 0,
-                    m_CurrentSettings->m_Img->GetWidth(),
-                    m_CurrentSettings->m_Img->GetHeight())));
+                    m_CurrentSettings->m_Img.GetWidth(),
+                    m_CurrentSettings->m_Img.GetHeight())));
     }
 }
 
@@ -1125,9 +1121,9 @@ void c_MainWindow::OpenFile(wxFileName path, bool resetSelection)
 
     std::string errorMsg;
 
-    c_Image *newImg = LoadImageFileAsMono32f(path.GetFullPath().ToStdString(), path.GetExt().Lower().ToStdString(), &errorMsg);
+    c_Image newImg = LoadImageFileAsMono32f(path.GetFullPath().ToStdString(), path.GetExt().Lower().ToStdString(), &errorMsg);
 
-    if (newImg == 0)
+    if (!newImg.IsValid())
     {
         wxMessageBox(wxString::Format(_("Could not open %s."), path.GetFullPath()) + (errorMsg != "" ? "\n" + errorMsg : ""),
             _("Error"), wxICON_ERROR);
@@ -1141,21 +1137,21 @@ void c_MainWindow::OpenFile(wxFileName path, bool resetSelection)
 
         UpdateWindowTitle();
 
-        s.m_Img.reset(newImg);
+        s.m_Img = newImg;
         if (s.normalization.enabled)
-            NormalizeFpImage(*s.m_Img, s.normalization.min, s.normalization.max);
+            NormalizeFpImage(s.m_Img, s.normalization.min, s.normalization.max);
 
-        s.m_ImgBmp.reset(ImageToRgbBitmap(*s.m_Img, 0, 0,
-            s.m_Img->GetWidth(),
-            s.m_Img->GetHeight()));
+        s.m_ImgBmp.reset(ImageToRgbBitmap(s.m_Img, 0, 0,
+            s.m_Img.GetWidth(),
+            s.m_Img.GetHeight()));
 
         if (resetSelection)
         {
             // Set initial selection to the middle 20% of the image
-            s.selection.x = 4 * s.m_Img->GetWidth() / 10;
-            s.selection.width = s.m_Img->GetWidth() / 5;
-            s.selection.y = 4 * s.m_Img->GetHeight() / 10;
-            s.selection.height = s.m_Img->GetHeight() / 5;
+            s.selection.x = 4 * s.m_Img.GetWidth() / 10;
+            s.selection.width = s.m_Img.GetWidth() / 5;
+            s.selection.y = 4 * s.m_Img.GetHeight() / 10;
+            s.selection.height = s.m_Img.GetHeight() / 5;
 
             s.scaledSelection = s.selection;
             s.scaledSelection.x *= s.view.zoomFactor;
@@ -1166,27 +1162,27 @@ void c_MainWindow::OpenFile(wxFileName path, bool resetSelection)
 
         // Determine the selection's histogram and update the tone curve editor
         Histogram_t histogram;
-        DetermineHistogram(*s.m_Img, s.selection, histogram);
+        DetermineHistogram(s.m_Img, s.selection, histogram);
         ((c_ToneCurveEditor *)FindWindowById(ID_ToneCurveEditor, this))->SetHistogram(histogram);
 
         // Initialize the images holding results of processing steps
-        s.output.sharpening.img.reset(new c_Image(s.selection.width, s.selection.height, PIX_MONO32F));
-        c_Image::Copy(*s.m_Img, *s.output.sharpening.img, s.selection.x, s.selection.y,
+        s.output.sharpening.img = c_Image(s.selection.width, s.selection.height, PIX_MONO32F);
+        c_Image::Copy(s.m_Img, s.output.sharpening.img, s.selection.x, s.selection.y,
             s.selection.width, s.selection.height, 0, 0);
         s.output.sharpening.valid = false;
 
-        s.output.unsharpMasking.img.reset(new c_Image(s.selection.width, s.selection.height, PIX_MONO32F));
-        c_Image::Copy(*s.m_Img, *s.output.unsharpMasking.img, s.selection.x, s.selection.y,
+        s.output.unsharpMasking.img = c_Image(s.selection.width, s.selection.height, PIX_MONO32F);
+        c_Image::Copy(s.m_Img, s.output.unsharpMasking.img, s.selection.x, s.selection.y,
             s.selection.width, s.selection.height, 0, 0);
         s.output.unsharpMasking.valid = false;
 
-        s.output.toneCurve.img.reset(new c_Image(s.selection.width, s.selection.height, PIX_MONO32F));
-        c_Image::Copy(*s.m_Img, *s.output.toneCurve.img, s.selection.x, s.selection.y,
+        s.output.toneCurve.img = c_Image(s.selection.width, s.selection.height, PIX_MONO32F);
+        c_Image::Copy(s.m_Img, s.output.toneCurve.img, s.selection.x, s.selection.y,
             s.selection.width, s.selection.height, 0, 0);
         s.output.toneCurve.valid = false;
         s.output.toneCurve.preciseValuesApplied = false;
 
-        m_ImageView.SetVirtualSize(s.m_Img->GetWidth() * s.view.zoomFactor, s.m_Img->GetHeight() * s.view.zoomFactor);
+        m_ImageView.SetVirtualSize(s.m_Img.GetWidth() * s.view.zoomFactor, s.m_Img.GetHeight() * s.view.zoomFactor);
         m_ImageView.SetScrollRate(1, 1);
         if (s.view.zoomFactor != ZOOM_NONE)
             CreateScaledPreview(true);
@@ -1215,9 +1211,9 @@ void c_MainWindow::UpdateSelectionAfterProcessing()
     ProcessingSettings_t &s = *m_CurrentSettings;
     Log::Print("Updating selection after processing\n");
 
-    std::unique_ptr<wxBitmap> updatedArea(ImageToRgbBitmap(*s.output.toneCurve.img, 0, 0,
-        s.output.toneCurve.img->GetWidth(),
-        s.output.toneCurve.img->GetHeight()));
+    std::unique_ptr<wxBitmap> updatedArea(ImageToRgbBitmap(s.output.toneCurve.img, 0, 0,
+        s.output.toneCurve.img.GetWidth(),
+        s.output.toneCurve.img.GetHeight()));
 
     // Update the bitmap
     wxMemoryDC dcUpdated(*updatedArea), dcMain(*s.m_ImgBmp);
@@ -1283,7 +1279,7 @@ void c_MainWindow::UpdateSelectionAfterProcessing()
     Histogram_t histogram;
     // Show histogram of the results of all processing steps up to unsharp masking,
     // but NOT including tone curve application.
-    DetermineHistogram(*s.output.unsharpMasking.img, wxRect(0, 0, s.selection.width, s.selection.height), histogram);
+    DetermineHistogram(s.output.unsharpMasking.img, wxRect(0, 0, s.selection.width, s.selection.height), histogram);
     ((c_ToneCurveEditor *)FindWindowById(ID_ToneCurveEditor, this))->SetHistogram(histogram);
 
     if (s.m_FileSaveScheduled)
@@ -1361,7 +1357,7 @@ void c_MainWindow::StartProcessing()
     switch (m_Processing.processingRequest)
     {
     case ProcessingRequest::SHARPENING:
-        s.output.sharpening.img.reset(new c_Image(s.selection.width, s.selection.height, PIX_MONO32F));
+        s.output.sharpening.img = c_Image(s.selection.width, s.selection.height, PIX_MONO32F);
 
         // Invalidate the current output and those of subsequent steps
         s.output.sharpening.valid = false;
@@ -1375,7 +1371,7 @@ void c_MainWindow::StartProcessing()
             // No processing required, just copy the selection into 'output.sharpening.img',
             // as it will be used by the subsequent processing steps.
 
-            c_Image::Copy(*s.m_Img, *s.output.sharpening.img,
+            c_Image::Copy(s.m_Img, s.output.sharpening.img,
                 s.selection.x,
                 s.selection.y,
                 s.selection.width,
@@ -1392,12 +1388,12 @@ void c_MainWindow::StartProcessing()
             m_Processing.worker = new c_LucyRichardsonThread(
                 *this, m_Processing.guard, &m_Processing.worker,
                 0, // in the future we will pass the index of the currently open image
-                new c_ImageBufferView(s.m_Img->GetBuffer(),
+                new c_ImageBufferView(s.m_Img.GetBuffer(),
                     s.selection.x,
                     s.selection.y,
                     s.selection.width,
                     s.selection.height),
-                s.output.sharpening.img->GetBuffer(),
+                s.output.sharpening.img.GetBuffer(),
                 m_Processing.currentThreadId,
                 s.LucyRichardson.sigma,
                 s.LucyRichardson.iterations,
@@ -1413,7 +1409,7 @@ void c_MainWindow::StartProcessing()
 
     case ProcessingRequest::UNSHARP_MASKING:
 
-        s.output.unsharpMasking.img.reset(new c_Image(s.selection.width, s.selection.height, PIX_MONO32F));
+        s.output.unsharpMasking.img = c_Image(s.selection.width, s.selection.height, PIX_MONO32F);
 
         // Invalidate the current output and those of subsequent steps
         s.output.unsharpMasking.valid = false;
@@ -1425,7 +1421,7 @@ void c_MainWindow::StartProcessing()
 
             // No processing required, just copy the selection into 'output.sharpening.img',
             // as it will be used by the subsequent processing steps.
-            c_Image::Copy(*s.output.sharpening.img, *s.output.unsharpMasking.img, 0, 0, s.selection.width, s.selection.height, 0, 0);
+            c_Image::Copy(s.output.sharpening.img, s.output.unsharpMasking.img, 0, 0, s.selection.width, s.selection.height, 0, 0);
             OnProcessingStepCompleted(RESULT_COMPLETED);
         }
         else
@@ -1436,9 +1432,9 @@ void c_MainWindow::StartProcessing()
             // Unsharp masking thread takes the output of sharpening as input
             m_Processing.worker = new c_UnsharpMaskingThread(*this, m_Processing.guard, &m_Processing.worker,
                 0, // in the future we will pass the index of currently open image
-                new c_ImageBufferView(*s.output.sharpening.img),
-                new c_ImageBufferView(s.m_Img->GetBuffer(), s.selection.x, s.selection.y, s.selection.width, s.selection.height),
-                m_CurrentSettings->output.unsharpMasking.img->GetBuffer(),
+                new c_ImageBufferView(s.output.sharpening.img),
+                new c_ImageBufferView(s.m_Img.GetBuffer(), s.selection.x, s.selection.y, s.selection.width, s.selection.height),
+                m_CurrentSettings->output.unsharpMasking.img.GetBuffer(),
                 m_Processing.currentThreadId,
                 s.UnsharpMasking.adaptive,
                 s.UnsharpMasking.sigma,
@@ -1453,7 +1449,7 @@ void c_MainWindow::StartProcessing()
 
     case ProcessingRequest::TONE_CURVE:
 
-        s.output.toneCurve.img.reset(new c_Image(s.selection.width, s.selection.height, PIX_MONO32F));
+        s.output.toneCurve.img = c_Image(s.selection.width, s.selection.height, PIX_MONO32F);
 
         Log::Print("Created tone curve output image\n");
 
@@ -1464,7 +1460,7 @@ void c_MainWindow::StartProcessing()
         {
             Log::Print("Tone curve is an identity map, no work needed\n");
 
-            c_Image::Copy(*s.output.unsharpMasking.img , *s.output.toneCurve.img,
+            c_Image::Copy(s.output.unsharpMasking.img, s.output.toneCurve.img,
                 0, 0, s.selection.width, s.selection.height, 0, 0);
 
             OnProcessingStepCompleted(RESULT_COMPLETED);
@@ -1478,8 +1474,8 @@ void c_MainWindow::StartProcessing()
 
             m_Processing.worker = new c_ToneCurveThread(*this, m_Processing.guard, &m_Processing.worker,
                 0, // in the future we will pass the index of currently open image
-                new c_ImageBufferView(*s.output.unsharpMasking.img),
-                m_CurrentSettings->output.toneCurve.img->GetBuffer(),
+                new c_ImageBufferView(s.output.unsharpMasking.img),
+                m_CurrentSettings->output.toneCurve.img.GetBuffer(),
                 m_Processing.currentThreadId,
                 m_CurrentSettings->toneCurve,
                 m_Processing.usePreciseTCurveVals
@@ -1501,7 +1497,7 @@ void c_MainWindow::OnUpdateLucyRichardsonSettings()
         m_CurrentSettings->LucyRichardson.sigma = ((c_NumericalCtrl *)FindWindowById(ID_LucyRichardsonSigma, this))->GetValue();
         m_CurrentSettings->LucyRichardson.deringing.enabled = ((wxCheckBox *)FindWindowById(ID_LucyRichardsonDeringing, this))->GetValue();
 
-        if (m_CurrentSettings->m_Img)
+        if (m_CurrentSettings->m_Img.IsValid())
             ScheduleProcessing(ProcessingRequest::SHARPENING);
     }
 }
@@ -1517,7 +1513,7 @@ void c_MainWindow::OnUpdateUnsharpMaskingSettings()
         m_CurrentSettings->UnsharpMasking.threshold = ((c_NumericalCtrl *)FindWindowById(ID_UnsharpMaskingThreshold, this))->GetValue();
         m_CurrentSettings->UnsharpMasking.width = ((c_NumericalCtrl *)FindWindowById(ID_UnsharpMaskingWidth, this))->GetValue();
 
-        if (m_CurrentSettings->m_Img)
+        if (m_CurrentSettings->m_Img.IsValid())
             ScheduleProcessing(ProcessingRequest::UNSHARP_MASKING);
     }
 }
@@ -1651,7 +1647,7 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent &event)
         break;
 
     case ID_SelectAndProcessAll:
-        if (s.m_Img)
+        if (s.m_Img.IsValid())
         {
             // Set 'm_MouseOps' as if this new whole-image selection was marked with mouse by the user.
             // Needed for determining of 'scaledSelection' in OnNewSelection().
@@ -1660,7 +1656,7 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent &event)
                     wxPoint((int)s.m_ImgBmp->GetWidth() * s.view.zoomFactor,
                             (int)s.m_ImgBmp->GetHeight() * s.view.zoomFactor));
 
-            OnNewSelection(wxRect(0, 0, s.m_Img->GetWidth(), s.m_Img->GetHeight()));
+            OnNewSelection(wxRect(0, 0, s.m_Img.GetWidth(), s.m_Img.GetHeight()));
         }
         break;
 
@@ -1684,7 +1680,7 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent &event)
         GetToolBar()->Realize();
         GetMenuBar()->FindItem(ID_FitInWindow)->Check(m_FitImageInWindow);
 
-        if (s.m_Img)
+        if (s.m_Img.IsValid())
         {
             if (m_FitImageInWindow)
                 s.view.zoomFactor = GetViewToImgRatio();
@@ -1719,7 +1715,7 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent &event)
                 else
                     s.normalization.enabled = false;
 
-                if (s.m_Img)
+                if (s.m_Img.IsValid())
                 {
                     // We don't keep the original non-normalized contents, so the file needs to be reloaded.
                     // Normalization using the new limits (if enabled) is performed by OpenFile().
@@ -1884,14 +1880,12 @@ wxWindow *c_MainWindow::CreateProcessingControlsPanel()
 }
 
 /// Converts the specified fragment of 'src' to a 24-bit RGB bitmap
-wxBitmap *c_MainWindow::ImageToRgbBitmap(c_Image &src, int x0, int y0, int width, int height)
+wxBitmap *c_MainWindow::ImageToRgbBitmap(const c_Image &src, int x0, int y0, int width, int height)
 {
-    c_Image *rgbImage = c_Image::ConvertPixelFormat(src, PIX_RGB8, x0, y0, width, height);
+    c_Image rgbImage = c_Image::ConvertPixelFormat(src, PIX_RGB8, x0, y0, width, height);
     // For storage, 'rgbImage' uses c_SimpleBuffer, which has no row padding, so we can pass it directly to wxImage's constructor
-    wxImage wximg(width, height, (unsigned char *)rgbImage->GetRow(0), true);
-    wxBitmap *result = new wxBitmap(wximg);
-    delete rgbImage;
-    return result;
+    wxImage wximg(width, height, (unsigned char *)rgbImage.GetRow(0), true);
+    return new wxBitmap(wximg);
 }
 
 void c_MainWindow::OnPaintImageArea(wxPaintEvent &event)
@@ -1904,8 +1898,8 @@ void c_MainWindow::OnPaintImageArea(wxPaintEvent &event)
     {
         wxRect currSel = m_MouseOps.dragging
             ? m_MouseOps.GetSelection(wxRect(0, 0,
-                    s.m_Img->GetWidth(),
-                    s.m_Img->GetHeight()))
+                    s.m_Img.GetWidth(),
+                    s.m_Img.GetHeight()))
             : s.selection;
 
         if (s.view.zoomFactor != ZOOM_NONE && s.view.bmpScaled)
@@ -2167,7 +2161,7 @@ void c_MainWindow::InitStatusBar()
 
 void c_MainWindow::OnImageViewDragScrollStart(wxMouseEvent &event)
 {
-    if (m_CurrentSettings->m_Img)
+    if (m_CurrentSettings->m_Img.IsValid())
     {
         m_MouseOps.dragScroll.dragging = true;
         m_MouseOps.dragScroll.start = event.GetPosition();
@@ -2276,7 +2270,7 @@ void c_MainWindow::InitControls()
 void c_MainWindow::ScheduleScalingRequest()
 {
     ProcessingSettings_t &s = *m_CurrentSettings;
-    if (s.m_Img)
+    if (s.m_Img.IsValid())
     {
         if (s.view.zoomFactor != ZOOM_NONE)
             m_CurrentSettings->view.scalingTimer.StartOnce(IMAGE_SCALING_DELAY);
@@ -2302,7 +2296,7 @@ c_MainWindow::~c_MainWindow()
 }
 
 /// Determines histogram of the specified area of an image
-void c_MainWindow::DetermineHistogram(c_Image &img, const wxRect &selection, Histogram_t &histogram)
+void c_MainWindow::DetermineHistogram(const c_Image &img, const wxRect &selection, Histogram_t &histogram)
 {
     histogram.values.clear();
     histogram.values.insert(histogram.values.begin(), NUM_HISTOGRAM_BINS, 0);

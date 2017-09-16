@@ -93,8 +93,8 @@ class c_BatchDialog: public wxDialog
     } m_Settings;
 
     size_t m_CurrentFile; ///< Index of the currently processed file
-    std::unique_ptr<c_Image> m_RawImg; ///< Raw (unprocessed, but possibly normalized) current image
-    std::unique_ptr<c_Image> m_Img; ///< Currently processed image (first the original, later a result of one of the processing steps)
+    c_Image m_RawImg; ///< Raw (unprocessed, but possibly normalized) current image
+    c_Image m_Img; ///< Currently processed image (first the original, later a result of one of the processing steps)
     ProcessingRequest::ProcessingRequest_t m_ProcessingRequest;
     int m_ThreadId; ///< Unique worker thread id (not reused by new threads)
 
@@ -110,7 +110,7 @@ class c_BatchDialog: public wxDialog
     bool IsProcessingInProgress()
     {
         wxCriticalSectionLocker lock(m_Guard);
-        return m_Worker != 0;
+        return m_Worker != nullptr;
     }
     /// Returns 'false' on error
     bool SaveOutputFile();
@@ -215,7 +215,7 @@ bool c_BatchDialog::SaveOutputFile()
     }
 
     wxString destPath = wxFileName(m_Settings.outputDir, fn.GetName() + "_out", fn.GetExt()).GetFullPath();
-    if (!SaveImageFile(destPath.ToStdString(), *m_Img, m_Settings.outputFmt))
+    if (!SaveImageFile(destPath.ToStdString(), m_Img, m_Settings.outputFmt))
     {
         wxMessageBox(wxString::Format(_("Could not save output file: %s"), destPath), _("Error"), wxICON_ERROR, this);
         m_FileOperationFailure = true;
@@ -265,8 +265,8 @@ void c_BatchDialog::OnProcessingStepCompleted(CompletionStatus_t status)
             else
                 SetProgressInfo(_("Error"));
 
-            m_Img.reset();
-            m_RawImg.reset();
+            m_Img = c_Image::GetEmpty();
+            m_RawImg = c_Image::GetEmpty();
 
             if (m_CurrentFile == m_FileNames.Count() - 1) // Was it the last file?
             {
@@ -358,7 +358,7 @@ void c_BatchDialog::ProcessNextFile()
 
 void c_BatchDialog::ScheduleProcessing(ProcessingRequest::ProcessingRequest_t request)
 {
-    if (!m_Img) // Image is not yet created, i.e. 'request' is the first processing step specified in the settings file
+    if (!m_Img.IsValid()) // Image is not yet created, i.e. 'request' is the first processing step specified in the settings file
     {
         wxFileName path = wxFileName(m_FileNames[m_CurrentFile]);
         wxString ext = path.GetExt().Lower();
@@ -366,8 +366,8 @@ void c_BatchDialog::ScheduleProcessing(ProcessingRequest::ProcessingRequest_t re
 
 
 
-        m_Img.reset(LoadImageFileAsMono32f(path.GetFullPath().ToStdString(), path.GetExt().ToStdString(), &errorMsg));
-        if (!m_Img)
+        m_Img = LoadImageFileAsMono32f(path.GetFullPath().ToStdString(), path.GetExt().ToStdString(), &errorMsg);
+        if (!m_Img.IsValid())
         {
             wxMessageBox(wxString::Format(_("Could not open file: %s."), path.GetFullPath()) + (errorMsg != "" ? "\n" + errorMsg : ""),
                 _("Error"), wxICON_ERROR, this);
@@ -376,7 +376,7 @@ void c_BatchDialog::ScheduleProcessing(ProcessingRequest::ProcessingRequest_t re
         }
         else
         {
-            m_RawImg.reset(new c_Image(*m_Img));
+            m_RawImg = m_Img;
         }
     }
 
@@ -386,15 +386,15 @@ void c_BatchDialog::ScheduleProcessing(ProcessingRequest::ProcessingRequest_t re
 
         if (m_Settings.normalization.enabled)
         {
-            NormalizeFpImage(*m_Img, m_Settings.normalization.min, m_Settings.normalization.max);
-            m_RawImg.reset(new c_Image(*m_Img));
+            NormalizeFpImage(m_Img, m_Settings.normalization.min, m_Settings.normalization.max);
+            m_RawImg = m_Img;
         }
 
         if (m_Settings.lrIters > 0)
         {
             m_Worker = new c_LucyRichardsonThread(*this, m_Guard, &m_Worker, 0,
-                new c_ImageBufferView(*m_Img),
-                m_Img->GetBuffer(), m_ThreadId,
+                new c_ImageBufferView(m_Img),
+                m_Img.GetBuffer(), m_ThreadId,
                 m_Settings.lrSigma, m_Settings.lrIters,
                 m_Settings.deringing, 254.0f/255, true, m_Settings.lrSigma);
 
@@ -418,9 +418,9 @@ void c_BatchDialog::ScheduleProcessing(ProcessingRequest::ProcessingRequest_t re
              m_Settings.unshAdaptive && (m_Settings.unshAmountMin != 1.0f || m_Settings.unshAmountMax != 1.0f))
         {
             m_Worker = new c_UnsharpMaskingThread(*this, m_Guard, &m_Worker, 0,
-                new c_ImageBufferView(*m_Img),
-                new c_ImageBufferView(*m_RawImg),
-                m_Img->GetBuffer(), m_ThreadId,
+                new c_ImageBufferView(m_Img),
+                new c_ImageBufferView(m_RawImg),
+                m_Img.GetBuffer(), m_ThreadId,
                 m_Settings.unshAdaptive, m_Settings.unshSigma, m_Settings.unshAmountMin, m_Settings.unshAmountMax, m_Settings.unshThreshold, m_Settings.unshWidth);
 
             m_Worker->Run();
@@ -443,8 +443,8 @@ void c_BatchDialog::ScheduleProcessing(ProcessingRequest::ProcessingRequest_t re
             m_Settings.tcurve.IsGammaMode() && m_Settings.tcurve.GetGamma() != 1.0f)
         {
             m_Worker = new c_ToneCurveThread(*this, m_Guard, &m_Worker, 0,
-                new c_ImageBufferView(*m_Img),
-                m_Img->GetBuffer(), m_ThreadId,
+                new c_ImageBufferView(m_Img),
+                m_Img.GetBuffer(), m_ThreadId,
                 m_Settings.tcurve, true);
 
             m_Worker->Run();
@@ -481,8 +481,7 @@ c_BatchDialog::c_BatchDialog(wxWindow *parent, const wxArrayString &fileNames,
         wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
 {
     m_CurrentFile = FILE_IDX_NONE;
-    m_Worker = 0;
-    m_Img = 0;
+    m_Worker = nullptr;
     m_ProcessingRequest = ProcessingRequest::NONE;
     m_ThreadId = 0;
     m_FileOperationFailure = false;

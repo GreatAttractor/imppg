@@ -43,12 +43,12 @@ inline float BlackmanWindow(float x)
 }
 
 /// Calculates window function (Blackman) and returns its values as a PIX_MONO32F image
-std::unique_ptr<c_Image> CalcWindowFunction(
+c_Image CalcWindowFunction(
         int wndWidth,
         int wndHeight
 )
 {
-    std::unique_ptr<c_Image> result(new c_Image(wndWidth, wndHeight, PIX_MONO32F));
+    c_Image result(wndWidth, wndHeight, PIX_MONO32F);
 
     // The window function is horizontally and vertically symmetrical,
     // so calculate it only in a quarter of 'buf'
@@ -61,13 +61,13 @@ std::unique_ptr<c_Image> CalcWindowFunction(
                 value = BlackmanWindow(1.0f - dist);
 
             // upper left
-            ((float *)result->GetRow(y))[x] = value;
+            ((float *)result.GetRow(y))[x] = value;
             // upper right
-            ((float *)result->GetRow(y))[wndWidth-1-x] = value;
+            ((float *)result.GetRow(y))[wndWidth-1-x] = value;
             // lower right
-            ((float *)result->GetRow(wndHeight-1-y))[wndWidth-1-x] = value;
+            ((float *)result.GetRow(wndHeight-1-y))[wndWidth-1-x] = value;
             // lower left
-            ((float *)result->GetRow(wndHeight-1-y))[x] = value;
+            ((float *)result.GetRow(wndHeight-1-y))[x] = value;
         }
 
     return result;
@@ -244,7 +244,7 @@ bool DetermineTranslationVectors(
 
     int imgWidth, imgHeight; // Dimensions of the recently read image (before padding to Nwidth*Nheight)
 
-    std::unique_ptr<c_Image> windowFunc(CalcWindowFunction(Nwidth, Nheight));
+    c_Image windowFunc = CalcWindowFunction(Nwidth, Nheight);
     // Window function smoothly varies from 0 at the array boundaries to 1 at the center and is used to
     // "blunt" the image, starting from the edges. Without it they would produce prominent
     // false peaks in the cross-correlation (as any sudden change in brightness generates
@@ -265,24 +265,23 @@ bool DetermineTranslationVectors(
     // Read the first image and calculate its FFT
     Log::Print(wxString::Format("Loading %s... ", inputFiles[0]));
     std::string localErrorMsg;
-    c_Image *src = LoadImageFileAsMono32f(inputFiles[0].ToStdString(), wxFileName(inputFiles[0]).GetExt().Lower().ToStdString(), &localErrorMsg);
+    c_Image src = LoadImageFileAsMono32f(inputFiles[0].ToStdString(), wxFileName(inputFiles[0]).GetExt().Lower().ToStdString(), &localErrorMsg);
     Log::Print("done.\n");
-    if (!src)
+    if (!src.IsValid())
     {
         if (errorMsg)
             *errorMsg = localErrorMsg;
         return false;
     }
 
-    imgWidth = src->GetWidth();
-    imgHeight = src->GetHeight();
+    imgWidth = src.GetWidth();
+    imgHeight = src.GetHeight();
 
-    c_Image::ResizeAndTranslate(src->GetBuffer(), prevImg->GetBuffer(),
-            0, 0, src->GetWidth()-1, src->GetHeight()-1,
-            (Nwidth - src->GetWidth())/2, (Nheight - src->GetHeight())/2, true);
-    delete src;
+    c_Image::ResizeAndTranslate(src.GetBuffer(), prevImg->GetBuffer(),
+            0, 0, src.GetWidth()-1, src.GetHeight()-1,
+            (Nwidth - src.GetWidth())/2, (Nheight - src.GetHeight())/2, true);
 
-    prevImg->Multiply(*windowFunc);
+    prevImg->Multiply(windowFunc);
 
     Log::Print("Calculating FFT... ");
     CalcFFT2D((float *)prevImg->GetRow(0), prevImg->GetHeight(), prevImg->GetWidth(), prevImg->GetBuffer().GetBytesPerRow(), prevFFT.get());
@@ -309,24 +308,23 @@ bool DetermineTranslationVectors(
         // Read the current (i-th) file
         Log::Print(wxString::Format("Loading %s... ", inputFiles[i]));
         std::string localErrorMsg;
-        c_Image *src = LoadImageFileAsMono32f(inputFiles[i].ToStdString(), wxFileName(inputFiles[i]).GetExt().Lower().ToStdString(), &localErrorMsg);
+        c_Image src = LoadImageFileAsMono32f(inputFiles[i].ToStdString(), wxFileName(inputFiles[i]).GetExt().Lower().ToStdString(), &localErrorMsg);
         Log::Print("done.\n");
-        if (!src)
+        if (!src.IsValid())
         {
             if (errorMsg)
                 *errorMsg = localErrorMsg;
             return false;
         }
 
-        imgWidth = src->GetWidth();
-        imgHeight = src->GetHeight();
+        imgWidth = src.GetWidth();
+        imgHeight = src.GetHeight();
 
-        c_Image::ResizeAndTranslate(src->GetBuffer(), currImg->GetBuffer(),
-                0, 0, src->GetWidth()-1, src->GetHeight()-1,
-                (Nwidth - src->GetWidth())/2, (Nheight - src->GetHeight())/2, true);
-        delete src;
+        c_Image::ResizeAndTranslate(src.GetBuffer(), currImg->GetBuffer(),
+                0, 0, src.GetWidth()-1, src.GetHeight()-1,
+                (Nwidth - src.GetWidth())/2, (Nheight - src.GetHeight())/2, true);
 
-        currImg->Multiply(*windowFunc);
+        currImg->Multiply(windowFunc);
 
         // Calculate the current image's FFT
         Log::Print("Calculating FFT... ");

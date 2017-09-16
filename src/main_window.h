@@ -84,7 +84,7 @@ class c_MainWindow: public wxFrame
     void InitControls();
     void InitMenu();
     /// Converts the specified fragment of 'src' to a 24-bit RGB bitmap
-    wxBitmap *ImageToRgbBitmap(c_Image &src, int x0, int y0, int width, int height);
+    wxBitmap *ImageToRgbBitmap(const c_Image &src, int x0, int y0, int width, int height);
     /// Returns a panel containing the processing controls
     wxWindow *CreateProcessingControlsPanel();
     /// Marks the selection's outline (using physical coords) on the specified DC
@@ -100,7 +100,7 @@ class c_MainWindow: public wxFrame
     bool ToneCurveEnabled(); ///< Returns 'true' if tone curve has impact on the image (i.e. it is not the identity map)
     void OnProcessingStepCompleted(CompletionStatus_t status);
     /// Determines histogram of the specified area of an image
-    void DetermineHistogram(c_Image &img, const wxRect &selection, Histogram_t &histogram);
+    void DetermineHistogram(const c_Image &img, const wxRect &selection, Histogram_t &histogram);
     wxPanel *CreateLucyRichardsonControlsPanel(wxWindow *parent);
     wxStaticBoxSizer *CreateUnsharpMaskingControls(wxWindow *parent);
     void OnUpdateUnsharpMaskingSettings();
@@ -145,7 +145,7 @@ class c_MainWindow: public wxFrame
     {
         wxString inputFilePath;
 
-        std::unique_ptr<c_Image> m_Img; ///< Image (mono) in floating-point format
+        c_Image m_Img; ///< Image (mono) in floating-point format
         std::unique_ptr<wxBitmap> m_ImgBmp; ///< Bitmap which wraps 'm_Img' for displaying on 'm_ImageView'
 
         ScalingMethod_t scalingMethod;
@@ -184,21 +184,21 @@ class c_MainWindow: public wxFrame
             /// Results of sharpening
             struct
             {
-                std::unique_ptr<c_Image> img;
+                c_Image img;
                 bool valid; ///< 'true' if the last sharpening request completed
             } sharpening;
 
             /// Results of sharpening and unsharp masking
             struct
             {
-                std::unique_ptr<c_Image> img;
+                c_Image img;
                 bool valid; ///< 'true' if the last unsharp masking request completed
             } unsharpMasking;
 
             /// Results of sharpening, unsharp masking and applying of tone curve
             struct
             {
-                std::unique_ptr<c_Image> img;
+                c_Image img;
                 bool valid; ///< 'true' if the last tone curve application request completed
                 bool preciseValuesApplied; ///< 'true' if precise values of tone curve have been applied; happens only when saving output file
             } toneCurve;

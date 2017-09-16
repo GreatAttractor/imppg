@@ -109,22 +109,33 @@ public:
 class c_Image
 {
 private:
-    unsigned width, height;
     std::unique_ptr<IImageBuffer> pixels;
+
     /// Palette contents (R, G, B) if pixFmt == PIX_PAL8; contains PALETTE_LENGTH elements
     std::unique_ptr<uint8_t[]> palette;
 
 public:
     const size_t PALETTE_LENGTH = 256 * 3;
 
+    /// Creates an uninitialized image (0x0 pixels, PIX_INVALID pixel format); IsValid() will return false
     c_Image();
 
     c_Image(unsigned width, unsigned height, PixelFormat_t pixFmt);
 
     c_Image(std::unique_ptr<IImageBuffer> buffer);
 
-    /// Performs a deep copy of 'img'
+    c_Image(c_Image &&img);
+
+    c_Image &operator=(const c_Image &img);
+
+    c_Image &operator=(c_Image &&img);
+
     c_Image(const c_Image &img);
+
+    /// Returns an uninitialized image (0x0 pixels, PIX_INVALID pixel format); IsValid() will return false
+    static c_Image GetEmpty() { return c_Image(); }
+
+    bool IsValid() { return pixels->GetPixelFormat() != PIX_INVALID; }
 
     void ClearToZero(); ///< Clears all pixels to zero value
 
@@ -134,9 +145,9 @@ public:
     /// Provides read-only access to the palette
     const uint8_t *GetPalette() const { return palette.get(); }
 
-    unsigned GetWidth() const { return width; }
-    unsigned GetHeight() const { return height; }
-    unsigned GetNumPixels() const { return width * height; }
+    unsigned GetWidth() const { return pixels->GetWidth(); }
+    unsigned GetHeight() const { return pixels->GetHeight(); }
+    unsigned GetNumPixels() const { return GetWidth() * GetHeight(); }
     PixelFormat_t GetPixelFormat() const { return pixels->GetPixelFormat(); }
 
     /// Returns pointer to the specified row
@@ -152,14 +163,14 @@ public:
     void SetPalette(uint8_t palette[]);
 
     /// Copies a rectangular area from 'src' to 'dest'. Pixel formats of 'src' and 'dest' have to be the same.
-    static void Copy(c_Image &src, c_Image &dest, unsigned srcX, unsigned srcY, unsigned width, unsigned height, unsigned destX, unsigned destY);
+    static void Copy(const c_Image &src, c_Image &dest, unsigned srcX, unsigned srcY, unsigned width, unsigned height, unsigned destX, unsigned destY);
 
     /** Converts 'srcImage' to 'destPixFmt'; ; result uses c_SimpleBuffer for storage.
         If 'destPixFmt' is the same as source image's pixel format, returns a copy of 'srcImg'. */
-    static c_Image *ConvertPixelFormat(c_Image &srcImg, PixelFormat_t destPixFmt);
+    static c_Image ConvertPixelFormat(const c_Image &srcImg, PixelFormat_t destPixFmt);
 
     /// Converts the specified fragment of 'srcImage' to 'destPixFmt'; result uses c_SimpleBuffer for storage
-    static c_Image *ConvertPixelFormat(c_Image &srcImg, PixelFormat_t destPixFmt, unsigned x0, unsigned y0, unsigned width, unsigned height);
+    static c_Image ConvertPixelFormat(const c_Image &srcImg, PixelFormat_t destPixFmt, unsigned x0, unsigned y0, unsigned width, unsigned height);
 
     /// Resizes and translates image (or its fragment) by cropping and/or padding (with zeros) to the destination size and offset (there is no scaling)
     /** Subpixel translation (i.e. if 'xOfs' or 'yOfs' have a fractional part) of palettised images is not supported. */
@@ -176,7 +187,7 @@ public:
         );
 
     /// Multiply by another image; both images have to be PIX_MONO32F and have the same dimensions
-    void Multiply(c_Image &mult);
+    void Multiply(const c_Image &mult);
 };
 
 /// Lightweight wrapper of a fragment of an image buffer; does not allocate any pixels memory itself
@@ -288,37 +299,37 @@ public:
 void NormalizeFpImage(c_Image &img, float minLevel, float maxLevel);
 
 /// Loads the specified image file and converts it to PIX_MONO32F; returns 0 on error
-c_Image *LoadImageFileAsMono32f(
-    std::string fname,        ///< Full path (including file name and extension)
-    std::string extension,    ///< lowercase extension
-    std::string *errorMsg = 0 ///< If not null, may receive an error message (if any)
+c_Image LoadImageFileAsMono32f(
+    const std::string &fname,        ///< Full path (including file name and extension)
+    const std::string &extension,    ///< lowercase extension
+    std::string *errorMsg = 0        ///< If not null, may receive an error message (if any)
 );
 
 /// Loads the specified image file and converts it to PIX_MONO8; returns 0 on error
-c_Image *LoadImageFileAsMono8(
-    std::string fname,        ///< Full path (including file name and extension)
-    std::string extension,    ///< lowercase extension
-    std::string *errorMsg = 0 ///< If not null, may receive an error message (if any)
+c_Image LoadImageFileAsMono8(
+    const std::string &fname,     ///< Full path (including file name and extension)
+    const std::string &extension, ///< lowercase extension
+    std::string *errorMsg = 0     ///< If not null, may receive an error message (if any)
 );
 
 #if USE_CFITSIO
 /// Loads an image from a FITS file; the result's pixel format will be PIX_MONO8, PIX_MONO16 or PIX_MONO32F
-c_Image *LoadFitsImage(std::string fname);
+c_Image LoadFitsImage(const std::string &fname);
 #endif
 
 /// Saves image using the specified output format
 bool SaveImageFile(
-    std::string fname, ///< Full destination path
-    c_Image &img,
+    const std::string &fname, ///< Full destination path
+    const c_Image &img,
     OutputFormat_t outputFmt
 );
 
 /// Returns 'true' if image's width and/or height were successfully read; returns 'false' on error
 bool GetImageSize(
-    std::string fname,     ///< Full path (including file name and extension)
-    std::string extension, ///< lowercase extension
-    unsigned &width,            ///< Receives image width
-    unsigned &height            ///< Receives image height
+    const std::string &fname,     ///< Full path (including file name and extension)
+    const std::string &extension, ///< lowercase extension
+    unsigned &width,              ///< Receives image width
+    unsigned &height              ///< Receives image height
 );
 
 #endif // ImPPG_HEADER_H

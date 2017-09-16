@@ -108,16 +108,15 @@ public:
     }
 };
 
-c_Image::c_Image(): width(0), height(0)
+c_Image::c_Image()
 {
     palette.reset(new uint8_t[PALETTE_LENGTH]);
+    pixels.reset(new c_SimpleBuffer(0, 0, PIX_INVALID));
 }
 
 /// Allocates memory for pixel data
 c_Image::c_Image(unsigned width, unsigned height, PixelFormat_t pixFmt): c_Image()
 {
-    this->width = width;
-    this->height = height;
     assert(pixFmt > PIX_UNCHANGED && pixFmt < PIX_NUM_FORMATS);
     assert(width > 0 && height > 0);
 
@@ -129,15 +128,32 @@ c_Image::c_Image(unsigned width, unsigned height, PixelFormat_t pixFmt): c_Image
 c_Image::c_Image(std::unique_ptr<IImageBuffer> buffer): c_Image()
 {
     pixels = std::move(buffer);
-    width = pixels->GetWidth();
-    height = pixels->GetHeight();
+}
+
+c_Image::c_Image(c_Image &&img)
+{
+    palette = std::move(img.palette);
+    pixels = std::move(img.pixels);
+}
+
+c_Image &c_Image::operator=(const c_Image &img)
+{
+    c_Image newImg(img);
+    *this = std::move(newImg);
+
+    return *this;
+}
+
+c_Image &c_Image::operator=(c_Image &&img)
+{
+    palette = std::move(img.palette);
+    pixels = std::move(img.pixels);
+    return *this;
 }
 
 /// Performs a deep copy of 'img'
 c_Image::c_Image(const c_Image &img): c_Image()
 {
-    width = img.width;
-    height = img.height;
     memcpy(palette.get(), img.palette.get(), PALETTE_LENGTH);
     pixels = img.pixels->GetCopy();
 }
@@ -146,19 +162,21 @@ c_Image::c_Image(const c_Image &img): c_Image()
 void c_Image::ClearToZero()
 {
     // Works also for an array of floats; 32 zero bits represent a floating-point 0.0f
-    for (unsigned i = 0; i < height; i++)
-        memset(pixels->GetRow(i), 0, width * pixels->GetBytesPerPixel());
+    const unsigned w = GetWidth();
+    const unsigned h = GetHeight();
+    for (unsigned i = 0; i < h; i++)
+        memset(pixels->GetRow(i), 0, w * pixels->GetBytesPerPixel());
 }
 
 /** Converts 'srcImage' to 'destPixFmt'; ; result uses c_SimpleBuffer for storage.
     If 'destPixFmt' is the same as source image's pixel format, returns a copy of 'srcImg'. */
-c_Image *c_Image::ConvertPixelFormat(c_Image &srcImg, PixelFormat_t destPixFmt)
+c_Image c_Image::ConvertPixelFormat(const c_Image &srcImg, PixelFormat_t destPixFmt)
 {
     return ConvertPixelFormat(srcImg, destPixFmt,  0, 0, srcImg.GetWidth(), srcImg.GetHeight());
 }
 
 /// Converts the specified fragment of 'srcImage' to 'destPixFmt'; result uses c_SimpleBuffer for storage
-c_Image *c_Image::ConvertPixelFormat(c_Image &srcImg, PixelFormat_t destPixFmt, unsigned x0, unsigned y0, unsigned width, unsigned height)
+c_Image c_Image::ConvertPixelFormat(const c_Image &srcImg, PixelFormat_t destPixFmt, unsigned x0, unsigned y0, unsigned width, unsigned height)
 {
     assert(srcImg.GetPixelFormat() > PIX_UNCHANGED && srcImg.GetPixelFormat() < PIX_NUM_FORMATS);
     assert(!(destPixFmt == PIX_PAL8 && srcImg.GetPixelFormat() != PIX_PAL8));
@@ -171,15 +189,15 @@ c_Image *c_Image::ConvertPixelFormat(c_Image &srcImg, PixelFormat_t destPixFmt, 
     {
         if (x0 == 0 && y0 == 0 && width == srcImg.GetWidth() && height == srcImg.GetHeight())
         {
-            return new c_Image(srcImg);
+            return c_Image(srcImg);
         }
         else // No conversion required, just copy the data
         {
-            c_Image *destImg = new c_Image(width, height, destPixFmt);
+            c_Image destImg(width, height, destPixFmt);
 
             for (unsigned j = 0; j < height; j++)
                 for (unsigned i = 0; i < height; i++)
-                    memcpy((uint8_t *)destImg->GetRow(j) + i * BytesPerPixel[destPixFmt],
+                    memcpy((uint8_t *)destImg.GetRow(j) + i * BytesPerPixel[destPixFmt],
                            (uint8_t *)srcImg.GetRow(j + y0) + (i + x0) * BytesPerPixel[destPixFmt],
                            width * BytesPerPixel[destPixFmt]);
 
@@ -187,7 +205,7 @@ c_Image *c_Image::ConvertPixelFormat(c_Image &srcImg, PixelFormat_t destPixFmt, 
         }
     }
 
-    c_Image *destImg = new c_Image(width, height, destPixFmt);
+    c_Image destImg(width, height, destPixFmt);
 
     int inpPtrStep = BytesPerPixel[srcImg.GetPixelFormat()],
         outPtrStep = BytesPerPixel[destPixFmt];
@@ -195,7 +213,7 @@ c_Image *c_Image::ConvertPixelFormat(c_Image &srcImg, PixelFormat_t destPixFmt, 
     for (unsigned j = 0; j < height; j++)
     {
         uint8_t *inpPtr = (uint8_t*)srcImg.GetRow(j + y0) + x0 * BytesPerPixel[srcImg.GetPixelFormat()],
-                *outPtr = (uint8_t*)destImg->GetRow(j);
+                *outPtr = (uint8_t*)destImg.GetRow(j);
 
         for (unsigned i = 0; i < width; i++)
         {
@@ -246,7 +264,7 @@ c_Image *c_Image::ConvertPixelFormat(c_Image &srcImg, PixelFormat_t destPixFmt, 
             // When converting from a color format to mono, use sum (scaled) of all channels as the pixel brightness.
             else if (srcImg.GetPixelFormat() == PIX_PAL8)
             {
-                uint8_t *palette = srcImg.GetPalette();
+                const uint8_t *palette = srcImg.GetPalette();
                 uint8_t src = *inpPtr;
                 switch (destPixFmt)
                 {
@@ -309,7 +327,7 @@ void c_Image::SetPalette(uint8_t palette[])
 }
 
 /// Copies a rectangular area from 'src' to 'dest'. Pixel formats of 'src' and 'dest' have to be the same.
-void c_Image::Copy(c_Image &src, c_Image &dest, unsigned srcX, unsigned srcY, unsigned width, unsigned height, unsigned destX, unsigned destY)
+void c_Image::Copy(const c_Image &src, c_Image &dest, unsigned srcX, unsigned srcY, unsigned width, unsigned height, unsigned destX, unsigned destY)
 {
     assert(src.GetPixelFormat() == dest.GetPixelFormat());
     assert(srcX + width <= src.GetWidth());
@@ -575,9 +593,10 @@ void NormalizeFpImage(c_Image &img, float minLevel, float maxLevel)
 
 #if USE_CFITSIO
 /// Loads an image from a FITS file; the result's pixel format will be PIX_MONO8, PIX_MONO16 or PIX_MONO32F
-c_Image *LoadFitsImage(std::string fname)
+c_Image LoadFitsImage(const std::string &fname)
 {
-    c_Image *result = 0;
+    c_Image result;
+
     fitsfile *fptr;
     int status = 0;
     long dimensions[3] = { 0 };
@@ -599,7 +618,7 @@ c_Image *LoadFitsImage(std::string fname)
         else if (status)
         {
             fits_close_file(fptr, &status);
-            return 0;
+            return result;
         }
         else
             break;
@@ -608,7 +627,7 @@ c_Image *LoadFitsImage(std::string fname)
     }
 
     if (dimensions[0] < 0 || dimensions[1] < 0)
-        return 0;
+        return result;
 
     size_t numPixels = dimensions[0]*dimensions[1];
     void *fitsPixels = 0;
@@ -680,9 +699,9 @@ c_Image *LoadFitsImage(std::string fname)
             }
         }
 
-        result = new c_Image(dimensions[0], dimensions[1], pixFmt);
-        for (unsigned row = 0; row < result->GetHeight(); row++)
-            memcpy(result->GetRow(row), (uint8_t *)fitsPixels + row*dimensions[0]*BytesPerPixel[pixFmt], dimensions[0]*BytesPerPixel[pixFmt]);
+        result = c_Image(dimensions[0], dimensions[1], pixFmt);
+        for (unsigned row = 0; row < result.GetHeight(); row++)
+            memcpy(result.GetRow(row), (uint8_t *)fitsPixels + row*dimensions[0]*BytesPerPixel[pixFmt], dimensions[0]*BytesPerPixel[pixFmt]);
     }
     operator delete[](fitsPixels);
 
@@ -690,24 +709,23 @@ c_Image *LoadFitsImage(std::string fname)
 }
 #endif
 
-c_Image *LoadImageAs(
-    std::string fname,        ///< Full path (including file name and extension)
-    std::string extension,    ///< lowercase extension
-    PixelFormat_t destFmt,    ///< Pixel format of the result; can be one of PIX_MONO8, PIX_MONO32F
-    std::string *errorMsg     ///< If not null, may receive an error message (if any)
-    )
+c_Image LoadImageAs(
+    const std::string &fname,     ///< Full path (including file name and extension)
+    const std::string &extension, ///< lowercase extension
+    PixelFormat_t destFmt,        ///< Pixel format of the result; can be one of PIX_MONO8, PIX_MONO32F
+    std::string *errorMsg         ///< If not null, may receive an error message (if any)
+)
 {
-    c_Image *result = 0;
+    c_Image result;
 
 #if USE_CFITSIO
     if (extension == "fit" || extension == "fits")
     {
         result = LoadFitsImage(fname);
-        if (result)
+        if (result.IsValid())
         {
-            c_Image *converted = c_Image::ConvertPixelFormat(*result, destFmt);
-            delete result;
-            result = converted;
+            c_Image converted = c_Image::ConvertPixelFormat(result, destFmt);
+            result = std::move(converted);
         }
     }
     else
@@ -727,7 +745,7 @@ c_Image *LoadImageAs(
         {
             FIBITMAP *fibmp = FreeImage_Load(fif, fname.c_str());
             if (!fibmp)
-                return 0;
+                return result;
 
             FIBITMAP *fibmpConv = 0;
 
@@ -747,13 +765,13 @@ c_Image *LoadImageAs(
 
             FreeImage_Unload(fibmp);
             if (!fibmpConv)
-                return 0;
+                return result;
 
-            result = new c_Image(FreeImage_GetWidth(fibmpConv),
+            result = c_Image(FreeImage_GetWidth(fibmpConv),
                 FreeImage_GetHeight(fibmpConv),
                 destFmt);
-            for (unsigned row = 0; row < result->GetHeight(); row++)
-                memcpy(result->GetRow(result->GetHeight() - 1 - row), FreeImage_GetScanLine(fibmpConv, row), result->GetWidth() * BytesPerPixel[destFmt]);
+            for (unsigned row = 0; row < result.GetHeight(); row++)
+                memcpy(result.GetRow(result.GetHeight() - 1 - row), FreeImage_GetScanLine(fibmpConv, row), result.GetWidth() * BytesPerPixel[destFmt]);
 
             FreeImage_Unload(fibmpConv);
         }
@@ -780,20 +798,20 @@ c_Image *LoadImageAs(
 }
 
 /// Loads the specified image file and converts it to PIX_MONO32F; returns 0 on error
-c_Image *LoadImageFileAsMono32f(
-    std::string fname,        ///< Full path (including file name and extension)
-    std::string extension,    ///< lowercase extension
-    std::string *errorMsg    ///< If not null, may receive an error message (if any)
-    )
+c_Image LoadImageFileAsMono32f(
+    const std::string &fname,     ///< Full path (including file name and extension)
+    const std::string &extension, ///< lowercase extension
+    std::string *errorMsg         ///< If not null, may receive an error message (if any)
+)
 {
     return LoadImageAs(fname, extension, PIX_MONO32F, errorMsg);
 }
 
 /// Loads the specified image file and converts it to PIX_MONO8; returns 0 on error
-c_Image *LoadImageFileAsMono8(
-    std::string fname,        ///< Full path (including file name and extension)
-    std::string extension,    ///< lowercase extension
-    std::string *errorMsg    ///< If not null, may receive an error message (if any)
+c_Image LoadImageFileAsMono8(
+    const std::string &fname,      ///< Full path (including file name and extension)
+    const std::string &extension,  ///< lowercase extension
+    std::string *errorMsg          ///< If not null, may receive an error message (if any)
     )
 {
     return LoadImageAs(fname, extension, PIX_MONO8, errorMsg);
@@ -802,8 +820,8 @@ c_Image *LoadImageFileAsMono8(
 
 /// Saves image using the specified output format
 bool SaveImageFile(
-    std::string fname, ///< Full destination path
-    c_Image &img,
+    const std::string &fname, ///< Full destination path
+    const c_Image &img,
     OutputFormat_t outputFmt
     )
 {
@@ -834,21 +852,19 @@ bool SaveImageFile(
 
         case OUTF_FITS_16:
             {
-                c_Image *img16 = c_Image::ConvertPixelFormat(img, PIX_MONO16);
-                for (unsigned row = 0; row < img16->GetHeight(); row++)
-                    memcpy((uint8_t *)array + row*img16->GetWidth()*sizeof(uint16_t), img16->GetRow(row), img16->GetWidth()*sizeof(uint16_t));
+                c_Image img16 = c_Image::ConvertPixelFormat(img, PIX_MONO16);
+                for (unsigned row = 0; row < img16.GetHeight(); row++)
+                    memcpy((uint8_t *)array + row*img16.GetWidth()*sizeof(uint16_t), img16.GetRow(row), img16.GetWidth()*sizeof(uint16_t));
 
-                delete img16;
                 break;
             }
 
         case OUTF_FITS_8:
             {
-                c_Image *img8 = c_Image::ConvertPixelFormat(img, PIX_MONO8);
-                for (unsigned row = 0; row < img8->GetHeight(); row++)
-                    memcpy((uint8_t *)array + row*img8->GetWidth()*sizeof(uint8_t), img8->GetRow(row), img8->GetWidth()*sizeof(uint8_t));
+                c_Image img8 = c_Image::ConvertPixelFormat(img, PIX_MONO8);
+                for (unsigned row = 0; row < img8.GetHeight(); row++)
+                    memcpy((uint8_t *)array + row*img8.GetWidth()*sizeof(uint8_t), img8.GetRow(row), img8.GetWidth()*sizeof(uint8_t));
 
-                delete img8;
                 break;
             }
         }
@@ -885,7 +901,7 @@ bool SaveImageFile(
 #if USE_FREEIMAGE
 
     FIBITMAP *outputBmp = 0;
-    c_Image *convertedImg = 0;
+    c_Image convertedImg;
 
     switch (outputFmt)
     {
@@ -905,20 +921,17 @@ bool SaveImageFile(
     case OUTF_TIFF_MONO_32F:
     case OUTF_TIFF_MONO_32F_ZIP:
         outputBmp = FreeImage_AllocateT(FIT_FLOAT, img.GetWidth(), img.GetHeight());
-        convertedImg = &img;
+        convertedImg = img;
         break;
     }
 
-    if (!outputBmp || !convertedImg)
+    if (!outputBmp || !convertedImg.IsValid())
         return false;
 
     for (unsigned row = 0; row < img.GetHeight(); row++)
         memcpy(FreeImage_GetScanLine(outputBmp, row),
-            convertedImg->GetRow(convertedImg->GetHeight() - 1 - row),
-            convertedImg->GetWidth() * convertedImg->GetBuffer().GetBytesPerPixel());
-
-    if (convertedImg != &img)
-        delete convertedImg;
+            convertedImg.GetRow(convertedImg.GetHeight() - 1 - row),
+            convertedImg.GetWidth() * convertedImg.GetBuffer().GetBytesPerPixel());
 
     switch (outputFmt)
     {
@@ -979,7 +992,7 @@ bool SaveImageFile(
 }
 
 /// Multiply by another image; both images have to be PIX_MONO32F and have the same dimensions
-void c_Image::Multiply(c_Image &mult)
+void c_Image::Multiply(const c_Image &mult)
 {
     assert(GetPixelFormat() == PIX_MONO32F && mult.GetPixelFormat() == PIX_MONO32F);
     assert(GetWidth() == mult.GetWidth() && GetHeight() == mult.GetHeight());
@@ -991,10 +1004,10 @@ void c_Image::Multiply(c_Image &mult)
 
 /// Returns 'true' if image's width and height were successfully read; returns 'false' on error
 bool GetImageSize(
-    std::string fname,     ///< Full path (including file name and extension)
-    std::string extension, ///< lowercase extension
-    unsigned &width,            ///< Receives image width
-    unsigned &height            ///< Receives image height
+    const std::string &fname,     ///< Full path (including file name and extension)
+    const std::string &extension, ///< lowercase extension
+    unsigned &width,              ///< Receives image width
+    unsigned &height              ///< Receives image height
 )
 {
 #if USE_CFITSIO

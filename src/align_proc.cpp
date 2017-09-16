@@ -98,8 +98,8 @@ bool c_ImageAlignmentWorkerThread::SaveTranslatedOutputImage(wxString inputFileN
     uint8_t zeros[4*sizeof(float)] = { 0 }; // works also for floating-point (pattern of all zero bits represents 0.0f)
 #endif
 
-    std::unique_ptr<c_Image> srcImg;
-    std::unique_ptr<c_Image> outpImg;
+    c_Image srcImg;
+    c_Image outpImg;
 
     Log::Print(wxString::Format("Loading %s... ", inputFileName));
 
@@ -112,9 +112,9 @@ bool c_ImageAlignmentWorkerThread::SaveTranslatedOutputImage(wxString inputFileN
     wxString extension = wxFileName(inputFileName).GetExt().Lower();
     if (extension == "fit" || extension == "fits")
     {
-        srcImg.reset(LoadFitsImage(inputFileName.ToStdString()));
+        srcImg = LoadFitsImage(inputFileName.ToStdString());
         isFits = true;
-        outpImg.reset(new c_Image(outputWidth, outputHeight, srcImg->GetPixelFormat()));
+        outpImg = c_Image(outputWidth, outputHeight, srcImg.GetPixelFormat());
     }
     else
 #endif
@@ -146,8 +146,8 @@ bool c_ImageAlignmentWorkerThread::SaveTranslatedOutputImage(wxString inputFileN
             fiSrcBmp.Reset(FreeImage_ConvertTo24Bits(fiSrcBmp));
         }
 
-        srcImg.reset(new c_Image(std::unique_ptr<IImageBuffer>(new c_FreeImageBuffer(fiSrcBmp))));
-        if (srcImg->GetPixelFormat() == PIX_INVALID)
+        srcImg = c_Image(std::unique_ptr<IImageBuffer>(new c_FreeImageBuffer(fiSrcBmp)));
+        if (srcImg.GetPixelFormat() == PIX_INVALID)
         {
             m_CompletionMessage = wxString::Format(_("Unsupported pixel format: %s"), inputFileName);
             return false;
@@ -165,7 +165,7 @@ bool c_ImageAlignmentWorkerThread::SaveTranslatedOutputImage(wxString inputFileN
             return false;
         }
 
-        outpImg.reset(new c_Image(std::unique_ptr<IImageBuffer>(new c_FreeImageBuffer(fiOutpBmp))));
+        outpImg = c_Image(std::unique_ptr<IImageBuffer>(new c_FreeImageBuffer(fiOutpBmp)));
 
 #else
         wxString ext = wxFileName(inputFileName).GetExt().Lower();
@@ -181,26 +181,20 @@ bool c_ImageAlignmentWorkerThread::SaveTranslatedOutputImage(wxString inputFileN
         }
 
         // Subpixel translation of palettised images is not supported, so convert to RGB8
-        if (srcImg->GetPixelFormat() == PIX_PAL8)
+        if (srcImg.GetPixelFormat() == PIX_PAL8)
         {
             srcImg.reset(c_Image::ConvertPixelFormat(*srcImg, PIX_RGB8));
         }
 
-        outpImg.reset(new c_Image(outputWidth, outputHeight, srcImg->GetPixelFormat()));
+        outpImg.reset(new c_Image(outputWidth, outputHeight, srcImg.GetPixelFormat()));
 #endif
     }
 
     Log::Print("done. Allocated output image.\n");
 
-    c_Image::ResizeAndTranslate(srcImg->GetBuffer(), outpImg->GetBuffer(), 0, 0, srcImg->GetWidth()-1, srcImg->GetHeight()-1, Tx, Ty, true);
+    c_Image::ResizeAndTranslate(srcImg.GetBuffer(), outpImg.GetBuffer(), 0, 0, srcImg.GetWidth()-1, srcImg.GetHeight()-1, Tx, Ty, true);
 
     Log::Print("Created output image.\n");
-
-    // Input image is no longer needed, free it
-    srcImg.reset();
-#if USE_FREEIMAGE
-    fiSrcBmp.Reset();
-#endif
 
     wxFileName fnInput(inputFileName);
     wxFileName outputFileName(m_Parameters.outputDir, fnInput.GetName() + "_aligned", fnInput.GetExt());
@@ -210,14 +204,14 @@ bool c_ImageAlignmentWorkerThread::SaveTranslatedOutputImage(wxString inputFileN
     if (isFits)
     {
         OutputFormat_t outF = OUTF_FITS_16;
-        switch (outpImg->GetPixelFormat())
+        switch (outpImg.GetPixelFormat())
         {
         case PIX_MONO8: outF = OUTF_FITS_8; break;
         case PIX_MONO16: outF = OUTF_FITS_16; break;
         case PIX_MONO32F: outF = OUTF_FITS_32F; break;
         }
         outputFileName.SetExt("fit");
-        saved = SaveImageFile(outputFileName.GetFullPath().ToStdString(), *outpImg, outF);
+        saved = SaveImageFile(outputFileName.GetFullPath().ToStdString(), outpImg, outF);
     }
     else
 #endif
@@ -234,7 +228,6 @@ bool c_ImageAlignmentWorkerThread::SaveTranslatedOutputImage(wxString inputFileN
 
     Log::Print("Saved output image.\n");
 
-    outpImg.reset();
     if (!saved)
     {
         m_CompletionMessage = wxString::Format(_("Failed to save output file: %s"), outputFileName.GetFullPath());
@@ -327,7 +320,7 @@ void c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment()
 }
 
 /// Returns the quality of the specified image area: the sum of squared gradients
-float GetQuality(c_Image &img, const Rectangle_t &area)
+float GetQuality(const c_Image &img, const Rectangle_t &area)
 {
     assert(img.GetPixelFormat() == PIX_MONO32F);
 
@@ -349,15 +342,15 @@ float GetQuality(c_Image &img, const Rectangle_t &area)
     return result;
 }
 
-c_Image *GetBlurredImage(c_Image &srcImg, float gaussianSigma)
+c_Image GetBlurredImage(const c_Image &srcImg, float gaussianSigma)
 {
     assert(srcImg.GetPixelFormat() == PIX_MONO32F);
 
-    c_Image *result = new c_Image(srcImg.GetWidth(), srcImg.GetHeight(), PIX_MONO32F);
+    c_Image result(srcImg.GetWidth(), srcImg.GetHeight(), PIX_MONO32F);
 
     ConvolveSeparable(
             c_PaddedArrayPtr<float>((float *)srcImg.GetRow(0), srcImg.GetWidth(), srcImg.GetHeight(), srcImg.GetBuffer().GetBytesPerRow()),
-            c_PaddedArrayPtr<float>((float *)result->GetRow(0), result->GetWidth(), result->GetHeight(), result->GetBuffer().GetBytesPerRow()),
+            c_PaddedArrayPtr<float>((float *)result.GetRow(0), result.GetWidth(), result.GetHeight(), result.GetBuffer().GetBytesPerRow()),
             gaussianSigma);
 
     return result;
@@ -408,22 +401,22 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
         Point_t stabilizationPos;
 
         // Scan the first image's intersection portion for the highest-contrast area
-        std::unique_ptr<c_Image> firstImg(LoadImageFileAsMono32f(m_Parameters.inputFiles[0].ToStdString(), wxFileName(m_Parameters.inputFiles[0]).GetExt().Lower().ToStdString()));
-        if (!firstImg.get())
+        c_Image firstImg = LoadImageFileAsMono32f(m_Parameters.inputFiles[0].ToStdString(), wxFileName(m_Parameters.inputFiles[0]).GetExt().Lower().ToStdString());
+        if (!firstImg.IsValid())
         {
             errorMsg = wxString::Format(_("Could not read %s."), m_Parameters.inputFiles[0]);
             return false;
         }
 
         // Blur the image first to remove the impact of noise
-        firstImg.reset(GetBlurredImage(*firstImg, 1.0f));
+        firstImg = GetBlurredImage(firstImg, 1.0f);
 
         float maxQuality = 0;
         for (int i = 0; i < intrWidth / (STBL_AREA_SIZE/2) - 1; i++)
             for (int j = 0; j < intrHeight / (STBL_AREA_SIZE/2) - 1; j++)
             {
                 Rectangle_t currentArea(i*STBL_AREA_SIZE/2, j*STBL_AREA_SIZE/2, STBL_AREA_SIZE, STBL_AREA_SIZE);
-                float quality = GetQuality(*firstImg,
+                float quality = GetQuality(firstImg,
                     Rectangle_t(intersectionStart.x + currentArea.x,
                                 intersectionStart.y + currentArea.y,
                                 currentArea.width, currentArea.height));
@@ -434,23 +427,10 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
                 }
             }
 
-#if DEBUG_OUTPUT
-        {
-            // Save the selected area to an image
-            c_Image *areaImg = new c_Image(STBL_AREA_SIZE, STBL_AREA_SIZE, PIX_MONO32F);
-            c_Image::Copy(*firstImg, *areaImg,
-                intersectionStart.x + stabilizationPos.x - STBL_AREA_SIZE/2,
-                intersectionStart.y + stabilizationPos.y - STBL_AREA_SIZE/2,
-                STBL_AREA_SIZE, STBL_AREA_SIZE, 0, 0);
-            SaveImageFile("area.bmp", *areaImg, OUTF_BMP_MONO_8);
-            delete areaImg;
-        }
-#endif
-
         // 2. Trace the movement of the stabilization area
 
         // Window function for blunting the stabilization area's edges; Has a 1.0 peak in the middle and tapers to zero near the edges
-        std::unique_ptr<c_Image> wndFunc(CalcWindowFunction(STBL_AREA_SIZE, STBL_AREA_SIZE));
+        c_Image wndFunc = CalcWindowFunction(STBL_AREA_SIZE, STBL_AREA_SIZE);
 
         // Each element is the position of the stabilization area in subsequent images relative to the images' intersection origin
         std::vector<FloatPoint_t> stAreaImagePos;
@@ -458,13 +438,11 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
 
         // Stabilization area in the previous (currently: first) image
         std::unique_ptr<c_Image> prevArea(new c_Image(STBL_AREA_SIZE, STBL_AREA_SIZE, PIX_MONO32F));
-        c_Image::Copy(*firstImg, *prevArea,
+        c_Image::Copy(firstImg, *prevArea,
             intersectionStart.x + stabilizationPos.x - STBL_AREA_SIZE/2,
             intersectionStart.y + stabilizationPos.y - STBL_AREA_SIZE/2,
             STBL_AREA_SIZE, STBL_AREA_SIZE, 0, 0);
-        prevArea->Multiply(*wndFunc);
-
-        firstImg.reset();
+        prevArea->Multiply(wndFunc);
 
         FloatPoint_t prevFrac(0.0f, 0.0f);
 
@@ -477,8 +455,8 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
 
             SendMessageToParent(EID_LIMB_STABILIZATION_PROGRESS, i);
 
-            std::unique_ptr<c_Image> currImg(LoadImageFileAsMono32f(m_Parameters.inputFiles[i].ToStdString(), wxFileName(m_Parameters.inputFiles[i]).GetExt().Lower().ToStdString()));
-            if (!currImg.get())
+            c_Image currImg = LoadImageFileAsMono32f(m_Parameters.inputFiles[i].ToStdString(), wxFileName(m_Parameters.inputFiles[i]).GetExt().Lower().ToStdString());
+            if (!currImg.IsValid())
             {
                 errorMsg = wxString::Format(_("Could not read %s."), m_Parameters.inputFiles[i]);
                 return false;
@@ -492,12 +470,12 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
 
             // Stabilization area in the current image (assumed to be at the same position - relative to the images' intersection - as in the previous image)
             std::unique_ptr<c_Image> currArea(new c_Image(STBL_AREA_SIZE, STBL_AREA_SIZE, PIX_MONO32F));
-            c_Image::Copy(*currImg, *currArea,
+            c_Image::Copy(currImg, *currArea,
                 intersectionStart.x - Tint.x + stabilizationPos.x - STBL_AREA_SIZE/2,
                 intersectionStart.y - Tint.y + stabilizationPos.y - STBL_AREA_SIZE/2,
                 STBL_AREA_SIZE, STBL_AREA_SIZE, 0, 0);
 
-            currArea->Multiply(*wndFunc);
+            currArea->Multiply(wndFunc);
 
             FloatPoint_t areaTranslation = DetermineTranslationVector(*prevArea, *currArea);
             FloatPoint_t &prev = stAreaImagePos.back();
@@ -523,11 +501,11 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
             }
 
             // Refresh the current area using the updated stabilization position
-            c_Image::Copy(*currImg, *currArea,
+            c_Image::Copy(currImg, *currArea,
                 intersectionStart.x - Tint.x + stabilizationPos.x - STBL_AREA_SIZE/2,
                 intersectionStart.y - Tint.y + stabilizationPos.y - STBL_AREA_SIZE/2,
                 STBL_AREA_SIZE, STBL_AREA_SIZE, 0, 0);
-            currArea->Multiply(*wndFunc);
+            currArea->Multiply(wndFunc);
 
             prevArea.swap(currArea);
 
@@ -627,7 +605,7 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
 
 /// Returns number of neighbors of 'p' within 'radius' which have value > threshold
 void CountNeighborsAboveThreshold(
-    FloatPoint_t &p, c_Image &img, int radius, uint8_t threshold,
+    const FloatPoint_t &p, const c_Image &img, int radius, uint8_t threshold,
     size_t &numAbove, ///< Receives the number of pixels above threshold
     size_t &numTotal ///< Receives the number of all neighbor pixels used
 )
@@ -658,24 +636,24 @@ bool c_ImageAlignmentWorkerThread::FindRadii(
         if (IsAbortRequested())
             return false;
 
-        std::unique_ptr<c_Image> img(LoadImageFileAsMono8(m_Parameters.inputFiles[i].ToStdString(), wxFileName(m_Parameters.inputFiles[i]).GetExt().Lower().ToStdString()));
-        if (!img.get())
+        c_Image img = LoadImageFileAsMono8(m_Parameters.inputFiles[i].ToStdString(), wxFileName(m_Parameters.inputFiles[i]).GetExt().Lower().ToStdString());
+        if (!img.IsValid())
         {
             m_CompletionMessage = wxString::Format(_("Could not read %s."), m_Parameters.inputFiles[i]);
             return false;
         }
 
-        imgSizes.push_back(Point_t(img->GetWidth(), img->GetHeight()));
+        imgSizes.push_back(Point_t(img.GetWidth(), img.GetHeight()));
 
         // 1. Find the threshold value of brightness which separates
         //      the disc from the background.
 
         uint8_t avgDisc, avgBkgrnd;
-        uint8_t threshold = FindDiscBackgroundThreshold(*img, &avgDisc, &avgBkgrnd);
+        uint8_t threshold = FindDiscBackgroundThreshold(img, &avgDisc, &avgBkgrnd);
 
         // 2. Calculate the image centroid
 
-        Point_t centroid = CalcCentroid(*img);
+        Point_t centroid = CalcCentroid(img);
         centroids.push_back(centroid);
 
         // 3. Trace a number of rays originating at the centroid
@@ -688,7 +666,7 @@ bool c_ImageAlignmentWorkerThread::FindRadii(
             Point_t dir;
             dir.x = NUM_RAYS * std::cos(j * 2*3.14159f / NUM_RAYS);
             dir.y = NUM_RAYS * std::sin(j * 2*3.14159f / NUM_RAYS);
-            GetRayPoints(centroid, dir, *img, rays[j]);
+            GetRayPoints(centroid, dir, img, rays[j]);
         }
 
         // 4. Find limb crossing points along 'rays'
@@ -698,7 +676,7 @@ bool c_ImageAlignmentWorkerThread::FindRadii(
         for (int j = 0; j < NUM_RAYS; j++)
         {
             Point_t limbPt;
-            int varSum = FindLimbCrossing(rays[j], *img, threshold, limbPt);
+            int varSum = FindLimbCrossing(rays[j], img, threshold, limbPt);
             limbPointsCandidates.insert(std::pair<int, Point_t>(varSum, limbPt));
         }
 
@@ -739,7 +717,7 @@ bool c_ImageAlignmentWorkerThread::FindRadii(
         {
             size_t numTotal, numAbove;
             int radius = DIFF_SIZE;
-            CountNeighborsAboveThreshold(limbPoints[i][j], *img, radius, threshold, numAbove, numTotal);
+            CountNeighborsAboveThreshold(limbPoints[i][j], img, radius, threshold, numAbove, numTotal);
 
             float fraction = (float)numAbove/numTotal;
             aboveThFraction.push_back(fraction);

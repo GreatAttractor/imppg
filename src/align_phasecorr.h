@@ -70,9 +70,9 @@ FloatPoint_t DetermineTranslationVector(
 );
 
 /// Calculates window function (Blackman) and returns its values as a PIX_MONO32F image
-std::unique_ptr<c_Image> CalcWindowFunction(
+c_Image CalcWindowFunction(
     int wndWidth,
     int wndHeight
-    );
+);
 
 #endif // IMPPG_PHASE_CORRELATION_ALIGNMENT_HEADER
