@@ -125,6 +125,12 @@ if(USE_CFITSIO EQUAL 1)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_CFITSIO")
     if(WIN32)
         target_include_directories(imppg PUBLIC "${CFITSIO_INCLUDE_DIR}")
+    else()
+        exec_program(pkg-config ARGS cfitsio --cflags OUTPUT_VARIABLE CFITSIO_CFLAGS)
+        string(STRIP ${CFITSIO_CFLAGS} CFITSIO_CFLAGS)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CFITSIO_CFLAGS}")
     endif()
+    
     target_link_libraries(imppg cfitsio)
+    
 endif()

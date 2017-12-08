@@ -39,11 +39,7 @@ File description:
 #endif
 
 #if USE_CFITSIO
-  #if defined(_WIN32)
-    #include <fitsio.h>
-  #else
-    #include <cfitsio/fitsio.h>
-  #endif
+#include <fitsio.h>
 #endif
 
 /// Conditionally swaps a 32-bit value

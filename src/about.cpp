@@ -44,11 +44,7 @@ File description:
 #include <FreeImage.h>
 #endif
 #if USE_CFITSIO
-  #if defined(_WIN32)
-    #include <fitsio.h>
-  #else
-    #include <cfitsio/fitsio.h>
-  #endif
+#include <fitsio.h>
 #endif
 #include "common.h"
 #include "ctrl_ids.h"
