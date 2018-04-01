@@ -198,8 +198,6 @@ ImPPG stores certain settings (e.g. the main window’s size and position) in an
     - program hangs when trying to change file type in the `Open image file` dialog
     
 Solution: change the GTK theme to "Raleigh" (e.g. in Fedora use the "GTK+ Appearance" tool).
-    
-  - (wxGTK) If using a GTK 3 build of wxWidgets, position of the tone curve editor’s window is not restored on startup (with GTK 2 it is).
 
     
 ----------------------------------------

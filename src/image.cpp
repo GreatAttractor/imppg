@@ -32,7 +32,15 @@ File description:
 
 #include "image.h"
 #if (USE_FREEIMAGE)
-  #include "FreeImage.h"
+  #ifndef _WINDOWS_
+    #define FIMG_CLEANUP
+  #endif
+  #include <FreeImage.h>
+  #ifdef FIMG_CLEANUP
+    // FreeImage.h always defines _WINDOWS_, which interferes with wx headers
+    #undef _WINDOWS_
+    #undef FIMG_CLEANUP
+  #endif
 #else
   #include "bmp.h"
   #include "tiff.h"

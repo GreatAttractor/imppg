@@ -175,7 +175,7 @@ void c_BatchDialog::OnIdle(wxIdleEvent &event)
 /// Updates the progress string in the files grid
 void c_BatchDialog::SetProgressInfo(wxString info)
 {
-    m_Grid.SetCellValue(info, m_CurrentFile, 1);
+    m_Grid.SetCellValue(m_CurrentFile, 1, info);
 
     int newProgressColWidth = m_Grid.GetTextExtent(info).GetWidth() + 10;
     if (m_Grid.GetColSize(1) < newProgressColWidth)

@@ -33,7 +33,15 @@ File description:
 #include "logging.h"
 #include "appconfig.h"
 #if USE_FREEIMAGE
-#include "FreeImage.h" // on MSW it has to be the last include (to make sure no wxW header follows it)
+  #ifndef _WINDOWS_
+    #define FIMG_CLEANUP
+  #endif
+  #include <FreeImage.h>
+  #ifdef FIMG_CLEANUP
+    // FreeImage.h always defines _WINDOWS_, which interferes with wx headers
+    #undef _WINDOWS_
+    #undef FIMG_CLEANUP
+  #endif
 #endif
 
 bool c_MyApp::OnInit()
