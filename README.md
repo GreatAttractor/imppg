@@ -31,6 +31,12 @@ version 0.5.3 (2017-03-12)
 - 12\. Change log
 
 ----------------------------------------
+
+## Homepage: https://greatattractor.github.io/imppg/
+
+![Main window](main_wnd.png)
+
+----------------------------------------
 ## 1. Introduction
 
 ImPPG (Image Post-Processor) performs common image post-processing tasks, in this order:

@@ -31,6 +31,12 @@ wersja 0.5.3 (2017-03-12)
   - 11\.3\. Język UI
 - 12\. Historia zmian
 
+----------------------------------------
+
+## Strona WWW projektu: https://greatattractor.github.io/imppg/
+
+![Okno główne](main_wnd.png)
+
 
 ----------------------------------------
 ## 1. Wprowadzenie
