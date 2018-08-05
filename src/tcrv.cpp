@@ -285,7 +285,7 @@ void c_ToneCurve::RemovePoint(int index)
 /// Adds a curve point; returns its index
 int c_ToneCurve::AddPoint(float x, float y)
 {
-    auto insertAt = std::lower_bound(m_Points.cbegin(), m_Points.cend(), FloatPoint_t(x, 0.0f));
+    const auto insertAt = std::lower_bound(m_Points.begin(), m_Points.end(), FloatPoint_t(x, 0.0f));
     int result = insertAt - m_Points.begin();
     m_Points.insert(insertAt, FloatPoint_t(x, y));
     if (m_Smooth)
