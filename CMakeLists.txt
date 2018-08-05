@@ -64,8 +64,14 @@ add_executable(imppg WIN32
     src/wxapp.cpp
 )
 
-set_property(TARGET imppg PROPERTY CXX_STANDARD 11)
-set_property(TARGET imppg PROPERTY CXX_STANDARD_REQUIRED ON)
+if (CMAKE_VERSION VERSION_LESS "3.1")
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    endif()
+else()
+    set_property(TARGET imppg PROPERTY CXX_STANDARD 11)
+    set_property(TARGET imppg PROPERTY CXX_STANDARD_REQUIRED ON)
+endif()
 
 if(MINGW)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINK_FLAGS} -Wl,--strip-all")
