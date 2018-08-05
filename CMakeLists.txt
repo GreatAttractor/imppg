@@ -15,8 +15,9 @@
 
 project("ImPPG")
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 2.8)
 
+include(FindPkgConfig)
 include(config.in)
 
 if(WIN32)
@@ -71,16 +72,16 @@ if(MINGW)
 endif()
 
 if(WIN32)
-	# The imppg(64).rc files include the manifest that enables MS Windows Common Controls 6.0.0.0
-	# (for Windows XP and above), i.e. the nicer-looking, themed ones (this is needed only for MinGW,
-	# MSVC generates and embeds the manifest automatically). It also defines the application icon.
-	if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-		# 32-bit build
-		target_sources(imppg PUBLIC src/imppg.rc)
-	else()
-		# 64-bit build
-		target_sources(imppg PUBLIC src/imppg64.rc)
-	endif()
+    # The imppg(64).rc files include the manifest that enables MS Windows Common Controls 6.0.0.0
+    # (for Windows XP and above), i.e. the nicer-looking, themed ones (this is needed only for MinGW,
+    # MSVC generates and embeds the manifest automatically). It also defines the application icon.
+    if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+        # 32-bit build
+        target_sources(imppg PUBLIC src/imppg.rc)
+    else()
+        # 64-bit build
+        target_sources(imppg PUBLIC src/imppg64.rc)
+    endif()
 endif()
 
 find_package(Boost REQUIRED)
@@ -118,19 +119,18 @@ if(USE_FREEIMAGE EQUAL 1)
         target_include_directories(imppg PUBLIC "${FREEIMAGE_INCLUDE_DIR}")
     endif()
     target_link_libraries(imppg freeimage)
-    
+
 endif()
 
 if(USE_CFITSIO EQUAL 1)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_CFITSIO")
     if(WIN32)
         target_include_directories(imppg PUBLIC "${CFITSIO_INCLUDE_DIR}")
+        target_link_libraries(imppg cfitsio)
     else()
-        exec_program(pkg-config ARGS cfitsio --cflags OUTPUT_VARIABLE CFITSIO_CFLAGS)
-        string(STRIP ${CFITSIO_CFLAGS} CFITSIO_CFLAGS)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CFITSIO_CFLAGS}")
+        pkg_check_modules(CFITSIO cfitsio REQUIRED)
+        include_directories(${CFITSIO_INCLUDE_DIRS})
+        link_directories(${CFITSIO_LIBRARY_DIRS})
+        target_link_libraries(imppg ${CFITSIO_LIBRARIES})
     endif()
-    
-    target_link_libraries(imppg cfitsio)
-    
 endif()
