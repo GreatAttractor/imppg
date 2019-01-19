@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2016-2017 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2016-2019 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -70,6 +70,7 @@ enum
     ID_NormalizeImage,
     ID_ChooseLanguage,
     ID_ToolIconSize,
+    ID_ToneCurveWindowSettings,
 
     // View menu items
     ID_Panels,
@@ -121,6 +122,7 @@ enum
     ID_GammaCtrl,
     ID_Stretch,
     ID_UpdateEvtTimer,
+    ID_Configure,
 
 //----------------------------------------------------------------------
 // "About" dialog

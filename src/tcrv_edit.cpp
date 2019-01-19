@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2016-2017 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2016-2019 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -34,10 +34,14 @@ File description:
 #include <wx/bitmap.h>
 #include <wx/tglbtn.h>
 #include <wx/spinctrl.h>
+#include <wx/settings.h>
+
+#include "appconfig.h"
 #include "tcrv_edit.h"
 #include "cursors.h"
 #include "ctrl_ids.h"
 #include "common.h"
+#include "tcrv_wnd_settings.h"
 
 // Event sent to parent every time the curve is changed
 wxDEFINE_EVENT(EVT_TONE_CURVE, wxCommandEvent);
@@ -53,11 +57,6 @@ BEGIN_EVENT_TABLE(c_ToneCurveEditor, wxWindow)
 END_EVENT_TABLE()
 
 const int BORDER = 5; ///< Border size (in pixels) between controls
-
-const wxColour CL_CURVE_BACKGROUND = *wxWHITE;
-const wxColour CL_CURVE_POINT = wxColour(0xAAAAAA);
-const wxColour CL_SELECTED_CURVE_POINT = *wxRED;
-const wxColour CL_HISTOGRAM = wxColour(0xEEEEEE);
 
 /// Minimum grabbing distance of mouse cursor from a curve control point.
 /** Distance is expressed as a percentage of max(width, height) of the curve view area. */
@@ -283,19 +282,28 @@ void c_ToneCurveEditor::OnCurveAreaLeftUp(wxMouseEvent &event)
 void c_ToneCurveEditor::MarkCurvePoints(
     wxDC &dc,
     const wxRect &r ///< Represents the drawing area
- )
+)
 {
+    dc.SetPen(wxPen(Configuration::ToneCurveEditor_CurveColor, 1));
+
+    const wxColour pointColor = Configuration::ToneCurveEditor_CurvePointColor;
+    const wxColour selPointColor = Configuration::ToneCurveEditor_SelectedCurvePointColor;
+    const unsigned radius = Configuration::ToneCurveEditor_CurvePointSize;
+
+    const auto brPoint = wxBrush(pointColor);
+    const auto brSelPoint = wxBrush(selPointColor);
+
     for (int i = 0; i < m_Curve->GetNumPoints(); i++)
     {
         if (i != m_MouseOps.draggedPointIdx)
-            dc.SetBrush(wxBrush(CL_CURVE_POINT));
+            dc.SetBrush(brPoint);
         else
-            dc.SetBrush(wxBrush(CL_SELECTED_CURVE_POINT));
+            dc.SetBrush(brSelPoint);
 
         const FloatPoint_t &point = m_Curve->GetPoint(i);
         dc.DrawCircle(point.x * r.width,
             r.height - r.height * point.y,
-            4); // TODO: make the radius a constant or a configurable param
+            radius);
     }
 }
 
@@ -304,7 +312,7 @@ void c_ToneCurveEditor::DrawCurve(
     const wxRect &r ///< Represents the drawing area
 )
 {
-    dc.SetPen(*wxBLACK_PEN);
+    dc.SetPen(wxPen(Configuration::ToneCurveEditor_CurveColor, Configuration::ToneCurveEditor_CurveWidth));
 
     wxPoint prev(0, r.height - r.height * m_Curve->GetPreciseValue(0.0f));
 
@@ -334,7 +342,7 @@ void c_ToneCurveEditor::DrawHistogram(
     if (!m_Histogram.values.empty())
     {
         dc.SetPen(*wxTRANSPARENT_PEN);
-        dc.SetBrush(wxBrush(CL_HISTOGRAM, wxBRUSHSTYLE_SOLID));
+        dc.SetBrush(wxBrush(Configuration::ToneCurveEditor_HistogramColor, wxBRUSHSTYLE_SOLID));
 
         int step = 1;
         if (m_NumDrawSegments != 0)
@@ -369,7 +377,7 @@ void c_ToneCurveEditor::OnPaintCurveArea(wxPaintEvent &event)
     wxBitmap bmp(m_CurveArea->GetClientRect().width,
                  m_CurveArea->GetClientRect().height);
     wxMemoryDC bmpDC(bmp);
-    bmpDC.SetBrush(wxBrush(CL_CURVE_BACKGROUND));
+    bmpDC.SetBrush(wxBrush(Configuration::ToneCurveEditor_BackgroundColor));
 
     // Clear the contents
     bmpDC.SetPen(*wxTRANSPARENT_PEN);
@@ -440,7 +448,17 @@ c_ToneCurveEditor::c_ToneCurveEditor(wxWindow *parent, c_ToneCurve *curve, int i
         szSettings->Add(new wxSpinCtrlDouble(this, ID_GammaCtrl, wxEmptyString, wxDefaultPosition, wxDefaultSize,
                 wxSP_ARROW_KEYS, 0.05, 10.0, 1.0, 0.05), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
 
-        szTop->Add(szSettings, 0, wxALIGN_LEFT | wxALL, BORDER);
+        szSettings->AddStretchSpacer(1);
+        auto *btnSettings = new wxButton(this, ID_Configure, _(L"\u2699 conf"), wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT); // \u2699 = gear symbol
+        btnSettings->Bind(wxEVT_BUTTON,
+            [this](wxCommandEvent &evt)
+            {
+                c_ToneCurveWindowSettingsDialog dlg(this);
+                if (dlg.ShowModal() == wxID_OK) { Refresh(); }
+            });
+        szSettings->Add(btnSettings, 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
+
+        szTop->Add(szSettings, 0, wxALIGN_LEFT | wxALL | wxGROW, BORDER);
 
     SetSizer(szTop);
     SetToolTips();
@@ -463,4 +481,5 @@ void c_ToneCurveEditor::SetToolTips()
     FindWindowById(ID_GammaCheckBox, this)->SetToolTip(_("Use gamma curve (overrules graph)"));
     FindWindowById(ID_Invert, this)->SetToolTip(_("Invert brightness levels\n(reflect curve points horizontally)"));
     FindWindowById(ID_Stretch, this)->SetToolTip(_("Stretch the curve to cover the histogram only"));
+    FindWindowById(ID_Configure, this)->SetToolTip(_("Configure window appearance"));
 }

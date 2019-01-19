@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2016-2017 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2016-2019 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -79,6 +79,15 @@ namespace Configuration
     extern c_Property<OutputFormat> BatchOutputFormat;
     extern c_Property<int>      ProcessingPanelWidth;
     extern c_Property<unsigned> ToolIconSize;
+    extern c_Property<ToneCurveEditorColors> ToneCurveColors;
+    extern c_Property<wxColor>  ToneCurveEditor_CurveColor;
+    extern c_Property<wxColor>  ToneCurveEditor_BackgroundColor;
+    extern c_Property<wxColor>  ToneCurveEditor_CurvePointColor;
+    extern c_Property<wxColor>  ToneCurveEditor_SelectedCurvePointColor;
+    extern c_Property<wxColor>  ToneCurveEditor_HistogramColor;
+    extern c_Property<unsigned> ToneCurveEditor_CurveWidth;
+    extern c_Property<unsigned> ToneCurveEditor_CurvePointSize;
+    extern c_Property<wxRect>   ToneCurveSettingsDialogPosSize;
 
     /// If zero, draw 1 segment per pixel
     /** NOTE: drawing 1 segment per pixel may be slow for large widths of the tone curve editor window

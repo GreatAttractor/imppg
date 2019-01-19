@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2016-2017 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2016-2019 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -34,6 +34,7 @@ File description:
 #include <wx/bitmap.h>
 #include <wx/scrolwin.h>
 #include <wx/dc.h>
+#include <wx/stattext.h>
 #include <wx/timer.h>
 #include <wx/intl.h>
 #include "image.h"
@@ -130,10 +131,13 @@ class c_MainWindow: public wxFrame
     /** Also updates m_MruSettingsIdx. */
     void SetAsMRU(wxString settingsFile);
     void LoadSettingsFromFile(wxString settingsFile, bool moveToMruListStart);
+    void IndicateSettingsModified();
 
     wxAuiManager m_AuiMgr;
     wxScrolledCanvas m_ImageView; ///< Displays 'm_ImgBmp' or 'm_ImgBmpScaled' (i.e. the current image)
     wxFrame m_ToneCurveEditorWindow;
+    wxString m_LastChosenSettingsFileName;
+    wxStaticText *m_LastChosenSettings; ///< Shows the last chosen settings file name in toolbar
 
     bool m_FitImageInWindow; ///< If 'true', image view is scaled to fit the program window
 

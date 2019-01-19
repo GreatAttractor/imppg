@@ -1,7 +1,7 @@
 # ImPPG (Image Post-Processor)
-Copyright (C) 2015-2017 Filip Szczerek (ga.software@yahoo.com)
+Copyright (C) 2015-2019 Filip Szczerek (ga.software@yahoo.com)
 
-wersja 0.5.3 (2017-03-12)
+wersja 0.5.4 (2019-02-02)
 
 *Niniejszy program ABSOLUTNIE nie jest objęty JAKĄKOLWIEK GWARANCJĄ. Jest to wolne oprogramowanie na licencji GNU GPL w wersji 3 (lub dowolnej późniejszej) i można je swobodnie rozpowszechniać pod pewnymi warunkami: zob. pełny tekst licencji w pliku LICENSE.*
 
@@ -220,7 +220,7 @@ Kod źródłowy ImPPG i pliki wykonywalne dla MS Windows można pobrać pod adre
 ----------------------------------------
 ## 11. Budowanie ze źródeł
 
-Budowanie ze źródeł wymaga narzędzi do kompilacji C++ (zgodnych z C++11), CMake, bibliotek Boost w wersji 1.57.0 lub późniejszej (choć wcześniejsze też mogą działać) oraz wxWidgets 3.0. Do obsługi większej liczby formatów graficznych potrzebna jest biblioteka FreeImage w wersji co najmniej 3.14.0. Bez niej obsługiwane są jedynie: BMP 8-, 24- i 32-bitowe, TIFF mono lub RGB, 8 lub 16 bitów na kanał (bez kompresji). Obsługę plików FITS (opcjonalną) zapewnia biblioteka CFITSIO. Przetwarzanie wielowątkowe wymaga kompilatora obsługującego OpenMP (np. GCC 4.2 lub nowsze, MS Visual C++ 2008 lub nowsze (wersje płatne), MS Visual C++ 2012 Express lub nowsze).
+Budowanie ze źródeł wymaga narzędzi do kompilacji C++ (zgodnych z C++11), CMake, bibliotek Boost w wersji 1.57.0 lub późniejszej (choć wcześniejsze też mogą działać) oraz wxWidgets 3.0. Do obsługi większej liczby formatów graficznych potrzebna jest biblioteka FreeImage w wersji co najmniej 3.14.0. Bez niej obsługiwane są jedynie: BMP 8-, 24- i 32-bitowe, TIFF mono lub RGB, 8 lub 16 bitów na kanał (bez kompresji). Obsługę plików FITS (opcjonalną) zapewnia biblioteka CFITSIO. Przetwarzanie wielowątkowe wymaga kompilatora obsługującego OpenMP (np. GCC 4.2 lub nowsze).
 
 Obsługę CFITSIO i FreeImage można wyłączyć edytując plik `config.in` (domyślnie są włączone).
 
@@ -236,7 +236,12 @@ Plik wykonywalny musi znajdować się w tym samym miejscu, co podkatalog `images
     sudo ln -s /usr/bin/wx-config-3.0 /usr/bin/wx-config
 ```
 
-Po upewnieniu się, że `wx-config` jest dostępne, wykonać:
+Kod źródłowy można pobrać ręcznie lub sklonować Gitem:
+```
+    git clone https://github.com/GreatAttractor/imppg.git
+```
+
+W katalogu ze źródłami wykonać:
 ```
     cmake -G "Unix Makefiles"
 ```
@@ -293,7 +298,7 @@ ImPPG obsługuje wielojęzyczny interfejs użytkownika poprzez wbudowane funkcje
 
 - ekstrakcja napisów do przetłumaczenia z kodu źródłowego do pliku PO poprzez wykonanie:
 ```
-    xgettext -k_ *.cpp *.h -o imppg.po
+    xgettext -k_ src/*.cpp src/*.h -o imppg.po
 ```
 
 - przetłumaczenie napisów UI, tj. edycja wpisów `msgstr` w `imppg.po`
@@ -312,86 +317,104 @@ Dystrybucja binarna ImPPG potrzebuje jedynie plików MO (binarnych). Oprócz pli
 
 ----------------------------------------
 ## 12. Historia zmian
-```
-0.5.3 (2017-03-12)
-    Poprawki błędów:
+
+**0.5.4** (2019-02-02)
+
+  - **Nowe funkcje**
+    - Konfigurowalny wygląd edytora krzywej tonalnej
+
+  - **Ulepszenia**
+    - Wyświetlanie ostatnio załadowanego pliku ustawień w pasku narzędziowym
+
+**0.5.3** (2017-03-12)
+
+  - **Poprawki błędów**
     – Naprawiono wypełnianie listy ostatnio używanych ustawień pod Windows
 
-0.5.2 (2017-01-07)
-    Poprawki błędów:
+**0.5.2** (2017-01-07)
+
+  - **Poprawki błędów**
     – Naprawiono wyświetlanie histogramu i krzywej tonalnej
 
-0.5.1 (2016-10-02)
-    Nowe funkcje:
+**0.5.1** (2016-10-02)
+
+  - **Nowe funkcje**
     – Lista ostatnio używanych ustawień
 
-    Ulepszenia:
+  - **Ulepszenia**
     – Ikony narzędziowe o wysokiej rozdzielczości
     – Usprawnienie rysowania krzywej tonalnej na ekranach o wysokiej rozdzielczości
 
-0.5 (2016-01-02)
-    Nowe funkcje:
+**0.5** (2016-01-02)
+
+  - **Nowe funkcje**
     – Adaptatywny unsharp masking
 
-    Ulepszenia:
+  - **Ulepszenia**
     – Suwaki numeryczne można przewijać klawiszami kursora
     – Szerokość panelu kontrolnego jest zapamiętywana
     – Użycie CMake do budowania ze źródeł
 
-0.4.1 (2015-08-30)
-    Ulepszenia:
+**0.4.1** (2015-08-30)
+
+  - **Ulepszenia**
     – Suwaki numeryczne można zmieniać z 1-pikselową dokładnością zamiast sztywnej wartości 100 kroków
     – Format wyjściowy wybrany w oknie przetwarzania wsadowego jest pamiętany
     – Unsharp masking nie zwalnia przy dużych wartościach „sigmy”
     – Zwiększony zakres parametrów unsharp maskingu
 
-    Poprawki błędów:
+  - **Poprawki błędów**
     – Zła nazwa pliku wyjściowego, jeśli nazwa wejściowa zawierała więcej niż jedną kropkę
     – Błąd w momencie ręcznego wprowadzenia nieistniejącej ścieżki
     – Okna programu rozmieszczone poza ekranem, gdy poprzednio uruchomiono ImPPG w konfiguracji wieloekranowej
     – Przywrócono brakujące polskie napisy w interfejsie użytkownika
 
-0.4 (2015-06-21)
-    Nowe funkcje:
+**0.4** (2015-06-21)
+
+  - **Nowe funkcje**
     – Wyrównywanie sekwencji poprzez stabilizację krawędzi tarczy słonecznej
     – Obsługa plików FITS (odczyt i zapis)
     – Zmiana powiększenia widoku
 
-    Ulepszenia:
+  - **Ulepszenia**
     – Przewijanie widoku przez przeciąganie środkowym przyciskiem myszy
     – Pamiętanie ustawienia wyświetlania histogramu w skali logarytmicznej
 
-    Poprawki błędów:
+  - **Poprawki błędów**
     – Krzywa tonalna w trybie gamma nie jest aplikowana podczas przetwarzania wsadowego
 
-0.3.1 (2015-03-22)
-    Nowe funkcje:
+**0.3.1** (2015-03-22)
+
+  - **Nowe funkcje**
     – Polska wersja językowa; dodano instrukcję tworzenia kolejnych tłumaczeń
 
-0.3 (2015-03-19)
-  Nowe funkcje:
+**0.3** (2015-03-19)
+
+  - **Nowe funkcje**
     – Wyrównywanie sekwencji obrazów metodą korelacji fazowej
 
-  Ulepszenia:
+  - **Ulepszenia**
     – Ograniczona częstotliwość restartowania przetwarzania w trakcie edycji obrazu, w efekcie większa responsywność podczas zmiany parametrów unsharp maskingu i edycji krzywej tonalnej
 
-  Poprawki błędów:
+  - **Poprawki błędów**
     – Niewłaściwe rozszerzenie plików wyjściowych po przetwarzaniu wsadowym, gdy wybrany format różni się od wejściowego
 
-0.2 (2015-02-28)
-  Nowe funkcje:
+**0.2** (2015-02-28)
+
+  - **Nowe funkcje**
     – Obsługa większej liczby formatów plików graficznych poprzez FreeImage. Nowe formaty wyjściowe: PNG 8-bitowy, TIFF 8-bitowy z kompresją LZW, TIFF 16-bitowy z kompresją ZIP, TIFF 32-bit zmiennoprzecinkowy (bez kompresji lub z kompresją ZIP).
 
-  Ulepszenia:
+  - **Ulepszenia**
     – Uaktywniony „nowoczesny” styl elementów kontrolnych pod Windows
 
-  Poprawki błędów:
+  - **Poprawki błędów**
     – Ramka zaznaczenia niewidoczna na platformach bez obsługi rastrowych operacji logicznych (np. GTK 3)
 
-0.1.1 (2015-02-24)
-  Poprawki błędów:
+**0.1.1** (2015-02-24)
+
+  - **Poprawki błędów**
     – Puste pliki wynikowe po przetwarzaniu wsadowym przy zerowej liczbie iteracji L-R
 
-0.1 (2015-02-21)
-  Pierwsza wersja.
-```
+**0.1** (2015-02-21)
+
+  - **Pierwsza wersja**

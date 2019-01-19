@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2016-2017 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2016-2019 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -60,7 +60,7 @@ class c_ToneCurve
 
     /// If 'true', control points are interpolated by a Catmull-Rom spline
     bool m_Smooth;
-    
+
     /// 'True' if the curve is defined as output = input^(1/m_Gamma)
     bool m_IsGamma;
 

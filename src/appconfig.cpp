@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2016-2017 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2016-2019 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -24,9 +24,11 @@ File description:
 #include <sstream>
 #include <wx/gdicmn.h>
 #include <wx/filename.h>
-#include "appconfig.h"
 
-bool wxFromString(const wxString &string, wxRect *rect)
+#include "appconfig.h"
+#include "common.h"
+
+static bool wxFromString(const wxString &string, wxRect *rect)
 {
     std::stringstream parser;
     parser << string;
@@ -43,7 +45,7 @@ bool wxFromString(const wxString &string, wxRect *rect)
     return !parser.fail();
 }
 
-wxString wxToString(const wxRect &r)
+static wxString wxToString(const wxRect &r)
 {
     return wxString::Format("%d;%d;%d;%d;", r.x, r.y, r.width, r.height);
 }
@@ -68,6 +70,16 @@ namespace Keys
     const char *ProcessingPanelWidth =   UserInterfaceGroup"/ProcessingPanelWidth";
     const char *ToolIconSize =           UserInterfaceGroup"/ToolIconSize";
     const char *ToneCurveEditorNumDrawSegments = UserInterfaceGroup"/ToneCurveEditorNumDrawSegments";
+    const char *ToneCurveEditorColors =  UserInterfaceGroup"/ToneCurveEditorColors";
+
+    const char *ToneCurveEditor_CurveColor                 = UserInterfaceGroup"/ToneCurveEditor_CurveColor";
+    const char *ToneCurveEditor_BackgroundColor            = UserInterfaceGroup"/ToneCurveEditor_BackgroundColor";
+    const char *ToneCurveEditor_CurvePointColor            = UserInterfaceGroup"/ToneCurveEditor_CurvePointColor";
+    const char *ToneCurveEditor_SelectedCurvePointColor    = UserInterfaceGroup"/ToneCurveEditor_SelectedCurvePointColor";
+    const char *ToneCurveEditor_HistogramColor             = UserInterfaceGroup"/ToneCurveEditor_HistogramColor";
+    const char *ToneCurveEditor_CurveWidth                 = UserInterfaceGroup"/ToneCurveEditor_CurveWidth";
+    const char *ToneCurveEditor_CurvePointSize             = UserInterfaceGroup"/ToneCurveEditor_CurvePointSize";
+    const char *ToneCurveSettingsDialogPosSize             = UserInterfaceGroup"/ToneCurveSettingsDialogPosSize";
 
     const char *BatchFileOpenPath =          UserInterfaceGroup"/BatchFilesOpenPath";
     const char *BatchLoadSettingsPath =      UserInterfaceGroup"/BatchLoadSettingsPath";
@@ -157,17 +169,65 @@ PROPERTY_RECT(BatchDialogPosSize);
 PROPERTY_RECT(BatchProgressDialogPosSize);
 PROPERTY_RECT(AlignProgressDialogPosSize);
 PROPERTY_RECT(AlignParamsDialogPosSize);
+PROPERTY_RECT(ToneCurveSettingsDialogPosSize);
 
 c_Property<OutputFormat> BatchOutputFormat(
     []()
     {
-        long result = static_cast<long>(appConfig->ReadLong(Keys::BatchOutputFormat, (long)OutputFormat::BMP_MONO_8));
-        if (result < 0 || result >= (long)OutputFormat::LAST)
+        long result = appConfig->ReadLong(Keys::BatchOutputFormat, static_cast<long>(OutputFormat::BMP_MONO_8));
+        if (result < 0 || result >= static_cast<long>(OutputFormat::LAST))
             return OutputFormat::BMP_MONO_8;
 
         return static_cast<OutputFormat>(result);
     },
-    [](const OutputFormat &val) { appConfig->Write(Keys::BatchOutputFormat, (long)val); }
+    [](const OutputFormat &val) { appConfig->Write(Keys::BatchOutputFormat, static_cast<long>(val)); }
+);
+
+c_Property<ToneCurveEditorColors> ToneCurveColors(
+    []()
+    {
+        long result = static_cast<long>(appConfig->ReadLong(Keys::ToneCurveEditorColors, static_cast<long>(ToneCurveEditorColors::ImPPGDefaults)));
+        if (result < 0 || result >= static_cast<long>(ToneCurveEditorColors::Last))
+            return ToneCurveEditorColors::ImPPGDefaults;
+
+        return static_cast<ToneCurveEditorColors>(result);
+    },
+    [](const ToneCurveEditorColors &val) { appConfig->Write(Keys::ToneCurveEditorColors, static_cast<long>(val)); }
+);
+
+#define PROPERTY_TCRV_COLOR(Name, DefaultValue)                                                           \
+    c_Property<wxColour> Name(                                                                            \
+        [](){                                                                                             \
+            switch (ToneCurveColors)                                                                      \
+            {                                                                                             \
+                case ToneCurveEditorColors::ImPPGDefaults: return DefaultColors::ImPPG::DefaultValue;     \
+                case ToneCurveEditorColors::SystemDefaults: return DefaultColors::System::DefaultValue(); \
+                case ToneCurveEditorColors::Custom:                                                       \
+                    {                                                                                     \
+                        wxColour result;                                                                  \
+                        appConfig->Read(Keys::Name, &result, DefaultColors::ImPPG::DefaultValue);         \
+                        return result;                                                                    \
+                    }                                                                                     \
+                default: return DefaultColors::ImPPG::DefaultValue;                                       \
+            }                                                                                             \
+        },                                                                                                \
+        [](const wxColour &c) { appConfig->Write(Keys::Name, c); }                                        \
+    );                                                                                                    \
+
+PROPERTY_TCRV_COLOR(ToneCurveEditor_CurveColor, Curve);
+PROPERTY_TCRV_COLOR(ToneCurveEditor_BackgroundColor, CurveBackground);
+PROPERTY_TCRV_COLOR(ToneCurveEditor_CurvePointColor, CurvePoint);
+PROPERTY_TCRV_COLOR(ToneCurveEditor_SelectedCurvePointColor, SelectedCurvePoint);
+PROPERTY_TCRV_COLOR(ToneCurveEditor_HistogramColor, Histogram);
+
+c_Property<unsigned> ToneCurveEditor_CurveWidth(
+    [](){ return (unsigned)appConfig->ReadLong(Keys::ToneCurveEditor_CurveWidth, 1); },
+    [](const unsigned &u) { appConfig->Write(Keys::ToneCurveEditor_CurveWidth, u); }
+);
+
+c_Property<unsigned> ToneCurveEditor_CurvePointSize(
+    [](){ return (unsigned)appConfig->ReadLong(Keys::ToneCurveEditor_CurvePointSize, 4); },
+    [](const unsigned &u) { appConfig->Write(Keys::ToneCurveEditor_CurvePointSize, u); }
 );
 
 c_Property<int> ProcessingPanelWidth(

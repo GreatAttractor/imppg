@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2015-2017 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2015-2019 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -24,50 +24,139 @@ File description:
 #if defined(_OPENMP)
 #include <omp.h>
 #endif
+#include <array>
 #include <boost/version.hpp>
-#include <wx/window.h>
-#include <wx/dialog.h>
-#include <wx/sizer.h>
+#include <wx/bitmap.h>
 #include <wx/button.h>
-#include <wx/event.h>
+#include <wx/dcbuffer.h>
 #include <wx/dcclient.h>
 #include <wx/dcmemory.h>
-#include <wx/bitmap.h>
+#include <wx/dialog.h>
+#include <wx/event.h>
 #include <wx/filename.h>
-#include <wx/msgdlg.h>
-#include <wx/stattext.h>
 #include <wx/gdicmn.h>
+#include <wx/msgdlg.h>
 #include <wx/panel.h>
+#include <wx/sizer.h>
+#include <wx/stattext.h>
 #include <wx/stdpaths.h>
+#include <wx/timer.h>
 #include <wx/utils.h>
+#include <wx/wfstream.h>
+#include <wx/window.h>
 #if (USE_FREEIMAGE)
 #include <FreeImage.h>
 #endif
 #if USE_CFITSIO
 #include <fitsio.h>
 #endif
+
 #include "common.h"
 #include "ctrl_ids.h"
 
-const char *VERSION_STR = "0.5.3";   ///< Current version
-const char *DATE_STR = "2017-03-12"; ///< Release date of the current version
+
+const char *VERSION_STR = "0.5.4";   ///< Current version
+const char *DATE_STR = "2019-02-02"; ///< Release date of the current version
 
 #if !defined(_OPENMP)
 int omp_get_num_procs() { return 1; }
 #endif
 
+constexpr size_t NUM_FRAMES = 30;
+static struct
+{
+    bool valid = false;
+    bool loaded = false;
+    size_t frameIdx;
+    wxSize frameSize;
+    std::array<wxBitmap, NUM_FRAMES> frames;
+
+    bool LoadFrames()
+    {
+        if (loaded) return true;
+
+        static const size_t FRAME_NUM_BYTES[] = {
+            1097,
+            16948,
+            31390,
+            38289,
+            52393,
+            55880,
+            58947,
+            60470,
+            66420,
+            62632,
+            66964,
+            63927,
+            64747,
+            68776,
+            60073,
+            66680,
+            61963,
+            66462,
+            62504,
+            67139,
+            64207,
+            66606,
+            62582,
+            66302,
+            65832,
+            66281,
+            60860,
+            67799,
+            61112,
+            66956
+        };
+
+        // `images/anim.bin` contains concatenated frames, each is a PNG image
+
+        wxFileName fName = wxFileName(wxStandardPaths::Get().GetExecutablePath());
+        fName.AppendDir("images");
+        fName.SetName("anim");
+        fName.SetExt("bin");
+
+        wxFileInputStream fstream(fName.GetFullPath());
+        if (!fstream.IsOk())
+            return false;
+
+        wxFileOffset offset = 0;
+        for (auto i = 0; i < NUM_FRAMES; i++)
+        {
+            fstream.SeekI(offset);
+
+            auto img = wxImage(fstream, "image/png");
+            if (!img.IsOk())
+                return false;
+            if (i > 0 && img.GetSize() != frames[i-1].GetSize())
+                return false;
+
+            frames[i] = wxBitmap(img);
+            if (i == 0)
+                frameSize = frames[i].GetSize();
+
+            offset += FRAME_NUM_BYTES[i];
+        }
+
+        loaded = true;
+        return true;
+    }
+} Animation;
+
 class c_AboutDialog: public wxDialog
 {
+    static constexpr unsigned ANIM_INTERVAL_MS = 40;
+    static constexpr unsigned ANIM_REPLAY_DELAY_MS = 40;
+
+    // Event handlers
     void OnPaintImgPanel(wxPaintEvent &event);
     void OnLibrariesClick(wxCommandEvent &event);
+    void OnTimer(wxTimerEvent &event);
 
-    wxBitmap m_Bmp;
+    wxTimer timer;
 
 public:
     c_AboutDialog(wxWindow *parent);
 };
-
-//-----------------------------------------------------------
 
 void c_AboutDialog::OnLibrariesClick(wxCommandEvent &event)
 {
@@ -81,7 +170,7 @@ void c_AboutDialog::OnLibrariesClick(wxCommandEvent &event)
 #if USE_CFITSIO
                          "\nCFITSIO %s" // version of CFITSIO
 #endif
-                        "\n\n" + wxGetOsDescription()
+                        "\n\nOS: " + wxGetOsDescription()
     ;
 
 #if USE_CFITSIO
@@ -102,13 +191,32 @@ void c_AboutDialog::OnLibrariesClick(wxCommandEvent &event)
         _("Libraries"), wxOK, this);
 }
 
+void c_AboutDialog::OnTimer(wxTimerEvent &event)
+{
+    this->Refresh();
+    Animation.frameIdx = (Animation.frameIdx + 1) % NUM_FRAMES;
+    if (Animation.frameIdx == NUM_FRAMES-1)
+        timer.Start(ANIM_REPLAY_DELAY_MS, wxTIMER_ONE_SHOT);
+    else
+        timer.Start(ANIM_INTERVAL_MS, wxTIMER_ONE_SHOT);
+
+}
+
 c_AboutDialog::c_AboutDialog(wxWindow *parent)
 : wxDialog(parent, wxID_ANY, _("About ImPPG"))
 {
     SetBackgroundColour(*wxBLACK);
 
-    m_Bmp = LoadBitmap("about");
-    SetMinClientSize(m_Bmp.GetSize());
+    if (Animation.valid = Animation.LoadFrames())
+    {
+        Animation.frameIdx = 0;
+
+        timer.SetOwner(this);
+        Bind(wxEVT_TIMER, &c_AboutDialog::OnTimer, this);
+        timer.Start(ANIM_INTERVAL_MS, wxTIMER_ONE_SHOT);
+
+        SetMinClientSize(Animation.frameSize);
+    }
 
     wxSizer *szTop = new wxBoxSizer(wxHORIZONTAL);
     szTop->AddStretchSpacer(1);
@@ -116,15 +224,24 @@ c_AboutDialog::c_AboutDialog(wxWindow *parent)
     wxSizer *szContents = new wxBoxSizer(wxVERTICAL);
     szContents->AddStretchSpacer(1);
 
-    Bind(wxEVT_PAINT,
-         [this](wxPaintEvent &evt)
-         {
-            wxPaintDC dc(this);
-            wxMemoryDC bmpDC(m_Bmp);
-            dc.Blit(wxPoint(0, 0), GetClientSize(), &bmpDC, wxPoint(0, 0));
-         },
-         wxID_ANY);
+    SetBackgroundStyle(wxBG_STYLE_PAINT);
 
+    Bind(wxEVT_PAINT,
+        [this](wxPaintEvent &evt)
+        {
+            wxAutoBufferedPaintDC dc(this);
+            if (Animation.valid)
+            {
+                wxMemoryDC bmpDC(Animation.frames[Animation.frameIdx]);
+                dc.Blit(wxPoint(0, 0), GetClientSize(), &bmpDC, wxPoint(0, 0));
+            }
+            else
+            {
+                dc.SetBrush(wxBrush(*wxBLACK));
+                dc.DrawRectangle(wxRect(wxPoint(0, 0), GetClientSize()));
+            }
+        },
+        wxID_ANY);
 
     wxStaticText *title = new wxStaticText(this, wxID_ANY, "ImPPG");
     title->SetFont(title->GetFont().MakeLarger().MakeBold());
@@ -132,7 +249,7 @@ c_AboutDialog::c_AboutDialog(wxWindow *parent)
     szContents->Add(title, 0, wxALIGN_LEFT | (wxLEFT | wxRIGHT | wxTOP), 5);
 
     wxStaticText *info = new wxStaticText(this, wxID_ANY,
-        wxString::Format(wxString(L"Copyright \u00A9 2015-2017 Filip Szczerek (ga.software@yahoo.com)\n") +
+        wxString::Format(wxString(L"Copyright \u00A9 2015-2019 Filip Szczerek (ga.software@yahoo.com)\n") +
                          _("version %s ") + " (%s)\n\n" +
 
                          _("This program comes with ABSOLUTELY NO WARRANTY. This is free software,\n"
@@ -163,13 +280,17 @@ c_AboutDialog::c_AboutDialog(wxWindow *parent)
 
     int sizerMinWidth = GetSizer()->GetMinSize().GetWidth(); // min. width based on combined children's sizes
 
-    if (sizerMinWidth > m_Bmp.GetWidth()/2)
+    if (Animation.valid && sizerMinWidth > Animation.frameSize.GetWidth()/2)
     {
-        m_Bmp = wxBitmap(m_Bmp.ConvertToImage().Scale(2*sizerMinWidth,
-                                                      2*sizerMinWidth*m_Bmp.GetHeight() / m_Bmp.GetWidth(),
+        for (wxBitmap &bmp: Animation.frames)
+        {
+            bmp = wxBitmap(bmp.ConvertToImage().Scale(2*sizerMinWidth,
+                                                      2*sizerMinWidth*bmp.GetHeight() / bmp.GetWidth(),
                                                       wxIMAGE_QUALITY_BICUBIC));
+        }
+        Animation.frameSize = Animation.frames[0].GetSize();
 
-        SetMinClientSize(m_Bmp.GetSize());
+        SetMinClientSize(Animation.frameSize);
     }
 
     Fit();

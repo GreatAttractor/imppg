@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2016-2017 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2016-2019 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -83,7 +83,7 @@ void c_NormalizeDialog::InitControls()
         _("Normalization of image brightness is performed prior\n"
 		  "to all other processing steps.")),
         0, wxALIGN_CENTER_VERTICAL | wxGROW | wxALL, BORDER);
-          
+
     szTop->Add(new wxCheckBox(this, ID_NormalizationEnabled, _("Normalization enabled"), wxDefaultPosition, wxDefaultSize, 0, wxGenericValidator(&m_NormalizationEnabled)),
         0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
 

@@ -45,6 +45,7 @@ add_executable(imppg WIN32
     src/settings.cpp
     src/tcrv.cpp
     src/tcrv_edit.cpp
+    src/tcrv_wnd_settings.cpp
     src/tiff.cpp
     src/w_lrdeconv.cpp
     src/w_tcurve.cpp

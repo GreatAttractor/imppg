@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2016-2017 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2016-2019 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -413,11 +413,9 @@ void LucyRichardsonGaussian(
     ConvolutionMethod convMethod,
 
     /// Called after every iteration; arguments: current iteration, total iterations
-    //boost::function<void(int, int)> progressCallback,
     std::function<void (int, int)> progressCallback,
 
     /// Called periodically to check if there was an "abort processing" request
-    //boost::function<bool()> checkAbort
     std::function<bool ()> checkAbort
 )
 {

@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2016-2017 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2016-2019 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -25,7 +25,37 @@ File description:
 #define IMPGG_COMMON_HEADER
 
 #include <wx/bitmap.h>
+#include <wx/settings.h>
 #include <wx/window.h>
+
+enum class ToneCurveEditorColors
+{
+    ImPPGDefaults = 0,
+    SystemDefaults,
+    Custom,
+
+    Last
+};
+
+namespace DefaultColors
+{
+namespace ImPPG
+{
+const wxColour Curve              = wxColour(0x000000UL);
+const wxColour CurveBackground    = wxColour(0xFFFFFF);
+const wxColour CurvePoint         = wxColour(0xAAAAAA);
+const wxColour SelectedCurvePoint = wxColour(0x0000FF);
+const wxColour Histogram          = wxColour(0xEEEEEE);
+}
+namespace System
+{
+inline wxColour Curve()           { return wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOWTEXT); }
+inline wxColour CurveBackground() { return wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW); }
+inline wxColour CurvePoint()      { return wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOWTEXT); }
+inline wxColour SelectedCurvePoint() { return ImPPG::SelectedCurvePoint; }
+inline wxColour Histogram()       { return wxSystemSettings::GetColour(wxSYS_COLOUR_BTNSHADOW); }
+}
+}
 
 template<typename T>
 struct strPoint

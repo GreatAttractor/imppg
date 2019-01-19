@@ -1,7 +1,7 @@
 # ImPPG (Image Post-Processor)
-Copyright (C) 2015-2017 Filip Szczerek (ga.software@yahoo.com)
+Copyright (C) 2015-2019 Filip Szczerek (ga.software@yahoo.com)
 
-version 0.5.3 (2017-03-12)
+version 0.5.4 (2019-02-02)
 
 *This program comes with ABSOLUTELY NO WARRANTY. This is free software, licensed under GNU General Public License v3 or any later version and you are welcome to redistribute it under certain conditions. See the LICENSE file for details.*
 
@@ -71,7 +71,7 @@ The alignment is performed (with sub-pixel accuracy) either via phase correlatio
   - The view can be scrolled by dragging with the middle mouse button.
 
   - Size of toolbar icons can be changed via the `Settings` menu.
-    
+
 ----------------------------------------
 ## 3. Supported image file formats
 
@@ -97,7 +97,7 @@ Normalization may be useful when processing a sequence of astronomical stack ima
 Access by:
     menu: `Settings`/`Normalize brightness levels...`
 
-    
+
 ----------------------------------------
 ### 4.2. Lucy–Richardson deconvolution
 
@@ -110,8 +110,8 @@ The `Prevent ringing` checkbox enables an experimental function which reduces ri
 Access by:
     `Lucy–Richardson deconvolution` tab in the processing controls panel (on the left of the main window)
 
-    
-----------------------------------------    
+
+----------------------------------------
 ### 4.3. Unsharp masking
 
 Unsharp masking can be used for final sharpening (independently of L–R deconvolution) or blurring of the image. The *sigma* parameter specifies the Gaussian kernel’s width; the larger the value, the coarser the sharpening or blurring. `Amount` specifies the effect’s strength. Value < 1.0 blurs the image, 1.0 does nothing, value > 1.0 sharpens the image.
@@ -124,10 +124,10 @@ In this mode the amount varies, depending on the input (unprocessed) image brigh
 An example situation where this mode can be useful is stretching of faint solar prominences with the tone curve. Typically this will also underline the image noise (especially if L–R was applied), as the darker image areas have small signal-to-noise ratio. By setting `amount max` to a sharpening value (>1.0) appropriate for the solar disc interior, but `amount min` to 1.0 (i.e. no sharpening) and `threshold` to fall somewhere at the disc/prominences transition, the faint prominences and background are left unsharpened. They can be even smoothed out by setting `amount min` to <1.0, while keeping rest of the disc sharpened.
 
 Is is also allowed to set `amount min` > `amount max`.
-    
+
 Access by:
     `Unsharp masking` box in the processing controls panel (on the left of the main window)
-    
+
 
 ----------------------------------------
 ### 4.4. Tone curve
@@ -137,7 +137,7 @@ The tone curve editor allows changing the input-output mapping of brightness lev
 Access by:
     menu: `View`/`Panels`/`Tone curve` or the corresponding toolbar button
 
-    
+
 ----------------------------------------
 ## 5. Saving/loading settings
 
@@ -146,7 +146,7 @@ All settings described in **4.1-4.4** can be saved to/restored from a file (in X
 Access by:
     menu: `File` or the corresponding toolbar buttons
 
-    
+
 ----------------------------------------
 ## 6. Batch processing
 
@@ -157,7 +157,7 @@ Access by:
 
 
 ----------------------------------------
-## 7. Image sequence alignment    
+## 7. Image sequence alignment
 
 The `Input image files` list in the `Image alignment` dialog contains the input files in the order they are to be aligned as a sequence. List items can be removed and shifted using the buttons in the upper right corner.
 
@@ -168,13 +168,13 @@ The output files are saved under names suffixed with `_aligned`. FITS files are 
 
 ----------------------------------------
 ### 7.1. High-contrast features stabilization (phase correlation)
-    
+
 A general-purpose method. Attempts to keep the high-contrast features (e.g. sunspots, filaments, prominences, craters) stationary. In some cases it may be undesirable, e.g. in a multi-hour time-lapse of a sunspot nearing the solar disc’s limb; phase correlation would tend to keep the sunspot stationary, but not the limb.
-    
-    
+
+
 ----------------------------------------
 ### 7.2. Solar limb stabilization
-    
+
 Detects and matches the solar limb position. The more of the limb is visible in input images, the better the results. It is recommended that the images to align are already sharpened. Requirements:
   - the disc has to be brighter than the background
   - no vignetting or limb darkening exaggerated by post-processing
@@ -186,7 +186,7 @@ Operations such as full/partial brightness inversion (creating a negative) or ap
 Access by:
     menu: `Tools`/`Align image sequence...`
 
-    
+
 ----------------------------------------
 ## 8. Misc
 
@@ -202,14 +202,14 @@ ImPPG stores certain settings (e.g. the main window’s size and position) in an
     - `File open` dialog does not show any files after it is opened; the files do appear when the dialog is resized by the user
     - program crashes when trying to select the output directory in Batch dialog using the `Choose folder` dialog
     - program hangs when trying to change file type in the `Open image file` dialog
-    
+
 Solution: change the GTK theme to "Raleigh" (e.g. in Fedora use the "GTK+ Appearance" tool).
 
-    
+
 ----------------------------------------
 ## 10. Downloading
 
-ImPPG source code and MS Windows executables can be downloaded from:  
+ImPPG source code and MS Windows executables can be downloaded from:
     https://github.com/GreatAttractor/imppg/releases
 
 
@@ -229,7 +229,7 @@ The ImPPG executable has to be placed in the same location as the `images` and l
 
 *Note: CMake relies on the presence of the `wx-config` tool to detect and configure wxWidgets-related build options. Sometimes this tool can be named differently, e.g. in Fedora 23 with wxGTK3 packages from repository it is `wx-config-3.0`. Older versions of CMake may not accept it. This can be remedied e.g. by creating a symlink:*
 ```
-    sudo ln -s /usr/bin/wx-config-3.0 /usr/bin/wx-config  
+    sudo ln -s /usr/bin/wx-config-3.0 /usr/bin/wx-config
 ```
 
 Download the source code manually or clone with Git:
@@ -295,7 +295,7 @@ ImPPG supports multiple user interface languages using the wxWidgets built-in in
 
 - extraction of translatable strings from sources into a PO file by running:
 ```
-    xgettext -k_ *.cpp *.h -o imppg.po
+    xgettext -k_ src/*.cpp src/*.h -o imppg.po
 ```
 
 - translation of UI strings by editing the `msgstr` entries in `imppg.po`
@@ -315,87 +315,103 @@ Binary distribution of ImPPG needs only the MO (binary) language files. Beside t
 ----------------------------------------
 ## 12. Change log
 
-```
-0.5.3 (2017-03-12)
-    Bug fixes:
+**0.5.4** (2019-02-02)
+
+  - **New features**
+    - Configurable look of the tone curve editor
+
+  - **Enhancements**
+    - Last loaded settings file name shown in toolbar
+
+**0.5.3** (2017-03-12)
+
+  - **Bug fixes**
     - Fixed filling the list of recently used settings under Windows
 
-0.5.2 (2017-01-07)
-    Bug fixes:
+**0.5.2** (2017-01-07)
+
+  - **Bug fixes**
     - Fixed drawing of histogram and tone curve
 
-0.5.1 (2016-10-02)
-    New features:
+**0.5.1** (2016-10-02)
+
+  - **New features**
     - List of most recently used settings files
 
-    Enhancements:
+  - **Enhancements**
     - High-resolution toolbar icons
     - Improved tone curve drawing performance on high-resolution displays
 
-0.5 (2016-01-02)
-    New features:
+**0.5** (2016-01-02)
+
+  - **New features**
     - Adaptive unsharp masking
-    
-    Enhancements:
+
+  - **Enhancements**
     - Numerical sliders can be scrolled with cursor keys
     - Processing panel width is preserved
     - Using CMake for building
 
-0.4.1 (2015-08-30)
-    Enhancements:
+**0.4.1** (2015-08-30)
+
+  - **Enhancements**
     - Numerical sliders use 1-pixel steps instead of hard-coded 100 steps
     - Output format selected in batch processing dialog is preserved
     - Unsharp masking not slowing down for large values of *sigma*
     - Increased the range of unsharp masking parameters
-    
-    Bug fixes:
+
+  - **Bug fixes**
     - Invalid output file name after alignment if there was more than one period in input name
     - Crash when a non-existing path is entered during manual editing
     - Program windows placed outside the screen when ImPPG was previously run on multi-monitor setup
     - Restored missing Polish translation strings
-    
 
-0.4 (2015-06-21)
-    New features:
+**0.4** (2015-06-21)
+
+  - **New features**
     - Image sequence alignment via solar limb stabilization
     - FITS files support (load/save)
     - Zooming in/out of the view
 
-    Enhancements:
+  - **Enhancements**
     - View scrolling by dragging with the middle mouse button
     - Logarithmic histogram setting is preserved
-    
-    Bug fixes:
+
+  - **Bug fixes**
     - Tone curve in gamma mode not applied during batch processing
 
-0.3.1 (2015-03-22)
-    New features:
+**0.3.1** (2015-03-22)
+
+  - **New features**
     - Polish translation; added instructions for creating additional translations
 
-0.3 (2015-03-19)
-  New features:
+**0.3** (2015-03-19)
+
+  - **New features**
     - Image sequence alignment via phase correlation
-    
-  Enhancements:
+
+  - **Enhancements**
     - Limited the frequency of processing requests to improve responsiveness during changing of unsharp masking parameters and editing of tone curve
-    
-  Bug fixes:
+
+  - **Bug fixes**
     - Incorrect output file extension after batch processing when the selected output format differs from the input
 
-0.2 (2015-02-28)
-  New features:
+**0.2** (2015-02-28)
+
+  - **New features**
     - Support for more image file formats via FreeImage. New output formats: PNG/8-bit, TIFF/8-bit LZW-compressed, TIFF/16-bit ZIP-compressed, TIFF/32 bit floating-point (no compression and ZIP-compressed).
-    
-  Enhancements:
+
+  - **Enhancements**
     - Enabled the modern-look GUI controls on Windows
-    
-  Bug fixes:
+
+  - **Bug fixes**
     - Selection border not marked on platforms w/o logical raster ops support (e.g. GTK 3)
 
-0.1.1 (2015-02-24)
-  Bug fixes:
-    - Blank output files after batch processing when L–R iterations count is 0
+**0.1.1** (2015-02-24)
 
-0.1 (2015-02-21)
-    Initial revision.
-```
+  - **Bug fixes**
+    - Blank output files after batch processing when L–R iteration count is 0
+
+**0.1** (2015-02-21)
+
+  - **Initial revision**

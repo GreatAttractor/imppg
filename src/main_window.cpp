@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2016-2017 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2016-2019 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -75,6 +75,8 @@ File description:
 #include "ctrl_ids.h"
 #include "formats.h"
 #include "align.h"
+#include "tcrv_wnd_settings.h"
+
 
 DECLARE_APP(c_MyApp)
 
@@ -163,6 +165,7 @@ BEGIN_EVENT_TABLE(c_MainWindow, wxFrame)
     EVT_CHECKBOX(ID_LucyRichardsonDeringing, c_MainWindow::OnCommandEvent)
     EVT_MENU(ID_NormalizeImage, c_MainWindow::OnCommandEvent)
     EVT_MENU(ID_ChooseLanguage, c_MainWindow::OnCommandEvent)
+    EVT_MENU(ID_ToneCurveWindowSettings, c_MainWindow::OnCommandEvent)
     EVT_MENU(ID_About, c_MainWindow::OnCommandEvent)
     EVT_MENU(ID_AlignImages, c_MainWindow::OnCommandEvent)
     // The handler is bound to m_ImageView, but attach it also here to c_MainWindow
@@ -205,6 +208,14 @@ void c_MainWindow::LoadSettingsFromFile(wxString settingsFile, bool moveToMruLis
           s.toneCurve, s.normalization.enabled, s.normalization.min, s.normalization.max))
     {
         wxMessageBox(_("Failed to load processing settings."), _("Error"), wxOK | wxCENTRE | wxICON_ERROR);
+
+        wxArrayString slist = Configuration::GetMruSettings();
+        if ((m_MruSettingsIdx = slist.Index(settingsFile)) != wxNOT_FOUND)
+        {
+            slist.RemoveAt(m_MruSettingsIdx);
+            m_MruSettingsIdx = wxNOT_FOUND;
+        }
+        Configuration::StoreMruSettings(slist);
     }
     else
     {
@@ -223,6 +234,9 @@ void c_MainWindow::LoadSettingsFromFile(wxString settingsFile, bool moveToMruLis
         ((c_NumericalCtrl *)FindWindowById(ID_UnsharpMaskingWidth))->SetValue(s.UnsharpMasking.width);
 
         ((c_ToneCurveEditor *)FindWindowById(ID_ToneCurveEditor, this))->SetToneCurve(&s.toneCurve);
+
+        m_LastChosenSettingsFileName = wxFileName(settingsFile).GetName();
+        m_LastChosenSettings->SetLabel(m_LastChosenSettingsFileName);
 
         OnUpdateLucyRichardsonSettings(); // Perform all processing steps, starting with L-R deconvolution
     }
@@ -268,7 +282,11 @@ void c_MainWindow::OnSettingsFile(wxCommandEvent &event)
                     wxMessageBox(_("Failed to save processing settings."), _("Error"), wxOK | wxCENTRE | wxICON_ERROR);
                 }
                 else
+                {
                     SetAsMRU(fname.GetFullPath());
+                    m_LastChosenSettingsFileName = wxFileName(fname).GetName();
+                    m_LastChosenSettings->SetLabel(m_LastChosenSettingsFileName);
+                }
             }
         }
         break;
@@ -587,6 +605,8 @@ void c_MainWindow::OnToneCurveChanged(wxCommandEvent &event)
 {
     if (m_CurrentSettings->m_Img.IsValid())
         ScheduleProcessing(ProcessingRequest::TONE_CURVE);
+
+    IndicateSettingsModified();
 }
 
 /// Returns 'true' if sharpening settings have impact on the image
@@ -1591,6 +1611,12 @@ void c_MainWindow::SetUnsharpMaskingControlsVisibility()
     procPanel->Refresh(true);
 }
 
+void c_MainWindow::IndicateSettingsModified()
+{
+    if (!m_LastChosenSettingsFileName.IsEmpty())
+        m_LastChosenSettings->SetLabelMarkup(wxString::Format(_("%s <i>(modified)</i>"), m_LastChosenSettingsFileName));
+}
+
 void c_MainWindow::OnCommandEvent(wxCommandEvent &event)
 {
     ProcessingSettings_t &s = *m_CurrentSettings;
@@ -1609,17 +1635,20 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent &event)
     case ID_LucyRichardsonSigma:
     case ID_LucyRichardsonDeringing:
         OnUpdateLucyRichardsonSettings();
+        IndicateSettingsModified();
         break;
 
     case ID_LucyRichardsonReset:
         ((wxSpinCtrl *)FindWindowById(ID_LucyRichardsonIters, this))->SetValue(Default::LR_ITERATIONS);
         ((c_NumericalCtrl *)FindWindowById(ID_LucyRichardsonSigma, this))->SetValue(Default::LR_SIGMA);
         OnUpdateLucyRichardsonSettings();
+        IndicateSettingsModified();
         break;
 
     case ID_LucyRichardsonOff:
         ((wxSpinCtrl *)FindWindowById(ID_LucyRichardsonIters, this))->SetValue(0);
         OnUpdateLucyRichardsonSettings();
+        IndicateSettingsModified();
         break;
 
     case ID_UnsharpMaskingAdaptive:
@@ -1632,6 +1661,7 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent &event)
             SetUnsharpMaskingControlsVisibility();
 
         OnUpdateUnsharpMaskingSettings();
+        IndicateSettingsModified();
         break;
 
     case ID_UnsharpMaskingReset:
@@ -1645,6 +1675,7 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent &event)
         ((wxCheckBox *)FindWindowById(ID_UnsharpMaskingAdaptive, this))->SetValue(false);
         SetUnsharpMaskingControlsVisibility();
         OnUpdateUnsharpMaskingSettings();
+        IndicateSettingsModified();
         break;
 
     case ID_SelectAndProcessAll:
@@ -1722,6 +1753,18 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent &event)
                     // Normalization using the new limits (if enabled) is performed by OpenFile().
                     OpenFile(wxFileName(s.inputFilePath), false);
                 }
+
+                IndicateSettingsModified();
+            }
+        }
+        break;
+
+    case ID_ToneCurveWindowSettings:
+        {
+            c_ToneCurveWindowSettingsDialog dlg(this);
+            if (dlg.ShowModal() == wxID_OK)
+            {
+                m_ToneCurveEditorWindow.Refresh();
             }
         }
         break;
@@ -2011,7 +2054,8 @@ void c_MainWindow::InitToolbar()
 
     tb->SetToolBitmapSize(iconSize);
 
-    // File operations controls
+    // File operations controls ------------------------------
+
 	tb->AddTool(wxID_OPEN, wxEmptyString,
 	        LoadBitmap("open_file", true, iconSize),
 	        wxNullBitmap,
@@ -2024,7 +2068,8 @@ void c_MainWindow::InitToolbar()
         _("Save image file"));
     tb->AddSeparator();
 
-    // User interface controls
+    // User interface controls ------------------------------
+
     tb->AddCheckTool(ID_ToggleProcessingPanel, wxEmptyString, LoadBitmap("toggle_proc", true, iconSize),
         wxNullBitmap, _("Show processing controls"));
     tb->FindById(ID_ToggleProcessingPanel)->Toggle(true);
@@ -2034,7 +2079,8 @@ void c_MainWindow::InitToolbar()
 
     tb->AddSeparator();
 
-    // Processing controls
+    // Processing controls ------------------------------
+
     tb->AddTool(ID_SelectAndProcessAll, wxEmptyString,
                 LoadBitmap("select_all", true, iconSize),
                 wxNullBitmap,
@@ -2043,7 +2089,7 @@ void c_MainWindow::InitToolbar()
 
     tb->AddSeparator();
 
-    // Zoom controls
+    // Zoom controls ------------------------------
 
     tb->AddCheckTool(ID_FitInWindow, wxEmptyString, LoadBitmap("fit_wnd", true, iconSize),
             wxNullBitmap, _("Fit image in window"));
@@ -2058,6 +2104,8 @@ void c_MainWindow::InitToolbar()
 
     tb->AddSeparator();
 
+    // Settings file controls ------------------------------
+
     tb->AddTool(ID_SaveSettings, wxEmptyString, LoadBitmap("save_settings", true, iconSize),
             wxNullBitmap, wxITEM_NORMAL, _("Save processing settings"));
     tb->AddTool(ID_LoadSettings, wxEmptyString, LoadBitmap("load_settings", true, iconSize),
@@ -2065,6 +2113,11 @@ void c_MainWindow::InitToolbar()
 
     tb->AddTool(ID_MruSettings, wxEmptyString, LoadBitmap("mru_settings", true, iconSize),
             wxNullBitmap, wxITEM_NORMAL, _("Show list of recently used settings"));
+
+    tb->AddSeparator();
+
+    tb->AddControl(m_LastChosenSettings = new wxStaticText(tb, wxID_ANY, wxEmptyString));
+    m_LastChosenSettings->SetToolTip(_("Last chosen settings file"));
 
     tb->Realize();
 }
@@ -2094,7 +2147,7 @@ void c_MainWindow::InitMenu()
                        [this](wxCommandEvent &evt)
                        {
                            long result = wxGetNumberFromUser(_("Size of toolbar icons in pixels:"), wxEmptyString,
-                                                             _(L"Tool icons\u2019 size"), Configuration::ToolIconSize,
+                                                             _(L"Tool Icons\u2019 Size"), Configuration::ToolIconSize,
                                                              16, 128, this);
                             if (result != -1)
                             {
@@ -2103,6 +2156,8 @@ void c_MainWindow::InitMenu()
                             }
                        },
                        ID_ToolIconSize);
+
+    menuSettings->Append(ID_ToneCurveWindowSettings, _("Tone curve editor..."), wxEmptyString, false);
 
     wxMenu *menuView = new wxMenu();
         wxMenu *menuPanels = new wxMenu();
