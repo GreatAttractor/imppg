@@ -826,35 +826,35 @@ c_Image LoadImageFileAsMono8(
 bool SaveImageFile(
     const std::string &fname, ///< Full destination path
     const c_Image &img,
-    OutputFormat_t outputFmt
+    OutputFormat outputFmt
     )
 {
     bool result = false;
 
 #if USE_CFITSIO
-    if (outputFmt == OUTF_FITS_32F || outputFmt == OUTF_FITS_16 || outputFmt == OUTF_FITS_8)
+    if (outputFmt == OutputFormat::FITS_32F || outputFmt == OutputFormat::FITS_16 || outputFmt == OutputFormat::FITS_8)
     {
         fitsfile *fptr;
         int status;
         long dimensions[2] = { img.GetWidth(), img.GetHeight() };
         void *array = 0; // contents of the output FITS file
-        if (outputFmt == OUTF_FITS_32F)
+        if (outputFmt == OutputFormat::FITS_32F)
             array = operator new[](dimensions[0] * dimensions[1] * sizeof(float));
-        else if (outputFmt == OUTF_FITS_16)
+        else if (outputFmt == OutputFormat::FITS_16)
             array = operator new[](dimensions[0] * dimensions[1] * sizeof(uint16_t));
-        else if (outputFmt == OUTF_FITS_8)
+        else if (outputFmt == OutputFormat::FITS_8)
             array = operator new[](dimensions[0] * dimensions[1] * sizeof(uint8_t));
         if (!array)
             return false;
 
         switch (outputFmt)
         {
-        case OUTF_FITS_32F:
+        case OutputFormat::FITS_32F:
             for (unsigned row = 0; row < img.GetHeight(); row++)
                 memcpy((uint8_t *)array + row*img.GetWidth()*sizeof(float), img.GetRow(row), img.GetWidth()*sizeof(float));
             break;
 
-        case OUTF_FITS_16:
+        case OutputFormat::FITS_16:
             {
                 c_Image img16 = c_Image::ConvertPixelFormat(img, PIX_MONO16);
                 for (unsigned row = 0; row < img16.GetHeight(); row++)
@@ -863,7 +863,7 @@ bool SaveImageFile(
                 break;
             }
 
-        case OUTF_FITS_8:
+        case OutputFormat::FITS_8:
             {
                 c_Image img8 = c_Image::ConvertPixelFormat(img, PIX_MONO8);
                 for (unsigned row = 0; row < img8.GetHeight(); row++)
@@ -877,17 +877,17 @@ bool SaveImageFile(
         status = 0;
         fits_create_file(&fptr, (std::string("!") + fname).c_str(), &status); // A leading "!" overwrites an existing file
         int bitPix, datatype;
-        if (outputFmt == OUTF_FITS_32F)
+        if (outputFmt == OutputFormat::FITS_32F)
         {
             bitPix = FLOAT_IMG;
             datatype = TFLOAT;
         }
-        else if (outputFmt == OUTF_FITS_16)
+        else if (outputFmt == OutputFormat::FITS_16)
         {
             bitPix = USHORT_IMG;
             datatype = TUSHORT;
         }
-        else if (outputFmt == OUTF_FITS_8)
+        else if (outputFmt == OutputFormat::FITS_8)
         {
             bitPix = BYTE_IMG;
             datatype = TBYTE;
@@ -909,21 +909,21 @@ bool SaveImageFile(
 
     switch (outputFmt)
     {
-    case OUTF_BMP_MONO_8:
-    case OUTF_PNG_MONO_8:
-    case OUTF_TIFF_MONO_8_LZW:
+    case OutputFormat::BMP_MONO_8:
+    case OutputFormat::PNG_MONO_8:
+    case OutputFormat::TIFF_MONO_8_LZW:
         outputBmp = FreeImage_AllocateT(FIT_BITMAP, img.GetWidth(), img.GetHeight(), 8);
         convertedImg = c_Image::ConvertPixelFormat(img, PIX_MONO8);
         break;
 
-    case OUTF_TIFF_MONO_16:
-    case OUTF_TIFF_MONO_16_ZIP:
+    case OutputFormat::TIFF_MONO_16:
+    case OutputFormat::TIFF_MONO_16_ZIP:
         outputBmp = FreeImage_AllocateT(FIT_UINT16, img.GetWidth(), img.GetHeight());
         convertedImg = c_Image::ConvertPixelFormat(img, PIX_MONO16);
         break;
 
-    case OUTF_TIFF_MONO_32F:
-    case OUTF_TIFF_MONO_32F_ZIP:
+    case OutputFormat::TIFF_MONO_32F:
+    case OutputFormat::TIFF_MONO_32F_ZIP:
         outputBmp = FreeImage_AllocateT(FIT_FLOAT, img.GetWidth(), img.GetHeight());
         convertedImg = img;
         break;
@@ -939,31 +939,31 @@ bool SaveImageFile(
 
     switch (outputFmt)
     {
-    case OUTF_BMP_MONO_8:
+    case OutputFormat::BMP_MONO_8:
         result = FreeImage_Save(FIF_BMP, outputBmp, fname.c_str(), BMP_DEFAULT);
         break;
 
-    case OUTF_PNG_MONO_8:
+    case OutputFormat::PNG_MONO_8:
         result = FreeImage_Save(FIF_PNG, outputBmp, fname.c_str(), PNG_DEFAULT);
         break;
 
-    case OUTF_TIFF_MONO_8_LZW:
+    case OutputFormat::TIFF_MONO_8_LZW:
         result = FreeImage_Save(FIF_TIFF, outputBmp, fname.c_str(), TIFF_LZW);
         break;
 
-    case OUTF_TIFF_MONO_16:
+    case OutputFormat::TIFF_MONO_16:
         result = FreeImage_Save(FIF_TIFF, outputBmp, fname.c_str(), TIFF_NONE);
         break;
 
-    case OUTF_TIFF_MONO_16_ZIP:
+    case OutputFormat::TIFF_MONO_16_ZIP:
         result = FreeImage_Save(FIF_TIFF, outputBmp, fname.c_str(), TIFF_DEFLATE);
         break;
 
-    case OUTF_TIFF_MONO_32F:
+    case OutputFormat::TIFF_MONO_32F:
         result = FreeImage_Save(FIF_TIFF, outputBmp, fname.c_str(), TIFF_NONE);
         break;
 
-    case OUTF_TIFF_MONO_32F_ZIP:
+    case OutputFormat::TIFF_MONO_32F_ZIP:
         result = FreeImage_Save(FIF_TIFF, outputBmp, fname.c_str(), TIFF_DEFLATE);
         break;
     }
@@ -974,7 +974,7 @@ bool SaveImageFile(
 
     switch (outputFmt)
     {
-    case OUTF_BMP_MONO_8:
+    case OutputFormat::BMP_MONO_8:
         {
             c_Image *outputImg = c_Image::ConvertPixelFormat(img, PIX_MONO8);
             result = SaveBmp(fname.c_str(), *outputImg);
@@ -982,7 +982,7 @@ bool SaveImageFile(
             break;
         }
 
-    case OUTF_TIFF_MONO_16:
+    case OutputFormat::TIFF_MONO_16:
         {
             c_Image *outputImg = c_Image::ConvertPixelFormat(img, PIX_MONO16);
             result = SaveTiff(fname.c_str(), *outputImg);

@@ -89,7 +89,7 @@ class c_BatchDialog: public wxDialog
         c_ToneCurve tcurve;
 
         wxString outputDir;
-        OutputFormat_t outputFmt;
+        OutputFormat outputFmt;
     } m_Settings;
 
     size_t m_CurrentFile; ///< Index of the currently processed file
@@ -120,7 +120,7 @@ public:
     c_BatchDialog(wxWindow *parent, const wxArrayString &fileNames,
         wxString settingsFileName,
         wxString outputDirectory,
-        OutputFormat_t outputFormat
+        OutputFormat outputFormat
         );
 
     DECLARE_EVENT_TABLE()
@@ -188,25 +188,25 @@ bool c_BatchDialog::SaveOutputFile()
     wxFileName fn(m_FileNames[m_CurrentFile]);
     switch (m_Settings.outputFmt)
     {
-    case OUTF_BMP_MONO_8: fn.SetExt("bmp"); break;
+    case OutputFormat::BMP_MONO_8: fn.SetExt("bmp"); break;
 #if USE_FREEIMAGE
-    case OUTF_PNG_MONO_8: fn.SetExt("png"); break;
+    case OutputFormat::PNG_MONO_8: fn.SetExt("png"); break;
 #endif
 
-    case OUTF_TIFF_MONO_16:
+    case OutputFormat::TIFF_MONO_16:
 #if (USE_FREEIMAGE)
-    case OUTF_TIFF_MONO_8_LZW:
-    case OUTF_TIFF_MONO_16_ZIP:
-    case OUTF_TIFF_MONO_32F:
-    case OUTF_TIFF_MONO_32F_ZIP:
+    case OutputFormat::TIFF_MONO_8_LZW:
+    case OutputFormat::TIFF_MONO_16_ZIP:
+    case OutputFormat::TIFF_MONO_32F:
+    case OutputFormat::TIFF_MONO_32F_ZIP:
 #endif
         fn.SetExt("tif");
         break;
 
 #if USE_CFITSIO
-    case OUTF_FITS_8:
-    case OUTF_FITS_16:
-    case OUTF_FITS_32F:
+    case OutputFormat::FITS_8:
+    case OutputFormat::FITS_16:
+    case OutputFormat::FITS_32F:
         fn.SetExt("fit");
         break;
 #endif
@@ -475,7 +475,7 @@ void c_BatchDialog::OnCommandEvent(wxCommandEvent &event)
 c_BatchDialog::c_BatchDialog(wxWindow *parent, const wxArrayString &fileNames,
     wxString settingsFileName,
     wxString outputDirectory,
-    OutputFormat_t outputFormat
+    OutputFormat outputFormat
 )
 : wxDialog(parent, wxID_ANY, _("Batch processing"), wxDefaultPosition, wxDefaultSize,
         wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)

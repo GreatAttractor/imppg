@@ -329,7 +329,7 @@ c_Image LoadFitsImage(const std::string &fname);
 bool SaveImageFile(
     const std::string &fname, ///< Full destination path
     const c_Image &img,
-    OutputFormat_t outputFmt
+    OutputFormat outputFmt
 );
 
 /// Returns 'true' if image's width and/or height were successfully read; returns 'false' on error

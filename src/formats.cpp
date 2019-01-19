@@ -43,43 +43,43 @@ const char *INPUT_FILE_FILTERS =
 
 ;
 
-std::string GetOutputFormatDescription(OutputFormat_t fmt, std::string *wildcard)
+std::string GetOutputFormatDescription(OutputFormat fmt, std::string *wildcard)
 {
     switch (fmt)
     {
-    case OUTF_BMP_MONO_8:
+    case OutputFormat::BMP_MONO_8:
         if (wildcard)
             *wildcard = "*.bmp";
         return std::string(_("BMP 8-bit"));
 
-    case OUTF_TIFF_MONO_16:
+    case OutputFormat::TIFF_MONO_16:
         if (wildcard)
             *wildcard = "*.tif";
         return std::string(_("TIFF 16-bit"));
 
 #if (USE_FREEIMAGE)
 
-    case OUTF_PNG_MONO_8:
+    case OutputFormat::PNG_MONO_8:
         if (wildcard)
             *wildcard = "*.png";
         return std::string(_("PNG 8-bit"));
 
-    case OUTF_TIFF_MONO_8_LZW:
+    case OutputFormat::TIFF_MONO_8_LZW:
         if (wildcard)
             *wildcard = "*.tif";
         return std::string(_("TIFF 8-bit (LZW compression)"));
 
-    case OUTF_TIFF_MONO_16_ZIP:
+    case OutputFormat::TIFF_MONO_16_ZIP:
         if (wildcard)
             *wildcard = "*.tif";
         return std::string(_("TIFF 16-bit (ZIP compression)"));
 
-    case OUTF_TIFF_MONO_32F:
+    case OutputFormat::TIFF_MONO_32F:
         if (wildcard)
             *wildcard = "*.tif";
         return std::string(_("TIFF 32-bit floating-point"));
 
-    case OUTF_TIFF_MONO_32F_ZIP:
+    case OutputFormat::TIFF_MONO_32F_ZIP:
         if (wildcard)
             *wildcard = "*.tif";
         return std::string(_("TIFF 32-bit floating-point (ZIP compression)"));
@@ -87,17 +87,17 @@ std::string GetOutputFormatDescription(OutputFormat_t fmt, std::string *wildcard
 #endif
 
 #if USE_CFITSIO
-    case OUTF_FITS_8:
+    case OutputFormat::FITS_8:
         if (wildcard)
             *wildcard = "*.fit";
         return std::string(_("FITS 8-bit"));
 
-    case OUTF_FITS_16:
+    case OutputFormat::FITS_16:
         if (wildcard)
             *wildcard = "*.fit";
         return std::string(_("FITS 16-bit"));
 
-    case OUTF_FITS_32F:
+    case OutputFormat::FITS_32F:
         if (wildcard)
             *wildcard = "*.fit";
         return std::string(_("FITS 32-bit floating point"));
@@ -112,13 +112,13 @@ std::string GetOutputFilters()
 {
     std::string filters;
 
-    for (int i = 0; i < OUTF_LAST; i++)
+    for (int i = 0; i < static_cast<int>(OutputFormat::LAST); i++)
     {
         if (i > 0)
             filters += "|";
 
         std::string wildcard;
-        filters += GetOutputFormatDescription((OutputFormat_t)i, &wildcard);
+        filters += GetOutputFormatDescription(static_cast<OutputFormat>(i), &wildcard);
         filters += "|" + wildcard;
     }
 

@@ -76,7 +76,7 @@ namespace Configuration
     /// Code of UI language to use or an empty string (then the system default will used)
     extern c_Property<wxString> UiLanguage;
     extern c_Property<bool>     LogHistogram;
-    extern c_Property<OutputFormat_t> BatchOutputFormat;
+    extern c_Property<OutputFormat> BatchOutputFormat;
     extern c_Property<int>      ProcessingPanelWidth;
     extern c_Property<unsigned> ToolIconSize;
 

@@ -158,16 +158,16 @@ PROPERTY_RECT(BatchProgressDialogPosSize);
 PROPERTY_RECT(AlignProgressDialogPosSize);
 PROPERTY_RECT(AlignParamsDialogPosSize);
 
-c_Property<OutputFormat_t> BatchOutputFormat(
+c_Property<OutputFormat> BatchOutputFormat(
     []()
     {
-        long result = appConfig->ReadLong(Keys::BatchOutputFormat, (long)OUTF_BMP_MONO_8);
-        if (result < 0 || result >= OUTF_LAST)
-            result = OUTF_BMP_MONO_8;
+        long result = static_cast<long>(appConfig->ReadLong(Keys::BatchOutputFormat, (long)OutputFormat::BMP_MONO_8));
+        if (result < 0 || result >= (long)OutputFormat::LAST)
+            return OutputFormat::BMP_MONO_8;
 
-        return (OutputFormat_t)result;
+        return static_cast<OutputFormat>(result);
     },
-    [](const OutputFormat_t &val) { appConfig->Write(Keys::BatchOutputFormat, (long)val); }
+    [](const OutputFormat &val) { appConfig->Write(Keys::BatchOutputFormat, (long)val); }
 );
 
 c_Property<int> ProcessingPanelWidth(

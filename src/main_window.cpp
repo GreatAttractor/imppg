@@ -412,7 +412,7 @@ void c_MainWindow::OnSaveFile()
     if (wxID_OK == dlg.ShowModal())
     {
         Configuration::FileSavePath = wxFileName(dlg.GetPath()).GetPath();
-        if (!SaveImageFile(dlg.GetPath().ToStdString(), s.output.toneCurve.img, (OutputFormat_t)dlg.GetFilterIndex()))
+        if (!SaveImageFile(dlg.GetPath().ToStdString(), s.output.toneCurve.img, (OutputFormat)dlg.GetFilterIndex()))
             wxMessageBox(wxString::Format(_("Could not save output file %s."), dlg.GetFilename()), _("Error"), wxICON_ERROR, this);
     }
 }

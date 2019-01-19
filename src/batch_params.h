@@ -47,7 +47,7 @@ public:
 
     const wxArrayString GetInputFileNames();
     wxString GetOutputDirectory();
-    OutputFormat_t GetOutputFormat();
+    OutputFormat GetOutputFormat();
     wxString GetSettingsFileName();
 
     DECLARE_EVENT_TABLE()

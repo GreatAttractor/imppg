@@ -211,12 +211,12 @@ bool c_ImageAlignmentWorkerThread::SaveTranslatedOutputImage(wxString inputFileN
 #if USE_CFITSIO
     if (isFits)
     {
-        OutputFormat_t outF = OUTF_FITS_16;
+        auto outF = OutputFormat::FITS_16;
         switch (outpImg.GetPixelFormat())
         {
-        case PIX_MONO8: outF = OUTF_FITS_8; break;
-        case PIX_MONO16: outF = OUTF_FITS_16; break;
-        case PIX_MONO32F: outF = OUTF_FITS_32F; break;
+        case PIX_MONO8: outF = OutputFormat::FITS_8; break;
+        case PIX_MONO16: outF = OutputFormat::FITS_16; break;
+        case PIX_MONO32F: outF = OutputFormat::FITS_32F; break;
         }
         outputFileName.SetExt("fit");
         saved = SaveImageFile(outputFileName.GetFullPath().ToStdString(), outpImg, outF);

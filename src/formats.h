@@ -30,35 +30,35 @@ File description:
 extern const char *INPUT_FILE_FILTERS;
 
 /// Supported output file formats
-typedef enum
+enum class OutputFormat
 {
 #if USE_FREEIMAGE
 
-    OUTF_BMP_MONO_8 = 0,    ///< 8-bit mono BMP
-    OUTF_PNG_MONO_8,        ///< 8-bit mono PNG
-    OUTF_TIFF_MONO_8_LZW,   ///< 8-bit mono TIFF, LZW compression
-    OUTF_TIFF_MONO_16,      ///< 16-bit mono TIFF, no compression
-    OUTF_TIFF_MONO_16_ZIP,  ///< 16-bit mono TIFF, ZIP (Deflate) compression
-    OUTF_TIFF_MONO_32F,     ///< 32-bit floating-point mono TIFF, no compression
-    OUTF_TIFF_MONO_32F_ZIP, ///< 32-bit floating-point mono TIFF, ZIP (Deflate) compression
+    BMP_MONO_8 = 0,    ///< 8-bit mono BMP
+    PNG_MONO_8,        ///< 8-bit mono PNG
+    TIFF_MONO_8_LZW,   ///< 8-bit mono TIFF, LZW compression
+    TIFF_MONO_16,      ///< 16-bit mono TIFF, no compression
+    TIFF_MONO_16_ZIP,  ///< 16-bit mono TIFF, ZIP (Deflate) compression
+    TIFF_MONO_32F,     ///< 32-bit floating-point mono TIFF, no compression
+    TIFF_MONO_32F_ZIP, ///< 32-bit floating-point mono TIFF, ZIP (Deflate) compression
 
 #else
 
-    OUTF_BMP_MONO_8 = 0, ///< 8-bit mono BMP
-    OUTF_TIFF_MONO_16,   ///< 16-bit mono TIFF, no compression
+    BMP_MONO_8 = 0, ///< 8-bit mono BMP
+    TIFF_MONO_16,   ///< 16-bit mono TIFF, no compression
 
 #endif
 
 #if USE_CFITSIO
-    OUTF_FITS_8,
-    OUTF_FITS_16,
-    OUTF_FITS_32F,
+    FITS_8,
+    FITS_16,
+    FITS_32F,
 #endif
 
-    OUTF_LAST // this has to be the last element
-} OutputFormat_t;
+    LAST // this has to be the last element
+};
 
-std::string GetOutputFormatDescription(OutputFormat_t fmt, std::string *wildcard = 0);
+std::string GetOutputFormatDescription(OutputFormat fmt, std::string *wildcard = 0);
 
 /// Returns output filters suitable for use in a File Save dialog
 std::string GetOutputFilters();

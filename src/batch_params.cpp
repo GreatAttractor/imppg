@@ -69,9 +69,9 @@ wxString c_BatchParamsDialog::GetOutputDirectory()
     return ((wxDirPickerCtrl *)FindWindowById(ID_OutputDir, this))->GetPath();
 }
 
-OutputFormat_t c_BatchParamsDialog::GetOutputFormat()
+OutputFormat c_BatchParamsDialog::GetOutputFormat()
 {
-    return (OutputFormat_t)((wxChoice *)FindWindowById(ID_OutputFormat, this))->GetCurrentSelection();
+    return static_cast<OutputFormat>(((wxChoice *)FindWindowById(ID_OutputFormat, this))->GetCurrentSelection());
 }
 
 wxString c_BatchParamsDialog::GetSettingsFileName()
@@ -112,7 +112,7 @@ void c_BatchParamsDialog::StoreConfiguration()
     Configuration::BatchLoadSettingsPath = wxFileName(((wxFilePickerCtrl *)FindWindowById(ID_SettingsFilePicker, this))->GetPath()).GetPath();
     Configuration::BatchDialogPosSize = wxRect(GetPosition(), GetSize());
     Configuration::BatchOutputPath = ((wxDirPickerCtrl *)FindWindowById(ID_OutputDir, this))->GetPath();
-    Configuration::BatchOutputFormat = (OutputFormat_t)((wxChoice *)FindWindowById(ID_OutputFormat, this))->GetSelection();
+    Configuration::BatchOutputFormat = static_cast<OutputFormat>(((wxChoice *)FindWindowById(ID_OutputFormat, this))->GetSelection());
 }
 
 void c_BatchParamsDialog::OnCommandEvent(wxCommandEvent &event)
@@ -216,10 +216,10 @@ void c_BatchParamsDialog::DoInitControls()
     wxSizer *szOutFmt = new wxBoxSizer(wxHORIZONTAL);
     szOutFmt->Add(new wxStaticText(GetContainer(), wxID_ANY, _("Output format:")), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
     wxArrayString formatStr;
-    for (int i = 0; i < OUTF_LAST; i++)
-        formatStr.Add(GetOutputFormatDescription((OutputFormat_t)i));
+    for (int i = 0; i < static_cast<int>(OutputFormat::LAST); i++)
+        formatStr.Add(GetOutputFormatDescription((OutputFormat)i));
     wxChoice *outFormats = new wxChoice(GetContainer(), ID_OutputFormat, wxDefaultPosition, wxDefaultSize, formatStr);
-    outFormats->SetSelection((int)Configuration::BatchOutputFormat);
+    outFormats->SetSelection(static_cast<int>(static_cast<OutputFormat>(Configuration::BatchOutputFormat)));
     szOutFmt->Add(outFormats, 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
     szTop->Add(szOutFmt, 0, wxALIGN_LEFT | wxALL, BORDER);
 
