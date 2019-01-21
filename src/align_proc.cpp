@@ -357,7 +357,7 @@ c_Image GetBlurredImage(const c_Image &srcImg, float gaussianSigma)
     c_Image result(srcImg.GetWidth(), srcImg.GetHeight(), PIX_MONO32F);
 
     ConvolveSeparable(
-            c_PaddedArrayPtr<float>((float *)srcImg.GetRow(0), srcImg.GetWidth(), srcImg.GetHeight(), srcImg.GetBuffer().GetBytesPerRow()),
+            c_PaddedArrayPtr<const float>((const float *)srcImg.GetRow(0), srcImg.GetWidth(), srcImg.GetHeight(), srcImg.GetBuffer().GetBytesPerRow()),
             c_PaddedArrayPtr<float>((float *)result.GetRow(0), result.GetWidth(), result.GetHeight(), result.GetBuffer().GetBytesPerRow()),
             gaussianSigma);
 

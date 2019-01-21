@@ -21,11 +21,13 @@ File description:
     Lucy-Richardson deconvolution implementation.
 */
 
-#include <cassert>
-#include <cstring>
-#include <cmath>
 #include <algorithm>
+#include <cassert>
+#include <cmath>
+#include <cstring>
+#include <memory>
 #include <set>
+
 #include "lrdeconv.h"
 #include "gauss.h"
 
@@ -44,7 +46,7 @@ const int YOUNG_VAN_VLIET_MIN_KERNEL_RADIUS = 8;
 
 /// Transposes matrix 'input' and writes it to 'output'
 template<typename T>
-void Transpose(T *input, T *output,
+void Transpose(const T *input, T *output,
     int width, ///< Number of columns in 'input', rows in 'output'
     int height, ///< Number of rows in 'input', columns in 'output'
     int inputBytesPerRow, int outputBytesPerRow, int blockSize)
@@ -111,15 +113,8 @@ void Clamp(float array[], int width, int height, int bytesPerRow)
     }
 }
 
-void swapPtrs(float **p1, float **p2)
-{
-    float *temp = *p1;
-    *p1 = *p2;
-    *p2 = temp;
-}
-
 /// Performs a single step of 1D convolution using the middle kernel value 'kernelVal'
-inline void Convolve1Dstep_OfsZero(float input[], float output[], int len, float kernelVal)
+inline void Convolve1Dstep_OfsZero(const float input[], float output[], int len, float kernelVal)
 {
     for (int i = 0; i < len; i++)
     {
@@ -129,7 +124,7 @@ inline void Convolve1Dstep_OfsZero(float input[], float output[], int len, float
 }
 
 /// Performs a single step of 1D convolution using the kernel value 'kernelVal', offset by 'kernelOfs' elements from kernel's middle
-inline void Convolve1Dstep_OfsNonZero(float input[], float output[], int len, float kernelVal, int kernelOfs)
+inline void Convolve1Dstep_OfsNonZero(const float input[], float output[], int len, float kernelVal, int kernelOfs)
 {
     for (int i = 0; i < len; i++)
     {
@@ -141,9 +136,9 @@ inline void Convolve1Dstep_OfsNonZero(float input[], float output[], int len, fl
 
 /// Calculates convolution of 'input' with a rotationally symmetric and separable (i.e. Gaussian) 'kernel' and writes it in transposed form to 'output'
 void ConvolveSeparableTranspose(
-    c_PaddedArrayPtr<float> input,  ///< Input array
+    c_PaddedArrayPtr<const float> input,  ///< Input array
     c_PaddedArrayPtr<float> output, ///< Transposed output array; contains as many rows as 'input' does columns and as many columns as 'input' does rows
-    float kernel[], ///< Contains convolution kernel's projection (horizontal/vertical); element [kernelRadius] is the middle
+    const float kernel[], ///< Contains convolution kernel's projection (horizontal/vertical); element [kernelRadius] is the middle
     int kernelRadius, ///< 'kernel' contains 2*kernelRadius-1 elements
     float tempBuf1[], ///< Temporary buffer 1, as many elements as 'input'
     float tempBuf2[] ///< Temporary buffer 2, as many elements as 'input'
@@ -277,13 +272,13 @@ void ConvolveSeparableTranspose(
 
 /// Performs a Young & van Vliet approximated recursive Gaussian filtering of values in one direction
 inline void YvVFilterValues(
-    float input[], ///< Input array
+    const float input[], ///< Input array
     float output[], ///< Output array (may equal 'input')
     int length, ///< Number of elements in 'input', 'output'
     int direction, ///< 1: filter forward, -1: filter backward; if -1, processing starts at the last element
     // YvV coefficients
     float b0inv, float b1, float b2, float b3, float B
-    )
+)
 {
     assert(direction == 1 || direction == -1);
 
@@ -334,11 +329,11 @@ inline void CalculateYvVCoefficients(float sigma, float &b0inv, float &b1, float
 
 /// Calculates convolution of 'input' with an approximated Gaussian kernel (Young & van Vliet recursive method) and writes it in transposed form to 'output'
 void ConvolveGaussianRecursiveTranspose(
-    c_PaddedArrayPtr<float> input,  ///< Input array
-    c_PaddedArrayPtr<float> output, ///< Transposed output array; contains as many rows as 'input' does columns and as many columns as 'input' does rows
-    float sigma,                    ///< Gaussian sigma
-    float tempBuf1[],               ///< width*height elements
-    float tempBuf2[]                ///< width*height elements
+    c_PaddedArrayPtr<const float> input,  ///< Input array
+    c_PaddedArrayPtr<float> output,       ///< Transposed output array; contains as many rows as 'input' does columns and as many columns as 'input' does rows
+    float sigma,                          ///< Gaussian sigma
+    float tempBuf1[],                     ///< width*height elements
+    float tempBuf2[]                      ///< width*height elements
     )
 {
     int width = input.width(), height = input.height();
@@ -376,7 +371,7 @@ void ConvolveGaussianRecursiveTranspose(
 
 /// Calculates convolution of 'input' with a Gaussian kernel
 void ConvolveSeparable(
-        const c_PaddedArrayPtr<float> input,  ///< Input array
+        const c_PaddedArrayPtr<const float> input,  ///< Input array
         c_PaddedArrayPtr<float> output, ///< Output array having as much rows and columns as 'input' does
         float sigma              ///< Gaussian sigma
 )
@@ -428,27 +423,27 @@ void LucyRichardsonGaussian(
 {
     int width = input.GetWidth(), height = input.GetHeight();
 
-    float *prev = new float[width * height];
-    float *next = new float[width * height];
+    auto prev = std::unique_ptr<float[]>(new float[width * height]);
+    auto next = std::unique_ptr<float[]>(new float[width * height]);
 
-    float *inputConvolvedDivT = new float[input.GetHeight()*input.GetWidth()]; // a transposed array
-    float *estimateConvolvedT = new float[input.GetHeight()*input.GetWidth()]; // a transposed array
-    float *conv2 = new float[input.GetWidth()*input.GetHeight()];
+    auto inputConvolvedDivT = std::unique_ptr<float[]>(new float[input.GetHeight()*input.GetWidth()]); // a transposed array
+    auto estimateConvolvedT = std::unique_ptr<float[]>(new float[input.GetHeight()*input.GetWidth()]); // a transposed array
+    auto conv2 = std::unique_ptr<float[]>(new float[input.GetWidth()*input.GetHeight()]);
 
-    float *inputT = new float[input.GetHeight()*input.GetWidth()]; // a transposed array
+    auto inputT = std::unique_ptr<float[]>(new float[input.GetHeight()*input.GetWidth()]); // a transposed array
 
-    Transpose<float>((float *)input.GetRow(0), inputT, input.GetWidth(), input.GetHeight(),
+    Transpose<float>((float *)input.GetRow(0), inputT.get(), input.GetWidth(), input.GetHeight(),
         input.GetBytesPerRow(), input.GetHeight()*sizeof(float), TRANSPOSITION_BLOCK_SIZE);
 
-    float *tempBuf1 = new float[input.GetWidth()*input.GetHeight()];
-    float *tempBuf2 = new float[input.GetWidth()*input.GetHeight()];
+    auto tempBuf1 = std::unique_ptr<float[]>(new float[input.GetWidth()*input.GetHeight()]);
+    auto tempBuf2 = std::unique_ptr<float[]>(new float[input.GetWidth()*input.GetHeight()]);
 
     int kernelRadius = (int)ceil(sigma * 3.0f);
-    float *kernel = new float[2 * kernelRadius - 1];
-    CalculateGaussianKernelProjection(kernel, kernelRadius, sigma, true);
+    auto kernel = std::unique_ptr<float[]>(new float[2 * kernelRadius - 1]);
+    CalculateGaussianKernelProjection(kernel.get(), kernelRadius, sigma, true);
 
     for (unsigned i = 0; i < input.GetHeight(); i++)
-        memcpy((float *)prev + i*input.GetWidth(), input.GetRow(i), input.GetWidth() * sizeof(float));
+        memcpy(prev.get() + i*input.GetWidth(), input.GetRow(i), input.GetWidth() * sizeof(float));
 
     for (int i = 0; i < numIters; i++)
     {
@@ -456,15 +451,15 @@ void LucyRichardsonGaussian(
             convMethod == CONV_AUTO && kernelRadius < YOUNG_VAN_VLIET_MIN_KERNEL_RADIUS)
         {
             ConvolveSeparableTranspose(
-                    c_PaddedArrayPtr<float>(prev, width, height),
-                    c_PaddedArrayPtr<float>(estimateConvolvedT, height, width),
-                    kernel, kernelRadius, tempBuf1, tempBuf2);
+                    c_PaddedArrayPtr<const float>(prev.get(), width, height),
+                    c_PaddedArrayPtr<float>(estimateConvolvedT.get(), height, width),
+                    kernel.get(), kernelRadius, tempBuf1.get(), tempBuf2.get());
         }
         else
             ConvolveGaussianRecursiveTranspose(
-                    c_PaddedArrayPtr<float>(prev, width, height),
-                    c_PaddedArrayPtr<float>(estimateConvolvedT, height, width),
-                    sigma, tempBuf1, tempBuf2);
+                    c_PaddedArrayPtr<const float>(prev.get(), width, height),
+                    c_PaddedArrayPtr<float>(estimateConvolvedT.get(), height, width),
+                    sigma, tempBuf1.get(), tempBuf2.get());
 
         #pragma omp parallel for
         for (int j = 0; (unsigned)j < input.GetHeight() * input.GetWidth(); j++)
@@ -475,21 +470,21 @@ void LucyRichardsonGaussian(
             convMethod == CONV_AUTO && kernelRadius < YOUNG_VAN_VLIET_MIN_KERNEL_RADIUS)
         {
             ConvolveSeparableTranspose(
-                    c_PaddedArrayPtr<float>(inputConvolvedDivT, height, width),
-                    c_PaddedArrayPtr<float>(conv2, width, height),
-                    kernel, kernelRadius, tempBuf1, tempBuf2);
+                    c_PaddedArrayPtr<const float>(inputConvolvedDivT.get(), height, width),
+                    c_PaddedArrayPtr<float>(conv2.get(), width, height),
+                    kernel.get(), kernelRadius, tempBuf1.get(), tempBuf2.get());
         }
         else
             ConvolveGaussianRecursiveTranspose(
-                    c_PaddedArrayPtr<float>(inputConvolvedDivT, height, width),
-                    c_PaddedArrayPtr<float>(conv2, width, width),
-                    sigma, tempBuf1, tempBuf2);
+                    c_PaddedArrayPtr<const float>(inputConvolvedDivT.get(), height, width),
+                    c_PaddedArrayPtr<float>(conv2.get(), width, width),
+                    sigma, tempBuf1.get(), tempBuf2.get());
 
         #pragma omp parallel for
         for (int j = 0; (unsigned)j < input.GetWidth() * input.GetHeight(); j++)
             next[j] = prev[j] * conv2[j];
 
-        swapPtrs(&prev, &next);
+        std::swap(prev, next);
 
         progressCallback(i, numIters);
         if (checkAbort())
@@ -497,17 +492,7 @@ void LucyRichardsonGaussian(
     }
 
     for (unsigned i = 0; i < input.GetHeight(); i++)
-        memcpy(output.GetRow(i), next + i*input.GetWidth(), input.GetWidth() * sizeof(float));
-
-    delete[] kernel;
-    delete[] conv2;
-    delete[] prev;
-    delete[] next;
-    delete[] inputConvolvedDivT;
-    delete[] estimateConvolvedT;
-    delete[] inputT;
-    delete[] tempBuf1;
-    delete[] tempBuf2;
+        memcpy(output.GetRow(i), next.get() + i*input.GetWidth(), input.GetWidth() * sizeof(float));
 }
 
 // Functions to encode/decode (x,y) pairs into an unsigned integer; x, y need to be < 2^16
@@ -522,16 +507,16 @@ void BlurThresholdVicinity(
     float sigma
 )
 {
-    float *result = new float[input.GetWidth() * input.GetHeight()];
+    auto result = std::unique_ptr<float[]>(new float[input.GetWidth() * input.GetHeight()]);
     for (unsigned row = 0; row < input.GetHeight(); row++)
-        memcpy(result + row*input.GetWidth(), input.GetRow(row), input.GetWidth() * sizeof(float));
+        memcpy(result.get() + row*input.GetWidth(), input.GetRow(row), input.GetWidth() * sizeof(float));
 
     // Allow maximum of 2^16 = 65536 for width and height, because border pixels's coordinates will be each encoded on 16 bits
     if (input.GetWidth() >= (1<<16) || input.GetHeight() >= (1<<16))
     {
         // Just copy the input to the output
         for (unsigned row = 0; row < input.GetHeight(); row++)
-            memcpy(output.GetRow(row), result + row*input.GetWidth(), input.GetWidth() * sizeof(float));
+            memcpy(output.GetRow(row), result.get() + row*input.GetWidth(), input.GetWidth() * sizeof(float));
         return;
     }
 
@@ -591,8 +576,8 @@ void BlurThresholdVicinity(
 
     // 3) Apply Gaussian blur to all influenced pixels
     int blurRadius = (int)ceilf(sigma * 4.0f);
-    float *kernel = new float[blurRadius * blurRadius];
-    CalculateGaussianKernel(kernel, blurRadius, sigma, true);
+    auto kernel = std::unique_ptr<float[]>(new float[blurRadius * blurRadius]);
+    CalculateGaussianKernel(kernel.get(), blurRadius, sigma, true);
 
     for (std::set<unsigned>::iterator it = influencedPixels.begin(); it != influencedPixels.end(); it++)
     {
@@ -620,11 +605,6 @@ void BlurThresholdVicinity(
             }
     }
 
-    delete[] kernel;
-
     for (unsigned row = 0; row < input.GetHeight(); row++)
-        memcpy(output.GetRow(row), result + row*input.GetWidth(), input.GetWidth() * sizeof(float));
-
-    delete[] result;
-
+        memcpy(output.GetRow(row), result.get() + row*input.GetWidth(), input.GetWidth() * sizeof(float));
 }

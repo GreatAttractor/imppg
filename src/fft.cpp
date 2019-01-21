@@ -24,11 +24,13 @@ File description:
 // NOTE: MSVC 18 requires a signed integral type 'for' loop counter
 //       when using OpenMP
 
-#include "fft.h"
-#include <cmath>
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
-using namespace std;
+
+#include "fft.h"
+
+using std::complex;
 
 
 const float PI = 3.1415926536f;

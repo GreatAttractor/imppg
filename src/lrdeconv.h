@@ -67,7 +67,7 @@ void Clamp(float array[], int width, int height, int bytesPerRow);
 
 /// Calculates convolution of 'input' with a Gaussian kernel
 void ConvolveSeparable(
-        const c_PaddedArrayPtr<float> input,  ///< Input array
+        c_PaddedArrayPtr<const float> input,  ///< Input array
         c_PaddedArrayPtr<float> output, ///< Output array having as much rows and columns as 'input' does
         float sigma              ///< Gaussian sigma
 );

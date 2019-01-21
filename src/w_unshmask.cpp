@@ -63,7 +63,7 @@ void c_UnsharpMaskingThread::DoWork()
     std::unique_ptr<float[]> gaussianImg(new float[width * height]);
 
     ConvolveSeparable(
-            c_PaddedArrayPtr<float>((float *)input->GetRow(0), width, height, input->GetBytesPerRow()),
+            c_PaddedArrayPtr<const float>((const float *)input->GetRow(0), width, height, input->GetBytesPerRow()),
             c_PaddedArrayPtr<float>(gaussianImg.get(), width, height), m_Sigma);
 
     if (!m_Adaptive)
@@ -94,7 +94,7 @@ void c_UnsharpMaskingThread::DoWork()
         // Gaussian-smoothed raw image to provide the local "steering" brightness
         std::unique_ptr<float[]> imgL(new float[width * height]);
         ConvolveSeparable(
-                c_PaddedArrayPtr<float>((float *)m_RawInput->GetRow(0), width, height, m_RawInput->GetBytesPerRow()),
+                c_PaddedArrayPtr<const float>((const float *)m_RawInput->GetRow(0), width, height, m_RawInput->GetBytesPerRow()),
                 c_PaddedArrayPtr<float>(imgL.get(), width, height),
                 RAW_IMAGE_BLUR_SIGMA);
 
