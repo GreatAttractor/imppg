@@ -56,6 +56,8 @@ File description:
 #include <wx/numdlg.h>
 #include <wx/valgen.h>
 #include <wx/stdpaths.h>
+
+#include "wxapp.h"
 #include "main_window.h"
 #include "bmp.h"
 #include "tiff.h"
@@ -73,7 +75,6 @@ File description:
 #include "ctrl_ids.h"
 #include "formats.h"
 #include "align.h"
-#include "wxapp.h"
 
 DECLARE_APP(c_MyApp)
 

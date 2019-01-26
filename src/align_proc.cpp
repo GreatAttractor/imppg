@@ -39,15 +39,7 @@ File description:
 #include "gauss.h"
 #include "lrdeconv.h"
 #if USE_FREEIMAGE
-  #ifndef _WINDOWS_
-    #define FIMG_CLEANUP
-  #endif
-  #include <FreeImage.h>
-  #ifdef FIMG_CLEANUP
-    // FreeImage.h always defines _WINDOWS_, which interferes with wx headers
-    #undef _WINDOWS_
-    #undef FIMG_CLEANUP
-  #endif
+#include "FreeImage.h"
 #else
 #include "tiff.h"
 #include "bmp.h"

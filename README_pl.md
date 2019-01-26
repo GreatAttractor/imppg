@@ -61,20 +61,20 @@ Wyrównywanie (z subpikselową dokładnością) odbywa się metodą korelacji fa
   - Panel elementów kontrolnych sterujących obróbką, początkowo zadokowany po lewej stronie okna głównego, może zostać odłączony lub zadokowany po prawej stronie.
 
   - Panel sterujący obróbką oraz okno edytora krzywej tonalnej mogą zostać zamknięte i przywrócone poleceniami z menu `Widok` lub przyciskami paska narzędziowego.
-    
+
   - Zmiany ustawień dekonwolucji L-R, unsharp maskingu i krzywej tonalnej wpływają tylko na bieżące zaznaczenie (ograniczone wykropkowaną lub oznaczoną odwróconym poziomem jasności ramką). By zastosować je do całego obrazu, należy użyć funkcji `Zaznacz (i poddaj obróbce) wszystko` z menu `Edycja` lub odpowiedniego przycisku z paska narzędziowego.
-    
+
   - Bieżące zaznaczenie można zmienić w każdej chwili przeciągając myszą z wciśniętym lewym przyciskiem. Zmiana zaznaczenia przerywa rozpoczęte już przetwarzanie (o ile było w toku).
-    
+
   - Im mniejszy zaznaczony obszar, tym szybciej przebiega obróbka. Do precyzyjnej regulacji *sigmy* dekonwolucji L-R zaleca się zaznaczenie w miarę małego obszaru; dzięki temu efekty poruszania suwakiem *sigmy* będą widoczne prawie natychmiastowo. Odświeżanie jest nieco wolniejsze, gdy bieżące powiększenie jest różne od 100%.
-    
+
   - Powiększenie widoku można zmieniać przyciskami paska narzędziowego, pozycjami w menu `Widok` bądź kombinacją `Ctrl+rolka myszy`.
-    
+
   - Widok można przewijać przeciągając go z wciśniętym środkowym przyciskiem myszy.
 
   - Wielkość ikon narzędziowych można zmienić w menu `Ustawienia`.
 
-    
+
 ----------------------------------------
 ## 3. Obsługiwane formaty graficzne
 
@@ -99,8 +99,8 @@ Normalizacja może być przydatna podczas obróbki sekwencji astronomicznych „
 
 Dostęp:
     menu: `Ustawienia`/`Normalizacja poziomu jasności...`
-    
-    
+
+
 ----------------------------------------
 ### 4.2. Dekonwolucja Lucy-Richardson
 
@@ -113,8 +113,8 @@ Przełącznik `Ogranicz ringing` aktywuje eksperymentalną funkcję redukcji *ri
 Dostęp:
     zakładka `Dekonwolucja Lucy-Richardson` na panelu kontrolnym (po lewej stronie okna głównego)
 
-    
-----------------------------------------    
+
+----------------------------------------
 ### 4.3. Unsharp masking
 
 Unsharp masking służy do końcowego wyostrzania (niezależnie od dekonwolucji L-R) lub wygładzania obrazu. Parametr `sigma` określa szerokość kernela gaussowskiego; im większa wartość, tym bardziej gruboziarniste ostrzenie/wygładzanie. `Poziom` reguluje natężenie efektu. Wartość < 1 wygładza, 1 pozostawia obraz bez zmian, wartość > 1 wyostrza.
@@ -129,7 +129,7 @@ Dopuszczalne jest również ustawienie `poziom min.` > `poziom max.`.
 
 Dostęp:
     ramka `Unsharp masking` na panelu kontrolnym (po lewej stronie okna głównego)
-    
+
 
 ----------------------------------------
 ### 4.4. Krzywa tonalna
@@ -139,7 +139,7 @@ Edytor krzywej tonalnej umożliwia zmianę odwzorowania wejściowych poziomów j
 Dostęp:
     menu: `Widok`/`Panele`/`Krzywa tonalna` lub odpowiedni przycisk paska narzędziowego
 
-    
+
 ----------------------------------------
 ## 5. Zapisywanie/wczytywanie ustawień
 
@@ -148,7 +148,7 @@ Wszystkie ustawienia opisane w **4.1-4.4** można zapisać do/wczytać z pliku (
 Dostęp:
     menu: `Plik` lub odpowiednie przyciski paska narzędziowego
 
-    
+
 ----------------------------------------
 ## 6. Przetwarzanie wsadowe (wielu plików)
 
@@ -158,7 +158,7 @@ Dostęp:
     menu: `Plik`/`Przetwarzanie wsadowe...`
 
 
-----------------------------------------    
+----------------------------------------
 ## 7. Wyrównywanie sekwencji obrazów
 
 Lista `Obrazy wejściowe` w oknie dialogowym `Wyrównywanie obrazów` wyświetla pliki wejściowe w kolejności, w jakiej ImPPG ma dokonać wyrównania sekwencji. Pliki można usuwać i przenosić pojedynczo korzystając z przycisków w prawym górnym rogu listy.
@@ -190,7 +190,7 @@ Operacje takie jak zmiana obrazu na pełny/częściowy negatyw czy użycie „pr
 Dostęp:
     menu: `Narzędzia`/`Wyrównaj sekwencję obrazów...`
 
-    
+
 ----------------------------------------
 ## 8. Pozostałe
 
@@ -201,21 +201,19 @@ ImPPG przechowuje pewne ustawienia (np. pozycję i rozmiar okna głównego) w pl
 ## 9. Znane problemy
 
   - wxGTK 3.0.2, Fedora 20: Wszystkie przyciski narzędziowe reagują poprawnie, ale czasami wyświetlony stan (wciśnięty lub nie) jest niewłaściwy po użyciu opcji z menu `View` lub przycisków zamykania panelu kontrolnego bądź edytora krzywej tonalnej.
-    
+
   - (wxGTK) W lutym 2015 niektóre motywy GTK nie funkcjonują poprawnie (np. „QtCurve”, ale już nie „Raleigh”). W ImPPG może się to objawiać następująco:
     - okno dialogowe służące do otwierania plików nie pokazuje zawartości po jego otwarciu; zawartość jest odświeżana dopiero po zmianie rozmiaru okna przez użytkownika
     - program zostaje zamknięty z błędem po próbie wyboru folderu wyjściowego w oknie dialogowym z parametrami przetwarzania wsadowego
     - program zawiesza się przy próbie zmiany typu pliku w oknie dialogowym `Otwórz plik graficzny`
 
 Rozwiązanie: zmienić motyw GTK na „Raleigh” (np. w Fedorze użyć narzędzia „GTK+ Appearance”).
-    
-  - (wxGTK) Gdy używane są wxWidgets zbudowane z GTK 3, pozycja okna edytora krzywej tonalnej nie jest przywracana po uruchomieniu programu (z GTK 2 problem nie występuje).
 
 
 ----------------------------------------
 ## 10. Pobieranie
 
-Kod źródłowy ImPPG i pliki wykonywalne dla MS Windows można pobrać pod adresem:  
+Kod źródłowy ImPPG i pliki wykonywalne dla MS Windows można pobrać pod adresem:
     https://github.com/GreatAttractor/imppg/releases
 
 
@@ -230,25 +228,23 @@ By wyczyścić stworzoną przez CMake konfigurację budowania, należy usunąć 
 
 Plik wykonywalny musi znajdować się w tym samym miejscu, co podkatalog `images` i podkatalogi z plikami językowymi.
 
-*Symbol $ w poniższych przykładach oznacza znak zachęty (prompt) linii poleceń.*
-
 
 ### 11.1. Budowanie w systemie Linux i podobnych z użyciem narzędzi GNU (lub kompatybilnych)
 
 *Uwaga: CMake wymaga dostępności narzędzia `wx-config`, by wykryć wxWidgets i skonfigurować związane z nimi ustawienia. Czasami nazwa może być inna, np. w Fedorze 23 z pakietami wxGTK3 z repozytorium jest to `wx-config-3.0`. Można temu zaradzić np. tworząc dowiązanie symboliczne:*
 ```
-    $ sudo ln -s /usr/bin/wx-config-3.0 /usr/bin/wx-config  
+    sudo ln -s /usr/bin/wx-config-3.0 /usr/bin/wx-config
 ```
 
 Po upewnieniu się, że `wx-config` jest dostępne, wykonać:
 ```
-    $ cmake -G "Unix Makefiles"
+    cmake -G "Unix Makefiles"
 ```
 Zostanie utworzony natywny plik `Makefile`. Dopóki `config.in` nie zostanie zmieniony, nie trzeba więcej uruchamiać CMake.
 
 By zbudować ImPPG, wykonać:
 ```
-    $ make
+    make
 ```
 W katalogu ze źródłami pojawi się plik wykonywalny `imppg`.
 
@@ -256,39 +252,38 @@ W katalogu ze źródłami pojawi się plik wykonywalny `imppg`.
 ----------------------------------------
 ### 11.2. Budowanie pod MS Windows
 
-Jako że w tym wypadku nie ma standardowej lokacji plików nagłówkowych i bibliotek, należy zacząć od otwarcia `config.in` i odpowiedniego ustawienia ścieżek do ww. plików.
+Dostarczony plik `CMakeLists.txt` umożliwia budowanie w środowisku [MSYS2](http://www.msys2.org/). W przypadku ręcznej konfiguracji można użyć również innych środowisk (np. MS Visual Studio).
 
-
-#### Budowanie z użyciem MinGW (32- lub 64-bitowy)
-
-Upewnić się, że narzędzia MinGW są na ścieżce wyszukiwania (np. wykonać `set PATH=%PATH%;c:\MinGW\bin`) i wykonać:
+By zbudować z użyciem MSYS2, należy zainstalować środowisko zgodnie z instrukcją na http://www.msys2.org/. Następnie otworzyć konsolę MSYS2 i zainstalować narzędzia i biblioteki wymagane przez ImPPG:
 ```
-    $ cmake -G "MinGW Makefiles"
+    pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-wxWidgets mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage
+```
+
+Kod źródłowy można pobrać ręcznie lub sklonować Gitem:
+```
+    git clone https://github.com/GreatAttractor/imppg.git
+```
+
+*Uwaga*: MSYS2 montuje dyski jako `/<litera_dysku>`, więc jeśli źródła ImPPG umieszczono w:
+```
+    C:\Users\NazwaUżytkownika\Documents\imppg
+```
+by przejść do tej lokacji w konsoli MSYS2, należy wykonać:
+```
+    cd /c/Users/NazwaUżytkownika/Documents/imppg
+```
+
+W katalogu ze źródłami wykonać:
+```
+    cmake -G "MSYS Makefiles"
 ```
 Zostanie utworzony natywny plik `Makefile`. Dopóki `config.in` nie zostanie zmieniony, nie trzeba więcej uruchamiać CMake.
 
 By zbudować ImPPG, wykonać:
 ```
-    $ mingw32-make
+    make
 ```
 W katalogu ze źródłami pojawi się plik wykonywalny `imppg.exe`.
-
-
-#### Budowanie z użyciem Microsoft C++ (z Windows SDK lub Visual Studio; 32- lub 64-bitowy)
-
-Upewnić się, że środowisko jest skonfigurowane odpowiednio dla narzędzi MSVC (np. wykonać `C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\vcvars32.bat` dla konfiguracji 32-bitowej lub `C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\vcvarsx86_amd64.bat` dla 64-bitowej), następnie wykonać:
-```
-    $ cmake -G "NMake Makefiles"
-```
-Zostanie utworzony natywny plik `Makefile`. Dopóki `config.in` nie zostanie zmieniony, nie trzeba więcej uruchamiać CMake.
-
-By zbudować ImPPG, wykonać:
-```
-    $ nmake
-```
-W katalogu ze źródłami pojawi się plik wykonywalny `imppg.exe`.
-
-CMake jest w stanie również stworzyć pliki projektu dla MS Visual Studio (np. `cmake -G "Visual Studio 12 2013"` utworzy je dla VS 2013). Uruchomienie `cmake -G` wyświetli listę obsługiwanych generatorów.
 
 
 ----------------------------------------
@@ -298,14 +293,14 @@ ImPPG obsługuje wielojęzyczny interfejs użytkownika poprzez wbudowane funkcje
 
 - ekstrakcja napisów do przetłumaczenia z kodu źródłowego do pliku PO poprzez wykonanie:
 ```
-  $ xgettext -k_ *.cpp *.h -o imppg.po
+    xgettext -k_ *.cpp *.h -o imppg.po
 ```
 
 - przetłumaczenie napisów UI, tj. edycja wpisów `msgstr` w `imppg.po`
 
 - konwersja `imppg.po` do postaci binarnej:
 ```
-  $ msgfmt imppg.po -o imppg.mo
+    msgfmt imppg.po -o imppg.mo
 ```
 
 - umieszczenie `imppg.mo` w podkatalogu o nazwie będącej kodem języka (np. `pl`, `fr-ca`)
@@ -337,7 +332,7 @@ Dystrybucja binarna ImPPG potrzebuje jedynie plików MO (binarnych). Oprócz pli
 0.5 (2016-01-02)
     Nowe funkcje:
     – Adaptatywny unsharp masking
-    
+
     Ulepszenia:
     – Suwaki numeryczne można przewijać klawiszami kursora
     – Szerokość panelu kontrolnego jest zapamiętywana
@@ -349,7 +344,7 @@ Dystrybucja binarna ImPPG potrzebuje jedynie plików MO (binarnych). Oprócz pli
     – Format wyjściowy wybrany w oknie przetwarzania wsadowego jest pamiętany
     – Unsharp masking nie zwalnia przy dużych wartościach „sigmy”
     – Zwiększony zakres parametrów unsharp maskingu
-    
+
     Poprawki błędów:
     – Zła nazwa pliku wyjściowego, jeśli nazwa wejściowa zawierała więcej niż jedną kropkę
     – Błąd w momencie ręcznego wprowadzenia nieistniejącej ścieżki
@@ -361,7 +356,7 @@ Dystrybucja binarna ImPPG potrzebuje jedynie plików MO (binarnych). Oprócz pli
     – Wyrównywanie sekwencji poprzez stabilizację krawędzi tarczy słonecznej
     – Obsługa plików FITS (odczyt i zapis)
     – Zmiana powiększenia widoku
-    
+
     Ulepszenia:
     – Przewijanie widoku przez przeciąganie środkowym przyciskiem myszy
     – Pamiętanie ustawienia wyświetlania histogramu w skali logarytmicznej
@@ -376,17 +371,17 @@ Dystrybucja binarna ImPPG potrzebuje jedynie plików MO (binarnych). Oprócz pli
 0.3 (2015-03-19)
   Nowe funkcje:
     – Wyrównywanie sekwencji obrazów metodą korelacji fazowej
-    
+
   Ulepszenia:
     – Ograniczona częstotliwość restartowania przetwarzania w trakcie edycji obrazu, w efekcie większa responsywność podczas zmiany parametrów unsharp maskingu i edycji krzywej tonalnej
-    
+
   Poprawki błędów:
     – Niewłaściwe rozszerzenie plików wyjściowych po przetwarzaniu wsadowym, gdy wybrany format różni się od wejściowego
 
 0.2 (2015-02-28)
   Nowe funkcje:
     – Obsługa większej liczby formatów plików graficznych poprzez FreeImage. Nowe formaty wyjściowe: PNG 8-bitowy, TIFF 8-bitowy z kompresją LZW, TIFF 16-bitowy z kompresją ZIP, TIFF 32-bit zmiennoprzecinkowy (bez kompresji lub z kompresją ZIP).
-    
+
   Ulepszenia:
     – Uaktywniony „nowoczesny” styl elementów kontrolnych pod Windows
 

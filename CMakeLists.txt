@@ -2,12 +2,10 @@
 # ImPPG build file
 #
 # Prerequisite libraries: wxWidgets 3.0, Boost 1.57.0, FreeImage (optional) 3.14.0 or newer, CFITSIO (optional).
-# Before building, edit config.in to configure optional libs and to set include and library paths
-# if building on MS Windows.
+# Before building, edit config.in to configure optional libs.
 #
-# NOTE: On systems other than MS Windows, CMake relies on the presence of the "wx-config" tool
-#       to detect and configure wxWidgets-related build options. Sometimes this tool can be
-#       named differently, e.g. in Fedora 23 with wxGTK3 packages from repository it is
+# NOTE: CMake relies on the presence of the "wx-config" tool to detect and configure wxWidgets-related build options.
+#       Sometimes this tool can be named differently, e.g. in Fedora 23 with wxGTK3 packages from repository it is
 #       "wx-config-3.0". This can be remedied e.g. by creating a symlink:
 #
 #         sudo ln -s /usr/bin/wx-config-3.0 /usr/bin/wx-config
@@ -20,15 +18,6 @@ cmake_minimum_required(VERSION 2.8)
 include(FindPkgConfig)
 include(config.in)
 
-if(WIN32)
-    if(USE_FREEIMAGE EQUAL 1)
-        link_directories("${FREEIMAGE_LIB_DIR}")
-    endif()
-
-    if(USE_CFITSIO EQUAL 1)
-        link_directories("${CFITSIO_LIB_DIR}")
-    endif()
-endif()
 add_executable(imppg WIN32
     src/about.cpp
     src/align_disc.cpp
@@ -79,8 +68,7 @@ endif()
 
 if(WIN32)
     # The imppg(64).rc files include the manifest that enables MS Windows Common Controls 6.0.0.0
-    # (for Windows XP and above), i.e. the nicer-looking, themed ones (this is needed only for MinGW,
-    # MSVC generates and embeds the manifest automatically). It also defines the application icon.
+    # (for Windows XP and above), i.e. the nicer-looking, themed ones. It also defines the application icon.
     if(CMAKE_SIZEOF_VOID_P EQUAL 4)
         # 32-bit build
         target_sources(imppg PUBLIC src/imppg.rc)
@@ -107,36 +95,22 @@ endif()
 
 set(CMAKE_BUILD_TYPE Release)
 
-if (NOT MSVC)
-    include(CheckCXXCompilerFlag)
-    check_cxx_compiler_flag(-ffast-math GNU_FFAST_MATH_SUPPORTED)
-endif()
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag(-ffast-math GNU_FFAST_MATH_SUPPORTED)
 
-if (MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fp:fast")
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS=1)
-elseif(GNU_FFAST_MATH_SUPPORTED)
+if(GNU_FFAST_MATH_SUPPORTED)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
 endif()
 
 if(USE_FREEIMAGE EQUAL 1)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_FREEIMAGE")
-    if(WIN32)
-        target_include_directories(imppg PUBLIC "${FREEIMAGE_INCLUDE_DIR}")
-    endif()
+    # Cannot do `pkg_check_modules` on `freeimage`; as of FreeImage 3.18.0, there is no `.pc` file provided (checked in MSYS2 and Fedora 29)
     target_link_libraries(imppg freeimage)
-
 endif()
 
 if(USE_CFITSIO EQUAL 1)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_CFITSIO")
-    if(WIN32)
-        target_include_directories(imppg PUBLIC "${CFITSIO_INCLUDE_DIR}")
-        target_link_libraries(imppg cfitsio)
-    else()
-        pkg_check_modules(CFITSIO cfitsio REQUIRED)
-        include_directories(${CFITSIO_INCLUDE_DIRS})
-        link_directories(${CFITSIO_LIBRARY_DIRS})
-        target_link_libraries(imppg ${CFITSIO_LIBRARIES})
-    endif()
+    pkg_check_modules(CFITSIO cfitsio REQUIRED)
+    target_include_directories(imppg PUBLIC ${CFITSIO_INCLUDE_DIRS})
+    target_link_libraries(imppg ${CFITSIO_LIBRARIES})
 endif()

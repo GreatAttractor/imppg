@@ -216,7 +216,7 @@ ImPPG source code and MS Windows executables can be downloaded from:
 ----------------------------------------
 ## 11. Building from source code
 
-Building from source code requires a C++ compiler toolchain (with C++11 support), CMake, Boost libraries v. 1.57.0 or later (though earlier versions may work) and wxWidgets 3.0. Support for more image formats requires the FreeImage library, version 3.14.0 or newer. Without FreeImage the only supported formats are: BMP 8-, 24- and 32-bit, TIFF mono and RGB, 8 or 16 bits per channel (no compression). FITS support (optional) requires the CFITSIO library. Multithreaded processing requires compiler supporting OpenMP (e.g. GCC 4.2 or newer, MS Visual C++ 2008 or newer (non-free editions), MS Visual C++ 2012 Express or newer).
+Building from source code requires a C++ compiler toolchain (with C++11 support), CMake, Boost libraries v. 1.57.0 or later (though earlier versions may work) and wxWidgets 3.0. Support for more image formats requires the FreeImage library, version 3.14.0 or newer. Without FreeImage the only supported formats are: BMP 8-, 24- and 32-bit, TIFF mono and RGB, 8 or 16 bits per channel (no compression). FITS support (optional) requires the CFITSIO library. Multithreaded processing requires a compiler supporting OpenMP (e.g. GCC 4.2 or newer).
 
 To enable/disable usage of CFITSIO/FreeImage (they are enabled by default), edit the `config.in` file.
 
@@ -224,25 +224,28 @@ To remove any created CMake configuration, delete `CMakeCache.txt` and the `CMak
 
 The ImPPG executable has to be placed in the same location as the `images` and language subdirectories.
 
-*Note: $ in the examples below indicates a console command prompt.*
-
 
 ### 11.1. Building under Linux and similar systems using GNU (or compatible) toolchain
 
 *Note: CMake relies on the presence of the `wx-config` tool to detect and configure wxWidgets-related build options. Sometimes this tool can be named differently, e.g. in Fedora 23 with wxGTK3 packages from repository it is `wx-config-3.0`. Older versions of CMake may not accept it. This can be remedied e.g. by creating a symlink:*
 ```
-    $ sudo ln -s /usr/bin/wx-config-3.0 /usr/bin/wx-config  
+    sudo ln -s /usr/bin/wx-config-3.0 /usr/bin/wx-config  
 ```
 
-After making sure `wx-config` is available, execute:
+Download the source code manually or clone with Git:
 ```
-    $ cmake -G "Unix Makefiles"
+    git clone https://github.com/GreatAttractor/imppg.git
+```
+
+In the source folder, run:
+```
+    cmake -G "Unix Makefiles"
 ```
 This creates a native `Makefile`. Unless you edit `config.in` again, from now on there is no need to run CMake.
 
 To compile ImPPG, run:
 ```
-    $ make
+    make
 ```
 You will find `imppg` executable in the sources folder.
 
@@ -250,39 +253,39 @@ You will find `imppg` executable in the sources folder.
 ----------------------------------------
 ### 11.2. Building under MS Windows
 
-As there is no standard location for development files, first you must edit `config.in` and set all the include and library paths appropriately.
+The provided `CMakeLists.txt` supports the [MSYS2](http://www.msys2.org/) build environment. With manual configuration, other toolchains can also be used (e.g. MS Visual Studio).
 
-
-#### Building with MinGW (32- or 64-bit)
-
-Make sure MinGW toolchain is on the search path (e.g. run `set PATH=%PATH%;c:\MinGW\bin`), then run the following:
+In order to build ImPPG (64-bit) under MSYS2, follow its installation instructions at http://www.msys2.org/. Then open the MSYS2 shell and install the ImPPG's dependencies by running:
 ```
-    $ cmake -G "MinGW Makefiles"
+    pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-wxWidgets mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage
+```
+
+Download the source code manually or clone it with Git:
+```
+    git clone https://github.com/GreatAttractor/imppg.git
+```
+
+*Note*: MSYS2 mounts the drives as `/<drive_letter>`, so if ImPPG sources have been placed in:
+```
+    C:\Users\MyUsername\Documents\imppg
+```
+in order to go there in the MSYS2 shell:
+```
+    cd /c/Users/MyUsername/Documents/imppg
+```
+
+In the source folder, run:
+```
+    cmake -G "MSYS Makefiles"
 ```
 This creates a native `Makefile`. Unless you edit `config.in` again, from now on there is no need to run CMake.
 
 To compile ImPPG, run:
 ```
-    $ mingw32-make
+    make
 ```
-You will find `imppg.exe` executable in the sources folder.
+You will find `imppg` executable in the sources folder.
 
-
-#### Building with Microsoft C++ (from Windows SDK or Visual Studio; 32- or 64-bit)
-
-Make sure the environment is set up for MSVC toolchain (e.g. run `C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\vcvars32.bat` for 32-bit or `C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\vcvarsx86_amd64.bat` for a 64-bit build), then run the following:
-```
-    $ cmake -G "NMake Makefiles"
-```
-This creates a native `Makefile`. Unless you edit `config.in` again, from now on there is no need to run CMake.
-
-To compile ImPPG, run:
-```
-    $ nmake
-```
-You will find `imppg.exe` executable in the sources folder.
-
-CMake can also create MS Visual Studio project files (e.g. `cmake -G "Visual Studio 12 2013"` will create them for VS 2013). Run `cmake -G` for a list of supported generators.
 
 ----------------------------------------
 ### 11.3. UI language
@@ -292,14 +295,14 @@ ImPPG supports multiple user interface languages using the wxWidgets built-in in
 
 - extraction of translatable strings from sources into a PO file by running:
 ```
-  $ xgettext -k_ *.cpp *.h -o imppg.po
+    xgettext -k_ *.cpp *.h -o imppg.po
 ```
 
 - translation of UI strings by editing the `msgstr` entries in `imppg.po`
 
 - converting `imppg.po` to binary form by running:
 ```
-  $ msgfmt imppg.po -o imppg.mo
+    msgfmt imppg.po -o imppg.mo
 ```
 
 - placing `imppg.mo` in a subdirectory with name equal to the language code (e.g. `pl`, `fr-ca`)
