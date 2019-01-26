@@ -410,7 +410,7 @@ void LucyRichardsonGaussian(
     IImageBuffer &output, ///< Contains a single 'float' value per pixel; size the same as 'input'
     int numIters,  ///< Number of iterations
     float sigma,   ///< sigma of the Gaussian kernel
-    ConvolutionMethod_t convMethod,
+    ConvolutionMethod convMethod,
 
     /// Called after every iteration; arguments: current iteration, total iterations
     //boost::function<void(int, int)> progressCallback,
@@ -447,8 +447,8 @@ void LucyRichardsonGaussian(
 
     for (int i = 0; i < numIters; i++)
     {
-        if (convMethod == CONV_STANDARD ||
-            convMethod == CONV_AUTO && kernelRadius < YOUNG_VAN_VLIET_MIN_KERNEL_RADIUS)
+        if (convMethod == ConvolutionMethod::STANDARD ||
+            convMethod == ConvolutionMethod::AUTO && kernelRadius < YOUNG_VAN_VLIET_MIN_KERNEL_RADIUS)
         {
             ConvolveSeparableTranspose(
                     c_PaddedArrayPtr<const float>(prev.get(), width, height),
@@ -466,8 +466,8 @@ void LucyRichardsonGaussian(
             inputConvolvedDivT[j] = inputT[j] / (estimateConvolvedT[j] + 1.0e-8f); // add a small epsilon to prevent division by 0 and propagation of NaNs across output pixels
 
         // Note that 'height' and 'width' are switched in the below calls, as we use transposed arrays for input
-        if (convMethod == CONV_STANDARD ||
-            convMethod == CONV_AUTO && kernelRadius < YOUNG_VAN_VLIET_MIN_KERNEL_RADIUS)
+        if (convMethod == ConvolutionMethod::STANDARD ||
+            convMethod == ConvolutionMethod::AUTO && kernelRadius < YOUNG_VAN_VLIET_MIN_KERNEL_RADIUS)
         {
             ConvolveSeparableTranspose(
                     c_PaddedArrayPtr<const float>(inputConvolvedDivT.get(), height, width),

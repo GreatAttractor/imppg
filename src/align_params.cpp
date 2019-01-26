@@ -63,15 +63,15 @@ enum
 
 const int BORDER = 5; ///< Border size (in pixels) between controls
 
-wxString GetAlignmentMethodDescription(AlignmentMethod_t method)
+wxString GetAlignmentMethodDescription(AlignmentMethod method)
 {
     switch (method)
     {
-    case ALM_PHASE_CORRELATION: return
+    case AlignmentMethod::PHASE_CORRELATION: return
         _("A general-purpose method. Keeps the high-contrast features\n"
           "(e.g. sunspots, filaments, prominences, craters) stationary.");
 
-    case ALM_LIMB: return
+    case AlignmentMethod::LIMB: return
         _(L"Keeps the solar limb stationary. The more of the limb is visible\n"
           L"in input images, the better the results. Requirements:\n"
           L"\u2013 the disc has to be brighter than the background\n"
@@ -154,7 +154,7 @@ void c_ImageAlignmentParams::OnCommandEvent(wxCommandEvent &event)
         break;
 
     case ID_Method:
-        ((wxStaticText *)FindWindowById(ID_AlignMethodText, this))->SetLabel(GetAlignmentMethodDescription((AlignmentMethod_t)event.GetInt()));
+        ((wxStaticText *)FindWindowById(ID_AlignMethodText, this))->SetLabel(GetAlignmentMethodDescription(static_cast<AlignmentMethod>(event.GetInt())));
         Layout();
         break;
 
@@ -217,12 +217,12 @@ c_ImageAlignmentParams::c_ImageAlignmentParams(wxWindow *parent)
 
 void c_ImageAlignmentParams::DoInitControls()
 {
-    m_Parameters.cropMode = CM_CROP_TO_INTERSECTION;
+    m_Parameters.cropMode = CropMode::CROP_TO_INTERSECTION;
     m_Parameters.subpixelAlignment = true;
-    m_Parameters.alignmentMethod = ALM_PHASE_CORRELATION;
+    m_Parameters.alignmentMethod = AlignmentMethod::PHASE_CORRELATION;
 
-    m_CropBitmaps[CM_CROP_TO_INTERSECTION].LoadFile(wxFileName("images", "crop", "png").GetFullPath(), wxBITMAP_TYPE_PNG);
-    m_CropBitmaps[CM_PAD_TO_BOUNDING_BOX].LoadFile(wxFileName("images", "pad", "png").GetFullPath(), wxBITMAP_TYPE_PNG);
+    m_CropBitmaps[static_cast<size_t>(CropMode::CROP_TO_INTERSECTION)].LoadFile(wxFileName("images", "crop", "png").GetFullPath(), wxBITMAP_TYPE_PNG);
+    m_CropBitmaps[static_cast<size_t>(CropMode::PAD_TO_BOUNDING_BOX)].LoadFile(wxFileName("images", "pad", "png").GetFullPath(), wxBITMAP_TYPE_PNG);
 
     wxSizer *szContents = new wxBoxSizer(wxVERTICAL);
 
@@ -249,10 +249,10 @@ void c_ImageAlignmentParams::DoInitControls()
             wxArrayString cropChoices;
             cropChoices.Add(_("Crop to intersection"));
             cropChoices.Add(_("Pad to bounding box"));
-            wxRadioBox *rb = new wxRadioBox(GetContainer(), ID_Crop, wxEmptyString, wxDefaultPosition, wxDefaultSize, cropChoices, NUM_CROP_MODES, wxRA_SPECIFY_ROWS);
+            wxRadioBox *rb = new wxRadioBox(GetContainer(), ID_Crop, wxEmptyString, wxDefaultPosition, wxDefaultSize, cropChoices, 0, wxRA_SPECIFY_ROWS);
             rb->SetValidator(wxGenericValidator((int *)&m_Parameters.cropMode));
             szCrop->Add(rb, 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
-            szCrop->Add(new wxGenericStaticBitmap(GetContainer(), ID_CropBitmap, m_CropBitmaps[CM_CROP_TO_INTERSECTION]),
+            szCrop->Add(new wxGenericStaticBitmap(GetContainer(), ID_CropBitmap, m_CropBitmaps[static_cast<size_t>(CropMode::CROP_TO_INTERSECTION)]),
                 1, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
         szContents->Add(szCrop, 0, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxGROW | wxLEFT | wxRIGHT, BORDER);
 
@@ -260,11 +260,11 @@ void c_ImageAlignmentParams::DoInitControls()
             wxArrayString methodChoices;
             methodChoices.Add(_("Stabilize high-contrast features"));
             methodChoices.Add(_("Align on the solar limb"));
-            rb = new wxRadioBox(GetContainer(), ID_Method, wxEmptyString, wxDefaultPosition, wxDefaultSize, methodChoices, NUM_ALM_METHODS, wxRA_SPECIFY_ROWS);
+            rb = new wxRadioBox(GetContainer(), ID_Method, wxEmptyString, wxDefaultPosition, wxDefaultSize, methodChoices, 0, wxRA_SPECIFY_ROWS);
             rb->SetValidator(wxGenericValidator((int *)&m_Parameters.alignmentMethod));
             szMethod->Add(rb, 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
 
-            szMethod->Add(new wxStaticText(GetContainer(), ID_AlignMethodText, GetAlignmentMethodDescription(ALM_PHASE_CORRELATION)), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
+            szMethod->Add(new wxStaticText(GetContainer(), ID_AlignMethodText, GetAlignmentMethodDescription(AlignmentMethod::PHASE_CORRELATION)), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
 
         szContents->Add(szMethod, 0, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxGROW | wxLEFT | wxRIGHT, BORDER);
 

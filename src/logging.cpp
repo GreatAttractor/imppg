@@ -26,23 +26,25 @@ File description:
 #include "logging.h"
 
 std::ostream *logStream = 0;
-Log::LogLevel_t logLevel = Log::QUIET;
+auto logLevel = Log::LogLevel::QUIET;
 wxMutex logMutex;
 
-void Log::Initialize(LogLevel_t level, std::ostream &outputStream)
+void Log::Initialize(LogLevel level, std::ostream &outputStream)
 {
     logStream = &outputStream;
     logLevel = level;
 }
 
-void Log::Print(const wxString &msg, bool prependTimestamp, LogLevel_t level)
+void Log::Print(const wxString &msg, bool prependTimestamp, LogLevel level)
 {
     if (level <= logLevel)
     {
         wxMutexLocker lock(logMutex);
         //TODO: use something more precise for time source (microsecond precision or better)
         if (prependTimestamp)
+        {
             *logStream << wxDateTime::UNow().Format("%H:%M:%S.%l").c_str() << " ";
+        }
         *logStream << msg.c_str();
         logStream->flush();
     }

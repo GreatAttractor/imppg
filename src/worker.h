@@ -30,22 +30,19 @@ File description:
 #include "image.h"
 #include "ctrl_ids.h"
 
-typedef enum
+enum class CompletionStatus
 {
-    RESULT_COMPLETED = 0,
-    RESULT_ABORTED
-} CompletionStatus_t;
+    COMPLETED = 0,
+    ABORTED
+};
 
-namespace ProcessingRequest
+enum class ProcessingRequest
 {
-    typedef enum
-    {
-        NONE = 0,
-        SHARPENING,
-        UNSHARP_MASKING,
-        TONE_CURVE,
-    } ProcessingRequest_t;
-}
+    NONE = 0,
+    SHARPENING,
+    UNSHARP_MASKING,
+    TONE_CURVE
+};
 
 // The structure is later encapsulated in wxThreadEvent in a wxAny object,
 // so let us keep its size small (below 16 bytes) for better performance
@@ -54,7 +51,7 @@ typedef struct
     int taskId;
     union
     {
-        CompletionStatus_t completionStatus;
+        CompletionStatus completionStatus;
         int percentageComplete;
     };
 } WorkerEventPayload_t;

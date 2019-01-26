@@ -30,12 +30,12 @@ File description:
 namespace Log
 {
 
-typedef enum { QUIET = 0, NORMAL, VERBOSE} LogLevel_t;
+enum class LogLevel { QUIET = 0, NORMAL, VERBOSE };
 
-void Initialize(LogLevel_t level, std::ostream &outputStream);
+void Initialize(LogLevel level, std::ostream &outputStream);
 
 /// Prints a message. Newline is NOT added by default.
-void Print(const wxString &msg, bool prependTimestamp = true, LogLevel_t level = NORMAL);
+void Print(const wxString &msg, bool prependTimestamp = true, LogLevel level = LogLevel::NORMAL);
 
 }
 

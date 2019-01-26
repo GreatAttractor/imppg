@@ -95,7 +95,7 @@ class c_BatchDialog: public wxDialog
     size_t m_CurrentFile; ///< Index of the currently processed file
     c_Image m_RawImg; ///< Raw (unprocessed, but possibly normalized) current image
     c_Image m_Img; ///< Currently processed image (first the original, later a result of one of the processing steps)
-    ProcessingRequest::ProcessingRequest_t m_ProcessingRequest;
+    ProcessingRequest m_ProcessingRequest;
     int m_ThreadId; ///< Unique worker thread id (not reused by new threads)
 
 
@@ -104,7 +104,7 @@ class c_BatchDialog: public wxDialog
 
     /// Starts processing of the next file
     void ProcessNextFile();
-    void ScheduleProcessing(ProcessingRequest::ProcessingRequest_t request);
+    void ScheduleProcessing(ProcessingRequest request);
     /// Updates the progress string in the files grid
     void SetProgressInfo(wxString info);
     bool IsProcessingInProgress()
@@ -114,7 +114,7 @@ class c_BatchDialog: public wxDialog
     }
     /// Returns 'false' on error
     bool SaveOutputFile();
-    void OnProcessingStepCompleted(CompletionStatus_t status);
+    void OnProcessingStepCompleted(CompletionStatus status);
 
 public:
     c_BatchDialog(wxWindow *parent, const wxArrayString &fileNames,
@@ -168,7 +168,7 @@ void c_BatchDialog::OnIdle(wxIdleEvent &event)
 
     if (event.GetId() == ID_ProcessingStepSkipped)
     {
-        OnProcessingStepCompleted(RESULT_COMPLETED);
+        OnProcessingStepCompleted(CompletionStatus::COMPLETED);
     }
 }
 
@@ -225,9 +225,9 @@ bool c_BatchDialog::SaveOutputFile()
     return true;
 }
 
-void c_BatchDialog::OnProcessingStepCompleted(CompletionStatus_t status)
+void c_BatchDialog::OnProcessingStepCompleted(CompletionStatus status)
 {
-    if (status == RESULT_COMPLETED)
+    if (status == CompletionStatus::COMPLETED)
     {
         bool fileProcessingCompleted = false;
 
@@ -316,7 +316,7 @@ void c_BatchDialog::OnThreadEvent(wxThreadEvent &event)
         const WorkerEventPayload_t &p = event.GetPayload<WorkerEventPayload_t>();
 
         Log::Print(wxString::Format("Received a processing completion event from threadId = %d, status = %s\n",
-            event.GetInt(), p.completionStatus == RESULT_COMPLETED ? "COMPLETED" : "ABORTED"));
+            event.GetInt(), p.completionStatus == CompletionStatus::COMPLETED ? "COMPLETED" : "ABORTED"));
 
         Log::Print("Waiting for the worker thread to finish... ");
         // Since we have just received the "finished processing" event, the worker thread will destroy itself any moment; keep polling
@@ -356,7 +356,7 @@ void c_BatchDialog::ProcessNextFile()
     ScheduleProcessing(m_ProcessingRequest);
 }
 
-void c_BatchDialog::ScheduleProcessing(ProcessingRequest::ProcessingRequest_t request)
+void c_BatchDialog::ScheduleProcessing(ProcessingRequest request)
 {
     if (!m_Img.IsValid()) // Image is not yet created, i.e. 'request' is the first processing step specified in the settings file
     {

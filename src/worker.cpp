@@ -64,7 +64,7 @@ c_WorkerThread::~c_WorkerThread()
 {
     delete input;
     WorkerEventPayload_t payload;
-    payload.completionStatus = threadAborted ? RESULT_ABORTED : RESULT_COMPLETED;
+    payload.completionStatus = threadAborted ? CompletionStatus::ABORTED : CompletionStatus::COMPLETED;
     SendMessageToParent(ID_FINISHED_PROCESSING, payload);
     { wxCriticalSectionLocker lock(guard);
         *instancePtr = 0;

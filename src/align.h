@@ -28,36 +28,36 @@ File description:
 #include <wx/string.h>
 #include <wx/arrstr.h>
 
-typedef enum
+enum class CropMode
 {
-    CM_CROP_TO_INTERSECTION = 0,
-    CM_PAD_TO_BOUNDING_BOX = 1,
+    CROP_TO_INTERSECTION = 0,
+    PAD_TO_BOUNDING_BOX = 1,
 
-    NUM_CROP_MODES // this has to be the last element
-} CropMode_t;
+    NUM // this has to be the last element
+};
 
-typedef enum
+enum class AlignmentMethod
 {
-    ALM_PHASE_CORRELATION = 0,
-    ALM_LIMB = 1,
+    PHASE_CORRELATION = 0,
+    LIMB = 1,
 
-    NUM_ALM_METHODS // this has to be the last element
-} AlignmentMethod_t;
+    NUM // this has to be the last element
+};
 
 typedef struct
 {
     wxArrayString inputFiles;
-    AlignmentMethod_t alignmentMethod;
+    AlignmentMethod alignmentMethod;
     bool subpixelAlignment;
-    CropMode_t cropMode;
+    CropMode cropMode;
     wxString outputDir;
 } AlignmentParameters_t;
 
-typedef enum
+enum class AlignmentAbortReason
 {
-    ABRT_REQUESTED, ///< Abort requested by user
-    ABRT_PROC_ERROR ///< Abort due to processing error
-} AlignmentAbortReason_t;
+    USER_REQUESTED, ///< Abort requested by user
+    PROC_ERROR ///< Abort due to processing error
+};
 
 typedef struct
 {

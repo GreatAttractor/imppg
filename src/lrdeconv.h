@@ -30,12 +30,12 @@ File description:
 #include "image.h"
 
 
-typedef enum
+enum class ConvolutionMethod
 {
-    CONV_AUTO,           ///< Automatically select CONV_STANDARD or CONV_YOUNG_VAN_VLIET depending on "sigma"
-    CONV_STANDARD,       ///< Standard iterative convolution using 1D kernel projection (1D convolution of rows and columns)
-    CONV_YOUNG_VAN_VLIET ///< Young & van Vliet recursive Gaussian convolution
-} ConvolutionMethod_t;
+    AUTO,           ///< Automatically select STANDARD or YOUNG_VAN_VLIET depending on "sigma"
+    STANDARD,       ///< Standard iterative convolution using 1D kernel projection (1D convolution of rows and columns)
+    YOUNG_VAN_VLIET ///< Young & van Vliet recursive Gaussian convolution
+};
 
 /// Wrapper for an array which may contain row padding. Stores only the pointer and dimensions; can be copied, deleted without influencing the allocated memory.
 template<typename T>
@@ -78,7 +78,7 @@ void LucyRichardsonGaussian(
         IImageBuffer &output, ///< Contains a single 'float' value per pixel; size the same as 'input'
         int numIters,  ///< Number of iterations
         float sigma,   ///< sigma of the Gaussian kernel
-        ConvolutionMethod_t convMethod,
+        ConvolutionMethod convMethod,
 
         /// Called after every iteration; arguments: current iteration, total iterations
         //boost::function<void(int, int)> progressCallback,

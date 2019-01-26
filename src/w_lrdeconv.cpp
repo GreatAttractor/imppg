@@ -75,13 +75,13 @@ void c_LucyRichardsonThread::DoWork()
         preprocessedInput = &preprocessedInputImg->GetBuffer();
     }
 
-    LucyRichardsonGaussian(*preprocessedInput, output, numIterations, lrSigma, CONV_AUTO,
+    LucyRichardsonGaussian(*preprocessedInput, output, numIterations, lrSigma, ConvolutionMethod::AUTO,
         [this](int currentIter, int totalIters) { IterationNotification(currentIter, totalIters); },
         [this]() { return IsAbortRequested(); }
     );
     Log::Print(wxString::Format("L-R deconvolution finished in %s s\n", (wxDateTime::UNow() - tstart).Format("%S.%l")));
     Clamp((float *)output.GetRow(0), output.GetWidth(), output.GetHeight(), output.GetBytesPerRow());
-    
+
     if (preprocessedInputImg)
         delete preprocessedInputImg;
 }

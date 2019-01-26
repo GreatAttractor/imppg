@@ -293,8 +293,8 @@ void c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment()
 
     // Iterate again over all images, load, pad to the bounding box size or crop to intersection, translate and save
 
-    int outputWidth = m_Parameters.cropMode == CM_CROP_TO_INTERSECTION ? imgIntersection.width : bbox.width;
-    int outputHeight = m_Parameters.cropMode == CM_CROP_TO_INTERSECTION ? imgIntersection.height : bbox.height;
+    int outputWidth = m_Parameters.cropMode == CropMode::CROP_TO_INTERSECTION ? imgIntersection.width : bbox.width;
+    int outputHeight = m_Parameters.cropMode == CropMode::CROP_TO_INTERSECTION ? imgIntersection.height : bbox.height;
 
 
     for (size_t i = 0; i < m_Parameters.inputFiles.Count(); i++)
@@ -303,7 +303,7 @@ void c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment()
             return;
 
         Point_t translationOrigin;
-        if (m_Parameters.cropMode == CM_CROP_TO_INTERSECTION)
+        if (m_Parameters.cropMode == CropMode::CROP_TO_INTERSECTION)
         {
             translationOrigin.x = imgIntersection.x;
             translationOrigin.y = imgIntersection.y;
@@ -894,7 +894,7 @@ void c_ImageAlignmentWorkerThread::LimbAlignment()
     // 5. Load images again, pad them to bounding box or crop to intersection and save
 
     int outputWidth, outputHeight;
-    if (m_Parameters.cropMode == CM_PAD_TO_BOUNDING_BOX)
+    if (m_Parameters.cropMode == CropMode::PAD_TO_BOUNDING_BOX)
     {
         outputWidth = bbox.xmax - bbox.xmin + 1;
         outputHeight = bbox.ymax - bbox.ymin + 1;
@@ -911,7 +911,7 @@ void c_ImageAlignmentWorkerThread::LimbAlignment()
             return;
 
         float Tx, Ty;
-        if (m_Parameters.cropMode == CM_PAD_TO_BOUNDING_BOX)
+        if (m_Parameters.cropMode == CropMode::PAD_TO_BOUNDING_BOX)
         {
             Tx = translation[i].x;
             Ty = translation[i].y;
@@ -941,8 +941,8 @@ wxThread::ExitCode c_ImageAlignmentWorkerThread::Entry()
 {
     switch (m_Parameters.alignmentMethod)
     {
-    case ALM_PHASE_CORRELATION: PhaseCorrelationAlignment(); break;
-    case ALM_LIMB: LimbAlignment(); break;
+    case AlignmentMethod::PHASE_CORRELATION: PhaseCorrelationAlignment(); break;
+    case AlignmentMethod::LIMB: LimbAlignment(); break;
     }
 
     return 0;
@@ -970,7 +970,11 @@ c_ImageAlignmentWorkerThread::~c_ImageAlignmentWorkerThread()
     if (m_ProcessingCompleted)
         SendMessageToParent(EID_COMPLETED);
     else
-        SendMessageToParent(EID_ABORTED, m_ThreadAborted ? ABRT_REQUESTED : ABRT_PROC_ERROR, m_CompletionMessage);
+        SendMessageToParent(
+            EID_ABORTED,
+            m_ThreadAborted ? static_cast<int>(AlignmentAbortReason::USER_REQUESTED)
+                            : static_cast<int>(AlignmentAbortReason::PROC_ERROR),
+            m_CompletionMessage);
     { wxCriticalSectionLocker lock(m_Guard);
         *m_InstancePtr = 0;
     }

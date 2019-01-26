@@ -40,14 +40,14 @@ File description:
 #include "worker.h"
 #include "tcrv.h"
 
-typedef enum
+enum class ScalingMethod
 {
-    S_NEAREST = 0,
-    S_LINEAR,
-    S_CUBIC,
+    NEAREST = 0,
+    LINEAR,
+    CUBIC,
 
-    S_NUM_METHODS // This has to be the last entry
-} ScalingMethod_t;
+    NUM_METHODS // This has to be the last entry
+};
 
 class c_MainWindow: public wxFrame
 {
@@ -90,7 +90,7 @@ class c_MainWindow: public wxFrame
     /// Marks the selection's outline (using physical coords) on the specified DC
     void MarkSelection(wxRect &selection, wxDC &dc);
     /// Aborts processing and schedules new processing to start ASAP (as soon as 'm_Processing.worker' is not running)
-    void ScheduleProcessing(ProcessingRequest::ProcessingRequest_t request);
+    void ScheduleProcessing(ProcessingRequest request);
     void StartProcessing(); ///< Creates and starts a background processing thread
     void UpdateSelectionAfterProcessing();
     bool IsProcessingInProgress(); ///< Returns 'true' if the processing thread is running
@@ -98,7 +98,7 @@ class c_MainWindow: public wxFrame
     bool SharpeningEnabled(); ///< Returns 'true' if sharpening settings have impact on the image
     bool UnshMaskingEnabled(); ///< Returns 'true' if unsharp masking settings have impact on the image
     bool ToneCurveEnabled(); ///< Returns 'true' if tone curve has impact on the image (i.e. it is not the identity map)
-    void OnProcessingStepCompleted(CompletionStatus_t status);
+    void OnProcessingStepCompleted(CompletionStatus status);
     /// Determines histogram of the specified area of an image
     void DetermineHistogram(const c_Image &img, const wxRect &selection, Histogram_t &histogram);
     wxPanel *CreateLucyRichardsonControlsPanel(wxWindow *parent);
@@ -148,7 +148,7 @@ class c_MainWindow: public wxFrame
         c_Image m_Img; ///< Image (mono) in floating-point format
         std::unique_ptr<wxBitmap> m_ImgBmp; ///< Bitmap which wraps 'm_Img' for displaying on 'm_ImageView'
 
-        ScalingMethod_t scalingMethod;
+        ScalingMethod scalingMethod;
 
         bool m_FileSaveScheduled;
 
@@ -311,7 +311,7 @@ class c_MainWindow: public wxFrame
         and finally the tone curve applied. If, however, the user changes only a control point
         in the tone curve editor, only the (updated) tone curve is applied (to the results
         of the last performed unsharp masking). */
-        ProcessingRequest::ProcessingRequest_t processingRequest;
+        ProcessingRequest processingRequest;
 
         /// If 'true', processing has been scheduled to start ASAP (as soon as 'm_Processing.worker' is not running)
         bool processingScheduled;

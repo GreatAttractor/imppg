@@ -83,7 +83,7 @@ void c_ImageAlignmentProgress::InitControls()
 
     m_InfoText.Create(this, wxID_ANY, wxEmptyString);
     m_InfoText.SetFont(m_InfoText.GetFont().MakeBold());
-    if (m_Parameters.alignmentMethod == ALM_PHASE_CORRELATION)
+    if (m_Parameters.alignmentMethod == AlignmentMethod::PHASE_CORRELATION)
         m_InfoText.SetLabel(_("Determining translation vectors..."));
     szTop->Add(&m_InfoText, 0, wxALIGN_LEFT | wxGROW | wxALL, BORDER);
 

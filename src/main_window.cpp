@@ -107,13 +107,13 @@ const wxString imageView = "imageView";
 const wxString processing = "processing";
 }
 
-wxImageResizeQuality GetResizeQuality(ScalingMethod_t smethod)
+wxImageResizeQuality GetResizeQuality(ScalingMethod smethod)
 {
     switch (smethod)
     {
-    case S_NEAREST: return wxIMAGE_QUALITY_NEAREST;
-    case S_LINEAR: return wxIMAGE_QUALITY_BILINEAR;
-    case S_CUBIC: return wxIMAGE_QUALITY_BICUBIC;
+    case ScalingMethod::NEAREST: return wxIMAGE_QUALITY_NEAREST;
+    case ScalingMethod::LINEAR: return wxIMAGE_QUALITY_BILINEAR;
+    case ScalingMethod::CUBIC: return wxIMAGE_QUALITY_BICUBIC;
     default: return wxIMAGE_QUALITY_BICUBIC;
     }
 }
@@ -655,7 +655,7 @@ c_MainWindow::c_MainWindow()
 
     s.m_FileSaveScheduled = false;
 
-    s.scalingMethod = S_CUBIC;
+    s.scalingMethod = ScalingMethod::CUBIC;
 
     s.view.zoomFactor = ZOOM_NONE;
     s.view.bmpScaled = nullptr;
@@ -684,14 +684,14 @@ c_MainWindow::c_MainWindow()
     Show(true);
 }
 
-void c_MainWindow::OnProcessingStepCompleted(CompletionStatus_t status)
+void c_MainWindow::OnProcessingStepCompleted(CompletionStatus status)
 {
     SetActionText(_("Idle"));
 
     if (m_Processing.processingRequest == ProcessingRequest::TONE_CURVE ||
-        status == RESULT_ABORTED)
+        status == CompletionStatus::ABORTED)
     {
-        if (m_Processing.processingRequest == ProcessingRequest::TONE_CURVE && status == RESULT_COMPLETED)
+        if (m_Processing.processingRequest == ProcessingRequest::TONE_CURVE && status == CompletionStatus::COMPLETED)
         {
             m_CurrentSettings->output.toneCurve.preciseValuesApplied = m_Processing.usePreciseTCurveVals;
         }
@@ -701,7 +701,7 @@ void c_MainWindow::OnProcessingStepCompleted(CompletionStatus_t status)
         m_Processing.usePreciseTCurveVals = false;
     }
 
-    if (status == RESULT_COMPLETED)
+    if (status == CompletionStatus::COMPLETED)
     {
         Log::Print("Processing step completed\n");
 
@@ -723,7 +723,7 @@ void c_MainWindow::OnProcessingStepCompleted(CompletionStatus_t status)
             UpdateSelectionAfterProcessing();
         }
     }
-    else if (status == RESULT_ABORTED)
+    else if (status == CompletionStatus::ABORTED)
         m_CurrentSettings->m_FileSaveScheduled = false;
 }
 
@@ -766,7 +766,7 @@ void c_MainWindow::OnThreadEvent(wxThreadEvent &event)
             const WorkerEventPayload_t &p = event.GetPayload<WorkerEventPayload_t>();
 
             Log::Print(wxString::Format("Received a processing completion event from threadId = %d, status = %s\n",
-                    event.GetInt(), p.completionStatus == RESULT_COMPLETED ? "COMPLETED" : "ABORTED"));
+                    event.GetInt(), p.completionStatus == CompletionStatus::COMPLETED ? "COMPLETED" : "ABORTED"));
 
             OnProcessingStepCompleted(p.completionStatus);
 
@@ -1297,9 +1297,9 @@ bool c_MainWindow::IsProcessingInProgress()
 }
 
 /// Aborts processing and schedules new processing to start ASAP (as soon as 'm_Processing.worker' is not running)
-void c_MainWindow::ScheduleProcessing(ProcessingRequest::ProcessingRequest_t request)
+void c_MainWindow::ScheduleProcessing(ProcessingRequest request)
 {
-    ProcessingRequest::ProcessingRequest_t originalReq = request;
+    ProcessingRequest originalReq = request;
 
     // If the previous processing step(s) did not complete, we have to execute it (them) first
 
@@ -1377,7 +1377,7 @@ void c_MainWindow::StartProcessing()
                 s.selection.width,
                 s.selection.height,
                 0, 0);
-            OnProcessingStepCompleted(RESULT_COMPLETED);
+            OnProcessingStepCompleted(CompletionStatus::COMPLETED);
         }
         else
         {
@@ -1422,7 +1422,7 @@ void c_MainWindow::StartProcessing()
             // No processing required, just copy the selection into 'output.sharpening.img',
             // as it will be used by the subsequent processing steps.
             c_Image::Copy(s.output.sharpening.img, s.output.unsharpMasking.img, 0, 0, s.selection.width, s.selection.height, 0, 0);
-            OnProcessingStepCompleted(RESULT_COMPLETED);
+            OnProcessingStepCompleted(CompletionStatus::COMPLETED);
         }
         else
         {
@@ -1463,7 +1463,7 @@ void c_MainWindow::StartProcessing()
             c_Image::Copy(s.output.unsharpMasking.img, s.output.toneCurve.img,
                 0, 0, s.selection.width, s.selection.height, 0, 0);
 
-            OnProcessingStepCompleted(RESULT_COMPLETED);
+            OnProcessingStepCompleted(CompletionStatus::COMPLETED);
         }
         else
         {
@@ -1762,17 +1762,17 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent &event)
         break;
 
     case ID_ScalingNearest:
-        s.scalingMethod = S_NEAREST;
+        s.scalingMethod = ScalingMethod::NEAREST;
         CreateScaledPreview(true);
         break;
 
     case ID_ScalingLinear:
-        s.scalingMethod = S_LINEAR;
+        s.scalingMethod = ScalingMethod::LINEAR;
         CreateScaledPreview(true);
         break;
 
     case ID_ScalingCubic:
-        s.scalingMethod = S_CUBIC;
+        s.scalingMethod = ScalingMethod::CUBIC;
         CreateScaledPreview(true);
         break;
     }

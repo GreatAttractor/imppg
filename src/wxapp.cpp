@@ -95,7 +95,7 @@ bool c_MyApp::OnInit()
     {
         wxFileName logFilePath(wxFileName::GetHomeDir(), "imppg", "log");
         m_LogStream = new std::ofstream(logFilePath.GetFullPath().ToStdString().c_str(), std::ios_base::out | std::ios_base::app);
-        Log::Initialize(Log::NORMAL, *m_LogStream);
+        Log::Initialize(Log::LogLevel::NORMAL, *m_LogStream);
         Log::Print(wxString("\n") + wxDateTime::Now().FormatISOCombined(' ') + " ------------ IMPPG STARTED ------------\n\n", false);
     }
 
