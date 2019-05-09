@@ -163,7 +163,7 @@ msgstr ""
 
 #: src/align_params.cpp:286 src/batch_params.cpp:231
 msgid "Start processing"
-msgstr ""
+msgstr "Rozpocznij pracę"
 
 #: src/align_proc.cpp:141 src/align_proc.cpp:187 src/align_proc.cpp:415
 #: src/align_proc.cpp:469 src/align_proc.cpp:650
