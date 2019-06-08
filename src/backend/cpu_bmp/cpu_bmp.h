@@ -22,6 +22,7 @@ File description:
 */
 
 #include <optional>
+#include <wx/bitmap.h>
 
 #include "../backend.h"
 
@@ -30,17 +31,19 @@ namespace imppg::backend {
 class CpuAndBitmaps: public IBackEnd
 {
 public:
-    CpuAndBitmaps(const wxScrolledCanvas& imgView);
+    CpuAndBitmaps(wxScrolledCanvas& imgView);
 
     // Events -------------------------------------------------
-    void ImageViewScrolled() override;
+    void ImageViewScrolled(const wxScrolledCanvas& imgView) override;
     void ImageViewZoomChanged(float zoomFactor) override;
     void FileOpened(c_Image&& img) override;
 
 private:
-    const wxScrolledCanvas& m_ImgView;
-
+    wxScrolledCanvas& m_ImgView;
     std::optional<c_Image> m_Img;
+    std::optional<wxBitmap> m_ImgBmp; ///< Bitmap which wraps `m_Img` for displaying on `m_ImgView`.
+
+    void OnPaint(wxPaintEvent& event);
 };
 
 } // namespace imppg::backend

@@ -88,8 +88,6 @@ class c_MainWindow: public wxFrame
     void InitStatusBar();
     void InitControls();
     void InitMenu();
-    /// Converts the specified fragment of 'src' to a 24-bit RGB bitmap
-    wxBitmap ImageToRgbBitmap(const c_Image& src, int x0, int y0, int width, int height);
     /// Returns a panel containing the processing controls
     wxWindow* CreateProcessingControlsPanel();
     /// Marks the selection's outline (using physical coords) on the specified DC
@@ -170,8 +168,8 @@ class c_MainWindow: public wxFrame
     {
         wxString inputFilePath;
 
-        std::optional<c_Image> m_Img; ///< Image (mono) in floating-point format.
-        std::optional<wxBitmap> m_ImgBmp; ///< Bitmap which wraps `m_Img` for displaying on `m_ImageView`.
+        // std::optional<c_Image> m_Img; ///< Image (mono) in floating-point format.
+        // std::optional<wxBitmap> m_ImgBmp; ///< Bitmap which wraps `m_Img` for displaying on `m_ImageView`.
 
         ScalingMethod scalingMethod;
 
@@ -180,14 +178,17 @@ class c_MainWindow: public wxFrame
         /// Current selection within the image (for processing preview); expressed in logical coords (i.e. scrolling not included).
         wxRect selection;
 
+        unsigned imgWidth{0};
+        unsigned imgHeight{0};
+
         /// Contains `selection` expressed in logical coordinates of `m_ImageView` when view.zoomFactor <> 1.
         wxRect scaledSelection;
 
         struct
         {
             float zoomFactor;
-            std::optional<wxBitmap> bmpScaled; ///< Currently visible scaled fragment (or whole) of 'm_ImgBmp'
-            wxRect scaledArea; ///< Area within 'm_ImgBmp' represented by 'bmpScaled'
+            // std::optional<wxBitmap> bmpScaled; ///< Currently visible scaled fragment (or whole) of 'm_ImgBmp'
+            // wxRect scaledArea; ///< Area within 'm_ImgBmp' represented by 'bmpScaled'
 
             bool zoomFactorChanged; ///< If 'true', the next Refresh() after scaling needs to erase background; the flag is then cleared
 
@@ -202,32 +203,32 @@ class c_MainWindow: public wxFrame
             float min, max;
         } normalization;
 
-        /// Incremental results of processing of the current selection
-        /** Must not be accessed when the relevant background thread is running. */
-        struct
-        {
-            /// Results of sharpening
-            struct
-            {
-                std::optional<c_Image> img;
-                bool valid; ///< 'true' if the last sharpening request completed
-            } sharpening;
+        // /// Incremental results of processing of the current selection
+        // /** Must not be accessed when the relevant background thread is running. */
+        // struct
+        // {
+        //     /// Results of sharpening
+        //     struct
+        //     {
+        //         std::optional<c_Image> img;
+        //         bool valid; ///< 'true' if the last sharpening request completed
+        //     } sharpening;
 
-            /// Results of sharpening and unsharp masking
-            struct
-            {
-                std::optional<c_Image> img;
-                bool valid; ///< 'true' if the last unsharp masking request completed
-            } unsharpMasking;
+        //     /// Results of sharpening and unsharp masking
+        //     struct
+        //     {
+        //         std::optional<c_Image> img;
+        //         bool valid; ///< 'true' if the last unsharp masking request completed
+        //     } unsharpMasking;
 
-            /// Results of sharpening, unsharp masking and applying of tone curve
-            struct
-            {
-                std::optional<c_Image> img;
-                bool valid; ///< 'true' if the last tone curve application request completed
-                bool preciseValuesApplied; ///< 'true' if precise values of tone curve have been applied; happens only when saving output file
-            } toneCurve;
-        } output;
+        //     /// Results of sharpening, unsharp masking and applying of tone curve
+        //     struct
+        //     {
+        //         std::optional<c_Image> img;
+        //         bool valid; ///< 'true' if the last tone curve application request completed
+        //         bool preciseValuesApplied; ///< 'true' if precise values of tone curve have been applied; happens only when saving output file
+        //     } toneCurve;
+        // } output;
 
         c_ToneCurve toneCurve;
 
@@ -312,31 +313,31 @@ class c_MainWindow: public wxFrame
         } dragScroll;
     } m_MouseOps;
 
-    /// Background processing-related variables
-    struct
-    {
-        ExclusiveAccessObject<IWorkerThread*> worker{nullptr};
+    // /// Background processing-related variables
+    // struct
+    // {
+    //     ExclusiveAccessObject<IWorkerThread*> worker{nullptr};
 
-        /// Identifier increased by 1 after each creation of a new thread
-        int currentThreadId;
-        /// If 'true', tone curve is applied using its precise values. Otherwise, the curve's LUT is used.
-        /** Set to 'false' when user is just editing and adjusting settings. Set to 'true' when an output file is saved. */
-        bool usePreciseTCurveVals;
+    //     /// Identifier increased by 1 after each creation of a new thread
+    //     int currentThreadId;
+    //     /// If 'true', tone curve is applied using its precise values. Otherwise, the curve's LUT is used.
+    //     /** Set to 'false' when user is just editing and adjusting settings. Set to 'true' when an output file is saved. */
+    //     bool usePreciseTCurveVals;
 
-        /// Currently scheduled processing request.
-        /** When a request of type 'n' (from the enum below) is generated (by user actions in the GUI),
-        all processing steps designated by values >=n are performed.
+    //     /// Currently scheduled processing request.
+    //     /** When a request of type 'n' (from the enum below) is generated (by user actions in the GUI),
+    //     all processing steps designated by values >=n are performed.
 
-        For example, if the user changes sharpening settings (e.g. the L-R kernel sigma),
-        the currently selected area is sharpened, then unsharp masking is performed,
-        and finally the tone curve applied. If, however, the user changes only a control point
-        in the tone curve editor, only the (updated) tone curve is applied (to the results
-        of the last performed unsharp masking). */
-        ProcessingRequest processingRequest;
+    //     For example, if the user changes sharpening settings (e.g. the L-R kernel sigma),
+    //     the currently selected area is sharpened, then unsharp masking is performed,
+    //     and finally the tone curve applied. If, however, the user changes only a control point
+    //     in the tone curve editor, only the (updated) tone curve is applied (to the results
+    //     of the last performed unsharp masking). */
+    //     ProcessingRequest processingRequest;
 
-        /// If 'true', processing has been scheduled to start ASAP (as soon as 'm_Processing.worker' is not running)
-        bool processingScheduled;
-    } m_Processing;
+    //     /// If 'true', processing has been scheduled to start ASAP (as soon as 'm_Processing.worker' is not running)
+    //     bool processingScheduled;
+    // } m_Processing;
 
     std::unique_ptr<imppg::backend::IBackEnd> m_BackEnd;
 
