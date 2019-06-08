@@ -66,7 +66,7 @@ struct strPoint
     strPoint(T x, T y) : x(x), y(y) { }
 
     // Used for binary search via std::lower_bound()
-    bool operator <(const strPoint &p) const { return x < p.x; }
+    bool operator <(const strPoint& p) const { return x < p.x; }
 };
 
 typedef strPoint<int> Point_t;
@@ -94,7 +94,7 @@ public:
       : m_Getter(getter), m_Setter(setter)
     { }
 
-    void operator =(const T &value) { m_Setter(value); }
+    void operator =(const T& value) { m_Setter(value); }
     operator T() const { return m_Getter(); }
 };
 
@@ -108,13 +108,13 @@ public:
 #define SQR(x) ((x)*(x))
 
 /// Checks if a window is visible on any display; if not, sets its size and position to default
-void FixWindowPosition(wxWindow &wnd);
+void FixWindowPosition(wxWindow& wnd);
 
 /// Loads a bitmap from the "images" subdirectory, optionally scaling it
 wxBitmap LoadBitmap(wxString name, bool scale = false, wxSize scaledSize = wxDefaultSize);
 
 template<class T>
-void BindAllScrollEvents(wxEvtHandler &evtHandler, void(T::* evtFunc)(wxScrollWinEvent &), T *parent)
+void BindAllScrollEvents(wxEvtHandler& evtHandler, void(T::* evtFunc)(wxScrollWinEvent&), T* parent)
 {
     for (auto tag: { wxEVT_SCROLLWIN_BOTTOM,
                      wxEVT_SCROLLWIN_LINEDOWN,
@@ -128,5 +128,8 @@ void BindAllScrollEvents(wxEvtHandler &evtHandler, void(T::* evtFunc)(wxScrollWi
          evtHandler.Bind(tag, evtFunc, parent);
      }
 }
+
+/// Deleter for blocks allocated with `operator new[]`.
+struct BlockDeleter { void operator()(void* ptr) { operator delete[](ptr); } };
 
 #endif //  IMPGG_COMMON_HEADER

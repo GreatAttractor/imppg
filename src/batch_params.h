@@ -22,28 +22,33 @@ File description:
 */
 
 #include <wx/arrstr.h>
-#include <wx/listbox.h>
-#include <wx/filepicker.h>
-#include <wx/event.h>
+#include <wx/choice.h>
 #include <wx/dialog.h>
+#include <wx/event.h>
+#include <wx/filepicker.h>
 #include <wx/grid.h>
+#include <wx/listbox.h>
+
 #include "image.h"
 #include "scrollable_dlg.h"
 
 class c_BatchParamsDialog : public c_ScrollableDialog
 {
-    void OnCommandEvent(wxCommandEvent &event);
-    void OnOutputDirChanged(wxFileDirPickerEvent &event);
-    void OnSettingsFileChanged(wxFileDirPickerEvent &event);
+    void OnCommandEvent(wxCommandEvent& event);
+    void OnOutputDirChanged(wxFileDirPickerEvent& event);
+    void OnSettingsFileChanged(wxFileDirPickerEvent& event);
 
-    virtual void DoInitControls();
+    void DoInitControls() override;
     void StoreConfiguration();
 
     /// Lists the chosen input files
-    wxListBox *m_FileList;
+    wxListBox* m_FileList{nullptr};
+    wxDirPickerCtrl* m_OutputDirCtrl{nullptr};
+    wxChoice* m_OutputFormatsCtrl{nullptr};
+    wxFilePickerCtrl* m_SettingsFileCtrl{nullptr};
 
 public:
-    c_BatchParamsDialog(wxWindow *parent);
+    c_BatchParamsDialog(wxWindow* parent);
 
     const wxArrayString GetInputFileNames();
     wxString GetOutputDirectory();

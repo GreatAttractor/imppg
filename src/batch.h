@@ -28,7 +28,7 @@ File description:
 
 /// Allows the user to choose images to process, choose the processing settings to use and displays the batch processing progress and control dialog
 void BatchProcessing(
-    wxWindow *parent ///< Pointer to the application's main window
+    wxWindow* parent ///< Pointer to the application's main window
 );
 
 

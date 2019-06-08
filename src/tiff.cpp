@@ -22,9 +22,10 @@ File description:
 */
 
 #include <climits>
-#include <cassert>
 #include <fstream>
 #include <boost/format.hpp>
+
+#include "imppg_assert.h"
 #include "tiff.h"
 
 
@@ -62,8 +63,8 @@ const int TAG_PLANAR_CONFIGURATION =       0x11C;
 
 const uint16_t NO_COMPRESSION = 1;
 const uint16_t PLANAR_CONFIGURATION_CHUNKY = 1;
-const uint16_t INTEL_BYTE_ORDER = ((uint16_t)'I' << 8) + 'I'; // little-endian
-const uint16_t MOTOROLA_BYTE_ORDER = ((uint16_t)'M' << 8) + 'M'; // big-endian
+const uint16_t INTEL_BYTE_ORDER = ('I' << 8) + 'I'; // little-endian
+const uint16_t MOTOROLA_BYTE_ORDER = ('M' << 8) + 'M'; // big-endian
 const int PHMET_WHITE_IS_ZERO = 0;
 const int PHMET_BLACK_IS_ZERO = 1;
 const int PHMET_RGB = 2;
@@ -83,67 +84,68 @@ inline unsigned GetFieldTypeLength(TagType_t ttt)
 }
 
 /// Changes endianess of 16-bit words in the specified buffer
-void SwapBufferWords(IImageBuffer &buf)
+void SwapBufferWords(IImageBuffer& buf)
 {
     for (unsigned j = 0; j < buf.GetHeight(); j++)
     {
-        uint16_t *row = (uint16_t *)buf.GetRow(j);
+        uint16_t* row = buf.GetRowAs<uint16_t>(j);
         for (unsigned i = 0; i < buf.GetWidth(); i++)
             row[i] = (row[i] << 8) | (row[i] >> 8);
     }
 }
 
 /// Reverses values of an 8-bit grayscale buffer
-void NegateGrayscale8(IImageBuffer &buf)
+void NegateGrayscale8(IImageBuffer& buf)
 {
     for (unsigned j = 0; j < buf.GetHeight(); j++)
     {
-        uint8_t *row = (uint8_t *)buf.GetRow(j);
+        uint8_t* row = buf.GetRowAs<uint8_t>(j);
         for (unsigned i = 0; i < buf.GetWidth(); i++)
             row[i] = 0xFF - row[i];
     }
 }
 
 /// Reverses values of a 16-bit grayscale buffer
-void NegateGrayscale16(IImageBuffer &buf)
+void NegateGrayscale16(IImageBuffer& buf)
 {
     for (unsigned j = 0; j < buf.GetHeight(); j++)
     {
-        uint16_t *row = (uint16_t *)buf.GetRow(j);
+        uint16_t* row = buf.GetRowAs<uint16_t>(j);
         for (unsigned i = 0; i < buf.GetWidth(); i++)
             row[i] = 0xFFFF - row[i];
     }
 }
 
-bool GetTiffDimensions(const char *fileName, unsigned &imgWidth, unsigned &imgHeight)
+std::optional<std::tuple<unsigned, unsigned>> GetTiffDimensions(const std::string& fileName)
 {
     std::ifstream file(fileName, std::ios_base::binary);
 
     if (file.fail())
-        return false;
+        return std::nullopt;
 
     TiffHeader_t tiffHeader;
-    file.read((char *)&tiffHeader, sizeof(tiffHeader));
+    file.read(reinterpret_cast<char*>(&tiffHeader), sizeof(tiffHeader));
     if (file.gcount() != sizeof(tiffHeader))
-        return false;
+        return std::nullopt;
 
     bool isMBE = IsMachineBigEndian();
     bool isFBE = tiffHeader.id == MOTOROLA_BYTE_ORDER; // true if the file has big endian data
     bool enDiff = (isMBE != isFBE);
 
     if (SWAP16cnd(tiffHeader.version, enDiff) != TIFF_VERSION)
-        return false;
+        return std::nullopt;
 
     // Seek to the first TIFF directory
     file.seekg(SWAP32cnd(tiffHeader.dirOffset, enDiff), std::ios_base::beg);
 
     uint16_t numDirEntries;
-    file.read((char *)&numDirEntries, sizeof(numDirEntries));
+    file.read(reinterpret_cast<char*>(&numDirEntries), sizeof(numDirEntries));
     numDirEntries = SWAP16cnd(numDirEntries, enDiff);
     if (file.gcount() != sizeof(numDirEntries))
-        return false;
+        return std::nullopt;
 
-    imgWidth = imgHeight = UINT_MAX;
+    std::optional<unsigned> imgWidth;
+    std::optional<unsigned> imgHeight;
 
     std::fstream::pos_type nextFieldPos = file.tellg();
     for (unsigned i = 0; i < numDirEntries; i++)
@@ -151,9 +153,10 @@ bool GetTiffDimensions(const char *fileName, unsigned &imgWidth, unsigned &imgHe
         TiffField_t tiffField;
 
         file.seekg(nextFieldPos, std::ios_base::beg);
-        file.read((char *)&tiffField, sizeof(tiffField));
+        file.read(reinterpret_cast<char*>(&tiffField), sizeof(tiffField));
         if (file.gcount() != sizeof(tiffField))
-            return false;
+            return std::nullopt;
+
         nextFieldPos = file.tellg();
 
         tiffField.tag = SWAP16cnd(tiffField.tag, enDiff);
@@ -179,20 +182,23 @@ bool GetTiffDimensions(const char *fileName, unsigned &imgWidth, unsigned &imgHe
         case TAG_IMAGE_HEIGHT: imgHeight = tiffField.value; break;
         }
 
-        if (imgWidth != UINT_MAX && imgHeight != UINT_MAX)
+        if (imgWidth && imgHeight)
             break;
     }
 
-    return true;
+    if (!imgWidth || !imgHeight)
+        return std::nullopt;
+    else
+        return std::make_tuple(imgWidth.value(), imgHeight.value());
 }
 
 /// Saves image in TIFF format; returns 'false' on error
-bool SaveTiff(const char *fileName, const c_Image &img)
+bool SaveTiff(const std::string& fileName, const IImageBuffer& img)
 {
-    assert(img.GetPixelFormat() == PIX_MONO8 ||
-           img.GetPixelFormat() == PIX_MONO16 ||
-           img.GetPixelFormat() == PIX_RGB8 ||
-           img.GetPixelFormat() == PIX_RGB16);
+    IMPPG_ASSERT(img.GetPixelFormat() == PixelFormat::PIX_MONO8 ||
+                 img.GetPixelFormat() == PixelFormat::PIX_MONO16 ||
+                 img.GetPixelFormat() == PixelFormat::PIX_RGB8 ||
+                 img.GetPixelFormat() == PixelFormat::PIX_RGB16);
 
     std::ofstream file(fileName, std::ios_base::trunc | std::ios_base::binary);
 
@@ -212,10 +218,10 @@ bool SaveTiff(const char *fileName, const c_Image &img)
     tiffHeader.id = isMBE ? MOTOROLA_BYTE_ORDER : INTEL_BYTE_ORDER;
     tiffHeader.version = TIFF_VERSION;
     tiffHeader.dirOffset = sizeof(tiffHeader);
-    file.write((const char *)&tiffHeader, sizeof(tiffHeader));
+    file.write(reinterpret_cast<const char*>(&tiffHeader), sizeof(tiffHeader));
 
     uint16_t numDirEntries = 10;
-    file.write((const char *)&numDirEntries, sizeof(numDirEntries));
+    file.write(reinterpret_cast<const char*>(&numDirEntries), sizeof(numDirEntries));
 
     uint32_t nextDirOffset = 0;
 
@@ -226,124 +232,133 @@ bool SaveTiff(const char *fileName, const c_Image &img)
     field.count = 1;
     field.value = img.GetWidth();
     if (isMBE) field.value <<= 16;
-    file.write((const char *)&field, sizeof(field));
+    file.write(reinterpret_cast<const char*>(&field), sizeof(field));
 
     field.tag = TAG_IMAGE_HEIGHT;
     field.type = ttWord;
     field.count = 1;
     field.value = img.GetHeight();
     if (isMBE) field.value <<= 16;
-    file.write((const char *)&field, sizeof(field));
+    file.write(reinterpret_cast<const char*>(&field), sizeof(field));
 
     field.tag = TAG_BITS_PER_SAMPLE;
     field.type = ttWord;
     field.count = 1;
     switch (img.GetPixelFormat())
     {
-    case PIX_MONO8:
-    case PIX_RGB8:
+    case PixelFormat::PIX_MONO8:
+    case PixelFormat::PIX_RGB8:
         field.value = 8; break;
-    case PIX_MONO16:
-    case PIX_RGB16:
+
+    case PixelFormat::PIX_MONO16:
+    case PixelFormat::PIX_RGB16:
         field.value = 16; break;
+
+    default: IMPPG_ABORT();
     }
     if (isMBE) field.value <<= 16;
-    file.write((const char *)&field, sizeof(field));
+    file.write(reinterpret_cast<const char*>(&field), sizeof(field));
 
     field.tag = TAG_COMPRESSION;
     field.type = ttWord;
     field.count = 1;
     field.value = NO_COMPRESSION;
     if (isMBE) field.value <<= 16;
-    file.write((const char *)&field, sizeof(field));
+    file.write(reinterpret_cast<const char*>(&field), sizeof(field));
 
     field.tag = TAG_PHOTOMETRIC_INTERPRETATION;
     field.type = ttWord;
     field.count = 1;
     switch (img.GetPixelFormat())
     {
-    case PIX_MONO8:
-    case PIX_MONO16:
+    case PixelFormat::PIX_MONO8:
+    case PixelFormat::PIX_MONO16:
         field.value = PHMET_BLACK_IS_ZERO; break;
-    case PIX_RGB8:
-    case PIX_RGB16:
+
+    case PixelFormat::PIX_RGB8:
+    case PixelFormat::PIX_RGB16:
         field.value = PHMET_RGB; break;
+
+    default: IMPPG_ABORT();
     }
     if (isMBE) field.value <<= 16;
-    file.write((const char *)&field, sizeof(field));
+    file.write(reinterpret_cast<const char*>(&field), sizeof(field));
 
     field.tag = TAG_STRIP_OFFSETS;
     field.type = ttDWord;
     field.count = 1;
     // we write the header, num. of directory entries, 10 fields and a next directory offset (==0); pixel data starts next
     field.value = sizeof(tiffHeader) + sizeof(numDirEntries) + 10*sizeof(field) + sizeof(nextDirOffset);
-    file.write((const char *)&field, sizeof(field));
+    file.write(reinterpret_cast<const char*>(&field), sizeof(field));
 
     field.tag = TAG_SAMPLES_PER_PIXEL;
     field.type = ttWord;
     field.count = 1;
     switch (img.GetPixelFormat())
     {
-    case PIX_MONO8:
-    case PIX_MONO16:
+    case PixelFormat::PIX_MONO8:
+    case PixelFormat::PIX_MONO16:
         field.value = 1; break;
-    case PIX_RGB8:
-    case PIX_RGB16:
+
+    case PixelFormat::PIX_RGB8:
+    case PixelFormat::PIX_RGB16:
         field.value = 3; break;
+
+    default: IMPPG_ABORT();
     }
     if (isMBE) field.value <<= 16;
-    file.write((const char *)&field, sizeof(field));
+    file.write(reinterpret_cast<const char*>(&field), sizeof(field));
 
     field.tag = TAG_ROWS_PER_STRIP;
     field.type = ttWord;
     field.count = 1;
     field.value = img.GetHeight(); // there is only one strip for the whole image
     if (isMBE) field.value <<= 16;
-    file.write((const char *)&field, sizeof(field));
+    file.write(reinterpret_cast<const char*>(&field), sizeof(field));
 
     field.tag = TAG_STRIP_BYTE_COUNTS;
     field.type = ttDWord;
     field.count = 1;
-    field.value = img.GetWidth() * img.GetHeight() * BytesPerPixel[img.GetPixelFormat()]; // there is only one strip for the whole image
-    file.write((const char *)&field, sizeof(field));
+    field.value = img.GetWidth() * img.GetHeight() * img.GetBytesPerPixel(); // there is only one strip for the whole image
+    file.write(reinterpret_cast<const char*>(&field), sizeof(field));
 
     field.tag = TAG_PLANAR_CONFIGURATION;
     field.type = ttWord;
     field.count = 1;
     field.value = PLANAR_CONFIGURATION_CHUNKY; // there is only one strip for the whole image
     if (isMBE) field.value <<= 16;
-    file.write((const char *)&field, sizeof(field));
+    file.write(reinterpret_cast<const char*>(&field), sizeof(field));
 
     // write the next directory offset (0 = no other directories)
-    file.write((const char *)&nextDirOffset, sizeof(nextDirOffset));
+    file.write(reinterpret_cast<const char*>(&nextDirOffset), sizeof(nextDirOffset));
 
     for (unsigned i = 0; i < img.GetHeight(); i++)
-        file.write((const char *)img.GetRow(i), img.GetWidth() * BytesPerPixel[img.GetPixelFormat()]);
+        file.write(img.GetRowAs<const char>(i), img.GetWidth() * img.GetBytesPerPixel());
 
     file.close();
     return true;
 }
 
 /// Reads a TIFF image; returns 0 on error
-c_Image *ReadTiff(
-    const char *fileName,
-    std::string *errorMsg ///< If not null, receives error message (if any));
+std::optional<c_Image> ReadTiff(
+    const std::string& fileName,
+    std::string* errorMsg ///< If not null, receives error message (if any))
 )
 {
     int imgWidth = -1, imgHeight = -1;
-    PixelFormat_t pixFmt;
+    PixelFormat pixFmt{};
 
     std::ifstream file(fileName, std::ios_base::binary);
 
     if (file.fail())
-        return 0;
+        return std::nullopt;
 
     TiffHeader_t tiffHeader;
-    file.read((char *)&tiffHeader, sizeof(tiffHeader));
+    file.read(reinterpret_cast<char*>(&tiffHeader), sizeof(tiffHeader));
     if (file.gcount() != sizeof(tiffHeader))
     {
         if (errorMsg) *errorMsg = "File header is incomplete.";
-        return 0;
+        return std::nullopt;
     }
 
     bool isMBE = IsMachineBigEndian();
@@ -353,19 +368,19 @@ c_Image *ReadTiff(
     if (SWAP16cnd(tiffHeader.version, enDiff) != TIFF_VERSION)
     {
         if (errorMsg) *errorMsg = "Unknown TIFF version.";
-        return 0;
+        return std::nullopt;
     }
 
     // Seek to the first TIFF directory
     file.seekg(SWAP32cnd(tiffHeader.dirOffset, enDiff), std::ios_base::beg);
 
     uint16_t numDirEntries;
-    file.read((char *)&numDirEntries, sizeof(numDirEntries));
+    file.read(reinterpret_cast<char*>(&numDirEntries), sizeof(numDirEntries));
     numDirEntries = SWAP16cnd(numDirEntries, enDiff);
     if (file.gcount() != sizeof(numDirEntries))
     {
         if (errorMsg) *errorMsg = "The number of TIFF directory entries tag is incomplete.";
-        return 0;
+        return std::nullopt;
     }
 
     unsigned numStrips = 0;
@@ -382,11 +397,11 @@ c_Image *ReadTiff(
         TiffField_t tiffField;
 
         file.seekg(nextFieldPos, std::ios_base::beg);
-        file.read((char *)&tiffField, sizeof(tiffField));
+        file.read(reinterpret_cast<char*>(&tiffField), sizeof(tiffField));
         if (file.gcount() != sizeof(tiffField))
         {
             if (errorMsg) *errorMsg = "TIFF field is incomplete.";
-            return 0;
+            return std::nullopt;
         }
         nextFieldPos = file.tellg();
 
@@ -424,7 +439,7 @@ c_Image *ReadTiff(
                 file.seekg(tiffField.value, std::ios_base::beg);
 
                 std::unique_ptr<uint16_t[]> fieldBuf(new uint16_t[tiffField.count]);
-                file.read((char *)fieldBuf.get(), tiffField.count * sizeof(uint16_t));
+                file.read(reinterpret_cast<char*>(fieldBuf.get()), tiffField.count * sizeof(uint16_t));
 
                 bool allEqual = true;
                 uint16_t first = fieldBuf[0];
@@ -438,7 +453,7 @@ c_Image *ReadTiff(
                  if (!allEqual)
                  {
                     if (errorMsg) *errorMsg = "Files with differing bit depts per channel are not supported.";
-                    return 0;
+                    return std::nullopt;
                  }
 
                  bitsPerSample = SWAP16cnd(first, enDiff);
@@ -447,7 +462,7 @@ c_Image *ReadTiff(
             if (bitsPerSample != 8 && bitsPerSample != 16)
             {
                 if (errorMsg) *errorMsg = "Only 8 and 16 bits per channel files are supported.";
-                return 0;
+                return std::nullopt;
             }
             break;
 
@@ -455,7 +470,7 @@ c_Image *ReadTiff(
             if (tiffField.value != NO_COMPRESSION)
             {
                 if (errorMsg) *errorMsg = "Compression is not supported.";
-                return 0;
+                return std::nullopt;
             }
             break;
 
@@ -471,7 +486,7 @@ c_Image *ReadTiff(
                 file.seekg(tiffField.value, std::ios_base::beg);
                 for (unsigned i = 0; i < numStrips; i++)
                 {
-                    file.read((char *)&stripOffsets[i], sizeof(stripOffsets[i]));
+                    file.read(reinterpret_cast<char*>(&stripOffsets[i]), sizeof(stripOffsets[i]));
                     stripOffsets[i] = SWAP32cnd(stripOffsets[i], enDiff);
                 }
             }
@@ -490,7 +505,7 @@ c_Image *ReadTiff(
                 file.seekg(tiffField.value, std::ios_base::beg);
                 for (unsigned i = 0; i < tiffField.count; i++)
                 {
-                    file.read((char *)&stripByteCounts[i], sizeof(stripByteCounts[i]));
+                    file.read(reinterpret_cast<char*>(&stripByteCounts[i]), sizeof(stripByteCounts[i]));
                     stripByteCounts[i] = SWAP32cnd(stripByteCounts[i], enDiff);
                 }
             }
@@ -500,7 +515,7 @@ c_Image *ReadTiff(
             if (tiffField.value != PLANAR_CONFIGURATION_CHUNKY)
             {
                 if (errorMsg) *errorMsg = "Files with planar configuration other than packed (chunky) are not supported.";
-                return 0;
+                return std::nullopt;
             }
             break;
         }
@@ -517,27 +532,26 @@ c_Image *ReadTiff(
         samplesPerPixel != 1 && samplesPerPixel != 3)
     {
         if (errorMsg) *errorMsg = "Only RGB and grayscale images are supported.";
-        return 0;
+        return std::nullopt;
     }
 
     if (samplesPerPixel == 1)
     {
         if (bitsPerSample == 8)
-            pixFmt = PIX_MONO8;
+            pixFmt = PixelFormat::PIX_MONO8;
         else if (bitsPerSample == 16)
-            pixFmt = PIX_MONO16;
+            pixFmt = PixelFormat::PIX_MONO16;
     }
     else if (samplesPerPixel == 3)
     {
         if (bitsPerSample == 8)
-            pixFmt = PIX_RGB8;
+            pixFmt = PixelFormat::PIX_RGB8;
         else if (bitsPerSample == 16)
-            pixFmt = PIX_RGB16;
+            pixFmt = PixelFormat::PIX_RGB16;
     }
 
-    c_Image *result = new c_Image(imgWidth, imgHeight, pixFmt);
+    auto result = c_Image(imgWidth, imgHeight, pixFmt);
 
-    //int bufOfs = 0;
     int currentRow = 0;
     for (unsigned i = 0; i < numStrips; i++)
     {
@@ -545,8 +559,8 @@ c_Image *ReadTiff(
 
         for (unsigned j = 0; j < rowsPerStrip && currentRow < imgHeight; j++, currentRow++)
         {
-            std::streamsize numBytesToRead = imgWidth * BytesPerPixel[pixFmt];
-            file.read((char *)result->GetRow(currentRow), numBytesToRead);
+            std::streamsize numBytesToRead = imgWidth * BytesPerPixel[static_cast<size_t>(pixFmt)];
+            file.read(result.GetRowAs<char>(currentRow), numBytesToRead);
 
             if (file.gcount() != numBytesToRead)
             {
@@ -554,23 +568,23 @@ c_Image *ReadTiff(
                     "Expected %d bytes, but read only %d.")
                     % i
                     % stripByteCounts[i]
-                    % (currentRow * numBytesToRead));
-                delete result;
-                return 0;
+                    % (currentRow * numBytesToRead)
+                );
+                return std::nullopt;
             }
         }
     }
 
-    if ((pixFmt == PIX_MONO16 || pixFmt == PIX_RGB16) && enDiff)
-        SwapBufferWords(result->GetBuffer());
+    if ((pixFmt == PixelFormat::PIX_MONO16 || pixFmt == PixelFormat::PIX_RGB16) && enDiff)
+        SwapBufferWords(result.GetBuffer());
 
     if (photometricInterpretation == PHMET_WHITE_IS_ZERO)
     {
-        // Reverse the values so that "black" is zero, "white" is 255 or 65535.
-        if (pixFmt == PIX_MONO8)
-            NegateGrayscale8(result->GetBuffer());
-        else if (pixFmt == PIX_MONO16)
-            NegateGrayscale16(result->GetBuffer());
+        // reverse the values so that "black" is zero, "white" is 255 or 65535
+        if (pixFmt == PixelFormat::PIX_MONO8)
+            NegateGrayscale8(result.GetBuffer());
+        else if (pixFmt == PixelFormat::PIX_MONO16)
+            NegateGrayscale16(result.GetBuffer());
     }
 
     file.close();

@@ -24,14 +24,15 @@ File description:
 #ifndef ImPPG_BMP_H
 #define ImPPG_BMP_H
 
+#include <optional>
 #include "image.h"
 
-/// Reads a BMP image; returns 0 on error
-c_Image *ReadBmp(const char *fileName);
+std::optional<c_Image> ReadBmp(const std::string& fileName);
 
-/// Saves image in BMP format; returns 'false' on error
-bool SaveBmp(const char *fileName, const c_Image &img);
+/// Returns `false` on error.
+bool SaveBmp(const std::string& fileName, const IImageBuffer& img);
 
-bool GetBmpDimensions(const char *fileName, unsigned &imgWidth, unsigned &imgHeight);
+/// Returns (width, height).
+std::optional<std::tuple<unsigned, unsigned>> GetBmpDimensions(const std::string& fileName);
 
 #endif // ImPPG_BMP_H

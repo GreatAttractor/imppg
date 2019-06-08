@@ -35,7 +35,7 @@ File description:
 
 const int BORDER = 5; ///< Border size (in pixels between) controls
 
-c_ToneCurveWindowSettingsDialog::c_ToneCurveWindowSettingsDialog(wxWindow *parent)
+c_ToneCurveWindowSettingsDialog::c_ToneCurveWindowSettingsDialog(wxWindow* parent)
 : wxDialog(parent, wxID_ANY, _("Tone Curve Editor"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
 {
     InitControls();
@@ -82,29 +82,29 @@ void c_ToneCurveWindowSettingsDialog::SetColors(ToneCurveEditorColors colorSet)
 
 void c_ToneCurveWindowSettingsDialog::InitControls()
 {
-    auto *szTop = new wxBoxSizer(wxVERTICAL);
+    auto* szTop = new wxBoxSizer(wxVERTICAL);
 
     const wxString colorOptions[] = { _("ImPPG defaults"), _("System defaults"), _("Custom") };
     m_RbColorSet = new wxRadioBox(this, wxID_ANY, _("Choose tone curve editor colors"), wxDefaultPosition, wxDefaultSize, 3, colorOptions, 0, wxRA_SPECIFY_ROWS);
     m_RbColorSet->SetSelection(static_cast<int>(static_cast<ToneCurveEditorColors>(Configuration::ToneCurveColors)));
-    m_RbColorSet->Bind(wxEVT_RADIOBOX, [this](wxCommandEvent &evt) { SetColors(static_cast<ToneCurveEditorColors>(evt.GetSelection())); });
+    m_RbColorSet->Bind(wxEVT_RADIOBOX, [this](wxCommandEvent& evt) { SetColors(static_cast<ToneCurveEditorColors>(evt.GetSelection())); });
     szTop->Add(m_RbColorSet, 0, wxGROW | wxALL, BORDER);
 
     this->m_PnColors = new wxPanel(this, wxID_ANY);
-    auto *szColors = new wxBoxSizer(wxVERTICAL);
+    auto* szColors = new wxBoxSizer(wxVERTICAL);
     // create color picker controls by iterating over tuples of: (label; control ptr to initialize; color to use if "custom" color set is active)
-    for (const auto &i: std::initializer_list<std::tuple<wxString, wxColourPickerCtrl*&, wxColour>>
+    for (const auto& i: std::initializer_list<std::tuple<wxString, wxColourPickerCtrl*&, wxColour>>
         { { _("Curve:"),                m_CurveColor,              Configuration::ToneCurveEditor_CurveColor },
           { _("Curve point:"),          m_CurvePointColor,         Configuration::ToneCurveEditor_CurvePointColor },
           { _("Selected curve point:"), m_SelectedCurvePointColor, Configuration::ToneCurveEditor_SelectedCurvePointColor },
           { _("Histogram:"),            m_HistogramColor,          Configuration::ToneCurveEditor_HistogramColor },
           { _("Background:"),           m_BackgroundColor,         Configuration::ToneCurveEditor_BackgroundColor } })
     {
-        auto *sz = new wxBoxSizer(wxHORIZONTAL);
+        auto* sz = new wxBoxSizer(wxHORIZONTAL);
         sz->Add(new wxStaticText(m_PnColors, wxID_ANY, std::get<0>(i)), 1, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
-        auto *&colorPicker = std::get<1>(i);
+        auto*& colorPicker = std::get<1>(i);
         colorPicker = new wxColourPickerCtrl(m_PnColors, wxID_ANY);
-        colorPicker->Bind(wxEVT_COLOURPICKER_CHANGED, [this](wxColourPickerEvent& evt) { m_RbColorSet->SetSelection(static_cast<int>(ToneCurveEditorColors::Custom)); });
+        colorPicker->Bind(wxEVT_COLOURPICKER_CHANGED, [this](wxColourPickerEvent&) { m_RbColorSet->SetSelection(static_cast<int>(ToneCurveEditorColors::Custom)); });
         if (Configuration::ToneCurveColors == ToneCurveEditorColors::Custom)
         {
             colorPicker->SetColour(std::get<2>(i));

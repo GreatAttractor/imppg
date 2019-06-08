@@ -27,36 +27,28 @@ File description:
 #include "worker.h"
 #include "tcrv.h"
 
-class c_UnsharpMaskingThread: public c_WorkerThread
+class c_UnsharpMaskingThread: public IWorkerThread
 {
     virtual void DoWork();
 
-    // See comments in c_UnsharpMaskingThread::DoWork() for details
+    const c_ImageBufferView m_RawInput; ///< Raw/original image fragment without any processing performed.
+    // see comments in c_UnsharpMaskingThread::DoWork() for details
     bool m_Adaptive;
     float m_Sigma;
     float m_AmountMin, m_AmountMax;
     float m_Threshold, m_Width;
-    c_ImageBufferView *m_RawInput;
 
 public:
     c_UnsharpMaskingThread(
-        wxWindow &parent,             ///< Object to receive notification messages from this worker thread
-        wxCriticalSection &guard,     ///< Critical section protecting access to 'instancePtr'
-        c_WorkerThread **instancePtr, ///< Pointer to pointer to this thread, set to null when execution finishes
-        int taskId,                   ///< Id of task (will be included in every message)
-        c_ImageBufferView *input,     ///< Image fragment to process; object will be destroyed when thread ends
-        c_ImageBufferView *rawInput,  ///< Raw/original image fragment without any processing performed
-        IImageBuffer &output,         ///< Output image
-        unsigned threadId,            ///< Unique thread id (not reused by new threads)
-
+        WorkerParameters&& params,
+        c_ImageBufferView&& rawInput, ///< Raw/original image fragment without any processing performed
         bool adaptive, ///< If true, adaptive algorithm is used
         float sigma,  ///< Unsharp mask Gaussian sigma
         float amountMin, ///< Unsharp masking amount min
         float amountMax, ///< Unsharp masking amount max (or just "amount" if 'adaptive' is false)
         float threshold,  ///< Brightness threshold for transition from 'amountMin' to 'amountMax'
         float width       ///< Transition width
-        );
-
+    );
 };
 
 #endif

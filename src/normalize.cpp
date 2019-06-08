@@ -38,7 +38,7 @@ BEGIN_EVENT_TABLE(c_NormalizeDialog, wxDialog)
     EVT_CHECKBOX(ID_NormalizationEnabled, c_NormalizeDialog::OnCommandEvent)
 END_EVENT_TABLE()
 
-c_NormalizeDialog::c_NormalizeDialog(wxWindow *parent, bool normalizationEnabled, float minLevel, float maxLevel)
+c_NormalizeDialog::c_NormalizeDialog(wxWindow* parent, bool normalizationEnabled, float minLevel, float maxLevel)
 : wxDialog(parent, wxID_ANY, _("Brightness Normalization"), wxDefaultPosition, wxDefaultSize,
         wxDEFAULT_DIALOG_STYLE)
 {
@@ -57,7 +57,7 @@ c_NormalizeDialog::c_NormalizeDialog(wxWindow *parent, bool normalizationEnabled
     }
 }
 
-void c_NormalizeDialog::OnCommandEvent(wxCommandEvent &event)
+void c_NormalizeDialog::OnCommandEvent(wxCommandEvent& event)
 {
     switch (event.GetId())
     {
@@ -68,7 +68,7 @@ void c_NormalizeDialog::OnCommandEvent(wxCommandEvent &event)
     }
 }
 
-void c_NormalizeDialog::OnClose(wxCloseEvent &event)
+void c_NormalizeDialog::OnClose(wxCloseEvent& event)
 {
     if (GetReturnCode() == wxID_OK)
         TransferDataFromWindow();
@@ -77,7 +77,7 @@ void c_NormalizeDialog::OnClose(wxCloseEvent &event)
 
 void c_NormalizeDialog::InitControls()
 {
-    wxSizer *szTop = new wxBoxSizer(wxVERTICAL);
+    wxSizer* szTop = new wxBoxSizer(wxVERTICAL);
 
     szTop->Add(new wxStaticText(this, wxID_ANY,
         _("Normalization of image brightness is performed prior\n"
@@ -87,14 +87,14 @@ void c_NormalizeDialog::InitControls()
     szTop->Add(new wxCheckBox(this, ID_NormalizationEnabled, _("Normalization enabled"), wxDefaultPosition, wxDefaultSize, 0, wxGenericValidator(&m_NormalizationEnabled)),
         0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
 
-    wxSizer *szMin = new wxBoxSizer(wxHORIZONTAL);
+    wxSizer* szMin = new wxBoxSizer(wxHORIZONTAL);
     szMin->Add(new wxStaticText(this, wxID_ANY, _("Set the darkest input pixels to:")), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
     szMin->Add(new wxTextCtrl(this, ID_MinLevel, "0.0", wxDefaultPosition, wxDefaultSize, 0, wxFloatingPointValidator<double>(5, &m_MinLevelPercent)),
         0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
     szMin->Add(new wxStaticText(this, wxID_ANY, "%"), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
     szTop->Add(szMin, 0, wxGROW | wxALL, BORDER);
 
-    wxSizer *szMax = new wxBoxSizer(wxHORIZONTAL);
+    wxSizer* szMax = new wxBoxSizer(wxHORIZONTAL);
     szMax->Add(new wxStaticText(this, wxID_ANY, _("Set the brightest input pixels to:")), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
     szMax->Add(new wxTextCtrl(this, ID_MaxLevel, "100.0", wxDefaultPosition, wxDefaultSize, 0, wxFloatingPointValidator<double>(5, &m_MaxLevelPercent)),
         0, wxALIGN_CENTER_VERTICAL | wxALL, 5);

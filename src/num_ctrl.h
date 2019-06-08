@@ -47,6 +47,8 @@ class c_NumericalCtrl: public wxPanel, IDelayedAction
     bool m_AutoAdjustNumSteps;
 
     wxStaticText m_Label;
+    wxSlider* m_SliderCtrl{nullptr};
+    wxSpinCtrlDouble* m_SpinCtrl{nullptr};
 
     struct
     {
@@ -55,19 +57,19 @@ class c_NumericalCtrl: public wxPanel, IDelayedAction
     } Scrolling;
 
     void OnValueChanged();
-    void OnSpinEvent(wxSpinDoubleEvent &event);
+    void OnSpinEvent(wxSpinDoubleEvent& event);
 #ifdef __WXMSW__
-    void OnSpinEnter(wxCommandEvent &event);
+    void OnSpinEnter(wxCommandEvent& event);
 #endif
-    void OnSliderScroll(wxScrollEvent &event);
-    void OnSliderEndScroll(wxScrollEvent &event);
-    void OnSliderSize(wxSizeEvent &event);
-    void OnSliderKeyDown(wxKeyEvent &event);
-    void OnSliderKeyUp(wxKeyEvent &event);
-    virtual void DoPerformAction(void *param = 0);
+    void OnSliderScroll(wxScrollEvent& event);
+    void OnSliderEndScroll(wxScrollEvent& event);
+    void OnSliderSize(wxSizeEvent& event);
+    void OnSliderKeyDown(wxKeyEvent& event);
+    void OnSliderKeyUp(wxKeyEvent& event);
+    void DoPerformAction(void* param = nullptr) override;
 
 public:
-    c_NumericalCtrl(wxWindow *parent, int id,
+    c_NumericalCtrl(wxWindow* parent, int id,
         wxString label, ///< Label displayed next to the spin control
         double minVal, ///< Min. allowed value
         double maxVal, ///< Max. allowed value
@@ -87,7 +89,7 @@ public:
     /// Sets the value; does not generate an EVT_NUMERICAL_CTRL event
     void SetValue(double value);
 
-    virtual void SetLabel(const wxString &label);
+    void SetLabel(const wxString& label) override;
 
     DECLARE_EVENT_TABLE()
 };

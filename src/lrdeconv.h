@@ -41,41 +41,45 @@ enum class ConvolutionMethod
 template<typename T>
 class c_PaddedArrayPtr
 {
-    T *m_Array;
+    T* m_Array;
     int m_Width, m_Height, m_BytesPerRow;
 
 public:
-    c_PaddedArrayPtr(T *start, int width, int height, int bytesPerRow = 0): m_Array(start), m_Width(width), m_Height(height), m_BytesPerRow(bytesPerRow)
+    c_PaddedArrayPtr(T* start, int width, int height, int bytesPerRow = 0): m_Array(start), m_Width(width), m_Height(height), m_BytesPerRow(bytesPerRow)
     {
         if (bytesPerRow == 0)
             m_BytesPerRow = width * sizeof(T);
     }
 
-    /// Gets element at [row][col]
-    T &get(int row, int col) { return *((uint8_t *)m_Array + row*m_BytesPerRow + col * sizeof(T)); }
+    T* row(int row)
+    {
+        return reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(m_Array) + row * m_BytesPerRow);
+    }
 
-    /// Returns pointer to the specified row
-    T *row(int row) { return (T *)((uint8_t *)m_Array + row*m_BytesPerRow); }
+    T* row_const(int row) const
+    {
+        return reinterpret_cast<T*>(reinterpret_cast<const uint8_t*>(m_Array) + row * m_BytesPerRow);
+    }
 
     int width() const { return m_Width; }
     int height() const { return m_Height; }
     int GetBytesPerRow() const { return m_BytesPerRow; }
 };
 
-/// Clamps the values of the specified floating-point buffer to [0.0, 1.0]
-void Clamp(float array[], int width, int height, int bytesPerRow);
+/// Clamps the values of the specified PIX_MONO32F buffer to [0.0, 1.0]
+void Clamp(c_ImageBufferView& buf);
 
 /// Calculates convolution of 'input' with a Gaussian kernel
 void ConvolveSeparable(
-        c_PaddedArrayPtr<const float> input,  ///< Input array
-        c_PaddedArrayPtr<float> output, ///< Output array having as much rows and columns as 'input' does
-        float sigma              ///< Gaussian sigma
+        c_PaddedArrayPtr<const float> input, ///< Input array
+        c_PaddedArrayPtr<float> output,      ///< Output array having as much rows and columns as 'input' does
+        float sigma                           ///< Gaussian sigma
 );
 
 /// Reproduces original image from image in 'input' convolved with Gaussian kernel and writes it to 'output'.
 void LucyRichardsonGaussian(
-        const IImageBuffer &input, ///< Contains a single 'float' value per pixel; size the same as 'output'
-        IImageBuffer &output, ///< Contains a single 'float' value per pixel; size the same as 'input'
+        const c_ImageBufferView& input, ///< Contains a single 'float' value per pixel; size the same as 'output'
+        c_ImageBufferView& output, ///< Contains a single 'float' value per pixel; size the same as 'input'
         int numIters,  ///< Number of iterations
         float sigma,   ///< sigma of the Gaussian kernel
         ConvolutionMethod convMethod,
@@ -91,8 +95,8 @@ void LucyRichardsonGaussian(
 
 /// Blurs pixels around borders of brightness areas defined by 'threshold'
 void BlurThresholdVicinity(
-    const IImageBuffer &input,
-    IImageBuffer &output,
+    const c_ImageBufferView& input,
+    c_ImageBufferView& output,
     float threshold, ///< Threshold to qualify pixels as "border pixels"
     bool greaterThan,
     float sigma

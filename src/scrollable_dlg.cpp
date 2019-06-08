@@ -22,13 +22,15 @@ File description:
 */
 
 #include <cassert>
+
 #include "common.h"
+#include "imppg_assert.h"
 #include "scrollable_dlg.h"
 
 
-c_ScrollableDialog::c_ScrollableDialog(wxWindow *parent, wxWindowID id, wxString title)
-    : wxDialog(parent, id, title, wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER),
-      m_Contents(0), m_SzTop(0)
+c_ScrollableDialog::c_ScrollableDialog(wxWindow* parent, wxWindowID id, wxString title)
+: wxDialog(parent, id, title, wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER),
+  m_SzTop(0)
 {
     SetExtraStyle(GetExtraStyle() | wxWS_EX_VALIDATE_RECURSIVELY); // Make sure all validators are run
 }
@@ -49,7 +51,7 @@ void c_ScrollableDialog::InitControls(int borderSize)
 
     DoInitControls();
 
-    assert(m_Contents->GetSizer() != 0); // Derived classes have to create a sizer for m_Contents
+    IMPPG_ASSERT(m_Contents->GetSizer() != 0); // Derived classes have to create a sizer for m_Contents
     m_Contents->SetMinClientSize(m_Contents->GetSizer()->GetMinSize());
 
     SetSizer(m_SzTop);
@@ -62,12 +64,12 @@ void c_ScrollableDialog::RefreshContents()
     m_Contents->Refresh(false);
 }
 
-void c_ScrollableDialog::OnContentsResized(wxSizeEvent &event)
+void c_ScrollableDialog::OnContentsResized(wxSizeEvent&)
 {
     RefreshContents();
 }
 
-void c_ScrollableDialog::OnContentsScrolled(wxScrollWinEvent &event)
+void c_ScrollableDialog::OnContentsScrolled(wxScrollWinEvent& event)
 {
     RefreshContents();
     event.Skip();

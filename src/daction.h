@@ -39,9 +39,9 @@ class IDelayedAction
 
     wxTimer m_DelayedActionTimer;
 
-    void *m_NextActionParam;
+    void* m_NextActionParam{nullptr};
 
-    void OnTimer(wxTimerEvent &event)
+    void OnTimer(wxTimerEvent&)
     {
         m_LastActionTimestamp = wxDateTime::UNow();
         DoPerformAction(m_NextActionParam);
@@ -50,7 +50,7 @@ class IDelayedAction
 
 protected:
     /// Action implementation, to be provided by the derived classes
-    virtual void DoPerformAction(void *param = 0) = 0;
+    virtual void DoPerformAction(void* param = nullptr) = 0;
 
 public:
 
@@ -66,10 +66,10 @@ public:
 
     /// Makes sure that 'm_DelayMsec' have elapsed since the last call and performs the action implemented in DoPerformAction()
     /** Calls are not "buffered". If DelayedAction() is called more than once before 'm_DelayMsec' elapses, only the last call will be effective. */
-    void DelayedAction(void *param = 0)
+    void DelayedAction(void* param = nullptr)
     {
         wxDateTime now = wxDateTime::UNow();
-        unsigned msecSinceLastEvent = (unsigned)now.Subtract(m_LastActionTimestamp).GetMilliseconds().GetValue();
+        unsigned msecSinceLastEvent = static_cast<unsigned>(now.Subtract(m_LastActionTimestamp).GetMilliseconds().GetValue());
         if (msecSinceLastEvent > m_DelayMsec)
         {
             m_DelayedActionTimer.Stop();

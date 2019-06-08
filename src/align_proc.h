@@ -29,25 +29,25 @@ File description:
 #include <wx/arrstr.h>
 #include "align.h"
 #include "common.h"
+#include "exclusive_access.h"
 
 class c_ImageAlignmentWorkerThread: public wxThread
 {
-    wxWindow &m_Parent;
-    wxCriticalSection &m_Guard; ///< Guards access to 'm_InstancePtr'
-    c_ImageAlignmentWorkerThread **m_InstancePtr;
+    wxWindow& m_Parent;
+    ExclusiveAccessObject<c_ImageAlignmentWorkerThread*>& m_InstancePtr;
 
     /// The parent can perform Post() on this semaphore (via AbortProcessing())
     wxSemaphore m_AbortReq;
 
     bool m_ProcessingCompleted; ///< 'true' if processing has completed
     bool m_ThreadAborted; ///< 'true' if IsAbortRequested() has been called and has returned 'true'
-    wxString m_CompletionMessage;
+    std::string m_CompletionMessage;
     AlignmentParameters_t m_Parameters;
 
     /// Arguments: image index and its determined translation vector
     void PhaseCorrImgTranslationCallback(int imgIdx, float Tx, float Ty);
     bool IsAbortRequested();
-    void SendMessageToParent(int id, int value = 0, wxString msg = wxEmptyString, AlignmentEventPayload_t *payload = 0);
+    void SendMessageToParent(int id, int value = 0, wxString msg = wxEmptyString, AlignmentEventPayload_t* payload = nullptr);
 
     /// Loads the specified input image, translates it and saves using the specified size and translation vector
     bool SaveTranslatedOutputImage(wxString inputFileName, int outputWidth, int outputHeight,
@@ -60,47 +60,44 @@ class c_ImageAlignmentWorkerThread: public wxThread
 
     /// Finds disc radii in input images; returns 'true' on success
     bool FindRadii(
-        std::vector<std::vector<FloatPoint_t> > &limbPoints, ///< Receives limb points found in n-th image
-        std::vector<float> &radii, ///< Receives disc radii determined for each image
-        std::vector<Point_t> &imgSizes, ///< Receives input image sizes
-        std::vector<Point_t> &centroids ///< Receives image centroids
+        std::vector<std::vector<FloatPoint_t>>& limbPoints, ///< Receives limb points found in n-th image
+        std::vector<float>& radii, ///< Receives disc radii determined for each image
+        std::vector<Point_t>& imgSizes, ///< Receives input image sizes
+        std::vector<Point_t>& centroids ///< Receives image centroids
     );
 
     /// Performs the final stabilization phase of limb alignment; returns 'true' on success
     bool StabilizeLimbAlignment(
         /// Translation vectors to be corrected by stabilization
-        std::vector<FloatPoint_t> &translation,
+        std::vector<FloatPoint_t>& translation,
         /// Start of the images' intersection, relative to the first image's origin
         Point_t intersectionStart,
         int intrWidth, ///< Images' intersection width
         int intrHeight, ///< Images' intersection height
-        wxString &errorMsg ///< Receives error message (if any)
+        wxString& errorMsg ///< Receives error message (if any)
         );
 
 
 public:
     c_ImageAlignmentWorkerThread(
-        wxWindow &parent,         ///< Object to receive notification messages from this worker thread
-        wxCriticalSection &guard, ///< Critical section protecting access to 'instancePtr'
-        c_ImageAlignmentWorkerThread **instancePtr, ///< Pointer to pointer to this thread, will be set to null when execution finishes
-        AlignmentParameters_t &params ///< Copied internally and not accessed later
+        wxWindow& parent,         ///< Object to receive notification messages from this worker thread
+        ExclusiveAccessObject<c_ImageAlignmentWorkerThread*>& instancePtr, ///< Pointer to this thread, set to nullptr when execution finishes
+        const AlignmentParameters_t& params ///< Copied internally and not accessed later
         )
         : wxThread(wxTHREAD_DETACHED),
         m_Parent(parent),
-        m_Guard(guard),
         m_InstancePtr(instancePtr),
         m_ProcessingCompleted(false),
         m_ThreadAborted(false),
-        m_CompletionMessage(wxEmptyString),
         m_Parameters(params)
     { }
 
-    virtual ExitCode Entry();
+    ExitCode Entry() override;
 
     /// Signals the thread to finish processing ASAP
     void AbortProcessing();
 
-    virtual ~c_ImageAlignmentWorkerThread();
+    ~c_ImageAlignmentWorkerThread() override;
 };
 
 #endif // IMPPG_IMAGE_ALIGNMENT_THREAD_HEADER

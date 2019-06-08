@@ -25,14 +25,14 @@ File description:
 #include <wx/bitmap.h>
 
 // converts a 8-digit binary string into unsigned char value; NOTE: char[0] is the least significant bit
-#define BITM(str) (char)(((str[0]-'0') << 0) + \
-                         ((str[1]-'0') << 1) + \
-                         ((str[2]-'0') << 2) + \
-                         ((str[3]-'0') << 3) + \
-                         ((str[4]-'0') << 4) + \
-                         ((str[5]-'0') << 5) + \
-                         ((str[6]-'0') << 6) + \
-                         ((str[7]-'0') << 7))
+#define BITM(str) static_cast<char>(((str[0]-'0') << 0) + \
+                                    ((str[1]-'0') << 1) + \
+                                    ((str[2]-'0') << 2) + \
+                                    ((str[3]-'0') << 3) + \
+                                    ((str[4]-'0') << 4) + \
+                                    ((str[5]-'0') << 5) + \
+                                    ((str[6]-'0') << 6) + \
+                                    ((str[7]-'0') << 7))
 
 namespace Cursors
 {
@@ -91,8 +91,8 @@ namespace Cursors
         };
 
 #ifdef __WXMSW__
-        wxBitmap bmpHandOpen((const char *)crHandOpenBits, 16, 16);
-        wxBitmap bmpHandOpenMask((const char*)crHandOpenMask, 16, 16);
+        wxBitmap bmpHandOpen(static_cast<const char*>(crHandOpenBits), 16, 16);
+        wxBitmap bmpHandOpenMask(static_cast<const char*>(crHandOpenMask), 16, 16);
         bmpHandOpen.SetMask(new wxMask(bmpHandOpenMask));
         wxImage imgHandOpen = bmpHandOpen.ConvertToImage();
         imgHandOpen.SetOption(wxIMAGE_OPTION_CUR_HOTSPOT_X, 7);
@@ -144,8 +144,8 @@ namespace Cursors
         };
 
 #ifdef __WXMSW__
-        wxBitmap bmpHandClosed((const char *)crHandClosedBits, 16, 16);
-        wxBitmap bmpHandClosedMask((const char*)crHandClosedMask, 16, 16);
+        wxBitmap bmpHandClosed(static_cast<const char*>(crHandClosedBits), 16, 16);
+        wxBitmap bmpHandClosedMask(static_cast<const char*>(crHandClosedMask), 16, 16);
         bmpHandClosed.SetMask(new wxMask(bmpHandClosedMask));
         wxImage imgHandClosed = bmpHandClosed.ConvertToImage();
         imgHandClosed.SetOption(wxIMAGE_OPTION_CUR_HOTSPOT_X, 7);

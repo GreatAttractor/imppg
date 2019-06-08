@@ -24,12 +24,15 @@ File description:
 #ifndef IMPGG_TONE_CURVE_EDITOR_H
 #define IMPGG_TONE_CURVE_EDITOR_H
 
-#include <wx/panel.h>
-#include <wx/event.h>
-#include <wx/dc.h>
-#include <wx/gdicmn.h>
-#include <wx/timer.h>
 #include <wx/datetime.h>
+#include <wx/dc.h>
+#include <wx/event.h>
+#include <wx/gdicmn.h>
+#include <wx/panel.h>
+#include <wx/tglbtn.h>
+#include <wx/timer.h>
+#include <wx/checkbox.h>
+#include <wx/spinctrl.h>
 #include "tcrv.h"
 #include "daction.h"
 
@@ -40,19 +43,19 @@ class c_ToneCurveEditor: public wxPanel, IDelayedAction
 {
 private:
     // Event handlers ----------------------------
-    void OnPaintCurveArea(wxPaintEvent &event);
-    void OnCurveAreaLeftDown(wxMouseEvent &event);
-    void OnCurveAreaLeftUp(wxMouseEvent &event);
-    void OnCurveAreaRightDown(wxMouseEvent &event);
-    void OnCurveAreaMouseMove(wxMouseEvent &event);
-    void OnReset(wxCommandEvent &event);
-    void OnToggleSmooth(wxCommandEvent &event);
-    void OnMouseCaptureLost(wxMouseCaptureLostEvent &event);
-    void OnToggleLogHist(wxCommandEvent &event);
-    void OnToggleGammaMode(wxCommandEvent &event);
-    void OnChangeGamma(wxSpinDoubleEvent &event);
-    void OnInvert(wxCommandEvent &event);
-    void OnStretch(wxCommandEvent &event);
+    void OnPaintCurveArea(wxPaintEvent& event);
+    void OnCurveAreaLeftDown(wxMouseEvent& event);
+    void OnCurveAreaLeftUp(wxMouseEvent& event);
+    void OnCurveAreaRightDown(wxMouseEvent& event);
+    void OnCurveAreaMouseMove(wxMouseEvent& event);
+    void OnReset(wxCommandEvent& event);
+    void OnToggleSmooth(wxCommandEvent& event);
+    void OnMouseCaptureLost(wxMouseCaptureLostEvent& event);
+    void OnToggleLogHist(wxCommandEvent& event);
+    void OnToggleGammaMode(wxCommandEvent& event);
+    void OnChangeGamma(wxSpinDoubleEvent& event);
+    void OnInvert(wxCommandEvent& event);
+    void OnStretch(wxCommandEvent& event);
     //--------------------------------------------
 
     /// Returns 'true' if distance between point [pointIdx] and (x,y) is below MIN_GRAB_DIST
@@ -60,33 +63,33 @@ private:
 
     void SetToolTips();
     /// Converts pixel coords to curve logical coords (minx<=logx<=maxx, 0<=logy<=1)
-    void GetCurveLogicalCoords(int x, int y, float minx, float maxx, float *logx, float *logy);
+    void GetCurveLogicalCoords(int x, int y, float minx, float maxx, float* logx, float* logy);
 
     void DrawCurve(
-        wxDC &dc,
-        const wxRect &r ///< Represents the drawing area
+        wxDC& dc,
+        const wxRect& r ///< Represents the drawing area
         );
 
     void MarkCurvePoints(
-        wxDC &dc,
-        const wxRect &r ///< Represents the drawing area
+        wxDC& dc,
+        const wxRect& r ///< Represents the drawing area
         );
 
     void DrawHistogram(
-        wxDC &dc,
-        const wxRect &r ///< Represents the drawing area
+        wxDC& dc,
+        const wxRect& r ///< Represents the drawing area
         );
 
     void DeactivateGammaMode();
 
     /// Sends EVT_TONE_CURVE to parent, but not more often than the delay specified in the constructor
-    virtual void DoPerformAction(void *param = 0);
+    void DoPerformAction(void* param = nullptr) override;
 
     /// Sends EVT_TONE_CURVE event to parent, but no more frequently than each 'm_UpdateEvtDelay' milliseconds
     void SignalToneCurveUpdate();
 
-    wxPanel *m_CurveArea;
-    c_ToneCurve *m_Curve;
+    wxPanel* m_CurveArea{nullptr};
+    c_ToneCurve* m_Curve{nullptr};
     struct
     {
         bool dragging;
@@ -102,19 +105,27 @@ private:
     /// Number of curve and histogram segments to draw
     size_t m_NumDrawSegments;
 
+    wxSpinCtrlDouble* m_GammaCtrl{nullptr};
+    wxCheckBox* m_GammaToggleCtrl{nullptr};
+    wxCheckBox* m_SmoothCtrl{nullptr};
+    wxToggleButton* m_LogarithmicCtrl{nullptr};
+
 public:
-    c_ToneCurveEditor(wxWindow *parent, c_ToneCurve *curve, int id = wxID_ANY,
+    c_ToneCurveEditor(
+        wxWindow* parent,
+        c_ToneCurve* curve,
+        int id = wxID_ANY,
         unsigned updateEvtDelay = 0, ///< Delay in milliseconds between sending subsequent EVT_TONE_CURVE events
         bool logarithmicHistogram = false ///< If true, histogram is displayed in logarithmic scale
-        );
+    );
 
-    c_ToneCurve *GetToneCurve() { return m_Curve; }
+    c_ToneCurve* GetToneCurve() { return m_Curve; }
 
     /// Sets the tone curve and updates the display; does not generate an EVT_TONE_CURVE event
-    void SetToneCurve(c_ToneCurve *curve);
+    void SetToneCurve(c_ToneCurve* curve);
 
     /// Updates the histogram (creates an internal copy)
-    void SetHistogram(Histogram_t &histogram);
+    void SetHistogram(const Histogram_t& histogram);
 
     bool IsHistogramLogarithmic() { return m_LogarithmicHistogram; }
     void SetHistogramLogarithmic(bool value);

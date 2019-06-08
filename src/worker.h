@@ -24,11 +24,14 @@ File description:
 #ifndef IMPPG_WORKER_H
 #define IMPPG_WORKER_H
 
+#include <atomic>
 #include <wx/frame.h>
 #include <wx/thread.h>
 #include <wx/gdicmn.h>
-#include "image.h"
+
 #include "ctrl_ids.h"
+#include "exclusive_access.h"
+#include "image.h"
 
 enum class CompletionStatus
 {
@@ -46,7 +49,7 @@ enum class ProcessingRequest
 
 // The structure is later encapsulated in wxThreadEvent in a wxAny object,
 // so let us keep its size small (below 16 bytes) for better performance
-typedef struct
+struct WorkerEventPayload
 {
     int taskId;
     union
@@ -54,60 +57,54 @@ typedef struct
         CompletionStatus completionStatus;
         int percentageComplete;
     };
-} WorkerEventPayload_t;
+};
+
+class IWorkerThread;
+
+struct WorkerParameters
+{
+    wxWindow& parent; ///< Object to receive notification messages from this worker thread.
+    ExclusiveAccessObject<IWorkerThread*>& instancePtr; ///< Pointer to this thread, set to null when execution finishes.
+    int taskId; ///< Id of task (will be included in every message).
+    const c_ImageBufferView input; ///< Image fragment to process.
+    c_ImageBufferView output; ///< Output image.
+    int threadId; ///< Unique thread id (not reused by new threads).
+};
 
 /// Base class representing a worker thread performing processing in the background.
 /** Only one instance can be launched at a time. It may spawn more threads
-    (not of c_WorkerThread class) internally (e.g. via OpenMP) for faster processing. */
-class c_WorkerThread: public wxThread
+    (not of IWorkerThread class) internally (e.g. via OpenMP) for faster processing. */
+class IWorkerThread: public wxThread
 {
-    wxWindow &parent;
-    wxCriticalSection &guard;
-    c_WorkerThread **instancePtr;
-    bool threadAborted; ///< 'true' if IsAbortRequested() has been called and has returned 'true'
-    int taskId; ///< Id of the task (included in every message's payload)
-    unsigned threadId; ///< Unique thread id (not reused by new threads)
+    std::atomic<bool> threadAborted; ///< 'true' if IsAbortRequested() has been called.
 
     /// The main thread can perform Post() on this semaphore (via AbortProcessing())
     wxSemaphore abortRequested;
 
 protected:
-    /// Inherited classes perform processing in this method
+    WorkerParameters m_Params;
+
+    /// Inherited classes perform processing in this method.
     /** The method should call IsAbortRequested() frequently. */
     virtual void DoWork() = 0;
 
-    c_ImageBufferView *input;
-    IImageBuffer &output;
     bool IsAbortRequested();
-    void SendMessageToParent(int messageId, WorkerEventPayload_t &payload);
+    void SendMessageToParent(int messageId, WorkerEventPayload &payload);
 
 public:
-    c_WorkerThread(wxWindow &parent,  ///< Object to receive notification messages from this worker thread
-        wxCriticalSection &guard,     ///< Critical section protecting access to 'instancePtr'
-        c_WorkerThread **instancePtr, ///< Pointer to pointer to this thread, set to null when execution finishes
-        int taskId,                   ///< Id of task (will be included in every message)
-        c_ImageBufferView *input,     ///< Image fragment to process; object will be destroyed when thread ends
-        IImageBuffer &output,         ///< Output image
-        unsigned threadId             ///< Unique thread id (not reused by new threads)
-        )
-        : wxThread(wxTHREAD_DETACHED),
-        parent(parent),
-        guard(guard),
-        instancePtr(instancePtr),
-        threadAborted(false),
-        taskId(taskId),
-        threadId(threadId),
-        abortRequested(0, 1),
-        input(input),
-        output(output)
-    { }
+    IWorkerThread(WorkerParameters&& params)
+    : wxThread(wxTHREAD_DETACHED),
+      threadAborted(false),
+      abortRequested(0, 1),
+      m_Params(std::move(params))
+    {}
 
-    virtual ExitCode Entry();
+    ExitCode Entry() override;
 
     /// Signals the thread to finish processing ASAP
     void AbortProcessing();
 
-    virtual ~c_WorkerThread();
+    virtual ~IWorkerThread();
 };
 
 #endif

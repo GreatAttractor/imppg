@@ -27,20 +27,13 @@ File description:
 
 
 c_ToneCurveThread::c_ToneCurveThread(
-    wxWindow &parent,             ///< Object to receive notification messages from this worker thread
-    wxCriticalSection &guard,     ///< Critical section protecting access to 'instancePtr'
-    c_WorkerThread **instancePtr, ///< Pointer to pointer to this thread, set to null when execution finishes
-    int taskId,                   ///< Id of task (will be included in every message)
-    c_ImageBufferView *input,     ///< Image fragment to process; object will be destroyed when thread ends
-    IImageBuffer &output,         ///< Output image
-    unsigned threadId,            ///< Unique thread id (not reused by new threads)
-
-    const c_ToneCurve &toneCurve, ///< Tone curve to apply to 'output'; an internal copy will be created
-    bool usePreciseValues ///< If 'false', the approximated curve's values will be used
-)
-: c_WorkerThread(parent, guard, instancePtr, taskId, input, output, threadId), toneCurve(toneCurve), m_UsePreciseValues(usePreciseValues)
-{
-}
+    WorkerParameters&& params,
+    const c_ToneCurve& toneCurve,   ///< Tone curve to apply to 'output'; an internal copy will be created
+    bool usePreciseValues           ///< If 'false', the approximated curve's values will be used
+): IWorkerThread(std::move(params)),
+   toneCurve(toneCurve),
+   m_UsePreciseValues(usePreciseValues)
+{}
 
 void c_ToneCurveThread::DoWork()
 {
@@ -54,16 +47,16 @@ void c_ToneCurveThread::DoWork()
         valueGetter = &c_ToneCurve::GetApproximatedValue;
 
     int lastPercentageReported = 0;
-    for (unsigned y = 0; y < output.GetHeight(); y++)
+    for (unsigned y = 0; y < m_Params.output.GetHeight(); y++)
     {
-        for (unsigned x = 0; x < output.GetWidth(); x++)
-            ((float *)output.GetRow(y))[x] = (toneCurve.*valueGetter)(((float *)input->GetRow(y))[x]);
+        for (unsigned x = 0; x < m_Params.output.GetWidth(); x++)
+            m_Params.output.GetRowAs<float>(y)[x] = (toneCurve.*valueGetter)(m_Params.input.GetRowAs<float>(y)[x]);
 
         // Notify the main thread after every 5% of progress
-        int percentage = 100 * y / output.GetHeight();
+        int percentage = 100 * y / m_Params.output.GetHeight();
         if (percentage > lastPercentageReported + 5)
         {
-            WorkerEventPayload_t payload;
+            WorkerEventPayload payload;
             payload.percentageComplete = percentage;
             SendMessageToParent(ID_PROCESSING_PROGRESS, payload);
             lastPercentageReported = percentage;

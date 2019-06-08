@@ -31,36 +31,36 @@ const int FLOAT_PREC = 4;
 /// Names of XML elements in a settings file
 namespace XmlName
 {
-    const char *root = "imppg";
+    const char* root = "imppg";
 
-    const char *lucyRichardson = "lucy-richardson";
-    const char *lrSigma = "sigma";
-    const char *lrIters = "iterations";
-    const char *lrDeringing = "deringing";
+    const char* lucyRichardson = "lucy-richardson";
+    const char* lrSigma = "sigma";
+    const char* lrIters = "iterations";
+    const char* lrDeringing = "deringing";
 
-    const char *unshMask = "unsharp_mask";
-    const char *unshAdaptive = "adaptive";
-    const char *unshSigma = "sigma";
-    const char *unshAmountMin = "amount_min";
-    const char *unshAmountMax = "amount_max";
-    const char *unshThreshold = "amount_threshold";
-    const char *unshWidth = "amount_width";
+    const char* unshMask = "unsharp_mask";
+    const char* unshAdaptive = "adaptive";
+    const char* unshSigma = "sigma";
+    const char* unshAmountMin = "amount_min";
+    const char* unshAmountMax = "amount_max";
+    const char* unshThreshold = "amount_threshold";
+    const char* unshWidth = "amount_width";
 
-    const char *tcurve = "tone_curve";
-    const char *tcSmooth = "smooth";
-    const char *tcIsGamma = "is_gamma";
-    const char *tcGamma = "gamma";
+    const char* tcurve = "tone_curve";
+    const char* tcSmooth = "smooth";
+    const char* tcIsGamma = "is_gamma";
+    const char* tcGamma = "gamma";
 
-    const char *normalization = "normalization";
-    const char *normEnabled = "enabled";
-    const char *normMin = "min";
-    const char *normMax = "max";
+    const char* normalization = "normalization";
+    const char* normEnabled = "enabled";
+    const char* normMin = "min";
+    const char* normMax = "max";
 }
 
-const char *trueStr = "true";
-const char *falseStr = "false";
+const char* trueStr = "true";
+const char* falseStr = "false";
 
-bool CreateAndSaveDocument(wxString filePath, wxXmlNode *root)
+bool CreateAndSaveDocument(wxString filePath, wxXmlNode* root)
 {
     wxXmlDocument xdoc;
     xdoc.SetVersion("1.0");
@@ -69,7 +69,7 @@ bool CreateAndSaveDocument(wxString filePath, wxXmlNode *root)
     return xdoc.Save(filePath, XML_INDENT);
 }
 
-wxXmlNode *CreateToneCurveSettingsNode(c_ToneCurve &toneCurve)
+wxXmlNode* CreateToneCurveSettingsNode(const c_ToneCurve& toneCurve)
 {
     wxXmlNode *result = new wxXmlNode(wxXML_ELEMENT_NODE, XmlName::tcurve);
     result->AddAttribute(XmlName::tcSmooth, toneCurve.GetSmooth() ? trueStr : falseStr);
@@ -86,18 +86,18 @@ wxXmlNode *CreateToneCurveSettingsNode(c_ToneCurve &toneCurve)
     return result;
 }
 
-wxXmlNode *CreateLucyRichardsonSettingsNode(float lrSigma, int lrIters, bool lrDeringing)
+wxXmlNode* CreateLucyRichardsonSettingsNode(float lrSigma, int lrIters, bool lrDeringing)
 {
-    wxXmlNode *result = new wxXmlNode(wxXML_ELEMENT_NODE, XmlName::lucyRichardson);
+    wxXmlNode* result = new wxXmlNode(wxXML_ELEMENT_NODE, XmlName::lucyRichardson);
     result->AddAttribute(XmlName::lrSigma, wxString::FromCDouble(lrSigma, FLOAT_PREC));
     result->AddAttribute(XmlName::lrIters, wxString::Format("%d", lrIters));
     result->AddAttribute(XmlName::lrDeringing, lrDeringing ? trueStr : falseStr);
     return result;
 }
 
-wxXmlNode *CreateUnsharpMaskingSettingsNode(bool adaptive, float sigma, float amountMin, float amountMax, float threshold, float width)
+wxXmlNode* CreateUnsharpMaskingSettingsNode(bool adaptive, float sigma, float amountMin, float amountMax, float threshold, float width)
 {
-    wxXmlNode *result = new wxXmlNode(wxXML_ELEMENT_NODE, XmlName::unshMask);
+    wxXmlNode* result = new wxXmlNode(wxXML_ELEMENT_NODE, XmlName::unshMask);
 
     result->AddAttribute(XmlName::unshAdaptive, adaptive ? trueStr : falseStr);
     result->AddAttribute(XmlName::unshSigma, wxString::FromCDouble(sigma, FLOAT_PREC));
@@ -108,9 +108,9 @@ wxXmlNode *CreateUnsharpMaskingSettingsNode(bool adaptive, float sigma, float am
     return result;
 }
 
-wxXmlNode *CreateNormalizationSettingsNode(bool normalizationEnabled, float normMin, float normMax)
+wxXmlNode* CreateNormalizationSettingsNode(bool normalizationEnabled, float normMin, float normMax)
 {
-    wxXmlNode *result = new wxXmlNode(wxXML_ELEMENT_NODE, XmlName::normalization);
+    wxXmlNode* result = new wxXmlNode(wxXML_ELEMENT_NODE, XmlName::normalization);
     result->AddAttribute(XmlName::normEnabled, normalizationEnabled ? trueStr : falseStr);
     result->AddAttribute(XmlName::normMin, wxString::FromCDouble(normMin, FLOAT_PREC));
     result->AddAttribute(XmlName::normMax, wxString::FromCDouble(normMax, FLOAT_PREC));
@@ -122,7 +122,7 @@ bool SaveSettings(wxString filePath, float lrSigma, int lrIters, bool lrDeringin
         bool unshAdaptive, float unshSigma, float unshAmountMin, float unshAmountMax, float unshThreshold, float unshWidth,
         c_ToneCurve &toneCurve, bool normalizationEnabled, float normMin, float normMax)
 {
-    wxXmlNode *root = new wxXmlNode(wxXML_ELEMENT_NODE, XmlName::root);
+    wxXmlNode* root = new wxXmlNode(wxXML_ELEMENT_NODE, XmlName::root);
 
     root->AddChild(CreateLucyRichardsonSettingsNode(lrSigma, lrIters, lrDeringing));
     root->AddChild(CreateUnsharpMaskingSettingsNode(unshAdaptive, unshSigma, unshAmountMin, unshAmountMax, unshThreshold, unshWidth));
@@ -132,7 +132,7 @@ bool SaveSettings(wxString filePath, float lrSigma, int lrIters, bool lrDeringin
     return CreateAndSaveDocument(filePath, root);
 }
 
-bool ParseLucyRichardsonSettings(wxXmlNode *node, float &sigma, int &iterations, bool &deringing)
+bool ParseLucyRichardsonSettings(const wxXmlNode* node, float& sigma, int& iterations, bool& deringing)
 {
     std::stringstream parser;
 
@@ -157,7 +157,7 @@ bool ParseLucyRichardsonSettings(wxXmlNode *node, float &sigma, int &iterations,
     return true;
 }
 
-bool ParseUnsharpMaskingSettings(wxXmlNode *node, bool &adaptive, float &sigma, float &amountMin, float &amountMax, float &threshold, float &width)
+bool ParseUnsharpMaskingSettings(const wxXmlNode* node, bool& adaptive, float& sigma, float& amountMin, float& amountMax, float& threshold, float& width)
 {
     std::stringstream parser;
 
@@ -200,7 +200,7 @@ bool ParseUnsharpMaskingSettings(wxXmlNode *node, bool &adaptive, float &sigma, 
     return true;
 }
 
-bool ParseNormalizationSetings(wxXmlNode *node, bool &normalizationEnabled, float &normMin, float &normMax)
+bool ParseNormalizationSetings(const wxXmlNode* node, bool& normalizationEnabled, float& normMin, float& normMax)
 {
     if (node->GetAttribute(XmlName::normEnabled) == "true")
         normalizationEnabled = true;
@@ -224,7 +224,7 @@ bool ParseNormalizationSetings(wxXmlNode *node, bool &normalizationEnabled, floa
     return true;
 }
 
-bool ParseToneCurveSettings(wxXmlNode *node, c_ToneCurve &tcurve)
+bool ParseToneCurveSettings(const wxXmlNode* node, c_ToneCurve& tcurve)
 {
     std::stringstream parser;
 
@@ -280,9 +280,9 @@ bool ParseToneCurveSettings(wxXmlNode *node, c_ToneCurve &tcurve)
 
 /// Loads the settings of Lucy-Richardson deconvolution, unsharp masking, tone curve and deringing; returns 'false' on error
 /** If the specified file does not contain some of the settings, the corresponding parameters' values will not be updated.*/
-bool LoadSettings(wxString filePath, float &lrSigma, int &lrIters, bool &lrDeringing,
-    bool &unshAdaptive, float &unshSigma, float &unshAmountMin, float &unshAmountMax, float &unshThreshold, float &unshWidth,
-    c_ToneCurve &toneCurve, bool &normalizationEnabled, float &normMin, float &normMax, bool *loadedLR, bool *loadedUnsh, bool *loadedTCurve)
+bool LoadSettings(wxString filePath, float& lrSigma, int& lrIters, bool& lrDeringing,
+    bool& unshAdaptive, float& unshSigma, float& unshAmountMin, float& unshAmountMax, float& unshThreshold, float& unshWidth,
+    c_ToneCurve& toneCurve, bool& normalizationEnabled, float& normMin, float& normMax, bool* loadedLR, bool* loadedUnsh, bool* loadedTCurve)
 {
     if (loadedLR)
         *loadedLR = false;
@@ -298,11 +298,11 @@ bool LoadSettings(wxString filePath, float &lrSigma, int &lrIters, bool &lrDerin
     if (!xdoc.Load(filePath))
         return false;
 
-    wxXmlNode *root = xdoc.GetRoot();
+    wxXmlNode* root = xdoc.GetRoot();
     if (!root)
         return false;
 
-    wxXmlNode *child = root->GetChildren();
+    wxXmlNode* child = root->GetChildren();
     while (child)
     {
         if (child->GetName() == XmlName::lucyRichardson)

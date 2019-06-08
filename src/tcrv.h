@@ -39,7 +39,7 @@ typedef struct
 class c_ToneCurve
 {
     /// Look-up table with pre-calculated values of the curve
-    float *m_LUT;
+    float* m_LUT{nullptr};
     /// Number of elements in 'm_LUT'
     int m_LutSize;
 
@@ -54,7 +54,7 @@ class c_ToneCurve
         float a, b, c, d;
     } SplineParams_t;
 
-    /// Spline coefficients (Catmull-Rom); i-th element corresponds with the interval [m_Points[i]; m_Points[i+1]]
+    /// Spline coefficients (Catmull-Rom); i-th element corresponds to the interval [m_Points[i]; m_Points[i+1]]
     /** Number of elements = m_Points.size()-1. */
     std::vector<SplineParams_t> m_Spline;
 
@@ -72,10 +72,10 @@ public:
     c_ToneCurve();
 
     /// Allocates a LUT, but does not copy and does not recalculate LUT contents.
-    c_ToneCurve(const c_ToneCurve &c);
+    c_ToneCurve(const c_ToneCurve& c);
 
     /// Does not copy and does not recalculate LUT contents.
-    c_ToneCurve &operator=(const c_ToneCurve &c);
+    c_ToneCurve& operator=(const c_ToneCurve& c);
 
     /// Calculates the look-up table for a quick approximated application of the curve
     void RefreshLut();
@@ -103,7 +103,7 @@ public:
     ) const
     {
         //TODO: perform a quicker shift when LUT size is a power of 2
-        return m_LUT[(int)(input * (m_LutSize - 1))];
+        return m_LUT[static_cast<int>(input * (m_LutSize - 1))];
     }
 
     /// Applies the tone curve to 'input' using a precise curve value
@@ -117,7 +117,7 @@ public:
         float y  ///< Y coordinate, range [0; 1]
         ) const;
 
-    const FloatPoint_t &GetPoint(int idx) const
+    const FloatPoint_t& GetPoint(int idx) const
     {
         return m_Points[idx];
     }

@@ -36,7 +36,7 @@ c_ToneCurve::c_ToneCurve()
 }
 
 /// Allocates a LUT, but does not copy and does not recalculate LUT contents.
-c_ToneCurve::c_ToneCurve(const c_ToneCurve &c)
+c_ToneCurve::c_ToneCurve(const c_ToneCurve& c)
 : m_LutSize(DEFAULT_LUT_SIZE),
 m_Points(c.m_Points),
 m_Spline(c.m_Spline),
@@ -48,7 +48,7 @@ m_Gamma(c.m_Gamma)
 }
 
 /// Does not copy and does not recalculate LUT contents.
-c_ToneCurve &c_ToneCurve::operator=(const c_ToneCurve &c)
+c_ToneCurve& c_ToneCurve::operator=(const c_ToneCurve& c)
 {
     m_Points = c.m_Points;
     m_Spline = c.m_Spline;
@@ -213,7 +213,7 @@ int c_ToneCurve::GetIdxOfClosestPoint(
 void c_ToneCurve::RefreshLut()
 {
     for (int i = 0; i < m_LutSize; i++)
-        m_LUT[i] = GetPreciseValue((float)i * 1.0f/(m_LutSize - 1));
+        m_LUT[i] = GetPreciseValue(i * 1.0f/(m_LutSize - 1));
 }
 
 /// Applies the tone curve to 'input' using a precise curve value
@@ -260,7 +260,7 @@ float c_ToneCurve::GetPreciseValue(
         {
             float t = (input - m_Points[nextIdx-1].x) / deltaX;
 
-            const SplineParams_t &sp = m_Spline[nextIdx-1];
+            const SplineParams_t& sp = m_Spline[nextIdx-1];
             result = t*(t*(t * sp.a + sp.b) + sp.c) + sp.d;
         }
     }
@@ -318,7 +318,7 @@ void c_ToneCurve::Invert()
           xmin = m_Points.back().x;
 
     FloatPointsVector_t newPoints;
-    for (int i = (int)m_Points.size()-1; i >= 0; i--)
+    for (int i = static_cast<int>(m_Points.size())-1; i >= 0; i--)
         newPoints.push_back(FloatPoint_t(xmin + xmax - m_Points[i].x, m_Points[i].y));
 
     m_Points = newPoints;
@@ -338,5 +338,4 @@ void c_ToneCurve::Stretch(float min, float max)
 
     m_Points = newPoints;
     CalculateSpline();
-
 }

@@ -132,7 +132,7 @@ Access by:
 ----------------------------------------
 ### 4.4. Tone curve
 
-The tone curve editor allows changing the input-output mapping of brightness levels. The tone curve is only applied after all the other processing steps. The histogram shown in the editor window’s background corresponds with the output (just the current selection) of previous processing steps **before** the application of the tone curve.
+The tone curve editor allows changing the input-output mapping of brightness levels. The tone curve is only applied after all the other processing steps. The histogram shown in the editor window’s background corresponds to the output (just the current selection) of previous processing steps **before** the application of the tone curve.
 
 Access by:
     menu: `View`/`Panels`/`Tone curve` or the corresponding toolbar button
@@ -216,7 +216,7 @@ ImPPG source code and MS Windows executables can be downloaded from:
 ----------------------------------------
 ## 11. Building from source code
 
-Building from source code requires a C++ compiler toolchain (with C++11 support), CMake, Boost libraries v. 1.57.0 or later (though earlier versions may work) and wxWidgets 3.0. Support for more image formats requires the FreeImage library, version 3.14.0 or newer. Without FreeImage the only supported formats are: BMP 8-, 24- and 32-bit, TIFF mono and RGB, 8 or 16 bits per channel (no compression). FITS support (optional) requires the CFITSIO library. Multithreaded processing requires a compiler supporting OpenMP (e.g. GCC 4.2 or newer).
+Building from source code requires a C++ compiler toolchain (with C++17 support), CMake, Boost libraries v. 1.57.0 or later (though earlier versions may work) and wxWidgets 3.0. Support for more image formats requires the FreeImage library, version 3.14.0 or newer. Without FreeImage the only supported formats are: BMP 8-, 24- and 32-bit, TIFF mono and RGB, 8 or 16 bits per channel (no compression). FITS support (optional) requires the CFITSIO library. Multithreaded processing requires a compiler supporting OpenMP.
 
 To enable/disable usage of CFITSIO/FreeImage (they are enabled by default), edit the `config.in` file.
 

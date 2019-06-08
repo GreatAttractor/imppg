@@ -27,7 +27,9 @@ File description:
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <memory>
 
+#include "common.h"
 #include "fft.h"
 
 using std::complex;
@@ -54,7 +56,7 @@ inline unsigned quickLog2(unsigned N)
 /// Calculates 1-dimensional discrete Fourier transform or its inverse (not normalized by N, caller must do this)
 template<typename InputT>
 void fft1d(
-    const InputT *input,  ///< Input vector of length 'N'
+    const InputT* input,  ///< Input vector of length 'N'
     unsigned N,      ///< Number of elements in 'input', has to be a power of two
     complex<float> output[], ///< Output vector of length 'N'
     int stride,       ///< Stride of the input vector in bytes
@@ -62,7 +64,7 @@ void fft1d(
 
     /// Pointer to the initial twiddle factor for N, i.e. exp(-2*pi*i/N) (or exp(2*pi*i/N) for inverse transform).
     /// NOTE: (twiddlePtr-1) has to point to the lower twiddle factor, i.e. exp(+-2*pi*i/(N/2))
-    complex<float> *twiddlePtr
+    const complex<float>* twiddlePtr
 )
 {
     if (N == 1)
@@ -70,7 +72,14 @@ void fft1d(
     else
     {
         fft1d(input, N/2, output, 2*stride, outputStride, twiddlePtr - 1);
-        fft1d((InputT *)((uint8_t *)input + stride), N/2, (complex<float> *)((uint8_t *)output + N/2*outputStride), 2*stride, outputStride, twiddlePtr - 1);
+        fft1d(reinterpret_cast<const InputT*>(
+            reinterpret_cast<const uint8_t*>(input) + stride),
+            N/2,
+            reinterpret_cast<complex<float>*>(reinterpret_cast<uint8_t*>(output) + N/2*outputStride),
+            2*stride,
+            outputStride,
+            twiddlePtr - 1
+        );
 
         // Initial twiddle factor
         complex<float> tfactor0 = *twiddlePtr;
@@ -78,11 +87,11 @@ void fft1d(
         complex<float> tfactor = 1.0f;
         for (unsigned k = 0; k <= N/2 - 1; k++)
         {
-            complex<float> t = *(complex<float> *)((uint8_t *)output + k*outputStride);
-            complex<float> h = tfactor * (*(complex<float> *)((uint8_t *)output + (k + (N>>1))*outputStride));
+            complex<float> t = *reinterpret_cast<complex<float>*>(reinterpret_cast<uint8_t*>(output) + k*outputStride);
+            complex<float> h = tfactor * (*(reinterpret_cast<complex<float>*>(reinterpret_cast<uint8_t*>(output) + (k + (N>>1))*outputStride)));
 
-            *(complex<float> *)((uint8_t *)output + k*outputStride) = t + h;
-            *(complex<float> *)((uint8_t *)output + (k + (N>>1))*outputStride) = t - h;
+            *reinterpret_cast<complex<float>*>(reinterpret_cast<uint8_t*>(output) + k*outputStride) = t + h;
+            *reinterpret_cast<complex<float>*>(reinterpret_cast<uint8_t*>(output) + (k + (N>>1))*outputStride) = t - h;
 
             tfactor *= tfactor0; // in effect, tfactor = exp(-2*PI*I * k/N)
         }
@@ -114,22 +123,31 @@ void CalcFFT2D(
     unsigned maxDim = std::max(rows, cols);
 
     // Allocate without calling the complex<float> constructor
-    complex<float> *twiddleFactors = (complex<float> *)operator new[]((quickLog2(maxDim) + 1) * sizeof(complex<float>));
-    CalcTwiddleFactors(maxDim, twiddleFactors, false);
+    std::unique_ptr<complex<float>, BlockDeleter> twiddleFactors(
+        static_cast<complex<float>*>(operator new[]((quickLog2(maxDim) + 1) * sizeof(complex<float>)))
+    );
+
+    CalcTwiddleFactors(maxDim, twiddleFactors.get(), false);
 
     // Calculate 1-dimensional transforms of all the rows
-    complex<float> *fftrows = (complex<float> *)operator new[](rows * cols * sizeof(complex<float>));
+    std::unique_ptr<complex<float>, BlockDeleter> fftrows(
+        static_cast<complex<float>*>(operator new[](rows * cols * sizeof(complex<float>)))
+    );
+
     #pragma omp parallel for
-    for (int k = 0; k < (int)rows; k++)
-        fft1d<float>((float *)((uint8_t *)input + k*stride), cols, fftrows + k*cols, 1 * sizeof(float), 1 * sizeof(complex<float>), twiddleFactors + quickLog2(cols));
+    for (unsigned k = 0; k < rows; k++)
+        fft1d<float>(
+            reinterpret_cast<const float*>(reinterpret_cast<const uint8_t*>(input) + k*stride),
+            cols,
+            fftrows.get() + k*cols,
+            1 * sizeof(float),
+            1 * sizeof(complex<float>), twiddleFactors.get() + quickLog2(cols)
+        );
 
     // Calculate 1-dimensional transforms of all columns in 'fftrows' to get the final result
     #pragma omp parallel for
-    for (int k = 0; k < (int)cols; k++)
-        fft1d<complex<float> >(fftrows + k, rows, output + k, cols * sizeof(complex<float>), cols * sizeof(complex<float>), twiddleFactors + quickLog2(rows));
-
-    operator delete[](twiddleFactors);
-    operator delete[](fftrows);
+    for (unsigned k = 0; k < cols; k++)
+        fft1d<complex<float>>(fftrows.get() + k, rows, output + k, cols * sizeof(complex<float>), cols * sizeof(complex<float>), twiddleFactors.get() + quickLog2(rows));
 }
 
 /// Calculates 2-dimensional inverse discrete Fourier transform
@@ -146,26 +164,43 @@ void CalcFFTinv2D(
 
     unsigned maxDim = std::max(rows, cols);
     // Allocate without calling the complex<float> constructor
-    complex<float> *twiddleFactors = (complex<float> *)operator new[]((quickLog2(maxDim)+1) * sizeof(complex<float>));
-    CalcTwiddleFactors(maxDim, twiddleFactors, true);
+    std::unique_ptr<complex<float>, BlockDeleter> twiddleFactors(
+        static_cast<complex<float>*>(operator new[]((quickLog2(maxDim)+1) * sizeof(complex<float>)))
+    );
+
+    CalcTwiddleFactors(maxDim, twiddleFactors.get(), true);
 
     // Calculate 1-dimensional inverse transforms of all the rows
-    complex<float> *fftrows = (complex<float> *)operator new[](rows * cols * sizeof(complex<float>));
+    std::unique_ptr<complex<float>, BlockDeleter> fftrows(
+        static_cast<complex<float>*>(operator new[](rows * cols * sizeof(complex<float>)))
+    );
+
     #pragma omp parallel for
-    for (int k = 0; k < (int)rows; k++)
-        fft1d<complex<float> >(input + k*cols, cols, fftrows + k*cols, 1 * sizeof(complex<float>), 1 * sizeof(complex<float>), twiddleFactors + quickLog2(cols));
+    for (unsigned k = 0; k < rows; k++)
+        fft1d<complex<float>>(
+            input + k*cols,
+            cols,
+            fftrows.get() + k*cols,
+            1 * sizeof(complex<float>),
+            1 * sizeof(complex<float>),
+            twiddleFactors.get() + quickLog2(cols)
+        );
 
 
     for (unsigned k = 0; k < rows*cols; k++)
-        fftrows[k] *= colsInv;
+        fftrows.get()[k] *= colsInv;
 
     // Calculate 1-dimensional inverse transforms of all columns in 'fftrows' to get the final result
     #pragma omp parallel for
-    for (int k = 0; k < (int)cols; k++)
-        fft1d<complex<float> >(fftrows + k, rows, output + k, cols * sizeof(complex<float>), cols * sizeof(complex<float>), twiddleFactors + quickLog2(rows));
-
-    delete[](twiddleFactors);
-    delete[](fftrows);
+    for (unsigned k = 0; k < cols; k++)
+        fft1d<complex<float>>(
+            fftrows.get() + k,
+            rows,
+            output + k,
+            cols * sizeof(complex<float>),
+            cols * sizeof(complex<float>),
+            twiddleFactors.get() + quickLog2(rows)
+        );
 
     for (unsigned k = 0; k < rows*cols; k++)
         output[k] *= rowsInv;
@@ -180,7 +215,7 @@ void CalcCrossPowerSpectrum2D(
 )
 {
     #pragma omp parallel for
-    for (int i = 0; i < (int)N; i++)
+    for (unsigned i = 0; i < N; i++)
     {
         output[i] = conj(F1[i]) * F2[i];
         float magn = abs(output[i]);

@@ -28,6 +28,7 @@ File description:
 #include <memory>
 #include <set>
 
+#include "imppg_assert.h"
 #include "lrdeconv.h"
 #include "gauss.h"
 
@@ -46,7 +47,7 @@ const int YOUNG_VAN_VLIET_MIN_KERNEL_RADIUS = 8;
 
 /// Transposes matrix 'input' and writes it to 'output'
 template<typename T>
-void Transpose(const T *input, T *output,
+void Transpose(const T* input, T* output,
     int width, ///< Number of columns in 'input', rows in 'output'
     int height, ///< Number of rows in 'input', columns in 'output'
     int inputBytesPerRow, int outputBytesPerRow, int blockSize)
@@ -58,15 +59,15 @@ void Transpose(const T *input, T *output,
         for (int i = 0; i < width / blockSize; i++)
         {
             // Addresses of current input and output blocks
-            T *inBlk = (T *)((uint8_t *)input + (i*sizeof(T) + j*inputBytesPerRow) * blockSize);
-            T *outBlk = (T *)((uint8_t *)output + (j*sizeof(T) + i*outputBytesPerRow) * blockSize);
+            const T* inBlk = reinterpret_cast<const T*>(reinterpret_cast<const uint8_t*>(input) + (i*sizeof(T) + j*inputBytesPerRow) * blockSize);
+            T* outBlk = reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(output) + (j*sizeof(T) + i*outputBytesPerRow) * blockSize);
 
             // x, y - indices of the current element within the current block
             for (int y = 0; y < blockSize; y++)
                 for (int x = 0; x < blockSize; x++)
                 {
-                    *(T *)((uint8_t *)outBlk + y*sizeof(T) + x*outputBytesPerRow) =
-                        *(T *)((uint8_t *)inBlk + x*sizeof(T) + y*inputBytesPerRow);
+                    *reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(outBlk) + y*sizeof(T) + x*outputBytesPerRow) =
+                        *reinterpret_cast<const T*>(reinterpret_cast<const uint8_t*>(inBlk) + x*sizeof(T) + y*inputBytesPerRow);
                 }
         }
 
@@ -76,34 +77,35 @@ void Transpose(const T *input, T *output,
     for (int j = 0; j < height - (height % blockSize); j++)
         for (int i = width - (width % blockSize); i < width; i++)
         {
-            *(T *)((uint8_t *)output + j*sizeof(T) + i*outputBytesPerRow) =
-                *(T *)((uint8_t *)input + i*sizeof(T) + j*inputBytesPerRow);
+            *reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(output) + j*sizeof(T) + i*outputBytesPerRow) =
+                *reinterpret_cast<const T*>(reinterpret_cast<const uint8_t*>(input) + i*sizeof(T) + j*inputBytesPerRow);
         }
 
     // bottommost remaining elements
     for (int j = 0; j < width - (width % blockSize); j++)
         for (int i = height - (height % blockSize); i < height; i++)
         {
-            *(T *)((uint8_t *)output + i*sizeof(T) + j*outputBytesPerRow) =
-                *(T *)((uint8_t *)input + j*sizeof(T) + i*inputBytesPerRow);
+            *reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(output) + i*sizeof(T) + j*outputBytesPerRow) =
+                *reinterpret_cast<const T*>(reinterpret_cast<const uint8_t*>(input) + j*sizeof(T) + i*inputBytesPerRow);
         }
 
     // bottom-right residual rectangle
     for (int j = height - (height % blockSize); j < height; j++)
         for (int i = width - (width % blockSize); i < width; i++)
         {
-            *(T *)((uint8_t *)output + j*sizeof(T) + i*outputBytesPerRow) =
-                *(T *)((uint8_t *)input + i*sizeof(T) + j*inputBytesPerRow);
+            *reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(output) + j*sizeof(T) + i*outputBytesPerRow) =
+                *reinterpret_cast<const T*>(reinterpret_cast<const uint8_t*>(input) + i*sizeof(T) + j*inputBytesPerRow);
         }
 }
 
-/// Clamps the values of the specified floating-point buffer to [0.0, 1.0]
-void Clamp(float array[], int width, int height, int bytesPerRow)
+/// Clamps the values of the specified PIX_MONO32F buffer to [0.0, 1.0]
+void Clamp(c_ImageBufferView& buf)
 {
-    for (int j = 0; j < height; j++)
+    IMPPG_ASSERT(buf.GetPixelFormat() == PixelFormat::PIX_MONO32F);
+    for (unsigned j = 0; j < buf.GetHeight(); j++)
     {
-        float *row = (float *)((uint8_t *)array + j*bytesPerRow);
-        for (int i = 0; i < width; i++)
+        float* row = buf.GetRowAs<float>(j);
+        for (unsigned i = 0; i < buf.GetWidth(); i++)
         {
             if (row[i] < 0.0f)
                 row[i] = 0.0f;
@@ -148,7 +150,7 @@ void ConvolveSeparableTranspose(
 
     int width = input.width(), height = input.height();
 
-    float *convRows = tempBuf1;
+    float* convRows = tempBuf1;
 
     // All zero bits represents 0.0f
     for (int i = 0; i < output.height(); i++)
@@ -162,14 +164,14 @@ void ConvolveSeparableTranspose(
         #pragma omp parallel for
         for (int y = 0; y < height; y++)
         {
-            Convolve1Dstep_OfsZero(input.row(y) + kernelRadius - 1,
+            Convolve1Dstep_OfsZero(input.row_const(y) + kernelRadius - 1,
                     convRows + kernelRadius - 1 + y*width,
                     width - 2 * (kernelRadius - 1),
                     kernel[kernelRadius - 1]);
 
             for (int i = 1; i <= kernelRadius - 1; i++)
             {
-                Convolve1Dstep_OfsNonZero(input.row(y) + kernelRadius - 1,
+                Convolve1Dstep_OfsNonZero(input.row_const(y) + kernelRadius - 1,
                     convRows + kernelRadius - 1 + y*width,
                     width - 2 * (kernelRadius - 1),
                     kernel[i + kernelRadius - 1], i);
@@ -185,7 +187,7 @@ void ConvolveSeparableTranspose(
         {
             for (int i = 0; i < kernelRadius; i++)
             {
-                float influence = input.row(y)[std::max(x - i, 0)] * kernel[i + (kernelRadius - 1)];
+                float influence = input.row_const(y)[std::max(x - i, 0)] * kernel[i + (kernelRadius - 1)];
 
                 if (x + i >= 0 && x + i < width)
                     convRows[(x + i) + y*width] += influence;
@@ -199,7 +201,7 @@ void ConvolveSeparableTranspose(
         {
             for (int i = 0; i < kernelRadius; i++)
             {
-                float influence = input.row(y)[std::min(x + i, width - 1)] * kernel[i + (kernelRadius - 1)];
+                float influence = input.row_const(y)[std::min(x + i, width - 1)] * kernel[i + (kernelRadius - 1)];
                 if (x + i < width && x + i >= 0)
                     convRows[(x + i) + y*width] += influence;
                 if (x - i < width && x - i >= 0 && i != 0)
@@ -243,8 +245,8 @@ void ConvolveSeparableTranspose(
 
     // Before convolving rest of the columns, perform a transposition so we can convolve rows instead (faster due to sequential memory access)
 
-    float *convRowsT = tempBuf2;
-    Transpose<float>(convRows, convRowsT, width, height, width*sizeof(float), height*sizeof(float), TRANSPOSITION_BLOCK_SIZE);
+    float* convRowsT = tempBuf2;
+    Transpose<float>(convRows, convRowsT, width, height, width * sizeof(float), height * sizeof(float), TRANSPOSITION_BLOCK_SIZE);
 
     if (height > 2*(kernelRadius-1))
     {
@@ -280,7 +282,7 @@ inline void YvVFilterValues(
     float b0inv, float b1, float b2, float b3, float B
 )
 {
-    assert(direction == 1 || direction == -1);
+    IMPPG_ASSERT(direction == 1 || direction == -1);
 
     int startIdx; // Starting index to process (inclusive)
     int endIdx; // End index to process (exclusive)
@@ -311,7 +313,7 @@ inline void YvVFilterValues(
     }
 }
 
-inline void CalculateYvVCoefficients(float sigma, float &b0inv, float &b1, float &b2, float &b3, float &B)
+inline void CalculateYvVCoefficients(float sigma, float& b0inv, float& b1, float& b2, float& b3, float& B)
 {
     float q;
     if (sigma >= 0.5f && sigma <= 2.5f)
@@ -337,25 +339,25 @@ void ConvolveGaussianRecursiveTranspose(
     )
 {
     int width = input.width(), height = input.height();
-    assert(sigma >= 0.5f);
+    IMPPG_ASSERT(sigma >= 0.5f);
 
     float b0inv, b1, b2, b3, B;
     CalculateYvVCoefficients(sigma, b0inv, b1, b2, b3, B);
 
-    float *convRows = tempBuf1;
+    float* convRows = tempBuf1;
 
     // Convolve rows
     #pragma omp parallel for
     for (int y = 0; y < height; y++)
     {
         // Perform forward filtering
-        YvVFilterValues(input.row(y), &convRows[y*width], width, 1, b0inv, b1, b2, b3, B);
+        YvVFilterValues(input.row_const(y), &convRows[y*width], width, 1, b0inv, b1, b2, b3, B);
 
         // Perform backward filtering
         YvVFilterValues(&convRows[y*width], &convRows[y*width], width, -1, b0inv, b1, b2, b3, B);
     }
 
-    float *convRowsT = tempBuf2;
+    float* convRowsT = tempBuf2;
     Transpose<float>(convRows, convRowsT, width, height, width*sizeof(float), height*sizeof(float), TRANSPOSITION_BLOCK_SIZE);
 
     // Convolve columns (now: rows, since we are using 'convRowsT' as source)
@@ -371,17 +373,17 @@ void ConvolveGaussianRecursiveTranspose(
 
 /// Calculates convolution of 'input' with a Gaussian kernel
 void ConvolveSeparable(
-        const c_PaddedArrayPtr<const float> input,  ///< Input array
+        c_PaddedArrayPtr<const float> input,  ///< Input array
         c_PaddedArrayPtr<float> output, ///< Output array having as much rows and columns as 'input' does
         float sigma              ///< Gaussian sigma
 )
 {
     int width = input.width(), height = input.height();
-    int kernelRadius = (int)ceil(sigma * 3.0f);
+    int kernelRadius = static_cast<int>(ceil(sigma * 3.0f));
 
-    std::unique_ptr<float[]> outputT(new float[input.height()*input.width()]); // transposed output
-    std::unique_ptr<float[]> temp1(new float[input.width()*input.height()]);
-    std::unique_ptr<float[]> temp2(new float[input.width()*input.height()]);
+    std::unique_ptr<float[]> outputT(new float[input.height() * input.width()]); // transposed output
+    std::unique_ptr<float[]> temp1(new float[input.width() * input.height()]);
+    std::unique_ptr<float[]> temp2(new float[input.width() * input.height()]);
 
     if (kernelRadius < YOUNG_VAN_VLIET_MIN_KERNEL_RADIUS)
     {
@@ -406,8 +408,8 @@ void ConvolveSeparable(
 
 /// Reproduces original image from image in 'input' convolved with Gaussian kernel and writes it to 'output'.
 void LucyRichardsonGaussian(
-    const IImageBuffer &input, ///< Contains a single 'float' value per pixel; size the same as 'output'
-    IImageBuffer &output, ///< Contains a single 'float' value per pixel; size the same as 'input'
+    const c_ImageBufferView& input, ///< Contains a single 'float' value per pixel; size the same as 'output'
+    c_ImageBufferView& output, ///< Contains a single 'float' value per pixel; size the same as 'input'
     int numIters,  ///< Number of iterations
     float sigma,   ///< sigma of the Gaussian kernel
     ConvolutionMethod convMethod,
@@ -424,24 +426,24 @@ void LucyRichardsonGaussian(
     auto prev = std::unique_ptr<float[]>(new float[width * height]);
     auto next = std::unique_ptr<float[]>(new float[width * height]);
 
-    auto inputConvolvedDivT = std::unique_ptr<float[]>(new float[input.GetHeight()*input.GetWidth()]); // a transposed array
-    auto estimateConvolvedT = std::unique_ptr<float[]>(new float[input.GetHeight()*input.GetWidth()]); // a transposed array
-    auto conv2 = std::unique_ptr<float[]>(new float[input.GetWidth()*input.GetHeight()]);
+    auto inputConvolvedDivT = std::unique_ptr<float[]>(new float[input.GetHeight() * input.GetWidth()]); // a transposed array
+    auto estimateConvolvedT = std::unique_ptr<float[]>(new float[input.GetHeight() * input.GetWidth()]); // a transposed array
+    auto conv2 = std::unique_ptr<float[]>(new float[input.GetWidth() * input.GetHeight()]);
 
-    auto inputT = std::unique_ptr<float[]>(new float[input.GetHeight()*input.GetWidth()]); // a transposed array
+    auto inputT = std::unique_ptr<float[]>(new float[input.GetHeight() * input.GetWidth()]); // a transposed array
 
-    Transpose<float>((float *)input.GetRow(0), inputT.get(), input.GetWidth(), input.GetHeight(),
-        input.GetBytesPerRow(), input.GetHeight()*sizeof(float), TRANSPOSITION_BLOCK_SIZE);
+    Transpose(input.GetRowAs<float>(0), inputT.get(), input.GetWidth(), input.GetHeight(),
+        input.GetBytesPerRow(), input.GetHeight() * sizeof(float), TRANSPOSITION_BLOCK_SIZE);
 
-    auto tempBuf1 = std::unique_ptr<float[]>(new float[input.GetWidth()*input.GetHeight()]);
-    auto tempBuf2 = std::unique_ptr<float[]>(new float[input.GetWidth()*input.GetHeight()]);
+    auto tempBuf1 = std::unique_ptr<float[]>(new float[input.GetWidth() * input.GetHeight()]);
+    auto tempBuf2 = std::unique_ptr<float[]>(new float[input.GetWidth() * input.GetHeight()]);
 
-    int kernelRadius = (int)ceil(sigma * 3.0f);
+    int kernelRadius = static_cast<int>(ceil(sigma * 3.0f));
     auto kernel = std::unique_ptr<float[]>(new float[2 * kernelRadius - 1]);
     CalculateGaussianKernelProjection(kernel.get(), kernelRadius, sigma, true);
 
     for (unsigned i = 0; i < input.GetHeight(); i++)
-        memcpy(prev.get() + i*input.GetWidth(), input.GetRow(i), input.GetWidth() * sizeof(float));
+        memcpy(prev.get() + i * input.GetWidth(), input.GetRow(i), input.GetWidth() * sizeof(float));
 
     for (int i = 0; i < numIters; i++)
     {
@@ -460,7 +462,7 @@ void LucyRichardsonGaussian(
                     sigma, tempBuf1.get(), tempBuf2.get());
 
         #pragma omp parallel for
-        for (int j = 0; (unsigned)j < input.GetHeight() * input.GetWidth(); j++)
+        for (unsigned j = 0; j < input.GetHeight() * input.GetWidth(); j++)
             inputConvolvedDivT[j] = inputT[j] / (estimateConvolvedT[j] + 1.0e-8f); // add a small epsilon to prevent division by 0 and propagation of NaNs across output pixels
 
         // Note that 'height' and 'width' are switched in the below calls, as we use transposed arrays for input
@@ -479,7 +481,7 @@ void LucyRichardsonGaussian(
                     sigma, tempBuf1.get(), tempBuf2.get());
 
         #pragma omp parallel for
-        for (int j = 0; (unsigned)j < input.GetWidth() * input.GetHeight(); j++)
+        for (unsigned j = 0; j < input.GetWidth() * input.GetHeight(); j++)
             next[j] = prev[j] * conv2[j];
 
         std::swap(prev, next);
@@ -495,11 +497,11 @@ void LucyRichardsonGaussian(
 
 // Functions to encode/decode (x,y) pairs into an unsigned integer; x, y need to be < 2^16
 inline unsigned encodeXY(unsigned x, unsigned y) { return x + (y<<16); }
-inline void decodeXY(unsigned encoded, unsigned &x, unsigned &y) { x = encoded & 0xFFFF; y = encoded >> 16; }
+inline void decodeXY(unsigned encoded, unsigned& x, unsigned& y) { x = encoded & 0xFFFF; y = encoded >> 16; }
 
 void BlurThresholdVicinity(
-    const IImageBuffer &input,
-    IImageBuffer &output,
+    const c_ImageBufferView& input,
+    c_ImageBufferView& output,
     float threshold, ///< Threshold to qualify pixels as "border pixels"
     bool greaterThan,
     float sigma
@@ -522,10 +524,10 @@ void BlurThresholdVicinity(
 
     // 1) Identify all pixels above threshold and create a list of border pixels
     //    that are their neighbors, but themselves are below threshold.
-    for (int y = 0; y < (int)input.GetHeight(); y++)
-        for (int x = 0; x < (int)input.GetWidth(); x++)
+    for (int y = 0; y < static_cast<int>(input.GetHeight()); y++)
+        for (int x = 0; x < static_cast<int>(input.GetWidth()); x++)
         {
-            float valXY = ((float *)input.GetRow(y))[x];
+            float valXY = input.GetRowAs<float>(y)[x];
             bool valXYbelowThreshold =
                 greaterThan
                 ? valXY < threshold
@@ -535,10 +537,10 @@ void BlurThresholdVicinity(
                 for (int j = -1; j <= 1; j++)
                     for (int i = -1; i <= 1; i++)
                         if (i != 0 && j != 0 &&
-                            x + i >= 0 && x + i < (int)input.GetWidth() &&
-                            y + j >= 0 && y + j < (int)input.GetHeight())
+                            x + i >= 0 && x + i < static_cast<int>(input.GetWidth()) &&
+                            y + j >= 0 && y + j < static_cast<int>(input.GetHeight()))
                         {
-                            float neighborIJ = ((float *)input.GetRow(y + j))[x + i];
+                            float neighborIJ = input.GetRowAs<float>(y + j)[x + i];
 
                             bool neighborIJaboveThreshold =
                                 greaterThan
@@ -554,7 +556,7 @@ void BlurThresholdVicinity(
 
     // 2) Iterate over border pixels and identify all their neighbors to a specified distance
 
-    int influenceDist = (int)ceilf(sigma * 2.0f);
+    int influenceDist = static_cast<int>(ceilf(sigma * 2.0f));
     std::set<unsigned> influencedPixels;
 
     for (std::set<unsigned>::const_iterator it = borderPixels.begin(); it != borderPixels.end(); ++it)
@@ -563,8 +565,8 @@ void BlurThresholdVicinity(
         decodeXY(*it, x, y);
         for (int i = -(influenceDist - 1); i <= influenceDist - 1; i++)
             for (int j = -(influenceDist - 1); j <= influenceDist - 1; j++)
-                if ((int)x + i >= 0 && (int)x + i < (int)input.GetWidth() &&
-                    (int)y + j >= 0 && (int)y + j < (int)input.GetHeight())
+                if (static_cast<int>(x) + i >= 0 && static_cast<int>(x) + i < static_cast<int>(input.GetWidth()) &&
+                    static_cast<int>(y) + j >= 0 && static_cast<int>(y) + j < static_cast<int>(input.GetHeight()))
                 {
                     unsigned enc = encodeXY(x + i, y + j);
                     if (influencedPixels.find(enc) == influencedPixels.end())
@@ -573,7 +575,7 @@ void BlurThresholdVicinity(
     }
 
     // 3) Apply Gaussian blur to all influenced pixels
-    int blurRadius = (int)ceilf(sigma * 4.0f);
+    int blurRadius = static_cast<int>(ceilf(sigma * 4.0f));
     auto kernel = std::unique_ptr<float[]>(new float[blurRadius * blurRadius]);
     CalculateGaussianKernel(kernel.get(), blurRadius, sigma, true);
 
@@ -591,15 +593,15 @@ void BlurThresholdVicinity(
 
                 if (srcX < 0)
                     srcX = 0;
-                else if (srcX >= (int)input.GetWidth())
+                else if (srcX >= static_cast<int>(input.GetWidth()))
                     srcX = input.GetWidth() - 1;
 
                 if (srcY < 0)
                     srcY = 0;
-                else if (srcY >= (int)input.GetHeight())
+                else if (srcY >= static_cast<int>(input.GetHeight()))
                     srcY = input.GetHeight() - 1;
 
-                result[x + y*input.GetWidth()] += kernel[abs(i) + abs(j)*blurRadius] * ((float *)input.GetRow(srcY))[srcX];
+                result[x + y*input.GetWidth()] += kernel[abs(i) + abs(j)*blurRadius] * input.GetRowAs<float>(srcY)[srcX];
             }
     }
 

@@ -33,28 +33,28 @@ File description:
 class c_ScrollableDialog: public wxDialog
 {
 public:
-    c_ScrollableDialog(wxWindow *parent, wxWindowID id, wxString title);
+    c_ScrollableDialog(wxWindow* parent, wxWindowID id, wxString title);
     virtual ~c_ScrollableDialog();
 
 private:
     /** Container that automatically enables scrolling of its contents if its size becomes small enough;
     most controls (except perhaps "OK"/"Cancel" buttons) should be its children. Derived classes have to create
     a sizer first, assign it to m_Contents and then add child controls to this sizer. */
-    wxScrolledWindow *m_Contents;
+    wxScrolledWindow* m_Contents{nullptr};
 
     /** Top-level sizer, which contains 'm_Contents'. Derived classes can add more items to this sizer
     (e.g. a sizer with "OK"/"Cancel" buttons), though they will not be automatically scrollable. */
-    wxBoxSizer *m_SzTop;
+    wxBoxSizer* m_SzTop;
 
-    void OnContentsScrolled(wxScrollWinEvent &event);
-    void OnContentsResized(wxSizeEvent &event);
+    void OnContentsScrolled(wxScrollWinEvent& event);
+    void OnContentsResized(wxSizeEvent& event);
 
     void RefreshContents();
 
 protected:
-    wxBoxSizer *GetTopSizer() const { return m_SzTop; }
-    wxScrolledWindow *GetContainer() const { return m_Contents; }
-    void AssignContainerSizer(wxSizer *sizer) { m_Contents->SetSizer(sizer); }
+    wxBoxSizer* GetTopSizer() const { return m_SzTop; }
+    wxScrolledWindow* GetContainer() const { return m_Contents; }
+    void AssignContainerSizer(wxSizer* sizer) { m_Contents->SetSizer(sizer); }
 
     /// Derived classes must call this method when creating the dialog
     void InitControls(int borderSize);

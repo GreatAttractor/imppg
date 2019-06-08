@@ -21,7 +21,6 @@ File description:
     Disc detection code.
 */
 
-#include <cassert>
 #include <cstdint>
 #include <cstdlib>
 #include <algorithm>
@@ -34,24 +33,24 @@ File description:
 #include <boost/math/special_functions/fpclassify.hpp>
 #include "align_disc.h"
 #include "gauss.h"
-
+#include "imppg_assert.h"
 
 using namespace boost::numeric::ublas;
 
 /// Calculates the centroid of a PIX_MONO8 image
-Point_t CalcCentroid(const c_Image &img)
+Point_t CalcCentroid(const c_Image& img)
 {
     // We use 64-bit accumulators which is enough for an 8-bit image with 2^28 x 2^28 pixels.
-    assert(img.GetPixelFormat() == PIX_MONO8);
+    IMPPG_ASSERT(img.GetPixelFormat() == PixelFormat::PIX_MONO8);
 
     uint64_t sumX = 0, sumY = 0, sumVals = 0;
     for (unsigned y = 0; y < img.GetHeight(); y++)
         for (unsigned x = 0; x < img.GetWidth(); x++)
         {
-            uint8_t pixval = ((uint8_t *)img.GetRow(y))[x];
+            uint8_t pixval = img.GetRowAs<uint8_t>(y)[x];
             sumVals += pixval;
-            sumX += (uint64_t)x * pixval;
-            sumY += (uint64_t)y * pixval;
+            sumX += static_cast<uint64_t>(x) * pixval;
+            sumY += static_cast<uint64_t>(y) * pixval;
         }
 
     if (sumVals > 0)
@@ -61,7 +60,7 @@ Point_t CalcCentroid(const c_Image &img)
 }
 
 /// Returns subsequent points of a line from 'origin' along direction 'dir' to border of 'img'
-void GetRayPoints(const Point_t &origin, const Point_t &dir, const c_Image &img, Ray_t &result)
+void GetRayPoints(const Point_t& origin, const Point_t& dir, const c_Image& img, Ray_t& result)
 {
     result.clear();
 
@@ -69,15 +68,15 @@ void GetRayPoints(const Point_t &origin, const Point_t &dir, const c_Image &img,
     if (dir.x == 0)
     {
         int delta = (dir.y > 0 ? 1 : -1);
-        for (int y = origin.y; y >= 0 && y < (int)img.GetHeight(); y += delta)
-            result.push_back(PointVal_t(origin.x, y, ((uint8_t *)img.GetRow(y))[origin.x]));
+        for (int y = origin.y; y >= 0 && y < static_cast<int>(img.GetHeight()); y += delta)
+            result.push_back(PointVal_t(origin.x, y, img.GetRowAs<uint8_t>(y)[origin.x]));
     }
     else if (dir.y == 0)
     {
         int delta = (dir.x > 0 ? 1 : -1);
 
-        for (int x = origin.x; x >=0 && x < (int)img.GetWidth(); x += delta)
-            result.push_back(PointVal_t(x, origin.y, ((uint8_t *)img.GetRow(origin.y))[x]));
+        for (int x = origin.x; x >=0 && x < static_cast<int>(img.GetWidth()); x += delta)
+            result.push_back(PointVal_t(x, origin.y, img.GetRowAs<uint8_t>(origin.y)[x]));
     }
     // Handle slanted lines; high performance it not required, so use the naive algorithm with divisions
     else
@@ -90,9 +89,9 @@ void GetRayPoints(const Point_t &origin, const Point_t &dir, const c_Image &img,
             while (true)
             {
                 y = origin.y + dir.y * (x - origin.x) / dir.x;
-                if (x < 0 || x >= (int)img.GetWidth() || y < 0 || y >= (int)img.GetHeight())
+                if (x < 0 || x >= static_cast<int>(img.GetWidth()) || y < 0 || y >= static_cast<int>(img.GetHeight()))
                     break;
-                result.push_back(PointVal_t(x, y, ((uint8_t*)img.GetRow(y))[x]));
+                result.push_back(PointVal_t(x, y, img.GetRowAs<uint8_t>(y)[x]));
                 x += delta;
             }
         }
@@ -104,9 +103,9 @@ void GetRayPoints(const Point_t &origin, const Point_t &dir, const c_Image &img,
             while (true)
             {
                 x = origin.x + dir.x * (y - origin.y) / dir.y;
-                if (x < 0 || x >= (int)img.GetWidth() || y < 0 || y >= (int)img.GetHeight())
+                if (x < 0 || x >= static_cast<int>(img.GetWidth()) || y < 0 || y >= static_cast<int>(img.GetHeight()))
                     break;
-                result.push_back(PointVal_t(x, y, ((uint8_t*)img.GetRow(y))[x]));
+                result.push_back(PointVal_t(x, y, img.GetRowAs<uint8_t>(y)[x]));
                 y += delta;
             }
         }
@@ -114,7 +113,7 @@ void GetRayPoints(const Point_t &origin, const Point_t &dir, const c_Image &img,
 }
 
 /// Removes elements from 'points' which do not belong to their convex hull (found by "gift wrapping")
-void CullToConvexHull(std::vector<Point_t> &points)
+void CullToConvexHull(std::vector<Point_t>& points)
 {
     // We use less than 100 limb points, so the gift-wrapping algorithm's speed is sufficient
 
@@ -156,7 +155,7 @@ void CullToConvexHull(std::vector<Point_t> &points)
                 continue;
             }
 
-            float cosine = (wrapDir.x*vec.x + wrapDir.y*vec.y) / (wrapDirLen * vecLen);
+            float cosine = (wrapDir.x * vec.x + wrapDir.y * vec.y) / (wrapDirLen * vecLen);
             if (cosine > maxCosine)
             {
                 maxCosine = cosine;
@@ -208,18 +207,18 @@ float GetSumSqrDiffsFromHistogram(
 }
 
 /// Finds the brightness threshold separating the disc from the background
-uint8_t FindDiscBackgroundThreshold(const c_Image &img,
-    uint8_t *avgDisc,  ///< If not null, receives average disc brightness
-    uint8_t *avgBkgrnd ///< If not null, receives average background brightness
+uint8_t FindDiscBackgroundThreshold(const c_Image& img,
+    uint8_t* avgDisc,  ///< If not null, receives average disc brightness
+    uint8_t* avgBkgrnd ///< If not null, receives average background brightness
 )
 {
-    assert(img.GetPixelFormat() == PIX_MONO8);
+    IMPPG_ASSERT(img.GetPixelFormat() == PixelFormat::PIX_MONO8);
 
     // Determine the histogram
     uint32_t histogram[256] = { 0 };
     for (unsigned i = 0; i < img.GetHeight(); i++)
         for (unsigned j = 0; j < img.GetWidth(); j++)
-            histogram[((uint8_t *)img.GetRow(i))[j]] += 1;
+            histogram[img.GetRowAs<uint8_t>(i)[j]] += 1;
 
     // Use bisection to find the value 'currDivPos' in histogram which has
     // the lowest sum of squared pixel value differences from the average
@@ -260,35 +259,34 @@ uint8_t FindDiscBackgroundThreshold(const c_Image &img,
              totalBkgrnd = 0, bkgrndCount = 0;
     for (unsigned i = 0; i < currDivPos; i++)
     {
-        totalBkgrnd += i*histogram[i];
+        totalBkgrnd += i * histogram[i];
         bkgrndCount += histogram[i];
     }
     for (unsigned i = currDivPos; i < 256; i++)
     {
-        totalDisc += i*histogram[i];
+        totalDisc += i * histogram[i];
         discCount += histogram[i];
     }
 
     if (avgDisc)
-        *avgDisc = totalDisc/discCount;
+        *avgDisc = totalDisc / discCount;
     if (avgBkgrnd)
-        *avgBkgrnd = totalBkgrnd/bkgrndCount;
+        *avgBkgrnd = totalBkgrnd / bkgrndCount;
 
-    return (uint8_t) currDivPos;
+    return static_cast<uint8_t>(currDivPos);
 }
 
-/// Finds a point ('result') where 'ray' crosses the limb; returns steepness of the transition
-int FindLimbCrossing(Ray_t &ray, const c_Image &img, uint8_t threshold, Point_t &result)
+int FindLimbCrossing(Ray_t& ray, uint8_t threshold, Point_t& result)
 {
     // If the image was wavelet-sharpened, there may be a bright border left. To avoid
     // its influence, replace the first NUM_BORDER_AVG pixels on each end of the ray
     // by their average.
-    const int NUM_BORDER_AVG = 16;
+    constexpr int NUM_BORDER_AVG = 16;
     int avgStart = 0, avgEnd = 0;
 
-    for (int i = 0; i < NUM_BORDER_AVG && i < (int)ray.size(); i++)
+    for (int i = 0; i < NUM_BORDER_AVG && i < static_cast<int>(ray.size()); i++)
         avgStart += ray[i].value;
-    for (int i = (int)ray.size() - 1; i >= (int)ray.size() - NUM_BORDER_AVG && i >= 0; i--)
+    for (int i = static_cast<int>(ray.size()) - 1; i >= static_cast<int>(ray.size()) - NUM_BORDER_AVG && i >= 0; i--)
         avgEnd += ray[i].value;
 
     avgStart /= NUM_BORDER_AVG;
@@ -296,10 +294,10 @@ int FindLimbCrossing(Ray_t &ray, const c_Image &img, uint8_t threshold, Point_t 
 
     for (int i = 0; i < NUM_BORDER_AVG; i++)
     {
-        if (i < (int)ray.size())
+        if (i < static_cast<int>(ray.size()))
             ray[i].value = avgStart;
 
-        if ((int)ray.size() - i - 1 >= 0)
+        if (static_cast<int>(ray.size()) - i - 1 >= 0)
             ray[ray.size() - i - 1].value = avgEnd;
     }
 
@@ -335,7 +333,7 @@ int FindLimbCrossing(Ray_t &ray, const c_Image &img, uint8_t threshold, Point_t 
 
     int iMaxDiff = 0;
     int maxDiff = 0;
-    for (int i = currPos; i < (int)ray.size(); i++)
+    for (int i = currPos; i < static_cast<int>(ray.size()); i++)
     {
         int sumLo = 0;
         for (int j = -DIFF_SIZE; j <= 0; j++)
@@ -346,7 +344,7 @@ int FindLimbCrossing(Ray_t &ray, const c_Image &img, uint8_t threshold, Point_t 
 
         int sumHi = 0;
         for (int j = 0; j < DIFF_SIZE; j++)
-            if (i+j < (int)ray.size())
+            if (i+j < static_cast<int>(ray.size()))
                 sumHi += ray[i+j].value;
             else
                 sumHi += ray.back().value;
@@ -363,35 +361,35 @@ int FindLimbCrossing(Ray_t &ray, const c_Image &img, uint8_t threshold, Point_t 
     return maxDiff;
 }
 
-void Invert3x3(matrix<double> &M)
+void Invert3x3(matrix<double>& M)
 {
     matrix<double> Minv(3, 3);
 
-    double detM = +M(0, 0)*M(1, 1)*M(2, 2)
-        +M(1, 0)*M(2, 1)*M(0, 2)
-        +M(2, 0)*M(0, 1)*M(1, 2)
-        -M(0, 2)*M(1, 1)*M(2, 0)
-        -M(1, 2)*M(2, 1)*M(0, 0)
-        -M(2, 2)*M(0, 1)*M(1, 0);
+    double detM = + M(0, 0) * M(1, 1) * M(2, 2)
+        + M(1, 0) * M(2, 1) * M(0, 2)
+        + M(2, 0) * M(0, 1) * M(1, 2)
+        - M(0, 2) * M(1, 1) * M(2, 0)
+        - M(1, 2) * M(2, 1) * M(0, 0)
+        - M(2, 2) * M(0, 1) * M(1, 0);
 
-    Minv(0, 0) = M(1, 1)*M(2, 2)-M(1, 2)*M(2, 1);
-    Minv(0, 1) = M(0, 2)*M(2, 1)-M(0, 1)*M(2, 2);
-    Minv(0, 2) = M(0, 1)*M(1, 2)-M(0, 2)*M(1, 1);
+    Minv(0, 0) = M(1, 1) * M(2, 2) - M(1, 2) * M(2, 1);
+    Minv(0, 1) = M(0, 2) * M(2, 1) - M(0, 1) * M(2, 2);
+    Minv(0, 2) = M(0, 1) * M(1, 2) - M(0, 2) * M(1, 1);
 
-    Minv(1, 0) = M(1, 2)*M(2, 0)-M(1, 0)*M(2, 2);
-    Minv(1, 1) = M(0, 0)*M(2, 2)-M(0, 2)*M(2, 0);
-    Minv(1, 2) = M(0, 2)*M(1, 0)-M(0, 0)*M(1, 2);
+    Minv(1, 0) = M(1, 2) * M(2, 0) - M(1, 0) * M(2, 2);
+    Minv(1, 1) = M(0, 0) * M(2, 2) - M(0, 2) * M(2, 0);
+    Minv(1, 2) = M(0, 2) * M(1, 0) - M(0, 0) * M(1, 2);
 
-    Minv(2, 0) = M(1, 0)*M(2, 1)-M(1, 1)*M(2, 0);
-    Minv(2, 1) = M(0, 1)*M(2, 0)-M(0, 0)*M(2, 1);
-    Minv(2, 2) = M(0, 0)*M(1, 1)-M(0, 1)*M(1, 0);
+    Minv(2, 0) = M(1, 0) * M(2, 1) - M(1, 1) * M(2, 0);
+    Minv(2, 1) = M(0, 1) * M(2, 0) - M(0, 0) * M(2, 1);
+    Minv(2, 2) = M(0, 0) * M(1, 1) - M(0, 1) * M(1, 0);
 
     Minv /= detM;
 
     M = Minv;
 }
 
-void Invert2x2(matrix<double> &M)
+void Invert2x2(matrix<double>& M)
 {
     matrix<double> Minv(2, 2);
     Minv(0, 0) = M(1, 1);
@@ -405,10 +403,10 @@ void Invert2x2(matrix<double> &M)
 
 /// Uses Gauss-Newton method to fit a circle to specified points; returns 'true' on success
 bool FitCircleToPoints(
-    const std::vector<FloatPoint_t> &points,
-    float *centerX, ///< If not null, receives circle center's X
-    float *centerY, ///< If not null, receives circle center's Y
-    float *radius,  ///< If not null and 'forceRadius' is zero, receives radius
+    const std::vector<FloatPoint_t>& points,
+    float* centerX, ///< If not null, receives circle center's X
+    float* centerY, ///< If not null, receives circle center's Y
+    float* radius,  ///< If not null and 'forceRadius' is zero, receives radius
     float forceRadius, ///< If not zero, used as a predetermined radius; only the circle's center will be fitted
     /// If 'true', 'centerX' and 'centerY' are used as initial center; otherwise, the centroid of 'points' is used
     bool initialCenterSpecified
@@ -424,7 +422,7 @@ bool FitCircleToPoints(
         matrix<double>(2, 1);  // cx, cy
 
 
-    // Vector of residuals; i-th row a residual corresponding with points[i]
+    // Vector of residuals; i-th row a residual corresponding to points[i]
     matrix<double> Rs(points.size(), 1);
 
     // Jacobian; i-th row contains 3 partial derivatives of the i-th residual with respect to 'cx', 'cy' and 'radius' (if we are fitting radius)
@@ -440,7 +438,7 @@ bool FitCircleToPoints(
     int xmin = INT_MAX, xmax = INT_MIN, ymin = INT_MAX, ymax = INT_MIN;
     for (i = 0; i < points.size(); i++)
     {
-        const FloatPoint_t &p = points[i];
+        const FloatPoint_t& p = points[i];
         B(0, 0) += p.x;
         B(1, 0) += p.y;
 

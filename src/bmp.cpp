@@ -21,12 +21,13 @@ File description:
     BMP-related functions.
 */
 
-#include <fstream>
-#include <cassert>
 #include <cstdint>
 #include <cstdlib>
+#include <fstream>
+#include <optional>
 
 #include "image.h"
+#include "imppg_assert.h"
 
 bool IsMachineBigEndian();
 
@@ -65,56 +66,55 @@ const uint32_t BI_BITFIELDS = 3;
 const int BMP_PALETTE_SIZE = 256*4;
 
 // returns the least multiple of 4 which is >= x
-#define UP4MULT(x) (((x)+3)/4*4)
+#define UP4MULT(x) (((x) + 3) / 4 * 4)
 
 /// Reads a BMP image; returns 0 on error
-c_Image *ReadBmp(const char *fileName)
+std::optional<c_Image> ReadBmp(const std::string& fileName)
 {
-    std::ifstream file(fileName, std::ios_base::in | std::ios_base::binary);
+    std::ifstream file(fileName.c_str(), std::ios_base::in | std::ios_base::binary);
     if (file.fail())
-        return 0;
+        return std::nullopt;
 
-    unsigned imgWidth, imgHeight;
-    PixelFormat_t pixFmt = PIX_INVALID;
+    PixelFormat pixFmt{};
 
-    bool isMBE = IsMachineBigEndian();
+    const bool isMBE = IsMachineBigEndian();
 
     BITMAPFILEHEADER_t bmpFileHdr;
     BITMAPINFOHEADER_t bmpInfoHdr;
 
-    file.read((char *)&bmpFileHdr, sizeof(bmpFileHdr));
-    file.read((char *)&bmpInfoHdr, sizeof(bmpInfoHdr));
+    file.read(reinterpret_cast<char*>(&bmpFileHdr), sizeof(bmpFileHdr));
+    file.read(reinterpret_cast<char*>(&bmpInfoHdr), sizeof(bmpInfoHdr));
     if (file.eof())
-        return 0;
+        return std::nullopt;
 
-    // Fields in a BMP are always little-endian, so swap them if running on a big-endian machine
+    // fields in a BMP are always little-endian, so swap them if running on a big-endian machine
 
-    int bitsPerPixel = SWAP16cnd(bmpInfoHdr.biBitCount, isMBE);
+    const int bitsPerPixel = SWAP16cnd(bmpInfoHdr.biBitCount, isMBE);
 
-    imgWidth = SWAP32cnd(bmpInfoHdr.biWidth, isMBE);
-    imgHeight = SWAP32cnd(bmpInfoHdr.biHeight, isMBE);
+    const unsigned imgWidth = SWAP32cnd(bmpInfoHdr.biWidth, isMBE);
+    const unsigned imgHeight = SWAP32cnd(bmpInfoHdr.biHeight, isMBE);
     if (imgWidth == 0 || imgHeight == 0 ||
-        SWAP16cnd(bmpFileHdr.bfType, isMBE) != 'B'+((int)'M'<<8) ||
+        SWAP16cnd(bmpFileHdr.bfType, isMBE) != 'B'+(static_cast<int>('M')<<8) ||
         SWAP16cnd(bmpInfoHdr.biPlanes, isMBE) != 1 ||
         bitsPerPixel != 8 && bitsPerPixel != 24 && bitsPerPixel != 32 ||
         SWAP32cnd(bmpInfoHdr.biCompression, isMBE) != BI_RGB && SWAP32cnd(bmpInfoHdr.biCompression, isMBE) != BI_BITFIELDS)
     {
-        return 0;
+        return std::nullopt;
     }
 
-    int srcBytesPerPixel = bitsPerPixel / 8;
+    const int srcBytesPerPixel = bitsPerPixel / 8;
 
     if (bitsPerPixel == 8)
-        pixFmt = PIX_PAL8;
+        pixFmt = PixelFormat::PIX_PAL8;
     else if (bitsPerPixel == 24 || bitsPerPixel == 32)
-        pixFmt = PIX_RGB8;
+        pixFmt = PixelFormat::PIX_RGB8;
 
-    c_Image *img = new c_Image(imgWidth, imgHeight, pixFmt);
+    std::optional<c_Image> img;
 
-    if (pixFmt == PIX_PAL8)
+    if (pixFmt == PixelFormat::PIX_PAL8)
     {
-        unsigned bmpStride = UP4MULT(imgWidth); // line length in bytes in the BMP file's pixel data
-        unsigned skip = bmpStride - imgWidth; // number of padding bytes at the end of a line
+        const unsigned bmpStride = UP4MULT(imgWidth); // line length in bytes in the BMP file's pixel data
+        const unsigned skip = bmpStride - imgWidth; // number of padding bytes at the end of a line
 
         int numUsedPalEntries = SWAP32cnd(bmpInfoHdr.biClrUsed, isMBE);
         if (numUsedPalEntries == 0)
@@ -124,58 +124,82 @@ c_Image *ReadBmp(const char *fileName)
         file.seekg(sizeof(bmpFileHdr) + SWAP32cnd(bmpInfoHdr.biSize, isMBE), std::ios_base::beg);
 
         uint8_t palette[BMP_PALETTE_SIZE]; /// BMP-style palette (B, G, R, pad)
-        file.read((char *)palette, numUsedPalEntries*4);
+        file.read(reinterpret_cast<char*>(palette), numUsedPalEntries*4);
 
-        // Convert to RGB-order palette
-        for (int i = 0; i < numUsedPalEntries; i++)
+        bool isMono8 = true;
+        if (numUsedPalEntries == 256)
         {
-            img->GetPalette()[3*i + 0] = palette[i*4 + 2];
-            img->GetPalette()[3*i + 1] = palette[i*4 + 1];
-            img->GetPalette()[3*i + 2] = palette[i*4 + 0];
+            for (int i = 0; i < 256; i++)
+                if (palette[i*4 + 0] != palette[i*4 + 1] ||
+                    palette[i*4 + 1] != palette[i*4 + 2] ||
+                    palette[i*4 + 0] != i)
+                {
+                    isMono8 = false;
+                    break;
+                }
         }
 
-        // Seek to the beginning of pixel values
+        if (isMono8)
+            pixFmt = PixelFormat::PIX_MONO8;
+
+        img = c_Image(imgWidth, imgHeight, pixFmt);
+
+        if (!isMono8)
+        {
+            // convert to RGB-order palette
+            auto& buf = img->GetBuffer();
+            for (int i = 0; i < numUsedPalEntries; i++)
+            {
+                buf.GetPalette()[3*i + 0] = palette[i*4 + 2];
+                buf.GetPalette()[3*i + 1] = palette[i*4 + 1];
+                buf.GetPalette()[3*i + 2] = palette[i*4 + 0];
+            }
+        }
+
+        // seek to the beginning of pixel values
         file.seekg(SWAP32cnd(bmpFileHdr.bfOffBits, isMBE), std::ios_base::beg);
 
         for (int y = imgHeight - 1; y >= 0; y--) // lines in BMP are stored bottom to top
         {
-            file.read((char *)((uint8_t *)img->GetRow(y)), imgWidth);
+            file.read(img.value().GetRowAs<char>(y), imgWidth);
             if (skip > 0)
                 file.seekg(skip, std::ios_base::cur);
         }
     }
-    else if (pixFmt == PIX_RGB8)
+    else if (pixFmt == PixelFormat::PIX_RGB8)
     {
-        unsigned bmpStride = UP4MULT(imgWidth*srcBytesPerPixel); // line length in bytes in the BMP file's pixel data
-        unsigned skip = bmpStride - imgWidth*srcBytesPerPixel; // number of padding bytes at the end of a row
+        img = c_Image(imgWidth, imgHeight, pixFmt);
 
-        // Seek to the beginning of pixel values
+        unsigned bmpStride = UP4MULT(imgWidth * srcBytesPerPixel); // line length in bytes in the BMP file's pixel data
+        unsigned skip = bmpStride - imgWidth * srcBytesPerPixel; // number of padding bytes at the end of a row
+
+        // seek to the beginning of pixel values
         file.seekg(SWAP32cnd(bmpFileHdr.bfOffBits, isMBE), std::ios_base::beg);
 
-        std::unique_ptr<uint8_t[]> row(new uint8_t[imgWidth*srcBytesPerPixel]);
+        std::unique_ptr<uint8_t[]> row(new uint8_t[imgWidth * srcBytesPerPixel]);
 
         // read the lines directly into the buffer
-        for (int y = (int)imgHeight - 1; y >= 0; y--) // lines in BMP are stored bottom to top
+        for (int y = static_cast<int>(imgHeight) - 1; y >= 0; y--) // lines in BMP are stored bottom to top
         {
-            file.read((char *)row.get(), imgWidth*srcBytesPerPixel);
+            file.read(reinterpret_cast<char*>(row.get()), imgWidth * srcBytesPerPixel);
 
             if (srcBytesPerPixel == 3)
             {
                 for (unsigned x = 0; x < imgWidth; x++)
                 {
-                    ((uint8_t *)img->GetRow(y))[x*3+0] = row[3*x + 2];
-                    ((uint8_t *)img->GetRow(y))[x*3+1] = row[3*x + 1];
-                    ((uint8_t *)img->GetRow(y))[x*3+2] = row[3*x + 0];
+                    img->GetRowAs<uint8_t>(y)[x * 3 + 0] = row[3 * x + 2];
+                    img->GetRowAs<uint8_t>(y)[x * 3 + 1] = row[3 * x + 1];
+                    img->GetRowAs<uint8_t>(y)[x * 3 + 2] = row[3 * x + 0];
                 }
             }
             else if (srcBytesPerPixel == 4)
             {
-                // Remove the unused 4th byte from each pixel and rearrange the channels to RGB order
+                // remove the unused 4th byte from each pixel and rearrange the channels to RGB order
                 for (unsigned x = 0; x < imgWidth; x++)
                 {
-                    ((uint8_t *)img->GetRow(y))[x*3+0] = row[x*4+3];
-                    ((uint8_t *)img->GetRow(y))[x*3+1] = row[x*4+2];
-                    ((uint8_t *)img->GetRow(y))[x*3+2] = row[x*4+1];
+                    img->GetRowAs<uint8_t>(y)[x * 3 + 0] = row[x * 4 + 3];
+                    img->GetRowAs<uint8_t>(y)[x * 3 + 1] = row[x * 4 + 2];
+                    img->GetRowAs<uint8_t>(y)[x * 3 + 2] = row[x * 4 + 1];
                 }
             }
 
@@ -187,33 +211,32 @@ c_Image *ReadBmp(const char *fileName)
     return img;
 }
 
-/// Saves image in BMP format; returns 'false' on error
-bool SaveBmp(const char *fileName, const c_Image &img)
+bool SaveBmp(const std::string& fileName, const IImageBuffer& img)
 {
-    PixelFormat_t pixFmt = img.GetPixelFormat();
-    assert(pixFmt == PIX_PAL8 ||
-           pixFmt == PIX_RGB8 ||
-           pixFmt == PIX_MONO8);
+    const PixelFormat pixFmt = img.GetPixelFormat();
+    IMPPG_ASSERT(pixFmt == PixelFormat::PIX_PAL8 ||
+                 pixFmt == PixelFormat::PIX_RGB8 ||
+                 pixFmt == PixelFormat::PIX_MONO8);
 
     BITMAPFILEHEADER_t bmfh;
     BITMAPINFOHEADER_t bmih;
     int i;
 
-    int bytesPP = BytesPerPixel[img.GetPixelFormat()];
-    unsigned bmpLineWidth = UP4MULT(img.GetWidth() * bytesPP);
+    const int bytesPP = img.GetBytesPerPixel();
+    const unsigned bmpLineWidth = UP4MULT(img.GetWidth() * bytesPP);
 
-    // Fields in a BMP are always little-endian, so swap them if running on a big-endian machine
-    bool isMBE = IsMachineBigEndian();
+    // fields in a BMP are always little-endian, so swap them if running on a big-endian machine
+    const bool isMBE = IsMachineBigEndian();
 
-    bmfh.bfType = SWAP16cnd('B'+((int)'M'<<8), isMBE);
-    bmfh.bfSize = sizeof(bmfh) + sizeof(bmih) + img.GetHeight()*bmpLineWidth;
-    if (pixFmt == PIX_PAL8 || pixFmt == PIX_MONO8)
+    bmfh.bfType = SWAP16cnd('B'+(static_cast<int>('M')<<8), isMBE);
+    bmfh.bfSize = sizeof(bmfh) + sizeof(bmih) + img.GetHeight() * bmpLineWidth;
+    if (pixFmt == PixelFormat::PIX_PAL8 || pixFmt == PixelFormat::PIX_MONO8)
         bmfh.bfSize += BMP_PALETTE_SIZE;
     bmfh.bfSize = SWAP32cnd(bmfh.bfSize, isMBE);
     bmfh.bfReserved1 = 0;
     bmfh.bfReserved2 = 0;
     bmfh.bfOffBits = sizeof(bmih) + sizeof(bmfh);
-    if (pixFmt == PIX_PAL8 || pixFmt == PIX_MONO8)
+    if (pixFmt == PixelFormat::PIX_PAL8 || pixFmt == PixelFormat::PIX_MONO8)
         bmfh.bfOffBits += BMP_PALETTE_SIZE;
     bmfh.bfOffBits = SWAP32cnd(bmfh.bfOffBits, isMBE);
 
@@ -233,13 +256,13 @@ bool SaveBmp(const char *fileName, const c_Image &img)
     if (file.fail())
         return false;
 
-    file.write((const char *)&bmfh, sizeof(bmfh));
-    file.write((const char *)&bmih, sizeof(bmih));
-    if (img.GetPixelFormat() == PIX_PAL8 || img.GetPixelFormat() == PIX_MONO8)
+    file.write(reinterpret_cast<const char*>(&bmfh), sizeof(bmfh));
+    file.write(reinterpret_cast<const char*>(&bmih), sizeof(bmih));
+    if (pixFmt == PixelFormat::PIX_PAL8 || pixFmt == PixelFormat::PIX_MONO8)
     {
         uint8_t palette[BMP_PALETTE_SIZE]; // BMP-style palette
 
-        if (img.GetPixelFormat() == PIX_PAL8)
+        if (pixFmt == PixelFormat::PIX_PAL8)
         {
             for (i = 0; i < 256; i++)
             {
@@ -260,20 +283,20 @@ bool SaveBmp(const char *fileName, const c_Image &img)
             }
         }
 
-        file.write((const char *)palette, BMP_PALETTE_SIZE);
+        file.write(reinterpret_cast<const char*>(palette), BMP_PALETTE_SIZE);
     }
 
-    int skip = bmpLineWidth - img.GetWidth()*bytesPP;
+    int skip = bmpLineWidth - img.GetWidth() * bytesPP;
 
-    uint8_t *row = 0;
-    if (pixFmt == PIX_RGB8)
+    uint8_t* row = 0;
+    if (pixFmt == PixelFormat::PIX_RGB8)
     {
-        row = new uint8_t[img.GetWidth()*bytesPP];
+        row = new uint8_t[img.GetWidth() * bytesPP];
     }
 
     for (i = img.GetHeight() - 1; i >= 0; i--) // lines in a BMP are stored bottom to top
     {
-        if (pixFmt == PIX_RGB8)
+        if (pixFmt == PixelFormat::PIX_RGB8)
         {
             for (unsigned x = 0; x < img.GetWidth(); x++)
             {
@@ -281,13 +304,13 @@ bool SaveBmp(const char *fileName, const c_Image &img)
                 row[3*x + 0] = row[3*x + 2];
                 row[3*x + 2] = temp;
             }
-            file.write((const char*)row, img.GetWidth()*bytesPP);
+            file.write(reinterpret_cast<const char*>(row), img.GetWidth() * bytesPP);
         }
         else
-            file.write((const char*)img.GetRow(i), img.GetWidth()*bytesPP);
+            file.write(img.GetRowAs<char>(i), img.GetWidth() * bytesPP);
 
         if (skip > 0)
-            file.write((const char *)img.GetRow(i), skip); //this is just padding, so write anything
+            file.write(img.GetRowAs<char>(i), skip); //this is just padding, so write anything
     }
 
     delete[] row;
@@ -297,25 +320,25 @@ bool SaveBmp(const char *fileName, const c_Image &img)
     return true;
 }
 
-bool GetBmpDimensions(const char *fileName, unsigned &imgWidth, unsigned &imgHeight)
+std::optional<std::tuple<unsigned, unsigned>> GetBmpDimensions(const std::string& fileName)
 {
-    std::ifstream file(fileName, std::ios_base::in | std::ios_base::binary);
+    std::ifstream file(fileName.c_str(), std::ios_base::in | std::ios_base::binary);
     if (file.fail())
-        return false;
+        return std::nullopt;
 
     BITMAPFILEHEADER_t bmpFileHdr;
     BITMAPINFOHEADER_t bmpInfoHdr;
 
-    file.read((char *)&bmpFileHdr, sizeof(bmpFileHdr));
-    file.read((char *)&bmpInfoHdr, sizeof(bmpInfoHdr));
+    file.read(reinterpret_cast<char*>(&bmpFileHdr), sizeof(bmpFileHdr));
+    file.read(reinterpret_cast<char*>(&bmpInfoHdr), sizeof(bmpInfoHdr));
     if (file.eof())
-        return false;
+        return std::nullopt;
 
     // Fields in a BMP are always little-endian, so swap them if running on a big-endian machine
-    bool isMBE = IsMachineBigEndian();
+    const bool isMBE = IsMachineBigEndian();
 
-    imgWidth = SWAP32cnd(bmpInfoHdr.biWidth, isMBE);
-    imgHeight = SWAP32cnd(bmpInfoHdr.biHeight, isMBE);
-
-    return true;
+    return std::make_tuple(
+        SWAP32cnd(bmpInfoHdr.biWidth, isMBE),
+        SWAP32cnd(bmpInfoHdr.biHeight, isMBE)
+    );
 }

@@ -62,7 +62,7 @@ const int BORDER = 5; ///< Border size (in pixels) between controls
 /** Distance is expressed as a percentage of max(width, height) of the curve view area. */
 const int MIN_GRAB_DIST = 5;
 
-void c_ToneCurveEditor::OnStretch(wxCommandEvent &event)
+void c_ToneCurveEditor::OnStretch(wxCommandEvent&)
 {
     if (m_Histogram.values.size() > 0)
     {
@@ -72,11 +72,11 @@ void c_ToneCurveEditor::OnStretch(wxCommandEvent &event)
     }
 }
 
-void c_ToneCurveEditor::OnChangeGamma(wxSpinDoubleEvent &event)
+void c_ToneCurveEditor::OnChangeGamma(wxSpinDoubleEvent&)
 {
     if (m_Curve->IsGammaMode())
     {
-        m_Curve->SetGamma(((wxSpinCtrlDouble *)FindWindowById(ID_GammaCtrl, this))->GetValue());
+        m_Curve->SetGamma(m_GammaCtrl->GetValue());
         m_CurveArea->Refresh(false);
         DelayedAction();
     }
@@ -85,33 +85,33 @@ void c_ToneCurveEditor::OnChangeGamma(wxSpinDoubleEvent &event)
 void c_ToneCurveEditor::DeactivateGammaMode()
 {
     m_Curve->SetGammaMode(false);
-    ((wxCheckBox *)FindWindowById(ID_GammaCheckBox, this))->SetValue(false);
+    m_GammaToggleCtrl->SetValue(false);
 }
 
-void c_ToneCurveEditor::OnToggleGammaMode(wxCommandEvent &event)
+void c_ToneCurveEditor::OnToggleGammaMode(wxCommandEvent&)
 {
-    m_Curve->SetGammaMode(((wxCheckBox *)FindWindowById(ID_GammaCheckBox, this))->GetValue());
-    m_Curve->SetGamma(((wxSpinCtrlDouble *)FindWindowById(ID_GammaCtrl, this))->GetValue());
+    m_Curve->SetGammaMode(m_GammaToggleCtrl->GetValue());
+    m_Curve->SetGamma(m_GammaCtrl->GetValue());
     m_CurveArea->Refresh(false);
     DelayedAction();
 }
 
-void c_ToneCurveEditor::OnToggleLogHist(wxCommandEvent &event)
+void c_ToneCurveEditor::OnToggleLogHist(wxCommandEvent&)
 {
     m_LogarithmicHistogram = !m_LogarithmicHistogram;
     Refresh(false);
 }
 
 /// Updates the histogram (creates an internal copy)
-void c_ToneCurveEditor::SetHistogram(Histogram_t &histogram)
+void c_ToneCurveEditor::SetHistogram(const Histogram_t& histogram)
 {
     m_Histogram = histogram;
     m_CurveArea->Refresh(false);
 }
 
-void c_ToneCurveEditor::OnToggleSmooth(wxCommandEvent &event)
+void c_ToneCurveEditor::OnToggleSmooth(wxCommandEvent& event)
 {
-    m_Curve->SetSmooth((bool)event.GetInt());
+    m_Curve->SetSmooth(static_cast<bool>(event.GetInt()));
     m_CurveArea->Refresh(false);
     DelayedAction();
 }
@@ -119,18 +119,18 @@ void c_ToneCurveEditor::OnToggleSmooth(wxCommandEvent &event)
 void c_ToneCurveEditor::SetToneCurve(c_ToneCurve *curve)
 {
     m_Curve = curve;
-    ((wxCheckBox *)FindWindowById(ID_Smooth, this))->SetValue(m_Curve->GetSmooth());
-    ((wxCheckBox *)FindWindowById(ID_GammaCheckBox, this))->SetValue(m_Curve->IsGammaMode());
+    m_SmoothCtrl->SetValue(m_Curve->GetSmooth());
+    m_GammaToggleCtrl->SetValue(m_Curve->IsGammaMode());
     if (m_Curve->IsGammaMode())
-        ((wxSpinCtrlDouble *)FindWindowById(ID_GammaCtrl, this))->SetValue(m_Curve->GetGamma());
+        m_GammaCtrl->SetValue(m_Curve->GetGamma());
     m_CurveArea->Refresh(false);
 }
 
 /// Converts pixel coords to curve logical coords (minx<=logx<=maxx, 0<=logy<=1)
-void c_ToneCurveEditor::GetCurveLogicalCoords(int x, int y, float minx, float maxx, float *logx, float *logy)
+void c_ToneCurveEditor::GetCurveLogicalCoords(int x, int y, float minx, float maxx, float* logx, float* logy)
 {
-    *logx = (float)x / m_CurveArea->GetClientRect().width;
-    *logy = 1.0f - (float)y / m_CurveArea->GetClientRect().height;
+    *logx = static_cast<float>(x) / m_CurveArea->GetClientRect().width;
+    *logy = 1.0f - static_cast<float>(y) / m_CurveArea->GetClientRect().height;
 
     if (*logx < minx)
         *logx = minx;
@@ -143,23 +143,23 @@ void c_ToneCurveEditor::GetCurveLogicalCoords(int x, int y, float minx, float ma
         *logy = 1;
 }
 
-void c_ToneCurveEditor::OnInvert(wxCommandEvent &event)
+void c_ToneCurveEditor::OnInvert(wxCommandEvent&)
 {
     m_Curve->Invert();
     m_CurveArea->Refresh(false);
     DelayedAction();
 }
 
-void c_ToneCurveEditor::OnReset(wxCommandEvent &event)
+void c_ToneCurveEditor::OnReset(wxCommandEvent&)
 {
     m_Curve->Reset();
-    ((wxCheckBox *)FindWindowById(ID_Smooth, this))->SetValue(m_Curve->GetSmooth());
-    ((wxCheckBox *)FindWindowById(ID_GammaCheckBox, this))->SetValue(m_Curve->IsGammaMode());
+    m_SmoothCtrl->SetValue(m_Curve->GetSmooth());
+    m_GammaToggleCtrl->SetValue(m_Curve->IsGammaMode());
     m_CurveArea->Refresh(false);
     DelayedAction();
 }
 
-void c_ToneCurveEditor::OnCurveAreaMouseMove(wxMouseEvent &event)
+void c_ToneCurveEditor::OnCurveAreaMouseMove(wxMouseEvent& event)
 {
     // Event's logical coordinates within the curve area
     float x, y;
@@ -185,7 +185,7 @@ void c_ToneCurveEditor::OnCurveAreaMouseMove(wxMouseEvent &event)
     }
 }
 
-void c_ToneCurveEditor::OnMouseCaptureLost(wxMouseCaptureLostEvent &event)
+void c_ToneCurveEditor::OnMouseCaptureLost(wxMouseCaptureLostEvent&)
 {
     m_MouseOps.draggedPointIdx = -1;
     m_MouseOps.dragging = false;
@@ -199,7 +199,7 @@ bool c_ToneCurveEditor::IsPointDistBelowThreshold(float x, float y, int pointIdx
             <= SQR(MIN_GRAB_DIST / 100.0f));
 }
 
-void c_ToneCurveEditor::OnCurveAreaRightDown(wxMouseEvent &event)
+void c_ToneCurveEditor::OnCurveAreaRightDown(wxMouseEvent& event)
 {
     // Event's logical coordinates within the curve area
     float x, y;
@@ -215,7 +215,7 @@ void c_ToneCurveEditor::OnCurveAreaRightDown(wxMouseEvent &event)
     }
 }
 
-void c_ToneCurveEditor::OnCurveAreaLeftDown(wxMouseEvent &event)
+void c_ToneCurveEditor::OnCurveAreaLeftDown(wxMouseEvent& event)
 {
     m_MouseOps.minx = 0.0f;
     m_MouseOps.maxx = 1.0f;
@@ -259,7 +259,7 @@ void c_ToneCurveEditor::OnCurveAreaLeftDown(wxMouseEvent &event)
     MarkCurvePoints(dc, m_CurveArea->GetClientRect());
 }
 
-void c_ToneCurveEditor::OnCurveAreaLeftUp(wxMouseEvent &event)
+void c_ToneCurveEditor::OnCurveAreaLeftUp(wxMouseEvent& event)
 {
     // Event's logical coordinates within the curve area
     float x, y;
@@ -280,8 +280,8 @@ void c_ToneCurveEditor::OnCurveAreaLeftUp(wxMouseEvent &event)
 }
 
 void c_ToneCurveEditor::MarkCurvePoints(
-    wxDC &dc,
-    const wxRect &r ///< Represents the drawing area
+    wxDC& dc,
+    const wxRect& r ///< Represents the drawing area
 )
 {
     dc.SetPen(wxPen(Configuration::ToneCurveEditor_CurveColor, 1));
@@ -308,8 +308,8 @@ void c_ToneCurveEditor::MarkCurvePoints(
 }
 
 void c_ToneCurveEditor::DrawCurve(
-    wxDC &dc,
-    const wxRect &r ///< Represents the drawing area
+    wxDC& dc,
+    const wxRect& r ///< Represents the drawing area
 )
 {
     dc.SetPen(wxPen(Configuration::ToneCurveEditor_CurveColor, Configuration::ToneCurveEditor_CurveWidth));
@@ -325,7 +325,7 @@ void c_ToneCurveEditor::DrawCurve(
 
     for (int x = 1; x < r.width; x += step)
     {
-        int y = r.height - r.height * m_Curve->GetPreciseValue((float)x / r.width);
+        int y = r.height - r.height * m_Curve->GetPreciseValue(static_cast<float>(x) / r.width);
         dc.DrawLine(prev.x, prev.y, x, y);
         prev.x = x;
         prev.y = y;
@@ -335,9 +335,9 @@ void c_ToneCurveEditor::DrawCurve(
 }
 
 void c_ToneCurveEditor::DrawHistogram(
-    wxDC &dc,
-    const wxRect &r ///< Represents the drawing area
-    )
+    wxDC& dc,
+    const wxRect& r ///< Represents the drawing area
+)
 {
     if (!m_Histogram.values.empty())
     {
@@ -346,7 +346,7 @@ void c_ToneCurveEditor::DrawHistogram(
 
         int step = 1;
         if (m_NumDrawSegments != 0)
-            step = std::max((size_t)1, r.width/m_NumDrawSegments);
+            step = std::max(static_cast<size_t>(1), r.width/m_NumDrawSegments);
 
         for (int x = 0; x < r.width; x += step)
         {
@@ -369,7 +369,7 @@ void c_ToneCurveEditor::DrawHistogram(
 }
 
 /// Uses double buffering; therefore, for all calls to Refresh() we specify eraseBackground = false
-void c_ToneCurveEditor::OnPaintCurveArea(wxPaintEvent &event)
+void c_ToneCurveEditor::OnPaintCurveArea(wxPaintEvent&)
 {
     wxPaintDC dc(m_CurveArea);
 
@@ -395,16 +395,16 @@ void c_ToneCurveEditor::SetHistogramLogarithmic(bool value)
         Refresh(false);
 
     m_LogarithmicHistogram = value;
-    ((wxToggleButton *)FindWindowById(ID_Logarithmic, this))->SetValue(value);
+    m_LogarithmicCtrl->SetValue(value);
 }
 
 /// Sends EVT_TONE_CURVE to parent, but not more often than the delay specified in the constructor
-void c_ToneCurveEditor::DoPerformAction(void *param)
+void c_ToneCurveEditor::DoPerformAction(void*)
 {
     GetParent()->GetEventHandler()->AddPendingEvent(wxCommandEvent(EVT_TONE_CURVE, GetId()));
 }
 
-c_ToneCurveEditor::c_ToneCurveEditor(wxWindow *parent, c_ToneCurve *curve, int id,
+c_ToneCurveEditor::c_ToneCurveEditor(wxWindow* parent, c_ToneCurve* curve, int id,
     unsigned updateEvtDelay, ///< Delay in milliseconds between sending subsequent EVT_TONE_CURVE events)
     bool logarithmicHistogram ///< If true, histogram is displayed in logarithmic scale
 )
@@ -419,7 +419,7 @@ c_ToneCurveEditor::c_ToneCurveEditor(wxWindow *parent, c_ToneCurve *curve, int i
 
     // Init sizers and child controls ---------------------------------
 
-    wxSizer *szTop = new wxBoxSizer(wxVERTICAL);
+    wxSizer* szTop = new wxBoxSizer(wxVERTICAL);
 
     m_CurveArea = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(100, 100));
     m_CurveArea->Bind(wxEVT_PAINT,              &c_ToneCurveEditor::OnPaintCurveArea, this);
@@ -434,8 +434,8 @@ c_ToneCurveEditor::c_ToneCurveEditor(wxWindow *parent, c_ToneCurve *curve, int i
     // Only 'm_CurveArea' has its "proportion" set to 1, so it can fill the parent, while the remaining controls keep their size
     szTop->Add(m_CurveArea, 1, wxALIGN_CENTER | wxALL | wxGROW, BORDER);
 
-        wxSizer *szSettings = new wxBoxSizer(wxHORIZONTAL);
-        szSettings->Add(new wxToggleButton(this, ID_Logarithmic, _("log"), wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT),
+        wxSizer* szSettings = new wxBoxSizer(wxHORIZONTAL);
+        szSettings->Add(m_LogarithmicCtrl = new wxToggleButton(this, ID_Logarithmic, _("log"), wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT),
             0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
         szSettings->Add(new wxButton(this, ID_Reset, _("reset"), wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT),
             0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
@@ -443,15 +443,15 @@ c_ToneCurveEditor::c_ToneCurveEditor(wxWindow *parent, c_ToneCurve *curve, int i
             0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
         szSettings->Add(new wxButton(this, ID_Stretch, _("stretch"), wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT),
             0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
-        szSettings->Add(new wxCheckBox(this, ID_Smooth, _("smooth")), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
-        szSettings->Add(new wxCheckBox(this, ID_GammaCheckBox, _("gamma")), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
-        szSettings->Add(new wxSpinCtrlDouble(this, ID_GammaCtrl, wxEmptyString, wxDefaultPosition, wxDefaultSize,
+        szSettings->Add(m_SmoothCtrl = new wxCheckBox(this, ID_Smooth, _("smooth")), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
+        szSettings->Add(m_GammaToggleCtrl = new wxCheckBox(this, ID_GammaCheckBox, _("gamma")), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
+        szSettings->Add(m_GammaCtrl = new wxSpinCtrlDouble(this, ID_GammaCtrl, wxEmptyString, wxDefaultPosition, wxDefaultSize,
                 wxSP_ARROW_KEYS, 0.05, 10.0, 1.0, 0.05), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
 
         szSettings->AddStretchSpacer(1);
-        auto *btnSettings = new wxButton(this, ID_Configure, _(L"\u2699 conf"), wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT); // \u2699 = gear symbol
+        auto* btnSettings = new wxButton(this, ID_Configure, _(L"\u2699 conf"), wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT); // \u2699 = gear symbol
         btnSettings->Bind(wxEVT_BUTTON,
-            [this](wxCommandEvent &evt)
+            [this](wxCommandEvent&)
             {
                 c_ToneCurveWindowSettingsDialog dlg(this);
                 if (dlg.ShowModal() == wxID_OK) { Refresh(); }
@@ -463,11 +463,11 @@ c_ToneCurveEditor::c_ToneCurveEditor(wxWindow *parent, c_ToneCurve *curve, int i
     SetSizer(szTop);
     SetToolTips();
 
-    ((wxCheckBox *)FindWindowById(ID_Smooth, this))->SetValue(m_Curve->GetSmooth());
+    m_SmoothCtrl->SetValue(m_Curve->GetSmooth());
 
     m_MouseOps.dragging = false;
 
-    ((wxToggleButton *)FindWindowById(ID_Logarithmic, this))->SetValue(logarithmicHistogram);
+    m_LogarithmicCtrl->SetValue(logarithmicHistogram);
 
     m_CurveArea->SetCursor(*wxCROSS_CURSOR);
     Fit();

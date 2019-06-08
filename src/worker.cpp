@@ -25,26 +25,26 @@ File description:
 #include "worker.h"
 #include "logging.h"
 
-wxThread::ExitCode c_WorkerThread::Entry()
+wxThread::ExitCode IWorkerThread::Entry()
 {
-    Log::Print(wxString::Format("Worker thread (id = %d): started work\n", this->threadId));
+    Log::Print(wxString::Format("Worker thread (id = %d): started work\n", m_Params.threadId));
     DoWork();
-    Log::Print(wxString::Format("Worker thread (id = %d): work finished\n", this->threadId));
+    Log::Print(wxString::Format("Worker thread (id = %d): work finished\n", m_Params.threadId));
     return 0;
 }
 
-void c_WorkerThread::SendMessageToParent(int messageId, WorkerEventPayload_t &payload)
+void IWorkerThread::SendMessageToParent(int messageId, WorkerEventPayload& payload)
 {
-    wxThreadEvent *event = new wxThreadEvent(wxEVT_THREAD, messageId);
-    payload.taskId = taskId;
+    auto* event = new wxThreadEvent(wxEVT_THREAD, messageId);
+    payload.taskId = m_Params.taskId;
     event->SetPayload(payload);
-    event->SetInt(threadId);
+    event->SetInt(m_Params.threadId);
 
     // Send the event to the main window (i.e. the main thread)
-    parent.GetEventHandler()->QueueEvent(event);
+    m_Params.parent.GetEventHandler()->QueueEvent(event);
 }
 
-bool c_WorkerThread::IsAbortRequested()
+bool IWorkerThread::IsAbortRequested()
 {
     if (TestDestroy() ||
         // Check if the main thread has called Post() on the semaphore
@@ -60,19 +60,19 @@ bool c_WorkerThread::IsAbortRequested()
 
 }
 
-c_WorkerThread::~c_WorkerThread()
+IWorkerThread::~IWorkerThread()
 {
-    delete input;
-    WorkerEventPayload_t payload;
+    WorkerEventPayload payload;
     payload.completionStatus = threadAborted ? CompletionStatus::ABORTED : CompletionStatus::COMPLETED;
     SendMessageToParent(ID_FINISHED_PROCESSING, payload);
-    { wxCriticalSectionLocker lock(guard);
-        *instancePtr = 0;
+    {
+        auto lock = m_Params.instancePtr.Lock();
+        lock.Get() = nullptr;
     }
 }
 
 /// Signals the thread to finish processing ASAP
-void c_WorkerThread::AbortProcessing()
+void IWorkerThread::AbortProcessing()
 {
     abortRequested.Post();
     threadAborted = true;

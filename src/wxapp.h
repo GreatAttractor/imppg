@@ -31,14 +31,14 @@ File description:
 
 class c_MyApp: public wxApp
 {
-    std::ofstream *m_LogStream;
-    wxFileConfig *m_AppConfig;
+    std::ofstream* m_LogStream{nullptr};
+    wxFileConfig* m_AppConfig{nullptr};
 
     wxLanguage m_Language; ///< Language specified by user
     wxLocale m_Locale; ///< Locale to be used
 
-    virtual bool OnInit();
-    virtual int OnExit();
+    bool OnInit() override;
+    int OnExit() override;
 
 public:
     /// Returns current UI language

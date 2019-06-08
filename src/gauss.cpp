@@ -96,7 +96,7 @@ void GaussianBlur1D(
     float sigma ///< Gaussian sigma
     )
 {
-    int radius = (int)ceilf(3*sigma);
+    int radius = static_cast<int>(ceilf(3*sigma));
     std::unique_ptr<float[]> kernel(new float[2*radius-1]);
     CalculateGaussianKernelProjection(kernel.get(), radius, sigma, true);
 

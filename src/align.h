@@ -28,7 +28,7 @@ File description:
 #include <wx/string.h>
 #include <wx/arrstr.h>
 
-enum class CropMode
+enum class CropMode: int
 {
     CROP_TO_INTERSECTION = 0,
     PAD_TO_BOUNDING_BOX = 1,
@@ -36,7 +36,7 @@ enum class CropMode
     NUM // this has to be the last element
 };
 
-enum class AlignmentMethod
+enum class AlignmentMethod: int
 {
     PHASE_CORRELATION = 0,
     LIMB = 1,
@@ -83,11 +83,12 @@ enum
 };
 
 /// Displays the image alignment parameters dialog and receives parameters' values. Returns 'true' if the user clicks "Start processing".
-bool GetAlignmentParameters(wxWindow *parent,
-                           AlignmentParameters_t &params ///< Receives alignment parameters
-                           );
+bool GetAlignmentParameters(
+    wxWindow* parent,
+    AlignmentParameters_t& params ///< Receives alignment parameters
+);
 
 /// Displays the alignment progress dialog and starts processing. Returns 'true' if processing completes.
-bool AlignImages(wxWindow *parent, AlignmentParameters_t &params);
+bool AlignImages(wxWindow* parent, AlignmentParameters_t& params);
 
 #endif // IMPPG_IMAGE_ALIGNMENT_HEADER

@@ -46,14 +46,14 @@ namespace Configuration
     /// Number of tone curve and histogram segments to draw
     const unsigned DEFAULT_TONE_CURVE_EDITOR_NUM_DRAW_SEGMENTS = 512;
 
-    void Initialize(wxFileConfig *appConfig);
+    void Initialize(wxFileConfig* appConfig);
 
     /// Returns maximum frequency (in Hz) of issuing new processing requests by the tone curve editor and numerical control sliders (0 means: no limit)
     int GetMaxProcessingRequestsPerSec();
 
     /// Returns a list of the most recently used saved/loaded settings files
     wxArrayString GetMruSettings();
-    void StoreMruSettings(const wxArrayString &settings);
+    void StoreMruSettings(const wxArrayString& settings);
     void EmptyMruList();
 
     extern c_Property<wxString> FileOpenPath;

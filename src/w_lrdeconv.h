@@ -26,9 +26,9 @@ File description:
 
 #include "worker.h"
 
-class c_LucyRichardsonThread : public c_WorkerThread
+class c_LucyRichardsonThread : public IWorkerThread
 {
-    virtual void DoWork();
+    void DoWork() override;
 
     float lrSigma;
     int numIterations;
@@ -44,21 +44,14 @@ class c_LucyRichardsonThread : public c_WorkerThread
 
 public:
     c_LucyRichardsonThread(
-        wxWindow &parent,             ///< Object to receive notification messages from this worker thread
-        wxCriticalSection &guard,     ///< Critical section protecting access to 'instancePtr'
-        c_WorkerThread **instancePtr, ///< Pointer to pointer to this thread, set to null when execution finishes
-        int taskId,                   ///< Id of task (will be included in every message)
-        c_ImageBufferView *input,     ///< Image fragment to process; object will be destroyed when thread ends
-        IImageBuffer &output,         ///< Output image
-        unsigned threadId,            ///< Unique thread id (not reused by new threads)
-
-        float lrSigma,                ///< Lucy-Richardson deconvolution Gaussian kernel's sigma
-        int numIterations,            ///< Number of L-R deconvolution iterations
-        bool deringing,               ///< If 'true', ringing around a specified threshold of brightness will be reduced
+        WorkerParameters&& params,
+        float lrSigma,                  ///< Lucy-Richardson deconvolution Gaussian kernel's sigma
+        int numIterations,              ///< Number of L-R deconvolution iterations
+        bool deringing,                 ///< If 'true', ringing around a specified threshold of brightness will be reduced
         float deringingThreshold,
         bool deringingGreaterThan,
         float deringingSigma
-        );
+    );
 };
 
 #endif

@@ -5,7 +5,7 @@
 #include "common.h"
 
 /// Checks if a window is visible on any display; if not, sets its size and position to default
-void FixWindowPosition(wxWindow &wnd)
+void FixWindowPosition(wxWindow& wnd)
 {
     // The program could have been previously launched on multi-monitor setup
     // and the window moved to one of monitors which is no longer connected.

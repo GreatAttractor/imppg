@@ -28,7 +28,7 @@ File description:
 #include "appconfig.h"
 #include "common.h"
 
-static bool wxFromString(const wxString &string, wxRect *rect)
+static bool wxFromString(const wxString& string, wxRect* rect)
 {
     std::stringstream parser;
     parser << string;
@@ -45,7 +45,7 @@ static bool wxFromString(const wxString &string, wxRect *rect)
     return !parser.fail();
 }
 
-static wxString wxToString(const wxRect &r)
+static wxString wxToString(const wxRect& r)
 {
     return wxString::Format("%d;%d;%d;%d;", r.x, r.y, r.width, r.height);
 }
@@ -53,62 +53,62 @@ static wxString wxToString(const wxRect &r)
 namespace Configuration
 {
 
-wxFileConfig *appConfig;
+wxFileConfig* appConfig{nullptr};
 
 namespace Keys
 {
 #define UserInterfaceGroup "/UserInterface"
 
-    const char *FileOpenPath =           UserInterfaceGroup"/FileOpenPath";
-    const char *FileSavePath =           UserInterfaceGroup"/FileSavePath";
-    const char *MainWindowPosSize =      UserInterfaceGroup"/MainWindowPosSize";
-    const char *MainWindowMaximized =    UserInterfaceGroup"/MainWindowMaximized";
-    const char *ToneCurveEditorPosSize = UserInterfaceGroup"/ToneCurveEditorPosSize";
-    const char *ToneCurveEditorVisible = UserInterfaceGroup"/ToneCurveEditorVisible";
-    const char *SaveSettingsPath =       UserInterfaceGroup"/SaveSettingsPath";
-    const char *LoadSettingsPath =       UserInterfaceGroup"/LoadSettingsPath";
-    const char *ProcessingPanelWidth =   UserInterfaceGroup"/ProcessingPanelWidth";
-    const char *ToolIconSize =           UserInterfaceGroup"/ToolIconSize";
-    const char *ToneCurveEditorNumDrawSegments = UserInterfaceGroup"/ToneCurveEditorNumDrawSegments";
-    const char *ToneCurveEditorColors =  UserInterfaceGroup"/ToneCurveEditorColors";
+    const char* FileOpenPath =           UserInterfaceGroup"/FileOpenPath";
+    const char* FileSavePath =           UserInterfaceGroup"/FileSavePath";
+    const char* MainWindowPosSize =      UserInterfaceGroup"/MainWindowPosSize";
+    const char* MainWindowMaximized =    UserInterfaceGroup"/MainWindowMaximized";
+    const char* ToneCurveEditorPosSize = UserInterfaceGroup"/ToneCurveEditorPosSize";
+    const char* ToneCurveEditorVisible = UserInterfaceGroup"/ToneCurveEditorVisible";
+    const char* SaveSettingsPath =       UserInterfaceGroup"/SaveSettingsPath";
+    const char* LoadSettingsPath =       UserInterfaceGroup"/LoadSettingsPath";
+    const char* ProcessingPanelWidth =   UserInterfaceGroup"/ProcessingPanelWidth";
+    const char* ToolIconSize =           UserInterfaceGroup"/ToolIconSize";
+    const char* ToneCurveEditorNumDrawSegments = UserInterfaceGroup"/ToneCurveEditorNumDrawSegments";
+    const char* ToneCurveEditorColors =  UserInterfaceGroup"/ToneCurveEditorColors";
 
-    const char *ToneCurveEditor_CurveColor                 = UserInterfaceGroup"/ToneCurveEditor_CurveColor";
-    const char *ToneCurveEditor_BackgroundColor            = UserInterfaceGroup"/ToneCurveEditor_BackgroundColor";
-    const char *ToneCurveEditor_CurvePointColor            = UserInterfaceGroup"/ToneCurveEditor_CurvePointColor";
-    const char *ToneCurveEditor_SelectedCurvePointColor    = UserInterfaceGroup"/ToneCurveEditor_SelectedCurvePointColor";
-    const char *ToneCurveEditor_HistogramColor             = UserInterfaceGroup"/ToneCurveEditor_HistogramColor";
-    const char *ToneCurveEditor_CurveWidth                 = UserInterfaceGroup"/ToneCurveEditor_CurveWidth";
-    const char *ToneCurveEditor_CurvePointSize             = UserInterfaceGroup"/ToneCurveEditor_CurvePointSize";
-    const char *ToneCurveSettingsDialogPosSize             = UserInterfaceGroup"/ToneCurveSettingsDialogPosSize";
+    const char* ToneCurveEditor_CurveColor                 = UserInterfaceGroup"/ToneCurveEditor_CurveColor";
+    const char* ToneCurveEditor_BackgroundColor            = UserInterfaceGroup"/ToneCurveEditor_BackgroundColor";
+    const char* ToneCurveEditor_CurvePointColor            = UserInterfaceGroup"/ToneCurveEditor_CurvePointColor";
+    const char* ToneCurveEditor_SelectedCurvePointColor    = UserInterfaceGroup"/ToneCurveEditor_SelectedCurvePointColor";
+    const char* ToneCurveEditor_HistogramColor             = UserInterfaceGroup"/ToneCurveEditor_HistogramColor";
+    const char* ToneCurveEditor_CurveWidth                 = UserInterfaceGroup"/ToneCurveEditor_CurveWidth";
+    const char* ToneCurveEditor_CurvePointSize             = UserInterfaceGroup"/ToneCurveEditor_CurvePointSize";
+    const char* ToneCurveSettingsDialogPosSize             = UserInterfaceGroup"/ToneCurveSettingsDialogPosSize";
 
-    const char *BatchFileOpenPath =          UserInterfaceGroup"/BatchFilesOpenPath";
-    const char *BatchLoadSettingsPath =      UserInterfaceGroup"/BatchLoadSettingsPath";
-    const char *BatchOutputPath =            UserInterfaceGroup"/BatchOutputPath";
-    const char *BatchDialogPosSize =         UserInterfaceGroup"/BatchDlgPosSize";
-    const char *BatchProgressDialogPosSize = UserInterfaceGroup"/BatchProgressDlgPosSize";
-    const char *BatchOutputFormat =          UserInterfaceGroup"/BatchOutputFormat";
+    const char* BatchFileOpenPath =          UserInterfaceGroup"/BatchFilesOpenPath";
+    const char* BatchLoadSettingsPath =      UserInterfaceGroup"/BatchLoadSettingsPath";
+    const char* BatchOutputPath =            UserInterfaceGroup"/BatchOutputPath";
+    const char* BatchDialogPosSize =         UserInterfaceGroup"/BatchDlgPosSize";
+    const char* BatchProgressDialogPosSize = UserInterfaceGroup"/BatchProgressDlgPosSize";
+    const char* BatchOutputFormat =          UserInterfaceGroup"/BatchOutputFormat";
 
 
-    const char *AlignInputPath =             UserInterfaceGroup"/AlignInputPath";
-    const char *AlignOutputPath =            UserInterfaceGroup"/AlignOutputPath";
-    const char *AlignProgressDialogPosSize = UserInterfaceGroup"/AlignProgressDlgPosSize";
-    const char *AlignParamsDialogPosSize =   UserInterfaceGroup"/AlignParamsDlgPosSize";
+    const char* AlignInputPath =             UserInterfaceGroup"/AlignInputPath";
+    const char* AlignOutputPath =            UserInterfaceGroup"/AlignOutputPath";
+    const char* AlignProgressDialogPosSize = UserInterfaceGroup"/AlignProgressDlgPosSize";
+    const char* AlignParamsDialogPosSize =   UserInterfaceGroup"/AlignParamsDlgPosSize";
 
     /// Indicates maximum frequency (in Hz) of issuing new processing requests by tone curve editor and numerical control sliders
-    const char *MAX_PROCESSING_REQUESTS_PER_SEC =  UserInterfaceGroup"/MaxProcessingRequestsPerSecond";
+    const char* MAX_PROCESSING_REQUESTS_PER_SEC =  UserInterfaceGroup"/MaxProcessingRequestsPerSecond";
 
     /// Standard language code (e.g. "en", "pl") or Configuration::USE_DEFAULT_SYS_LANG for the system default
-    const char *UiLanguage = UserInterfaceGroup"/Language";
+    const char* UiLanguage = UserInterfaceGroup"/Language";
 
     /// Histogram values in logarithmic scale
-    const char *LogHistogram =   UserInterfaceGroup"/LogHistogram";
+    const char* LogHistogram =   UserInterfaceGroup"/LogHistogram";
 
     /// Most recently used settings files
-    const char *MruSettingsGroup = "/MostRecentSettings";
-    const char *MruSettingsItem = "item";
+    const char* MruSettingsGroup = "/MostRecentSettings";
+    const char* MruSettingsItem = "item";
 }
 
-void Initialize(wxFileConfig *_appConfig)
+void Initialize(wxFileConfig* _appConfig)
 {
     appConfig = _appConfig;
 }
@@ -116,7 +116,7 @@ void Initialize(wxFileConfig *_appConfig)
 /// Returns maximum frequency (in Hz) of issuing new processing requests by the tone curve editor and numerical control sliders (0 means: no limit)
 int GetMaxProcessingRequestsPerSec()
 {
-    int val = (int)appConfig->ReadLong(Keys::MAX_PROCESSING_REQUESTS_PER_SEC, DEFAULT_MAX_PROCESSING_REQUESTS_PER_SEC);
+    int val = static_cast<int>(appConfig->ReadLong(Keys::MAX_PROCESSING_REQUESTS_PER_SEC, DEFAULT_MAX_PROCESSING_REQUESTS_PER_SEC));
     if (val < 0)
         val = DEFAULT_MAX_PROCESSING_REQUESTS_PER_SEC;
     if (val == DEFAULT_MAX_PROCESSING_REQUESTS_PER_SEC)
@@ -174,9 +174,9 @@ PROPERTY_RECT(ToneCurveSettingsDialogPosSize);
 c_Property<OutputFormat> BatchOutputFormat(
     []()
     {
-        long result = appConfig->ReadLong(Keys::BatchOutputFormat, static_cast<long>(OutputFormat::BMP_MONO_8));
+        long result = appConfig->ReadLong(Keys::BatchOutputFormat, static_cast<long>(OutputFormat::BMP_8));
         if (result < 0 || result >= static_cast<long>(OutputFormat::LAST))
-            return OutputFormat::BMP_MONO_8;
+            return OutputFormat::BMP_8;
 
         return static_cast<OutputFormat>(result);
     },
@@ -214,36 +214,36 @@ c_Property<ToneCurveEditorColors> ToneCurveColors(
         [](const wxColour &c) { appConfig->Write(Keys::Name, c); }                                        \
     );                                                                                                    \
 
-PROPERTY_TCRV_COLOR(ToneCurveEditor_CurveColor, Curve);
-PROPERTY_TCRV_COLOR(ToneCurveEditor_BackgroundColor, CurveBackground);
-PROPERTY_TCRV_COLOR(ToneCurveEditor_CurvePointColor, CurvePoint);
-PROPERTY_TCRV_COLOR(ToneCurveEditor_SelectedCurvePointColor, SelectedCurvePoint);
-PROPERTY_TCRV_COLOR(ToneCurveEditor_HistogramColor, Histogram);
+PROPERTY_TCRV_COLOR(ToneCurveEditor_CurveColor, Curve)
+PROPERTY_TCRV_COLOR(ToneCurveEditor_BackgroundColor, CurveBackground)
+PROPERTY_TCRV_COLOR(ToneCurveEditor_CurvePointColor, CurvePoint)
+PROPERTY_TCRV_COLOR(ToneCurveEditor_SelectedCurvePointColor, SelectedCurvePoint)
+PROPERTY_TCRV_COLOR(ToneCurveEditor_HistogramColor, Histogram)
 
 c_Property<unsigned> ToneCurveEditor_CurveWidth(
-    [](){ return (unsigned)appConfig->ReadLong(Keys::ToneCurveEditor_CurveWidth, 1); },
+    [](){ return static_cast<unsigned>(appConfig->ReadLong(Keys::ToneCurveEditor_CurveWidth, 1)); },
     [](const unsigned &u) { appConfig->Write(Keys::ToneCurveEditor_CurveWidth, u); }
 );
 
 c_Property<unsigned> ToneCurveEditor_CurvePointSize(
-    [](){ return (unsigned)appConfig->ReadLong(Keys::ToneCurveEditor_CurvePointSize, 4); },
+    [](){ return static_cast<unsigned>(appConfig->ReadLong(Keys::ToneCurveEditor_CurvePointSize, 4)); },
     [](const unsigned &u) { appConfig->Write(Keys::ToneCurveEditor_CurvePointSize, u); }
 );
 
 c_Property<int> ProcessingPanelWidth(
-    [](){ return (int)appConfig->ReadLong(Keys::ProcessingPanelWidth, -1); },
+    [](){ return static_cast<int>(appConfig->ReadLong(Keys::ProcessingPanelWidth, -1)); },
     [](const int &width) { appConfig->Write(Keys::ProcessingPanelWidth, width); }
 );
 
 c_Property<unsigned> ToolIconSize(
-    [](){ return (unsigned)appConfig->ReadLong(Keys::ToolIconSize, DEFAULT_TOOL_ICON_SIZE); },
+    [](){ return static_cast<unsigned>(appConfig->ReadLong(Keys::ToolIconSize, DEFAULT_TOOL_ICON_SIZE)); },
     [](const unsigned &ts) { appConfig->Write(Keys::ToolIconSize, ts); }
 );
 
 c_Property<unsigned> ToneCurveEditorNumDrawSegments(
     []()
     {
-        unsigned num = (unsigned)appConfig->ReadLong(Keys::ToneCurveEditorNumDrawSegments, DEFAULT_TONE_CURVE_EDITOR_NUM_DRAW_SEGMENTS);
+        unsigned num = static_cast<unsigned>(appConfig->ReadLong(Keys::ToneCurveEditorNumDrawSegments, DEFAULT_TONE_CURVE_EDITOR_NUM_DRAW_SEGMENTS));
         if (DEFAULT_TONE_CURVE_EDITOR_NUM_DRAW_SEGMENTS == num)
             appConfig->Write(Keys::ToneCurveEditorNumDrawSegments, num);
         return num;
@@ -254,11 +254,11 @@ c_Property<unsigned> ToneCurveEditorNumDrawSegments(
 /// Returns a list of the most recently used saved/loaded settings files
 wxArrayString GetMruSettings()
 {
-    int index = 1;
+    size_t index = 1;
     wxString val;
     wxArrayString result;
     while (index <= MAX_MRU_SETTINGS_ITEMS
-           && appConfig->Read(wxString::Format("%s/%s%d", Keys::MruSettingsGroup, Keys::MruSettingsItem, index), &val))
+           && appConfig->Read(wxString::Format("%s/%s%d", Keys::MruSettingsGroup, Keys::MruSettingsItem, static_cast<int>(index)), &val))
     {
         result.Add(val);
         index++;
@@ -270,7 +270,7 @@ void StoreMruSettings(const wxArrayString &settings)
 {
     appConfig->DeleteGroup(Keys::MruSettingsGroup);
     for (size_t i = 0; i < settings.Count(); i++)
-        appConfig->Write(wxString::Format("%s/%s%d", Keys::MruSettingsGroup, Keys::MruSettingsItem, (int)i+1), settings[i]);
+        appConfig->Write(wxString::Format("%s/%s%d", Keys::MruSettingsGroup, Keys::MruSettingsItem, static_cast<int>(i)+1), settings[i]);
 }
 
 void EmptyMruList()

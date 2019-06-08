@@ -40,18 +40,18 @@ class c_ToneCurveWindowSettingsDialog: public wxDialog
 
     void EndModal(int retCode) override;
 
-    wxPanel *m_PnColors;
-    wxRadioBox *m_RbColorSet;
-    wxColourPickerCtrl *m_CurveColor;
-    wxColourPickerCtrl *m_CurvePointColor;
-    wxColourPickerCtrl *m_SelectedCurvePointColor;
-    wxColourPickerCtrl *m_HistogramColor;
-    wxColourPickerCtrl *m_BackgroundColor;
-    wxSpinCtrl *m_CurveWidth;
-    wxSpinCtrl *m_CurvePointSize;
+    wxPanel* m_PnColors{nullptr};
+    wxRadioBox* m_RbColorSet{nullptr};
+    wxColourPickerCtrl* m_CurveColor{nullptr};
+    wxColourPickerCtrl* m_CurvePointColor{nullptr};
+    wxColourPickerCtrl* m_SelectedCurvePointColor{nullptr};
+    wxColourPickerCtrl* m_HistogramColor{nullptr};
+    wxColourPickerCtrl* m_BackgroundColor{nullptr};
+    wxSpinCtrl* m_CurveWidth{nullptr};
+    wxSpinCtrl* m_CurvePointSize{nullptr};
 
 public:
-    c_ToneCurveWindowSettingsDialog(wxWindow *parent);
+    c_ToneCurveWindowSettingsDialog(wxWindow* parent);
 };
 
 #endif // IMPPG_TCRV_SETTINGS_DIALOG_HEADER

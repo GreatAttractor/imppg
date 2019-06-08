@@ -55,8 +55,8 @@ File description:
 #include "ctrl_ids.h"
 
 
-const char *VERSION_STR = "0.5.4";   ///< Current version
-const char *DATE_STR = "2019-02-02"; ///< Release date of the current version
+const char* VERSION_STR = "0.5.4";   ///< Current version
+const char* DATE_STR = "2019-02-02"; ///< Release date of the current version
 
 #if !defined(_OPENMP)
 int omp_get_num_procs() { return 1; }
@@ -120,7 +120,7 @@ static struct
             return false;
 
         wxFileOffset offset = 0;
-        for (auto i = 0; i < NUM_FRAMES; i++)
+        for (size_t i = 0; i < NUM_FRAMES; i++)
         {
             fstream.SeekI(offset);
 
@@ -148,17 +148,17 @@ class c_AboutDialog: public wxDialog
     static constexpr unsigned ANIM_REPLAY_DELAY_MS = 40;
 
     // Event handlers
-    void OnPaintImgPanel(wxPaintEvent &event);
-    void OnLibrariesClick(wxCommandEvent &event);
-    void OnTimer(wxTimerEvent &event);
+    void OnPaintImgPanel(wxPaintEvent& event);
+    void OnLibrariesClick(wxCommandEvent& event);
+    void OnTimer(wxTimerEvent& event);
 
     wxTimer timer;
 
 public:
-    c_AboutDialog(wxWindow *parent);
+    c_AboutDialog(wxWindow* parent);
 };
 
-void c_AboutDialog::OnLibrariesClick(wxCommandEvent &event)
+void c_AboutDialog::OnLibrariesClick(wxCommandEvent&)
 {
     wxString formatStr = "%s\n\n"    // "Libraries" - a localized string
                          "%s\n"      // version of wxWidgets
@@ -191,7 +191,7 @@ void c_AboutDialog::OnLibrariesClick(wxCommandEvent &event)
         _("Libraries"), wxOK, this);
 }
 
-void c_AboutDialog::OnTimer(wxTimerEvent &event)
+void c_AboutDialog::OnTimer(wxTimerEvent&)
 {
     this->Refresh();
     Animation.frameIdx = (Animation.frameIdx + 1) % NUM_FRAMES;
@@ -202,7 +202,7 @@ void c_AboutDialog::OnTimer(wxTimerEvent &event)
 
 }
 
-c_AboutDialog::c_AboutDialog(wxWindow *parent)
+c_AboutDialog::c_AboutDialog(wxWindow* parent)
 : wxDialog(parent, wxID_ANY, _("About ImPPG"))
 {
     SetBackgroundColour(*wxBLACK);
@@ -218,16 +218,16 @@ c_AboutDialog::c_AboutDialog(wxWindow *parent)
         SetMinClientSize(Animation.frameSize);
     }
 
-    wxSizer *szTop = new wxBoxSizer(wxHORIZONTAL);
+    wxSizer* szTop = new wxBoxSizer(wxHORIZONTAL);
     szTop->AddStretchSpacer(1);
 
-    wxSizer *szContents = new wxBoxSizer(wxVERTICAL);
+    wxSizer* szContents = new wxBoxSizer(wxVERTICAL);
     szContents->AddStretchSpacer(1);
 
     SetBackgroundStyle(wxBG_STYLE_PAINT);
 
     Bind(wxEVT_PAINT,
-        [this](wxPaintEvent &evt)
+        [this](wxPaintEvent&)
         {
             wxAutoBufferedPaintDC dc(this);
             if (Animation.valid)
@@ -243,12 +243,12 @@ c_AboutDialog::c_AboutDialog(wxWindow *parent)
         },
         wxID_ANY);
 
-    wxStaticText *title = new wxStaticText(this, wxID_ANY, "ImPPG");
+    wxStaticText* title = new wxStaticText(this, wxID_ANY, "ImPPG");
     title->SetFont(title->GetFont().MakeLarger().MakeBold());
     title->SetForegroundColour(*wxWHITE);
     szContents->Add(title, 0, wxALIGN_LEFT | (wxLEFT | wxRIGHT | wxTOP), 5);
 
-    wxStaticText *info = new wxStaticText(this, wxID_ANY,
+    wxStaticText* info = new wxStaticText(this, wxID_ANY,
         wxString::Format(wxString(L"Copyright \u00A9 2015-2019 Filip Szczerek (ga.software@yahoo.com)\n") +
                          _("version %s ") + " (%s)\n\n" +
 
@@ -258,12 +258,12 @@ c_AboutDialog::c_AboutDialog(wxWindow *parent)
     info->SetForegroundColour(*wxWHITE);
     szContents->Add(info, 0, wxALIGN_LEFT | wxALL, 5);
 
-    wxSizer *szSysInfo = new wxBoxSizer(wxHORIZONTAL);
-    wxStaticText *cpuInfo = new wxStaticText(this, wxID_ANY, wxString::Format(_("Using %d logical CPU(s)."), omp_get_num_procs()));
+    wxSizer* szSysInfo = new wxBoxSizer(wxHORIZONTAL);
+    wxStaticText* cpuInfo = new wxStaticText(this, wxID_ANY, wxString::Format(_("Using %d logical CPU(s)."), omp_get_num_procs()));
     cpuInfo->SetForegroundColour(*wxWHITE);
     szSysInfo->Add(cpuInfo, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
-    wxButton *btnLibs = new wxButton(this, ID_Libraries, _("Libraries..."), wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT);
+    wxButton* btnLibs = new wxButton(this, ID_Libraries, _("Libraries..."), wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT);
     btnLibs->SetForegroundColour(*wxWHITE);
     btnLibs->SetBackgroundColour(*wxBLACK);
     btnLibs->Bind(wxEVT_BUTTON, &c_AboutDialog::OnLibrariesClick, this);
@@ -282,10 +282,10 @@ c_AboutDialog::c_AboutDialog(wxWindow *parent)
 
     if (Animation.valid && sizerMinWidth > Animation.frameSize.GetWidth()/2)
     {
-        for (wxBitmap &bmp: Animation.frames)
+        for (wxBitmap& bmp: Animation.frames)
         {
-            bmp = wxBitmap(bmp.ConvertToImage().Scale(2*sizerMinWidth,
-                                                      2*sizerMinWidth*bmp.GetHeight() / bmp.GetWidth(),
+            bmp = wxBitmap(bmp.ConvertToImage().Scale(2 * sizerMinWidth,
+                                                      2 * sizerMinWidth * bmp.GetHeight() / bmp.GetWidth(),
                                                       wxIMAGE_QUALITY_BICUBIC));
         }
         Animation.frameSize = Animation.frames[0].GetSize();
@@ -303,25 +303,26 @@ c_AboutDialog::c_AboutDialog(wxWindow *parent)
     if (parent)
         SetPosition(
           wxPoint(parent->GetPosition().x + (parent->GetSize().GetWidth() - this->GetSize().GetWidth())/2,
-                  parent->GetPosition().y + (parent->GetSize().GetHeight() - this->GetSize().GetHeight())/2));
+                  parent->GetPosition().y + (parent->GetSize().GetHeight() - this->GetSize().GetHeight())/2)
+        );
 
 
     for (size_t i = 0; i < GetChildren().GetCount(); i++)
     {
         GetChildren()[i]->Bind(wxEVT_KEY_DOWN,
-                               [this](wxKeyEvent &event)
+                               [this](wxKeyEvent& event)
                                {
                                     if (event.GetKeyCode() == WXK_ESCAPE)
                                         Close();
                                });
 
         if (GetChildren()[i]->GetId() != ID_Libraries)
-            GetChildren()[i]->Bind(wxEVT_LEFT_DOWN, [this](wxMouseEvent &event) { Close(); });
+            GetChildren()[i]->Bind(wxEVT_LEFT_DOWN, [this](wxMouseEvent&) { Close(); });
     }
 
-    Bind(wxEVT_LEFT_DOWN, [this](wxMouseEvent &event) { Close(); });
+    Bind(wxEVT_LEFT_DOWN, [this](wxMouseEvent&) { Close(); });
 }
-void ShowAboutDialog(wxWindow *parent)
+void ShowAboutDialog(wxWindow* parent)
 {
     c_AboutDialog aboutDlg(parent);
     aboutDlg.ShowModal();

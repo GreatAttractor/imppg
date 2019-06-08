@@ -27,25 +27,25 @@ File description:
 #include <wx/translation.h>
 
 // Filter string used by the File Open (image) dialog
-extern const char *INPUT_FILE_FILTERS;
+extern const char* INPUT_FILE_FILTERS;
 
 /// Supported output file formats
 enum class OutputFormat
 {
 #if USE_FREEIMAGE
 
-    BMP_MONO_8 = 0,    ///< 8-bit mono BMP
-    PNG_MONO_8,        ///< 8-bit mono PNG
-    TIFF_MONO_8_LZW,   ///< 8-bit mono TIFF, LZW compression
-    TIFF_MONO_16,      ///< 16-bit mono TIFF, no compression
-    TIFF_MONO_16_ZIP,  ///< 16-bit mono TIFF, ZIP (Deflate) compression
-    TIFF_MONO_32F,     ///< 32-bit floating-point mono TIFF, no compression
-    TIFF_MONO_32F_ZIP, ///< 32-bit floating-point mono TIFF, ZIP (Deflate) compression
+    BMP_8 = 0,    ///< 8-bit mono BMP
+    PNG_8,        ///< 8-bit mono PNG
+    TIFF_8_LZW,   ///< 8-bit mono TIFF, LZW compression
+    TIFF_16,      ///< 16-bit mono TIFF, no compression
+    TIFF_16_ZIP,  ///< 16-bit mono TIFF, ZIP (Deflate) compression
+    TIFF_32F,     ///< 32-bit floating-point mono TIFF, no compression
+    TIFF_32F_ZIP, ///< 32-bit floating-point mono TIFF, ZIP (Deflate) compression
 
 #else
 
-    BMP_MONO_8 = 0, ///< 8-bit mono BMP
-    TIFF_MONO_16,   ///< 16-bit mono TIFF, no compression
+    BMP_8 = 0, ///< 8-bit mono BMP
+    TIFF_16,   ///< 16-bit mono TIFF, no compression
 
 #endif
 
@@ -55,10 +55,34 @@ enum class OutputFormat
     FITS_32F,
 #endif
 
-    LAST // this has to be the last element
+    LAST // has to be the last element
 };
 
-std::string GetOutputFormatDescription(OutputFormat fmt, std::string *wildcard = 0);
+enum class OutputBitDepth
+{
+    Uint8,
+    Uint16,
+#if USE_FREEIMAGE || USE_CFITSIO
+    Float32,
+#endif
+    Unchanged
+};
+
+enum class OutputFileType
+{
+    BMP,
+    TIFF,           ///< Uncompressed
+#if USE_FREEIMAGE
+    PNG,
+    TIFF_COMPR_LZW, ///< LZW compression
+    TIFF_COMPR_ZIP, ///< ZIP (Deflate) compression
+#endif
+#if USE_CFITSIO
+    FITS
+#endif
+};
+
+std::string GetOutputFormatDescription(OutputFormat fmt, std::string* wildcard = nullptr);
 
 /// Returns output filters suitable for use in a File Save dialog
 std::string GetOutputFilters();

@@ -43,43 +43,43 @@ const char *INPUT_FILE_FILTERS =
 
 ;
 
-std::string GetOutputFormatDescription(OutputFormat fmt, std::string *wildcard)
+std::string GetOutputFormatDescription(OutputFormat fmt, std::string* wildcard)
 {
     switch (fmt)
     {
-    case OutputFormat::BMP_MONO_8:
+    case OutputFormat::BMP_8:
         if (wildcard)
             *wildcard = "*.bmp";
         return std::string(_("BMP 8-bit"));
 
-    case OutputFormat::TIFF_MONO_16:
+    case OutputFormat::TIFF_16:
         if (wildcard)
             *wildcard = "*.tif";
         return std::string(_("TIFF 16-bit"));
 
 #if (USE_FREEIMAGE)
 
-    case OutputFormat::PNG_MONO_8:
+    case OutputFormat::PNG_8:
         if (wildcard)
             *wildcard = "*.png";
         return std::string(_("PNG 8-bit"));
 
-    case OutputFormat::TIFF_MONO_8_LZW:
+    case OutputFormat::TIFF_8_LZW:
         if (wildcard)
             *wildcard = "*.tif";
         return std::string(_("TIFF 8-bit (LZW compression)"));
 
-    case OutputFormat::TIFF_MONO_16_ZIP:
+    case OutputFormat::TIFF_16_ZIP:
         if (wildcard)
             *wildcard = "*.tif";
         return std::string(_("TIFF 16-bit (ZIP compression)"));
 
-    case OutputFormat::TIFF_MONO_32F:
+    case OutputFormat::TIFF_32F:
         if (wildcard)
             *wildcard = "*.tif";
         return std::string(_("TIFF 32-bit floating-point"));
 
-    case OutputFormat::TIFF_MONO_32F_ZIP:
+    case OutputFormat::TIFF_32F_ZIP:
         if (wildcard)
             *wildcard = "*.tif";
         return std::string(_("TIFF 32-bit floating-point (ZIP compression)"));

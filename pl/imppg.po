@@ -245,8 +245,8 @@ msgstr "Translacja i zapisywanie obrazów wyjściowych..."
 
 #: src/align_progress.cpp:150
 #, c-format
-msgid "Translated and saved image %d/%d."
-msgstr "Dokonano translacji i zapisano obraz %d/%d."
+msgid "Translated and saved image %d/%d.\n"
+msgstr "Dokonano translacji i zapisano obraz %d/%d.\n"
 
 #: src/align_progress.cpp:157
 #, c-format

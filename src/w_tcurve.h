@@ -27,26 +27,19 @@ File description:
 #include "worker.h"
 #include "tcrv.h"
 
-class c_ToneCurveThread: public c_WorkerThread
+class c_ToneCurveThread: public IWorkerThread
 {
-    virtual void DoWork();
+    void DoWork() override;
 
     c_ToneCurve toneCurve;
     bool m_UsePreciseValues;
 
 public:
     c_ToneCurveThread(
-        wxWindow &parent,             ///< Object to receive notification messages from this worker thread
-        wxCriticalSection &guard,     ///< Critical section protecting access to 'instancePtr'
-        c_WorkerThread **instancePtr, ///< Pointer to pointer to this thread, set to null when execution finishes
-        int taskId,                   ///< Id of task (will be included in every message)
-        c_ImageBufferView *input,     ///< Image fragment to process; object will be destroyed when thread ends
-        IImageBuffer &output,         ///< Output image
-        unsigned threadId,            ///< Unique thread id (not reused by new threads)
-
-        const c_ToneCurve &toneCurve,       ///< Tone curve to apply to 'output'; an internal copy will be created
-        bool usePreciseValues         ///< If 'false', the approximated curve's values will be used
-        );
+        WorkerParameters&& params,
+        const c_ToneCurve &toneCurve,   ///< Tone curve to apply to 'output'; an internal copy will be created
+        bool usePreciseValues           ///< If 'false', the approximated curve's values will be used
+    );
 
 };
 

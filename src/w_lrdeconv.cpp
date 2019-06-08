@@ -28,25 +28,16 @@ File description:
 
 
 c_LucyRichardsonThread::c_LucyRichardsonThread(
-    wxWindow &parent,             ///< Object to receive notification messages from this worker thread
-    wxCriticalSection &guard,     ///< Critical section protecting access to 'instancePtr'
-    c_WorkerThread **instancePtr, ///< Pointer to pointer to this thread, set to null when execution finishes
-    int taskId,                   ///< Id of task (will be included in every message)
-    c_ImageBufferView *input,     ///< Image fragment to process; object will be destroyed when thread ends
-    IImageBuffer &output,         ///< Output image
-    unsigned threadId,            ///< Unique thread id (not reused by new threads)
-
+    WorkerParameters&& params,
     float lrSigma,     ///< Lucy-Richardson deconvolution Gaussian kernel's sigma
     int numIterations, ///< Number of L-R deconvolution iterations
     bool deringing,    ///< If 'true', ringing around a specified threshold of brightness will be reduced
     float deringingThreshold,
     bool deringingGreaterThan,
     float deringingSigma
-    )
-    :
-    c_WorkerThread(parent, guard, instancePtr, taskId, input, output, threadId),
-    lrSigma(lrSigma),
-    numIterations(numIterations)
+): IWorkerThread(std::move(params)),
+   lrSigma(lrSigma),
+   numIterations(numIterations)
 {
     m_Deringing.enabled = deringing;
     m_Deringing.threshold = deringingThreshold;
@@ -56,7 +47,7 @@ c_LucyRichardsonThread::c_LucyRichardsonThread(
 
 void c_LucyRichardsonThread::IterationNotification(int iter, int totalIters)
 {
-    WorkerEventPayload_t payload;
+    WorkerEventPayload payload;
     payload.percentageComplete = 100 * iter / totalIters;
     SendMessageToParent(ID_PROCESSING_PROGRESS, payload);
 }
@@ -65,23 +56,21 @@ void c_LucyRichardsonThread::DoWork()
 {
     wxDateTime tstart = wxDateTime::UNow();
 
-    IImageBuffer *preprocessedInput = input;
+    c_ImageBufferView preprocessedInput = m_Params.input;
 
-    c_Image *preprocessedInputImg = 0;
+    std::unique_ptr<c_Image> preprocessedInputImg;
     if (m_Deringing.enabled)
     {
-        preprocessedInputImg = new c_Image(input->GetWidth(), input->GetHeight(), PIX_MONO32F);
-        BlurThresholdVicinity(*input, preprocessedInputImg->GetBuffer(), m_Deringing.threshold, m_Deringing.greaterThan, m_Deringing.sigma);
-        preprocessedInput = &preprocessedInputImg->GetBuffer();
+        preprocessedInputImg = std::make_unique<c_Image>(m_Params.input.GetWidth(), m_Params.input.GetHeight(), PixelFormat::PIX_MONO32F);
+        auto preprocView = c_ImageBufferView(preprocessedInputImg->GetBuffer());
+        BlurThresholdVicinity(m_Params.input, preprocView, m_Deringing.threshold, m_Deringing.greaterThan, m_Deringing.sigma);
+        preprocessedInput = c_ImageBufferView(preprocessedInputImg->GetBuffer());
     }
 
-    LucyRichardsonGaussian(*preprocessedInput, output, numIterations, lrSigma, ConvolutionMethod::AUTO,
+    LucyRichardsonGaussian(preprocessedInput, m_Params.output, numIterations, lrSigma, ConvolutionMethod::AUTO,
         [this](int currentIter, int totalIters) { IterationNotification(currentIter, totalIters); },
         [this]() { return IsAbortRequested(); }
     );
     Log::Print(wxString::Format("L-R deconvolution finished in %s s\n", (wxDateTime::UNow() - tstart).Format("%S.%l")));
-    Clamp((float *)output.GetRow(0), output.GetWidth(), output.GetHeight(), output.GetBytesPerRow());
-
-    if (preprocessedInputImg)
-        delete preprocessedInputImg;
+    Clamp(m_Params.output);
 }

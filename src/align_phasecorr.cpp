@@ -27,9 +27,12 @@ File description:
 #include <wx/arrstr.h>
 #include <wx/string.h>
 #include <wx/filename.h>
+
 #include "align_phasecorr.h"
-#include "image.h"
+#include "common.h"
 #include "fft.h"
+#include "image.h"
+#include "imppg_assert.h"
 #include "logging.h"
 
 /// Returns 0 for x=0, 1 for x=1
@@ -39,7 +42,7 @@ inline float BlackmanWindow(float x)
                 A1 = 9240.0f/18608,
                 A2 = 1430.0f/18608;
 
-    return A0 - A1*cosf(3.1415926535f*x) + A2*cosf(2*3.1415926535f*x);
+    return A0 - A1 * cosf(3.1415926535f*x) + A2 * cosf(2*3.1415926535f*x);
 }
 
 /// Calculates window function (Blackman) and returns its values as a PIX_MONO32F image
@@ -48,7 +51,7 @@ c_Image CalcWindowFunction(
         int wndHeight
 )
 {
-    c_Image result(wndWidth, wndHeight, PIX_MONO32F);
+    c_Image result(wndWidth, wndHeight, PixelFormat::PIX_MONO32F);
 
     // The window function is horizontally and vertically symmetrical,
     // so calculate it only in a quarter of 'buf'
@@ -56,18 +59,18 @@ c_Image CalcWindowFunction(
         for (int x = 0; x < wndWidth/2; x++)
         {
             float value = 0.0f;
-            float dist = SQR((x - wndWidth*0.5f)/(wndWidth*0.5f)) + SQR((y - wndHeight*0.5f)/(wndHeight*0.5f));
+            float dist = SQR((x - wndWidth*0.5f) / (wndWidth*0.5f)) + SQR((y - wndHeight*0.5f) / (wndHeight*0.5f));
             if (dist < 1)
                 value = BlackmanWindow(1.0f - dist);
 
             // upper left
-            ((float *)result.GetRow(y))[x] = value;
+            result.GetRowAs<float>(y)[x] = value;
             // upper right
-            ((float *)result.GetRow(y))[wndWidth-1-x] = value;
+            result.GetRowAs<float>(y)[wndWidth-1-x] = value;
             // lower right
-            ((float *)result.GetRow(wndHeight-1-y))[wndWidth-1-x] = value;
+            result.GetRowAs<float>(wndHeight-1-y)[wndWidth-1-x] = value;
             // lower left
-            ((float *)result.GetRow(wndHeight-1-y))[x] = value;
+            result.GetRowAs<float>(wndHeight-1-y)[x] = value;
         }
 
     return result;
@@ -77,8 +80,8 @@ c_Image CalcWindowFunction(
 FloatPoint_t DetermineImageTranslation(
     unsigned Nwidth,  ///< FFT columns
     unsigned Nheight, ///< FFT rows
-    const std::complex<float> *img1FFT, ///< FFT of the first image (Nwidth*Nheight elements)
-    const std::complex<float> *img2FFT, ///< FFT of the second image (Nwidth*Nheight elements)
+    const std::complex<float>* img1FFT, ///< FFT of the first image (Nwidth*Nheight elements)
+    const std::complex<float>* img2FFT, ///< FFT of the second image (Nwidth*Nheight elements)
     bool subpixelAccuracy ///< If 'true', the translation is determined down to sub-pixel accuracy
 )
 {
@@ -96,14 +99,16 @@ FloatPoint_t DetermineImageTranslation(
     // Using 'operator new[]' (raw memory allocation) instead of new[] to avoid Nwidth*Nheight std::complex constructor calls. All the elements will be assigned to before use.
 
     // Cross-power spectrum
-    std::unique_ptr<std::complex<float>, void (*)(void *)> cps((std::complex<float> *)(operator new[](Nwidth*Nheight * sizeof(std::complex<float>))),
-                                                              operator delete[]);
+    std::unique_ptr<std::complex<float>, BlockDeleter> cps(
+        static_cast<std::complex<float>*>(operator new[](Nwidth * Nheight * sizeof(std::complex<float>)))
+    );
 
     // Cross-correlation
-    std::unique_ptr<std::complex<float>, void (*)(void *)> cc((std::complex<float> *)(operator new[](Nwidth*Nheight * sizeof(std::complex<float>))),
-                                                              operator delete[]);
+    std::unique_ptr<std::complex<float>, BlockDeleter> cc(
+        static_cast<std::complex<float>*>(operator new[](Nwidth * Nheight * sizeof(std::complex<float>)))
+    );
 
-    CalcCrossPowerSpectrum2D(img1FFT, img2FFT, cps.get(), Nwidth*Nheight);
+    CalcCrossPowerSpectrum2D(img1FFT, img2FFT, cps.get(), Nwidth * Nheight);
     CalcFFTinv2D(cps.get(), Nheight, Nwidth, cc.get());
 
     // Find the highest-Re element in cross-correlation array
@@ -145,16 +150,16 @@ FloatPoint_t DetermineImageTranslation(
         #define CLAMPW(k) (((k)+Nwidth)%Nwidth)
         #define CLAMPH(k) (((k)+Nheight)%Nheight)
 
-        float ccXhi = cc.get()[CLAMPW(maxx+1) + maxy*Nwidth].real(),
-              ccXlo = cc.get()[CLAMPW(maxx-1) + maxy*Nwidth].real(),
-              ccYhi = cc.get()[maxx + CLAMPH(maxy+1)*Nwidth].real(),
-              ccYlo = cc.get()[maxx + CLAMPH(maxy-1)*Nwidth].real(),
-              ccPeak = cc.get()[maxx + maxy*Nwidth].real();
+        const float ccXhi = cc.get()[CLAMPW(maxx+1) + maxy*Nwidth].real();
+        const float ccXlo = cc.get()[CLAMPW(maxx-1) + maxy*Nwidth].real();
+        const float ccYhi = cc.get()[maxx + CLAMPH(maxy+1)*Nwidth].real();
+        const float ccYlo = cc.get()[maxx + CLAMPH(maxy-1)*Nwidth].real();
+        const float ccPeak = cc.get()[maxx + maxy*Nwidth].real();
 
         if (ccXhi > ccXlo)
         {
-            float dx1 = ccXhi/(ccXhi + ccPeak),
-                  dx2 = ccXhi/(ccXhi - ccPeak);
+            const float dx1 = ccXhi/(ccXhi + ccPeak);
+            const float dx2 = ccXhi/(ccXhi - ccPeak);
 
             if (dx1 > 0 && dx1 < 1.0f)
                 subdx = dx1;
@@ -163,8 +168,8 @@ FloatPoint_t DetermineImageTranslation(
         }
         else
         {
-            float dx1 = ccXlo/(ccXlo + ccPeak),
-                  dx2 = ccXlo/(ccXlo - ccPeak);
+            const float dx1 = ccXlo/(ccXlo + ccPeak);
+            const float dx2 = ccXlo/(ccXlo - ccPeak);
 
             if (dx1 > 0 && dx1 < 1.0f)
                 subdx = -dx1;
@@ -174,8 +179,8 @@ FloatPoint_t DetermineImageTranslation(
 
         if (ccYhi > ccYlo)
         {
-            float dy1 = ccYhi/(ccYhi + ccPeak),
-                  dy2 = ccYhi/(ccYhi - ccPeak);
+            const float dy1 = ccYhi/(ccYhi + ccPeak);
+            const float dy2 = ccYhi/(ccYhi - ccPeak);
 
             if (dy1 > 0 && dy1 < 1.0f)
                 subdy = dy1;
@@ -184,8 +189,8 @@ FloatPoint_t DetermineImageTranslation(
         }
         else
         {
-            float dy1 = ccYlo/(ccYlo + ccPeak),
-                  dy2 = ccYlo/(ccYlo - ccPeak);
+            const float dy1 = ccYlo/(ccYlo + ccPeak);
+            const float dy2 = ccYlo/(ccYlo - ccPeak);
 
             if (dy1 > 0 && dy1 < 1.0f)
                 subdy = -dy1;
@@ -199,26 +204,28 @@ FloatPoint_t DetermineImageTranslation(
 
 /// Determines translation vector between specified images; the images have to be already multiplied by window function
 FloatPoint_t DetermineTranslationVector(
-    const c_Image &img1, ///< Width and height have to be the same as 'img2' and be powers of two
-    const c_Image &img2  ///< Width and height have to be the same as 'img1' and be powers of two
+    const c_Image& img1, ///< Width and height have to be the same as 'img2' and be powers of two
+    const c_Image& img2  ///< Width and height have to be the same as 'img1' and be powers of two
 )
 {
     // For details of this function's operation see comments in 'DetermineTranslationVectors()'
 
-    assert(img1.GetWidth() == img2.GetWidth());
-    assert(img1.GetHeight() == img2.GetHeight());
+    IMPPG_ASSERT(img1.GetWidth() == img2.GetWidth());
+    IMPPG_ASSERT(img1.GetHeight() == img2.GetHeight());
 
-    int width = img1.GetWidth(),
-        height = img1.GetHeight();
+    const int width = img1.GetWidth();
+    const int height = img1.GetHeight();
 
-    std::unique_ptr<std::complex<float>, void (*)(void *)> fft1((std::complex<float> *)(operator new[](width * height * sizeof(std::complex<float>))),
-                                                                 operator delete[]);
+    std::unique_ptr<std::complex<float>, BlockDeleter> fft1(
+        static_cast<std::complex<float>*>(operator new[](width * height * sizeof(std::complex<float>)))
+    );
 
-    std::unique_ptr<std::complex<float>, void (*)(void *)> fft2((std::complex<float> *)(operator new[](width * height * sizeof(std::complex<float>))),
-                                                                operator delete[]);
+    std::unique_ptr<std::complex<float>, BlockDeleter> fft2(
+        static_cast<std::complex<float>*>(operator new[](width * height * sizeof(std::complex<float>)))
+    );
 
-    CalcFFT2D((const float *)img1.GetRow(0), height, width, img1.GetBuffer().GetBytesPerRow(), fft1.get());
-    CalcFFT2D((const float *)img2.GetRow(0), height, width, img2.GetBuffer().GetBytesPerRow(), fft2.get());
+    CalcFFT2D(img1.GetRowAs<float>(0), height, width, img1.GetBuffer().GetBytesPerRow(), fft1.get());
+    CalcFFT2D(img2.GetRowAs<float>(0), height, width, img2.GetBuffer().GetBytesPerRow(), fft2.get());
 
     return DetermineImageTranslation(width, height, fft1.get(), fft2.get(), true);
 }
@@ -227,13 +234,13 @@ FloatPoint_t DetermineTranslationVector(
 bool DetermineTranslationVectors(
         unsigned Nwidth, ///< FFT width
         unsigned Nheight, ///< FFT height
-        const wxArrayString &inputFiles, ///< List of input file names
+        const wxArrayString& inputFiles, ///< List of input file names
         /// Receives list of translation vectors between files in 'inputFiles'; each vector is a translation relative to the first image
-        std::vector<FloatPoint_t> &translation,
+        std::vector<FloatPoint_t>& translation,
         /// Receives the bounding box (within the Nwidth x Nheight working area) of all images after alignment
-        Rectangle_t &bBox,
+        Rectangle_t& bBox,
         // (Note: an untranslated image starts in the working area at (Nwidth - imgWidth)/2, (Nheight - imgHeight)/2)
-        wxString *errorMsg, ///< If not null, receives error message (if any)
+        std::string* errorMsg, ///< If not null, receives error message (if any)
         /// Called after determining an image's translation; argument: index of the current image
         bool subpixelAlignment,
         std::function<void (int, float, float)> progressCallback, ///< Called after determining translation of an image; arguments: image index, trans. vector
@@ -251,28 +258,32 @@ bool DetermineTranslationVectors(
     // lots if high frequencies after FFT), making it very hard or impossible to detect
     // the true peak which corresponds to the actual image translation.
 
-    std::unique_ptr<c_Image> prevImg(new c_Image(Nwidth, Nheight, PIX_MONO32F)); // previous image in the sequence (padded to Nwidth*Nheight pixels and with window func. applied)
-    std::unique_ptr<c_Image> currImg(new c_Image(Nwidth, Nheight, PIX_MONO32F)); // current image in the sequence (padded to Nwidth*Nheight pixels and with window func. applied)
+    std::unique_ptr<c_Image> prevImg(new c_Image(Nwidth, Nheight, PixelFormat::PIX_MONO32F)); // previous image in the sequence (padded to Nwidth*Nheight pixels and with window func. applied)
+    std::unique_ptr<c_Image> currImg(new c_Image(Nwidth, Nheight, PixelFormat::PIX_MONO32F)); // current image in the sequence (padded to Nwidth*Nheight pixels and with window func. applied)
 
     // Use 'operator new[]' instead of new[] to avoid Nwidth*Nheight std::complex constructor calls. All the elements will be assigned to before use.
 
-    std::unique_ptr<std::complex<float>, void (*)(void *)> prevFFT((std::complex<float> *)(operator new[](Nwidth * Nheight * sizeof(std::complex<float>))),
-                                                                   operator delete[]);
+    std::unique_ptr<std::complex<float>, BlockDeleter> prevFFT(
+        static_cast<std::complex<float>*>(operator new[](Nwidth * Nheight * sizeof(std::complex<float>)))
+    );
 
-    std::unique_ptr<std::complex<float>, void (*)(void *)> currFFT((std::complex<float> *)(operator new[](Nwidth * Nheight * sizeof(std::complex<float>))),
-                                                                   operator delete[]);
+    std::unique_ptr<std::complex<float>, BlockDeleter> currFFT(
+        static_cast<std::complex<float>*>(operator new[](Nwidth * Nheight * sizeof(std::complex<float>)))
+    );
 
     // Read the first image and calculate its FFT
     Log::Print(wxString::Format("Loading %s... ", inputFiles[0]));
     std::string localErrorMsg;
-    c_Image src = LoadImageFileAsMono32f(inputFiles[0].ToStdString(), wxFileName(inputFiles[0]).GetExt().Lower().ToStdString(), &localErrorMsg);
+    const auto loadResult = LoadImageFileAsMono32f(inputFiles[0].ToStdString(), wxFileName(inputFiles[0]).GetExt().Lower().ToStdString(), &localErrorMsg);
     Log::Print("done.\n");
-    if (!src.IsValid())
+    if (!loadResult)
     {
         if (errorMsg)
             *errorMsg = localErrorMsg;
         return false;
     }
+
+    const c_Image& src = loadResult.value();
 
     imgWidth = src.GetWidth();
     imgHeight = src.GetHeight();
@@ -284,19 +295,19 @@ bool DetermineTranslationVectors(
     prevImg->Multiply(windowFunc);
 
     Log::Print("Calculating FFT... ");
-    CalcFFT2D((float *)prevImg->GetRow(0), prevImg->GetHeight(), prevImg->GetWidth(), prevImg->GetBuffer().GetBytesPerRow(), prevFFT.get());
+    CalcFFT2D(prevImg->GetRowAs<float>(0), prevImg->GetHeight(), prevImg->GetWidth(), prevImg->GetBuffer().GetBytesPerRow(), prevFFT.get());
     Log::Print("done.");
 
     // Iterate over the remaining images and detect their translation
 
     translation.clear();
-    translation.push_back(FloatPoint_t(0.0f, 0.0f)); // first element corresponds with the first image - no translation
+    translation.push_back(FloatPoint_t(0.0f, 0.0f)); // first element corresponds to the first image - no translation
 
     // Bounding box of all the images after alignment (in coordinates
     // of the Nwidth x Nheight working buffer, where an untranslated image
     // starts at (Nwidth - imgWidth)/2, (Nheight - imgHeight)/2).
     //
-    // Initially corresponds with dimensions and position of the first image.
+    // Initially corresponds to dimensions and position of the first image.
     bBox.x = (Nwidth - imgWidth)/2;
     bBox.y = (Nheight - imgHeight)/2;
 
@@ -308,14 +319,16 @@ bool DetermineTranslationVectors(
         // Read the current (i-th) file
         Log::Print(wxString::Format("Loading %s... ", inputFiles[i]));
         std::string localErrorMsg;
-        c_Image src = LoadImageFileAsMono32f(inputFiles[i].ToStdString(), wxFileName(inputFiles[i]).GetExt().Lower().ToStdString(), &localErrorMsg);
+        const auto loadResult = LoadImageFileAsMono32f(inputFiles[i].ToStdString(), wxFileName(inputFiles[i]).GetExt().Lower().ToStdString(), &localErrorMsg);
         Log::Print("done.\n");
-        if (!src.IsValid())
+        if (!loadResult)
         {
             if (errorMsg)
                 *errorMsg = localErrorMsg;
             return false;
         }
+
+        const c_Image& src = loadResult.value();
 
         imgWidth = src.GetWidth();
         imgHeight = src.GetHeight();
@@ -328,7 +341,7 @@ bool DetermineTranslationVectors(
 
         // Calculate the current image's FFT
         Log::Print("Calculating FFT... ");
-        CalcFFT2D((float *)currImg->GetRow(0), currImg->GetHeight(), currImg->GetWidth(), currImg->GetBuffer().GetBytesPerRow(), currFFT.get());
+        CalcFFT2D(currImg->GetRowAs<float>(0), currImg->GetHeight(), currImg->GetWidth(), currImg->GetBuffer().GetBytesPerRow(), currFFT.get());
         Log::Print("done.\n");
 
         FloatPoint_t T = DetermineImageTranslation(Nwidth, Nheight, prevFFT.get(), currFFT.get(), subpixelAlignment);
@@ -340,11 +353,11 @@ bool DetermineTranslationVectors(
         std::modf(translation.back().x, &intTx);
         std::modf(translation.back().y, &intTy);
 
-        bBox.x = std::min(bBox.x, (int)(Nwidth - imgWidth)/2 - (int)intTx);
-        bBox.y = std::min(bBox.y, (int)(Nheight - imgHeight)/2 - (int)intTy);
+        bBox.x = std::min(bBox.x, static_cast<int>(Nwidth - imgWidth)/2 - static_cast<int>(intTx));
+        bBox.y = std::min(bBox.y, static_cast<int>(Nheight - imgHeight)/2 - static_cast<int>(intTy));
 
-        int newXmax = (Nwidth - imgWidth)/2 - (int)intTx + imgWidth - 1;
-        int newYmax = (Nheight - imgHeight)/2 - (int)intTy + imgHeight - 1;
+        int newXmax = (Nwidth - imgWidth)/2 - static_cast<int>(intTx) + imgWidth - 1;
+        int newYmax = (Nheight - imgHeight)/2 - static_cast<int>(intTy) + imgHeight - 1;
 
         if (newXmax > xmax) xmax = newXmax;
         if (newYmax > ymax) ymax = newYmax;
@@ -377,16 +390,15 @@ unsigned GetClosestGPowerOf2(unsigned n)
         msb++;
     }
 
-    return ((unsigned)1 << msb);
+    return (1U << msb);
 }
 
 /// Returns the set-theoretic intersection, i.e. the largest shared area, of specified images
 Rectangle_t DetermineImageIntersection(
         unsigned Nwidth,    ///< Width of the working buffer (i.e. FFT arrays)
         unsigned Nheight,   ///< Height of the working buffer (i.e. FFT arrays)
-        const Rectangle_t &bBox, ///< Bounding box of all aligned images
-        const std::vector<FloatPoint_t> &translation, ///< Translation vectors relative to the first image
-        const std::vector<Point_t> &imgSize           ///< Image sizes
+        const std::vector<FloatPoint_t>& translation, ///< Translation vectors relative to the first image
+        const std::vector<Point_t>& imgSize           ///< Image sizes
 )
 {
     // Image intersection to be returned. Coordinates are relative to the NxN working buffer,
@@ -406,11 +418,11 @@ Rectangle_t DetermineImageIntersection(
         std::modf(translation[i].x, &intTx);
         std::modf(translation[i].y, &intTy);
 
-        result.x = std::max(result.x, (int)(Nwidth - imgSize[i].x)/2 - (int)intTx);
-        result.y = std::max(result.y, (int)(Nheight - imgSize[i].y)/2 - (int)intTy);
+        result.x = std::max(result.x, static_cast<int>(Nwidth - imgSize[i].x)/2 - static_cast<int>(intTx));
+        result.y = std::max(result.y, static_cast<int>(Nheight - imgSize[i].y)/2 - static_cast<int>(intTy));
 
-        int newXmax = (Nwidth - imgSize[i].x)/2 - (int)intTx + imgSize[i].x - 1;
-        int newYmax = (Nheight - imgSize[i].y)/2 - (int)intTy + imgSize[i].y - 1;
+        int newXmax = (Nwidth - imgSize[i].x)/2 - static_cast<int>(intTx) + imgSize[i].x - 1;
+        int newYmax = (Nheight - imgSize[i].y)/2 - static_cast<int>(intTy) + imgSize[i].y - 1;
 
         if (newXmax < xmax) xmax = newXmax;
         if (newYmax < ymax) ymax = newYmax;

@@ -72,9 +72,9 @@ bool c_MyApp::OnInit()
     wxString requestedLangCode = Configuration::UiLanguage;
     if (requestedLangCode != wxEmptyString && requestedLangCode != Configuration::USE_DEFAULT_SYS_LANG)
     {
-        const wxLanguageInfo *langInfo = wxLocale::FindLanguageInfo(requestedLangCode);
+        const wxLanguageInfo* langInfo = wxLocale::FindLanguageInfo(requestedLangCode);
         if (langInfo)
-            m_Language = (wxLanguage)langInfo->Language;
+            m_Language = static_cast<wxLanguage>(langInfo->Language);
     }
     wxFileTranslationsLoader::AddCatalogLookupPathPrefix(".");
     m_Locale.Init(m_Language);
@@ -93,7 +93,7 @@ bool c_MyApp::OnInit()
 
     Cursors::InitCursors();
     wxToolTip::Enable(true);
-    c_MainWindow *mainWnd = new c_MainWindow();
+    c_MainWindow* mainWnd = new c_MainWindow();
 
     wxIcon appIcon;
     appIcon.CopyFromBitmap(LoadBitmap("imppg-app"));

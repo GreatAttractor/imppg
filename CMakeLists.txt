@@ -54,12 +54,14 @@ add_executable(imppg WIN32
     src/wxapp.cpp
 )
 
+target_compile_options(imppg PRIVATE -Werror -Wall -Wextra -Wpedantic -Wold-style-cast -Wno-parentheses)
+
 if (CMAKE_VERSION VERSION_LESS "3.1")
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
     endif()
 else()
-    set_property(TARGET imppg PROPERTY CXX_STANDARD 11)
+    set_property(TARGET imppg PROPERTY CXX_STANDARD 17)
     set_property(TARGET imppg PROPERTY CXX_STANDARD_REQUIRED ON)
 endif()
 

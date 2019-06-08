@@ -35,11 +35,11 @@ class c_NormalizeDialog: public wxDialog
     double m_MinLevelPercent;
     double m_MaxLevelPercent;
 
-    void OnClose(wxCloseEvent &event);
-    void OnCommandEvent(wxCommandEvent &event);
+    void OnClose(wxCloseEvent& event);
+    void OnCommandEvent(wxCommandEvent& event);
 
 public:
-    c_NormalizeDialog(wxWindow *parent, bool normalizationEnabled, float minLevel, float maxLevel);
+    c_NormalizeDialog(wxWindow* parent, bool normalizationEnabled, float minLevel, float maxLevel);
 
     bool IsNormalizationEnabled() { return m_NormalizationEnabled; }
     double GetMinLevel() { return m_MinLevelPercent/100.0f; }

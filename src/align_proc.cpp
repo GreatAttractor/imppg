@@ -21,22 +21,27 @@ File description:
     Image alignment worker thread implementation.
 */
 
+#include <optional>
+
+#include <algorithm>
 #include <climits>
 #include <cmath>
-#include <string>
-#include <vector>
 #include <map>
 #include <memory>
-#include <algorithm>
+#include <string>
+#include <tuple>
+#include <vector>
 #include <boost/math/special_functions/round.hpp>
 #include <wx/filename.h>
-#include "logging.h"
-#include "align_proc.h"
-#include "align_phasecorr.h"
-#include "common.h"
-#include "image.h"
+
 #include "align_disc.h"
+#include "align_phasecorr.h"
+#include "align_proc.h"
+#include "common.h"
 #include "gauss.h"
+#include "image.h"
+#include "imppg_assert.h"
+#include "logging.h"
 #include "lrdeconv.h"
 #if USE_FREEIMAGE
 #include "FreeImage.h"
@@ -45,34 +50,7 @@ File description:
 #include "bmp.h"
 #endif
 
-#if USE_FREEIMAGE
-
-/// Wrapper for a FreeImage bitmap handle. Makes sure the bitmap is always unloaded.
-class c_ScopedFreeImageBmp
-{
-    FIBITMAP *m_FiBmp;
-public:
-    c_ScopedFreeImageBmp(FIBITMAP *fibmp = 0) : m_FiBmp(fibmp) { }
-    ~c_ScopedFreeImageBmp()
-    {
-        if (m_FiBmp)
-            FreeImage_Unload(m_FiBmp);
-    }
-
-    FIBITMAP *Get() { return m_FiBmp; }
-    void Reset(FIBITMAP *fibmp = 0)
-    {
-        if (m_FiBmp)
-            FreeImage_Unload(m_FiBmp);
-        m_FiBmp = fibmp;
-    }
-
-    operator FIBITMAP *() { return m_FiBmp; }
-};
-
-#endif
-
-/// Arguments: image index and its determined translation vector
+/// Arguments: image index and its determined translation vector.
 void c_ImageAlignmentWorkerThread::PhaseCorrImgTranslationCallback(int imgIdx, float Tx, float Ty)
 {
     AlignmentEventPayload_t payload;
@@ -82,39 +60,29 @@ void c_ImageAlignmentWorkerThread::PhaseCorrImgTranslationCallback(int imgIdx, f
     SendMessageToParent(EID_PHASECORR_IMG_TRANSLATION, imgIdx, wxEmptyString, &payload);
 }
 
-/// Loads the specified input image, translates it and saves using the specified size and translation vector
-bool c_ImageAlignmentWorkerThread::SaveTranslatedOutputImage(wxString inputFileName, int outputWidth, int outputHeight,
-    float Tx, ///< X offset within the input image
-    float Ty  ///< Y offset within the input image
-    )
+/// Returns (input image loaded from `inputFileName`, output image ready to be filled); returns `nullopt` on error.
+std::optional<std::tuple<c_Image, c_Image>> PrepareInputAndOutputImages(wxString inputFileName, int outputWidth, int outputHeight, std::string& errorMsg)
 {
-    // NOTE: all 'c_Image' and 'FIBITMAP' objects used in this method are wrapped
-    // in "scoped pointer" objects, which destroy automatically (on leaving scope)
-    // or by a reset()/Reset() call.
-    // Therefore there's no need to clean them up when doing an early return.
-
 #if USE_FREEIMAGE
     // Used by FreeImage_AllocateExT as "black" to initially fill a bitmap
     uint8_t zeros[4*sizeof(float)] = { 0 }; // works also for floating-point (pattern of all zero bits represents 0.0f)
 #endif
 
-    c_Image srcImg;
-    c_Image outpImg;
-
-    Log::Print(wxString::Format("Loading %s... ", inputFileName));
-
-#if USE_FREEIMAGE
-    c_ScopedFreeImageBmp fiSrcBmp, fiOutpBmp;
-#endif
-
 #if USE_CFITSIO
-    bool isFits = false;
     wxString extension = wxFileName(inputFileName).GetExt().Lower();
     if (extension == "fit" || extension == "fits")
     {
-        srcImg = LoadFitsImage(inputFileName.ToStdString());
-        isFits = true;
-        outpImg = c_Image(outputWidth, outputHeight, srcImg.GetPixelFormat());
+        auto srcImg = LoadFitsImage(inputFileName.ToStdString());
+        if (!srcImg)
+        {
+            errorMsg = wxString::Format(_("Could not read %s."), inputFileName);
+            return std::nullopt;
+        }
+        else
+        {
+            auto outputImg = c_Image(outputWidth, outputHeight, srcImg.value().GetPixelFormat());
+            return std::make_tuple(std::move(srcImg.value()), std::move(outputImg));
+        }
     }
     else
 #endif
@@ -125,74 +93,115 @@ bool c_ImageAlignmentWorkerThread::SaveTranslatedOutputImage(wxString inputFileN
         if (FIF_UNKNOWN == fif)
             fif = FreeImage_GetFIFFromFilename(inputFileName.c_str());
 
+        c_FreeImageHandleWrapper fiSrcBmp{nullptr};
+
         if (fif != FIF_UNKNOWN && FreeImage_FIFSupportsReading(fif))
         {
-            fiSrcBmp.Reset(FreeImage_Load(fif, inputFileName.c_str()));
-            if (!fiSrcBmp.Get())
+            fiSrcBmp.reset(FreeImage_Load(fif, inputFileName.c_str()));
+            if (!fiSrcBmp)
             {
-                m_CompletionMessage = wxString::Format(_("Could not read %s."), inputFileName);
-                return false;
+                errorMsg = wxString::Format(_("Could not read %s."), inputFileName);
+                return std::nullopt;
             }
         }
         else
         {
-            m_CompletionMessage = wxString::Format(_("Unsupported file or image type: %s"), inputFileName);
-            return false;
+            errorMsg = wxString::Format(_("Unsupported file or image type: %s"), inputFileName);
+            return std::nullopt;
         }
 
-        // Subpixel translation of palettised images is not supported, so convert to RGB8
-        if (FreeImage_GetPalette(fiSrcBmp))
+        // subpixel translation of palettised images is not supported, so convert to RGB8
+        if (FreeImage_GetPalette(fiSrcBmp.get()))
         {
-            fiSrcBmp.Reset(FreeImage_ConvertTo24Bits(fiSrcBmp));
+            fiSrcBmp = c_FreeImageHandleWrapper(FreeImage_ConvertTo24Bits(fiSrcBmp.get()));
         }
 
-        srcImg = c_Image(std::unique_ptr<IImageBuffer>(new c_FreeImageBuffer(fiSrcBmp)));
-        if (srcImg.GetPixelFormat() == PIX_INVALID)
+        const auto fiSrcImgType = FreeImage_GetImageType(fiSrcBmp.get());
+        const auto fiSrcBpp = FreeImage_GetBPP(fiSrcBmp.get());
+        const auto fiSrcRedMask = FreeImage_GetRedMask(fiSrcBmp.get());
+        const auto fiSrcGreenMask = FreeImage_GetGreenMask(fiSrcBmp.get());
+        const auto fiSrcBlueMask = FreeImage_GetBlueMask(fiSrcBmp.get());
+
+        auto fiBufferUniquePtrOpt = c_FreeImageBuffer::Create(std::move(fiSrcBmp));
+        if (!fiBufferUniquePtrOpt)
         {
-            m_CompletionMessage = wxString::Format(_("Unsupported pixel format: %s"), inputFileName);
-            return false;
+            errorMsg = wxString::Format(_("Unsupported pixel format: %s"), inputFileName);
+            return std::nullopt;
         }
 
-        fiOutpBmp.Reset(FreeImage_AllocateExT(
-            FreeImage_GetImageType(fiSrcBmp),
-            outputWidth, outputHeight,
-            FreeImage_GetBPP(fiSrcBmp),
-            zeros, 0, 0,
-            FreeImage_GetRedMask(fiSrcBmp), FreeImage_GetGreenMask(fiSrcBmp), FreeImage_GetBlueMask(fiSrcBmp)));
+        auto srcImg = c_Image(std::move(fiBufferUniquePtrOpt.value()));
+
+        auto fiOutpBmp = c_FreeImageHandleWrapper(
+            FreeImage_AllocateExT(
+                fiSrcImgType,
+                outputWidth,
+                outputHeight,
+                fiSrcBpp,
+                zeros,
+                0,
+                0,
+                fiSrcRedMask,
+                fiSrcGreenMask,
+                fiSrcBlueMask
+            )
+        );
         if (!fiOutpBmp)
         {
-            m_CompletionMessage = _("FreeImage_AllocateExT failed to allocate an output bitmap.");
-            return false;
+            errorMsg = _("FreeImage_AllocateExT failed to allocate an output bitmap.");
+            return std::nullopt;
         }
 
-        outpImg = c_Image(std::unique_ptr<IImageBuffer>(new c_FreeImageBuffer(fiOutpBmp)));
+        auto outputImg = c_Image(std::move(c_FreeImageBuffer::Create(std::move(fiOutpBmp)).value()));
+
+        return std::make_tuple(std::move(srcImg), std::move(outputImg));
 
 #else
+        std::optional<c_Image> loadResult;
+
         wxString ext = wxFileName(inputFileName).GetExt().Lower();
         if (ext == "tif" || ext == "tiff")
-            srcImg.reset(ReadTiff(inputFileName.c_str()));
+            loadResult = ReadTiff(inputFileName.ToStdString());
         else if (ext == "bmp")
-            srcImg.reset(ReadBmp(inputFileName.c_str()));
+            loadResult = ReadBmp(inputFileName.ToStdString());
 
-        if (!srcImg.get())
+        if (!loadResult)
         {
-            m_CompletionMessage = wxString::Format(_("Could not read %s."), inputFileName);
-            return false;
+            errorMsg = wxString::Format(_("Could not read %s."), inputFileName);
+            return std::nullopt;
         }
 
-        // Subpixel translation of palettised images is not supported, so convert to RGB8
-        if (srcImg.GetPixelFormat() == PIX_PAL8)
+        c_Image srcImg = std::move(loadResult.value());
+
+        // subpixel translation of palettised images is not supported, so convert to RGB8
+        if (srcImg.GetPixelFormat() == PixelFormat::PIX_PAL8)
         {
-            srcImg.reset(c_Image::ConvertPixelFormat(*srcImg, PIX_RGB8));
+            srcImg = srcImg.ConvertPixelFormat(PixelFormat::PIX_RGB8);
         }
 
-        outpImg.reset(new c_Image(outputWidth, outputHeight, srcImg.GetPixelFormat()));
+        c_Image outpImg(outputWidth, outputHeight, srcImg.GetPixelFormat());
+
+        return std::make_tuple(std::move(srcImg), std::move(outpImg));
 #endif
     }
+}
+
+/// Loads the specified input image, translates it and saves using the specified size and translation vector
+bool c_ImageAlignmentWorkerThread::SaveTranslatedOutputImage(wxString inputFileName, int outputWidth, int outputHeight,
+    float Tx, ///< X offset within the input image
+    float Ty  ///< Y offset within the input image
+    )
+{
+    Log::Print(wxString::Format("Loading %s... ", inputFileName));
+
+    auto result = PrepareInputAndOutputImages(inputFileName, outputWidth, outputHeight, m_CompletionMessage);
+    if (!result)
+        return false;
+
+    auto [srcImg, outputImg] = std::move(result.value());
 
     Log::Print("done. Allocated output image.\n");
 
-    c_Image::ResizeAndTranslate(srcImg.GetBuffer(), outpImg.GetBuffer(), 0, 0, srcImg.GetWidth()-1, srcImg.GetHeight()-1, Tx, Ty, true);
+    c_Image::ResizeAndTranslate(srcImg.GetBuffer(), outputImg.GetBuffer(), 0, 0, srcImg.GetWidth()-1, srcImg.GetHeight()-1, Tx, Ty, true);
 
     Log::Print("Created output image.\n");
 
@@ -201,29 +210,17 @@ bool c_ImageAlignmentWorkerThread::SaveTranslatedOutputImage(wxString inputFileN
     bool saved = false;
 
 #if USE_CFITSIO
-    if (isFits)
+    wxString extension = wxFileName(inputFileName).GetExt().Lower();
+    if (extension == "fit" || extension == "fits")
     {
-        auto outF = OutputFormat::FITS_16;
-        switch (outpImg.GetPixelFormat())
-        {
-        case PIX_MONO8: outF = OutputFormat::FITS_8; break;
-        case PIX_MONO16: outF = OutputFormat::FITS_16; break;
-        case PIX_MONO32F: outF = OutputFormat::FITS_32F; break;
-        }
         outputFileName.SetExt("fit");
-        saved = SaveImageFile(outputFileName.GetFullPath().ToStdString(), outpImg, outF);
+        saved = outputImg.SaveToFile(outputFileName.GetFullPath().ToStdString(), OutputBitDepth::Unchanged, OutputFileType::FITS);
     }
     else
 #endif
     {
         outputFileName.SetExt("tif");
-
-#if USE_FREEIMAGE
-        saved = FreeImage_Save(FIF_TIFF, fiOutpBmp, outputFileName.GetFullPath().c_str(), TIFF_NONE);
-        fiOutpBmp.Reset();
-#else
-        saved = SaveTiff(outputFileName.GetFullPath().c_str(), *outpImg.get());
-#endif
+        saved = outputImg.SaveToFile(outputFileName.GetFullPath().ToStdString(), OutputBitDepth::Unchanged, OutputFileType::TIFF/* TODO: make it configurable */);
     }
 
     Log::Print("Saved output image.\n");
@@ -249,14 +246,18 @@ void c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment()
 
     for (size_t i = 0; i < m_Parameters.inputFiles.Count(); i++)
     {
-        unsigned width, height;
-        if (!GetImageSize(m_Parameters.inputFiles[i].ToStdString(),
-            wxFileName(m_Parameters.inputFiles[i].ToStdString()).GetExt().ToStdString(),
-            width, height))
+        const auto result = GetImageSize(
+            m_Parameters.inputFiles[i].ToStdString(),
+            wxFileName(m_Parameters.inputFiles[i].ToStdString()).GetExt().ToStdString()
+        );
+
+        if (!result)
         {
             m_CompletionMessage = wxString::Format(_("Failed to obtain image dimensions from %s."), m_Parameters.inputFiles[i]);
             return;
         }
+
+        const auto [width, height] = result.value();
 
         imgSize.push_back(Point_t(width, height));
 
@@ -281,7 +282,7 @@ void c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment()
         return;
     }
 
-    Rectangle_t imgIntersection = DetermineImageIntersection(Nwidth, Nheight, bbox, translation, imgSize);
+    Rectangle_t imgIntersection = DetermineImageIntersection(Nwidth, Nheight, translation, imgSize);
 
     // Iterate again over all images, load, pad to the bounding box size or crop to intersection, translate and save
 
@@ -320,9 +321,9 @@ void c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment()
 }
 
 /// Returns the quality of the specified image area: the sum of squared gradients
-float GetQuality(const c_Image &img, const Rectangle_t &area)
+float GetQuality(const c_Image& img, const Rectangle_t& area)
 {
-    assert(img.GetPixelFormat() == PIX_MONO32F);
+    IMPPG_ASSERT(img.GetPixelFormat() == PixelFormat::PIX_MONO32F);
 
     float result = 0;
 
@@ -332,9 +333,9 @@ float GetQuality(const c_Image &img, const Rectangle_t &area)
     for (int y = BORDER_SKIP; y < area.height - BORDER_SKIP - 1; y++)
         for (int x = BORDER_SKIP; x < area.width - BORDER_SKIP - 1; x++)
         {
-            float val00 = ((float *)img.GetRow(area.y + y))[area.x + x];
-            float val10 = ((float *)img.GetRow(area.y + y))[area.x + x+1];
-            float val01 = ((float *)img.GetRow(area.y + y+1))[area.x + x];
+            float val00 = img.GetRowAs<float>(area.y + y)[area.x + x];
+            float val10 = img.GetRowAs<float>(area.y + y)[area.x + x+1];
+            float val01 = img.GetRowAs<float>(area.y + y+1)[area.x + x];
 
             result += SQR(val10 - val00) + SQR(val01 - val00);
         }
@@ -342,15 +343,15 @@ float GetQuality(const c_Image &img, const Rectangle_t &area)
     return result;
 }
 
-c_Image GetBlurredImage(const c_Image &srcImg, float gaussianSigma)
+c_Image GetBlurredImage(const c_Image& srcImg, float gaussianSigma)
 {
-    assert(srcImg.GetPixelFormat() == PIX_MONO32F);
+    IMPPG_ASSERT(srcImg.GetPixelFormat() == PixelFormat::PIX_MONO32F);
 
-    c_Image result(srcImg.GetWidth(), srcImg.GetHeight(), PIX_MONO32F);
+    c_Image result(srcImg.GetWidth(), srcImg.GetHeight(), PixelFormat::PIX_MONO32F);
 
     ConvolveSeparable(
-            c_PaddedArrayPtr<const float>((const float *)srcImg.GetRow(0), srcImg.GetWidth(), srcImg.GetHeight(), srcImg.GetBuffer().GetBytesPerRow()),
-            c_PaddedArrayPtr<float>((float *)result.GetRow(0), result.GetWidth(), result.GetHeight(), result.GetBuffer().GetBytesPerRow()),
+            c_PaddedArrayPtr(srcImg.GetRowAs<float>(0), srcImg.GetWidth(), srcImg.GetHeight(), srcImg.GetBuffer().GetBytesPerRow()),
+            c_PaddedArrayPtr(result.GetRowAs<float>(0), result.GetWidth(), result.GetHeight(), result.GetBuffer().GetBytesPerRow()),
             gaussianSigma);
 
     return result;
@@ -359,12 +360,12 @@ c_Image GetBlurredImage(const c_Image &srcImg, float gaussianSigma)
 /// Performs the final stabilization phase of limb alignment; returns 'true' on success
 bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
     /// Translation vectors to be corrected by stabilization
-    std::vector<FloatPoint_t> &translation,
+    std::vector<FloatPoint_t>& translation,
     /// Start of the images' intersection, relative to the first image's origin
     Point_t intersectionStart,
     int intrWidth, ///< Images' intersection width
     int intrHeight, ///< Images' intersection height
-    wxString &errorMsg ///< Receives error message (if any)
+    wxString& errorMsg ///< Receives error message (if any)
     )
 {
     // Simply finding the disc and overlapping it on subsequent images is often
@@ -401,12 +402,13 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
         Point_t stabilizationPos;
 
         // Scan the first image's intersection portion for the highest-contrast area
-        c_Image firstImg = LoadImageFileAsMono32f(m_Parameters.inputFiles[0].ToStdString(), wxFileName(m_Parameters.inputFiles[0]).GetExt().Lower().ToStdString());
-        if (!firstImg.IsValid())
+        const auto loadResult = LoadImageFileAsMono32f(m_Parameters.inputFiles[0].ToStdString(), wxFileName(m_Parameters.inputFiles[0]).GetExt().Lower().ToStdString());
+        if (!loadResult)
         {
             errorMsg = wxString::Format(_("Could not read %s."), m_Parameters.inputFiles[0]);
             return false;
         }
+        c_Image firstImg = std::move(loadResult.value());
 
         // Blur the image first to remove the impact of noise
         firstImg = GetBlurredImage(firstImg, 1.0f);
@@ -437,7 +439,7 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
         stAreaImagePos.push_back(FloatPoint_t(stabilizationPos.x, stabilizationPos.y));
 
         // Stabilization area in the previous (currently: first) image
-        std::unique_ptr<c_Image> prevArea(new c_Image(STBL_AREA_SIZE, STBL_AREA_SIZE, PIX_MONO32F));
+        std::unique_ptr<c_Image> prevArea(new c_Image(STBL_AREA_SIZE, STBL_AREA_SIZE, PixelFormat::PIX_MONO32F));
         c_Image::Copy(firstImg, *prevArea,
             intersectionStart.x + stabilizationPos.x - STBL_AREA_SIZE/2,
             intersectionStart.y + stabilizationPos.y - STBL_AREA_SIZE/2,
@@ -455,21 +457,22 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
 
             SendMessageToParent(EID_LIMB_STABILIZATION_PROGRESS, i);
 
-            c_Image currImg = LoadImageFileAsMono32f(m_Parameters.inputFiles[i].ToStdString(), wxFileName(m_Parameters.inputFiles[i]).GetExt().Lower().ToStdString());
-            if (!currImg.IsValid())
+            const auto loadResult = LoadImageFileAsMono32f(m_Parameters.inputFiles[i].ToStdString(), wxFileName(m_Parameters.inputFiles[i]).GetExt().Lower().ToStdString());
+            if (!loadResult)
             {
                 errorMsg = wxString::Format(_("Could not read %s."), m_Parameters.inputFiles[i]);
                 return false;
             }
+            const c_Image& currImg = loadResult.value();
 
             Point_t Tint;
             FloatPoint_t Tfrac;
             float temp;
-            Tfrac.x = std::modf(translation[i].x, &temp); Tint.x = (int)temp;
-            Tfrac.y = std::modf(translation[i].y, &temp); Tint.y = (int)temp;
+            Tfrac.x = std::modf(translation[i].x, &temp); Tint.x = static_cast<int>(temp);
+            Tfrac.y = std::modf(translation[i].y, &temp); Tint.y = static_cast<int>(temp);
 
             // Stabilization area in the current image (assumed to be at the same position - relative to the images' intersection - as in the previous image)
-            std::unique_ptr<c_Image> currArea(new c_Image(STBL_AREA_SIZE, STBL_AREA_SIZE, PIX_MONO32F));
+            std::unique_ptr<c_Image> currArea(new c_Image(STBL_AREA_SIZE, STBL_AREA_SIZE, PixelFormat::PIX_MONO32F));
             c_Image::Copy(currImg, *currArea,
                 intersectionStart.x - Tint.x + stabilizationPos.x - STBL_AREA_SIZE/2,
                 intersectionStart.y - Tint.y + stabilizationPos.y - STBL_AREA_SIZE/2,
@@ -478,7 +481,7 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
             currArea->Multiply(wndFunc);
 
             FloatPoint_t areaTranslation = DetermineTranslationVector(*prevArea, *currArea);
-            FloatPoint_t &prev = stAreaImagePos.back();
+            FloatPoint_t& prev = stAreaImagePos.back();
 
             // We also need to take the fractional parts of current and previous translation into account,
             // because the 'prevArea' and 'currArea' sub-images (which we use to obtain 'areaTranslation')
@@ -489,8 +492,8 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
             stAreaImagePos.push_back(FloatPoint_t(prev.x + areaTranslation.x, prev.y + areaTranslation.y));
 
             // Update position of the stabilization area for next iteration
-            Point_t newStabilizationPos = Point_t(stabilizationPos.x + (int)areaTranslation.x,
-                stabilizationPos.y + (int)areaTranslation.y);
+            Point_t newStabilizationPos = Point_t(stabilizationPos.x + static_cast<int>(areaTranslation.x),
+                stabilizationPos.y + static_cast<int>(areaTranslation.y));
             //Make sure 'stabilizationPos' didn't go outside the images' intersection
             if (newStabilizationPos.x - STBL_AREA_SIZE/2 >= 0 &&
                 newStabilizationPos.y - STBL_AREA_SIZE/2 >= 0 &&
@@ -564,7 +567,7 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
         for (unsigned i = 0; i < stAreaImagePos.size(); i++)
         {
             // Project current point onto the circle defined by 'smoothTrack'
-            FloatPoint_t &p = stAreaImagePos[i];
+            const FloatPoint_t& p = stAreaImagePos[i];
 
             FloatPoint_t correction(0.0f, 0.0f); // difference after projection
 
@@ -580,7 +583,7 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
                     // i.e. that the cross product of their pointing vectors has the same sign
                     // as 'firstLastCrossProd' (their product is positive).
 
-                    float crossProd = (prevProj.x - smoothTrack.cx) * (p.y - smoothTrack.cy) -
+                    const float crossProd = (prevProj.x - smoothTrack.cx) * (p.y - smoothTrack.cy) -
                         (prevProj.y - smoothTrack.cy) * (p.x - smoothTrack.cx);
                     if (crossProd * firstLastCrossProd < 0.0f)
                     {
@@ -605,28 +608,28 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
 
 /// Returns number of neighbors of 'p' within 'radius' which have value > threshold
 void CountNeighborsAboveThreshold(
-    const FloatPoint_t &p, const c_Image &img, int radius, uint8_t threshold,
-    size_t &numAbove, ///< Receives the number of pixels above threshold
-    size_t &numTotal ///< Receives the number of all neighbor pixels used
+    const FloatPoint_t& p, const c_Image& img, int radius, uint8_t threshold,
+    size_t& numAbove, ///< Receives the number of pixels above threshold
+    size_t& numTotal ///< Receives the number of all neighbor pixels used
 )
 {
     numAbove = 0; numTotal = 0;
-    for (int y = std::max((int)(p.y - radius), 0); y <= std::min((int)(p.y + radius), (int)img.GetHeight()-1); y++)
-        for (int x = std::max((int)(p.x - radius), 0); x <= std::min((int)(p.x + radius), (int)img.GetWidth()-1); x++)
+    for (int y = std::max(static_cast<int>(p.y - radius), 0); y <= std::min(static_cast<int>(p.y + radius), static_cast<int>(img.GetHeight())-1); y++)
+        for (int x = std::max(static_cast<int>(p.x - radius), 0); x <= std::min(static_cast<int>(p.x + radius), static_cast<int>(img.GetWidth())-1); x++)
             if (SQR(x - p.x) + SQR(y - p.y) <= SQR(radius))
             {
                 numTotal++;
-                if (((uint8_t *)img.GetRow(y))[x] > threshold)
+                if (img.GetRowAs<uint8_t>(y)[x] > threshold)
                     numAbove++;
             }
 }
 
 /// Finds disc radii in input images; returns 'true' on success
 bool c_ImageAlignmentWorkerThread::FindRadii(
-    std::vector<std::vector<FloatPoint_t> > &limbPoints, ///< Receives limb points found in n-th image
-    std::vector<float> &radii, ///< Receives disc radii determined for each image
-    std::vector<Point_t> &imgSizes, ///< Receives input image sizes
-    std::vector<Point_t> &centroids ///< Receives image centroids
+    std::vector<std::vector<FloatPoint_t>>& limbPoints, ///< Receives limb points found in n-th image
+    std::vector<float>& radii, ///< Receives disc radii determined for each image
+    std::vector<Point_t>& imgSizes, ///< Receives input image sizes
+    std::vector<Point_t>& centroids ///< Receives image centroids
 )
 {
     AlignmentEventPayload_t payload;
@@ -636,12 +639,13 @@ bool c_ImageAlignmentWorkerThread::FindRadii(
         if (IsAbortRequested())
             return false;
 
-        c_Image img = LoadImageFileAsMono8(m_Parameters.inputFiles[i].ToStdString(), wxFileName(m_Parameters.inputFiles[i]).GetExt().Lower().ToStdString());
-        if (!img.IsValid())
+        const auto loadResult = LoadImageFileAsMono8(m_Parameters.inputFiles[i].ToStdString(), wxFileName(m_Parameters.inputFiles[i]).GetExt().Lower().ToStdString());
+        if (!loadResult)
         {
             m_CompletionMessage = wxString::Format(_("Could not read %s."), m_Parameters.inputFiles[i]);
             return false;
         }
+        const c_Image img = loadResult.value();
 
         imgSizes.push_back(Point_t(img.GetWidth(), img.GetHeight()));
 
@@ -676,7 +680,7 @@ bool c_ImageAlignmentWorkerThread::FindRadii(
         for (int j = 0; j < NUM_RAYS; j++)
         {
             Point_t limbPt;
-            int varSum = FindLimbCrossing(rays[j], img, threshold, limbPt);
+            int varSum = FindLimbCrossing(rays[j], threshold, limbPt);
             limbPointsCandidates.insert(std::pair<int, Point_t>(varSum, limbPt));
         }
 
@@ -685,7 +689,7 @@ bool c_ImageAlignmentWorkerThread::FindRadii(
         // Assume that if the point's steepness is less than 1/THRESHOLD_DIV of the expected avg steepness,
         // it is not in fact a limb point - and discard it.
 
-        int avgSteepness = DIFF_SIZE * ((int)avgDisc - avgBkgrnd);
+        int avgSteepness = DIFF_SIZE * (static_cast<int>(avgDisc) - avgBkgrnd);
 
         // A multimap is sorted by keys ascending and we are interested in the steepest transitions,
         // so start the iteration from the last element ('rbegin')
@@ -719,7 +723,7 @@ bool c_ImageAlignmentWorkerThread::FindRadii(
             int radius = DIFF_SIZE;
             CountNeighborsAboveThreshold(limbPoints[i][j], img, radius, threshold, numAbove, numTotal);
 
-            float fraction = (float)numAbove/numTotal;
+            float fraction = static_cast<float>(numAbove)/numTotal;
             aboveThFraction.push_back(fraction);
 
             if (fraction > MAX_ABOVE_THRESHOLD_FRACTION)
@@ -731,13 +735,16 @@ bool c_ImageAlignmentWorkerThread::FindRadii(
         if (numPointsExceedingMaxFraction < 3*limbPoints[i].size()/4)
         {
             // Not an overexposed disc, so the fractions are fine; remove points which exceed the limit
-            for (int j = (int)limbPoints[i].size() - 1; j >= 0; j--)
+            for (int j = static_cast<int>(limbPoints[i].size()) - 1; j >= 0; j--)
                 if (aboveThFraction[j] > MAX_ABOVE_THRESHOLD_FRACTION)
                     limbPoints[i].erase(limbPoints[i].begin() + j);
         }
 
         Log::Print(wxString::Format("Found %d limb point candidates, used %d (%d%%).\n",
-            (int)limbPointsCandidates.size(), (int)limbPoints[i].size(), (int)(100*limbPoints[i].size()/limbPointsCandidates.size())));
+            static_cast<int>(limbPointsCandidates.size()),
+            static_cast<int>(limbPoints[i].size()),
+            static_cast<int>(100*limbPoints[i].size()/limbPointsCandidates.size()))
+        );
 
         if (limbPoints[i].size() < 3)
         {
@@ -847,8 +854,8 @@ void c_ImageAlignmentWorkerThread::LimbAlignment()
     {
         // Note: rounding via an (int) cast in order to round towards zero,
         // because that's how c_Image::ResizeAndTranslate() also operates.
-        int tx = (int)translation[i].x,
-            ty = (int)translation[i].y;
+        int tx = static_cast<int>(translation[i].x),
+            ty = static_cast<int>(translation[i].y);
 
         if (tx < bbox.xmin)
             bbox.xmin = tx;
@@ -935,14 +942,15 @@ wxThread::ExitCode c_ImageAlignmentWorkerThread::Entry()
     {
     case AlignmentMethod::PHASE_CORRELATION: PhaseCorrelationAlignment(); break;
     case AlignmentMethod::LIMB: LimbAlignment(); break;
+    default: IMPPG_ABORT();
     }
 
     return 0;
 }
 
-void c_ImageAlignmentWorkerThread::SendMessageToParent(int id, int value, wxString msg, AlignmentEventPayload_t *payload)
+void c_ImageAlignmentWorkerThread::SendMessageToParent(int id, int value, wxString msg, AlignmentEventPayload_t* payload)
 {
-    wxThreadEvent *event = new wxThreadEvent(wxEVT_THREAD, id);
+    wxThreadEvent* event = new wxThreadEvent(wxEVT_THREAD, id);
     event->SetInt(value);
     event->SetString(msg);
     if (payload)
@@ -967,8 +975,8 @@ c_ImageAlignmentWorkerThread::~c_ImageAlignmentWorkerThread()
             m_ThreadAborted ? static_cast<int>(AlignmentAbortReason::USER_REQUESTED)
                             : static_cast<int>(AlignmentAbortReason::PROC_ERROR),
             m_CompletionMessage);
-    { wxCriticalSectionLocker lock(m_Guard);
-        *m_InstancePtr = 0;
+    { auto lock = m_InstancePtr.Lock();
+        lock.Get() = nullptr;
     }
 }
 

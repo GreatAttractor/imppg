@@ -25,17 +25,17 @@ File description:
 #include <wx/datetime.h>
 #include "logging.h"
 
-std::ostream *logStream = 0;
+std::ostream* logStream = nullptr;
 auto logLevel = Log::LogLevel::QUIET;
 wxMutex logMutex;
 
-void Log::Initialize(LogLevel level, std::ostream &outputStream)
+void Log::Initialize(LogLevel level, std::ostream& outputStream)
 {
     logStream = &outputStream;
     logLevel = level;
 }
 
-void Log::Print(const wxString &msg, bool prependTimestamp, LogLevel level)
+void Log::Print(const wxString& msg, bool prependTimestamp, LogLevel level)
 {
     if (level <= logLevel)
     {

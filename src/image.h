@@ -26,11 +26,15 @@ File description:
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
+#include <wx/gdicmn.h>
 #if USE_FREEIMAGE
 #include "FreeImage.h"
 #endif
+
 #include "formats.h"
+#include "imppg_assert.h"
 
 
 /// Conditionally swaps a 32-bit value
@@ -40,12 +44,9 @@ uint32_t SWAP16in32cnd(uint32_t x, bool swap);
 /// Conditionally swaps a 16-bit value
 uint16_t SWAP16cnd(uint16_t x, bool swap);
 
-/// Image pixel format
-typedef enum {
-    PIX_INVALID = 0, // this has to be the first element
-
-    PIX_UNCHANGED, ///< Use the source pixel format
-    PIX_PAL8,      ///< 8-bit with palette (can be a greyscale palette)
+enum class PixelFormat
+{
+    PIX_PAL8 = 0,  ///< 8-bit with palette (can be a greyscale palette)
     PIX_MONO8,     ///< 8-bit greyscale
     PIX_RGB8,      ///< 24-bit RGB (8 bits per channel)
     PIX_RGBA8,     ///< 32-bit RGBA (8 bits per channel)
@@ -57,12 +58,11 @@ typedef enum {
     PIX_RGBA32F,   ///< 128-bit floating point RGBA
 
     PIX_NUM_FORMATS // this has to be the last element
-} PixelFormat_t;
+};
 
-/// Elements correspond with those from PixelFormat_t
-const size_t BytesPerPixel[PIX_NUM_FORMATS] =
+/// Elements correspond to those from PixelFormat
+const size_t BytesPerPixel[static_cast<size_t>(PixelFormat::PIX_NUM_FORMATS)] =
 {
-    0, 0,
     1,    // PIX_PAL8
     1,    // PIX_MONO8
     3,    // PIX_RBG8
@@ -75,10 +75,9 @@ const size_t BytesPerPixel[PIX_NUM_FORMATS] =
     16,   // PIX_RGBA32F
 };
 
-/// Elements correspond with those from PixelFormat_t
-const size_t NumChannels[PIX_NUM_FORMATS] =
+/// Elements correspond to those from PixelFormat
+const size_t NumChannels[static_cast<size_t>(PixelFormat::PIX_NUM_FORMATS)] =
 {
-    0, 0,
     1,    // PIX_PAL8
     1,    // PIX_MONO8
     3,    // PIX_RBG8
@@ -91,92 +90,112 @@ const size_t NumChannels[PIX_NUM_FORMATS] =
     4,    // PIX_RGBA32F
 };
 
-/// Image buffer interface
 class IImageBuffer
 {
 public:
-    virtual unsigned GetWidth() const = 0; ///< Returns image width in pixels
-    virtual unsigned GetHeight() const = 0; ///< Returns image height in pixels
-    virtual size_t GetBytesPerRow() const = 0; ///< Returns number of bytes per row (including padding, if any)
-    virtual size_t GetBytesPerPixel() const = 0; ///< Returns number of bytes per pixel
-    virtual void *GetRow(size_t row) = 0; ///< Returns pointer to the specified row
-    virtual const void *GetRow(size_t row) const = 0; ///< Returns pointer to the specified row
-    virtual std::unique_ptr<IImageBuffer> GetCopy() const = 0; ///< Creates and returns a copy
-    virtual PixelFormat_t GetPixelFormat() const = 0;
-    virtual ~IImageBuffer() { }
+    static constexpr size_t PALETTE_LENGTH = 256 * 3;
+    /// Palette contents (R, G, B) for PIX_PAL8.
+    using Palette = std::array<uint8_t, PALETTE_LENGTH>;
+
+    /// Palette is used only if the pixel format is PIX_PAL8.
+    virtual Palette& GetPalette() = 0;
+
+    virtual const Palette& GetPalette() const = 0;
+
+    virtual unsigned GetWidth() const = 0;
+
+    virtual unsigned GetHeight() const = 0;
+
+    virtual size_t GetBytesPerRow() const = 0; ///< Returns number of bytes per row (including padding, if any).
+
+    virtual size_t GetBytesPerPixel() const = 0;
+
+    virtual void* GetRow(size_t row) = 0;
+
+    template<typename T>
+    T* GetRowAs(size_t row) { return static_cast<T*>(GetRow(row)); }
+
+    virtual const void* GetRow(size_t row) const = 0;
+
+    template<typename T>
+    const T* GetRowAs(size_t row) const { return static_cast<const T*>(GetRow(row)); }
+
+    virtual std::unique_ptr<IImageBuffer> GetCopy() const = 0;
+
+    virtual PixelFormat GetPixelFormat() const = 0;
+
+    virtual ~IImageBuffer() = default;
+
+private:
+    virtual bool SaveToFile(const std::string& fname, OutputFileType outFileType) const = 0;
+
+    friend class c_Image;
 };
 
 class c_Image
 {
 private:
-    std::unique_ptr<IImageBuffer> pixels;
-
-    /// Palette contents (R, G, B) if pixFmt == PIX_PAL8; contains PALETTE_LENGTH elements
-    std::unique_ptr<uint8_t[]> palette;
+    std::unique_ptr<IImageBuffer> m_Buffer;
 
 public:
-    const size_t PALETTE_LENGTH = 256 * 3;
+    c_Image(unsigned width, unsigned height, PixelFormat pixFmt);
 
-    /// Creates an uninitialized image (0x0 pixels, PIX_INVALID pixel format); IsValid() will return false
-    c_Image();
+    c_Image(std::unique_ptr<IImageBuffer> buffer): m_Buffer(std::move(buffer)) {}
 
-    c_Image(unsigned width, unsigned height, PixelFormat_t pixFmt);
-
-    c_Image(std::unique_ptr<IImageBuffer> buffer);
-
-    c_Image(c_Image &&img);
-
-    c_Image &operator=(const c_Image &img);
-
-    c_Image &operator=(c_Image &&img);
+    c_Image(c_Image&& img) = default;
+    c_Image& operator=(c_Image &&img) = default;
 
     c_Image(const c_Image &img);
+    c_Image& operator=(const c_Image &img);
 
-    /// Returns an uninitialized image (0x0 pixels, PIX_INVALID pixel format); IsValid() will return false
-    static c_Image GetEmpty() { return c_Image(); }
+    void ClearToZero(); ///< Clears all pixels to zero value.
 
-    bool IsValid() { return pixels->GetPixelFormat() != PIX_INVALID; }
-
-    void ClearToZero(); ///< Clears all pixels to zero value
-
-    /// Provides read/write access to the palette
-    uint8_t *GetPalette() { return palette.get(); }
-
-    /// Provides read-only access to the palette
-    const uint8_t *GetPalette() const { return palette.get(); }
-
-    unsigned GetWidth() const { return pixels->GetWidth(); }
-    unsigned GetHeight() const { return pixels->GetHeight(); }
+    unsigned GetWidth() const { return m_Buffer->GetWidth(); }
+    unsigned GetHeight() const { return m_Buffer->GetHeight(); }
     unsigned GetNumPixels() const { return GetWidth() * GetHeight(); }
-    PixelFormat_t GetPixelFormat() const { return pixels->GetPixelFormat(); }
+    PixelFormat GetPixelFormat() const { return m_Buffer->GetPixelFormat(); }
 
-    /// Returns pointer to the specified row
-    void *GetRow(size_t row) { return pixels->GetRow(row); }
+    void* GetRow(size_t row) { return m_Buffer->GetRow(row); }
+    const void* GetRow(size_t row) const { return m_Buffer->GetRow(row); }
 
-    /// Returns pointer to the specified row
-    const void *GetRow(size_t row) const { return pixels->GetRow(row); }
+    template <typename T>
+    T* GetRowAs(size_t row) { return static_cast<T*>(GetRow(row)); }
 
-    IImageBuffer &GetBuffer() { return *pixels; }
+    template <typename T>
+    const T* GetRowAs(size_t row) const { return static_cast<const T*>(GetRow(row)); }
 
-    const IImageBuffer &GetBuffer() const { return *pixels; }
-
-    void SetPalette(uint8_t palette[]);
+    IImageBuffer& GetBuffer() { return *m_Buffer; }
+    const IImageBuffer& GetBuffer() const { return *m_Buffer; }
 
     /// Copies a rectangular area from 'src' to 'dest'. Pixel formats of 'src' and 'dest' have to be the same.
-    static void Copy(const c_Image &src, c_Image &dest, unsigned srcX, unsigned srcY, unsigned width, unsigned height, unsigned destX, unsigned destY);
+    static void Copy(
+        const c_Image& src,
+        c_Image& dest,
+        unsigned srcX,
+        unsigned srcY,
+        unsigned width,
+        unsigned height,
+        unsigned destX,
+        unsigned destY
+    );
 
-    /** Converts 'srcImage' to 'destPixFmt'; ; result uses c_SimpleBuffer for storage.
-        If 'destPixFmt' is the same as source image's pixel format, returns a copy of 'srcImg'. */
-    static c_Image ConvertPixelFormat(const c_Image &srcImg, PixelFormat_t destPixFmt);
+    /// Returns image copy converted to `destPixFmt`; result uses `c_SimpleBuffer` for storage.
+    c_Image ConvertPixelFormat(PixelFormat destPixFmt);
 
-    /// Converts the specified fragment of 'srcImage' to 'destPixFmt'; result uses c_SimpleBuffer for storage
-    static c_Image ConvertPixelFormat(const c_Image &srcImg, PixelFormat_t destPixFmt, unsigned x0, unsigned y0, unsigned width, unsigned height);
+    /// Returns copy of image fragment converted to `destPixFmt`; result uses `c_SimpleBuffer` for storage.
+    c_Image GetConvertedPixelFormatSubImage(
+        PixelFormat destPixFmt,
+        unsigned x0,
+        unsigned y0,
+        unsigned width,
+        unsigned height
+    ) const;
 
-    /// Resizes and translates image (or its fragment) by cropping and/or padding (with zeros) to the destination size and offset (there is no scaling)
-    /** Subpixel translation (i.e. if 'xOfs' or 'yOfs' have a fractional part) of palettised images is not supported. */
+    /// Resizes and translates image (or its fragment) by cropping and/or padding (with zeros) to the destination size and offset (there is no scaling).
+    /** Subpixel translation (i.e. if `xOfs` or `yOfs` have a fractional part) of palettised images is not supported. */
     static void ResizeAndTranslate(
-        IImageBuffer &srcImg,
-        IImageBuffer &destImg,
+        const IImageBuffer& srcImg,
+        IImageBuffer& destImg,
         int srcXmin,     ///< X min of input data in source image
         int srcYmin,     ///< Y min of input data in source image
         int srcXmax,     ///< X max of input data in source image
@@ -187,149 +206,219 @@ public:
         );
 
     /// Multiply by another image; both images have to be PIX_MONO32F and have the same dimensions
-    void Multiply(const c_Image &mult);
+    void Multiply(const c_Image& mult);
+
+    bool SaveToFile(
+        const std::string& fname, ///< Full destination path
+        OutputBitDepth outpBitDepth,
+        OutputFileType outpFileType
+    );
+
+    bool SaveToFile(
+        const std::string& fname, ///< Full destination path
+        OutputFormat outpFormat
+    );
 };
 
 /// Lightweight wrapper of a fragment of an image buffer; does not allocate any pixels memory itself
-class c_ImageBufferView : public IImageBuffer
+class c_ImageBufferView
 {
-    IImageBuffer &buf; ///< The underlying image buffer
-    int x0, y0, width, height;
+    IImageBuffer* m_Buf; // must be a pointer rather than a reference to enable move assignment
+    int m_X0, m_Y0, m_Width, m_Height;
+
 public:
-    c_ImageBufferView(c_Image &img)
-        : buf(img.GetBuffer()), x0(0), y0(0), width(img.GetWidth()), height(img.GetHeight())
+    c_ImageBufferView(IImageBuffer& buf)
+        : m_Buf(&buf), m_X0(0), m_Y0(0), m_Width(buf.GetWidth()), m_Height(buf.GetHeight())
     { }
 
-    c_ImageBufferView(IImageBuffer &underlyingBuffer, int x0, int y0, int width, int height)
-        : buf(underlyingBuffer), x0(x0), y0(y0), width(width), height(height)
+    c_ImageBufferView(IImageBuffer& buf, int x0, int y0, int width, int height)
+        : m_Buf(&buf), m_X0(x0), m_Y0(y0), m_Width(width), m_Height(height)
     { }
 
-    /// Returns image width in pixels
-    virtual unsigned GetWidth() const { return width; }
+    c_ImageBufferView(IImageBuffer& buf, const wxRect& rect)
+        : m_Buf(&buf), m_X0(rect.x), m_Y0(rect.y), m_Width(rect.width), m_Height(rect.height)
+    { }
 
-    /// Returns image height in pixels
-    virtual unsigned GetHeight() const { return height; }
+    unsigned GetWidth() const { return m_Width; }
 
-    /// Returns number of bytes per row (including padding, if any)
-    virtual size_t GetBytesPerRow() const { return buf.GetBytesPerRow(); }
+    unsigned GetHeight() const { return m_Height; }
 
-    /// Returns number of bytes per pixel
-    virtual size_t GetBytesPerPixel() const { return buf.GetBytesPerPixel(); }
+    /// Returns number of bytes per row (including padding, if any).
+    size_t GetBytesPerRow() const { return m_Buf->GetBytesPerRow(); }
 
-    /// Returns pointer to the specified row
-    virtual void *GetRow(size_t row) { return (uint8_t *)buf.GetRow(y0 + row) + x0 * buf.GetBytesPerPixel(); }
+    size_t GetBytesPerPixel() const { return m_Buf->GetBytesPerPixel(); }
 
-    /// Returns pointer to the specified row
-    virtual const void *GetRow(size_t row) const { return (const uint8_t *)buf.GetRow(y0 + row) + x0 * buf.GetBytesPerPixel(); }
+    void* GetRow(size_t row) { return static_cast<uint8_t*>(m_Buf->GetRow(m_Y0 + row)) + m_X0 * m_Buf->GetBytesPerPixel(); }
 
-    virtual PixelFormat_t GetPixelFormat() const { return buf.GetPixelFormat(); }
+    template <typename T>
+    T* GetRowAs(size_t row) { return static_cast<T*>(GetRow(row)); }
 
-    /// Creating a copy of a view is not supported
-    virtual std::unique_ptr<IImageBuffer> GetCopy() const { return nullptr; }
+    template <typename T>
+    const T* GetRowAs(size_t row) const { return static_cast<const T*>(GetRow(row)); }
+
+    const void* GetRow(size_t row) const { return static_cast<const uint8_t*>(m_Buf->GetRow(m_Y0 + row)) + m_X0 * m_Buf->GetBytesPerPixel(); }
+
+    PixelFormat GetPixelFormat() const { return m_Buf->GetPixelFormat(); }
 };
 
 #if USE_FREEIMAGE
-/// A wrapper around a FreeImage bitmap object; does not allocate nor free any memory itself
+
+class c_FreeImageHandleWrapper
+{
+    struct FreeImageDeleter { void operator()(FIBITMAP* ptr) const { FreeImage_Unload(ptr); } };
+    std::unique_ptr<FIBITMAP, FreeImageDeleter> m_FiBmp;
+
+public:
+    c_FreeImageHandleWrapper() = default;
+
+    c_FreeImageHandleWrapper(FIBITMAP* ptr)
+    {
+        m_FiBmp.reset(ptr);
+    }
+
+    c_FreeImageHandleWrapper(const c_FreeImageHandleWrapper& rhs) = delete;
+
+    c_FreeImageHandleWrapper& operator=(const c_FreeImageHandleWrapper& rhs) = delete;
+
+    c_FreeImageHandleWrapper(c_FreeImageHandleWrapper&& rhs) = default;
+
+    c_FreeImageHandleWrapper& operator=(c_FreeImageHandleWrapper&& rhs) = default;
+
+    ~c_FreeImageHandleWrapper() = default;
+
+    FIBITMAP* get() const { return m_FiBmp.get(); }
+
+    void reset(FIBITMAP* ptr) { m_FiBmp.reset(ptr); }
+
+    operator bool() const { return m_FiBmp.get() != nullptr; }
+};
+
+/// A wrapper around a FreeImage bitmap object.
 /** Palettised bitmaps are not supported. Before using c_FreeImageBuffer, convert the wrapped FI bitmap to RGB8. */
 class c_FreeImageBuffer: public IImageBuffer
 {
-    FIBITMAP *fibmp;
-    uint8_t *pixels;
-    int stride;
+    c_FreeImageHandleWrapper m_FiBmp;
+    // Store the pointer to the beginning of pixel data and the stride
+    // and later calculate row pointers in GetRow(), because for some reason
+    // using FreeImage_GetScanLine() is very slow (as of FreeImage 3.16.0,
+    // on Windows 8 x64 and Fedora 21 x64).
+    uint8_t* m_Pixels;
+    PixelFormat m_PixFmt;
+    int m_Stride;
+    Palette m_Palette{};
+
+    c_FreeImageBuffer(
+        c_FreeImageHandleWrapper&& fiBmp,
+        uint8_t* pixels,
+        PixelFormat pixFmt,
+        int stride
+    ): m_FiBmp(std::move(fiBmp)), m_Pixels(pixels), m_PixFmt(pixFmt), m_Stride(stride) {}
 
 public:
 
-    c_FreeImageBuffer(FIBITMAP *fibmp): fibmp(fibmp)
+    c_FreeImageBuffer(const c_FreeImageBuffer& rhs) = delete;
+    c_FreeImageBuffer& operator=(const c_FreeImageBuffer& rhs) = delete;
+
+    c_FreeImageBuffer(c_FreeImageBuffer&& rhs) = default;
+    c_FreeImageBuffer& operator=(c_FreeImageBuffer&& rhs) = default;
+
+    static std::optional<std::unique_ptr<IImageBuffer>> Create(c_FreeImageHandleWrapper&& fiBmp)
     {
-        // Store the pointer to the beginning of pixel data and the stride
-        // and later calculate row pointers in GetRow(), because for some reason
-        // using FreeImage_GetScanLine() is very slow (as of FreeImage 3.16.0,
-        // on Windows 8 x64 and Fedora 21 x64).
-        pixels = FreeImage_GetBits(fibmp);
-        stride = FreeImage_GetPitch(fibmp);
-    }
-
-    /// Returns image width in pixels
-    virtual unsigned GetWidth() const { return FreeImage_GetWidth(fibmp); }
-
-    /// Returns image height in pixels
-    virtual unsigned GetHeight() const { return FreeImage_GetHeight(fibmp); }
-
-    /// Returns number of bytes per row (including padding, if any)
-    virtual size_t GetBytesPerRow() const { return FreeImage_GetLine(fibmp); }
-
-    /// Returns number of bytes per pixel
-    virtual size_t GetBytesPerPixel() const { return FreeImage_GetBPP(fibmp) / 8; }
-
-    /// Returns pointer to the specified row; FreeImage stores rows in reverse order
-    virtual void *GetRow(size_t row) { return pixels + (GetHeight() - 1 - row) * stride; }
-
-    /// Returns pointer to the specified row; FreeImage stores rows in reverse order
-    virtual const void *GetRow(size_t row) const { return pixels + (GetHeight() - 1 - row) * stride; }
-
-    virtual PixelFormat_t GetPixelFormat() const
-    {
-        switch (FreeImage_GetImageType(fibmp))
+        PixelFormat pixFmt;
+        switch (FreeImage_GetImageType(fiBmp.get()))
         {
         case FIT_BITMAP:
-            switch (GetBytesPerPixel())
+            switch (FreeImage_GetBPP(fiBmp.get()) / 8)
             {
-            case 3: return PIX_RGB8;
-            case 4: return PIX_RGBA8;
-            default: return PIX_INVALID;
+            case 3: pixFmt = PixelFormat::PIX_RGB8; break;
+            case 4: pixFmt = PixelFormat::PIX_RGBA8; break;
+            default: return std::nullopt;
             }
             break;
 
-        case FIT_UINT16: return PIX_MONO16;
-        case FIT_FLOAT:  return PIX_MONO32F;
-        case FIT_RGB16:  return PIX_RGB16;
-        case FIT_RGBA16: return PIX_RGBA16;
-        case FIT_RGBF:   return PIX_RGB32F;
-        case FIT_RGBAF:  return PIX_RGBA32F;
-
-        default: return PIX_INVALID;
+        case FIT_UINT16: pixFmt = PixelFormat::PIX_MONO16; break;
+        case FIT_FLOAT:  pixFmt = PixelFormat::PIX_MONO32F; break;
+        case FIT_RGB16:  pixFmt = PixelFormat::PIX_RGB16; break;
+        case FIT_RGBA16: pixFmt = PixelFormat::PIX_RGBA16; break;
+        case FIT_RGBF:   pixFmt = PixelFormat::PIX_RGB32F; break;
+        case FIT_RGBAF:  pixFmt = PixelFormat::PIX_RGBA32F; break;
+        default: return std::nullopt;
         }
+
+        std::unique_ptr<IImageBuffer> result(
+            new c_FreeImageBuffer(
+                std::move(fiBmp),
+                FreeImage_GetBits(fiBmp.get()),
+                pixFmt,
+                FreeImage_GetPitch(fiBmp.get())
+            )
+        );
+
+        if (RGBQUAD* fiPal = FreeImage_GetPalette(fiBmp.get()))
+        {
+            Palette& palette = result->GetPalette();
+            for (int i = 0; i < 256; i++)
+            {
+                palette[i*3]   = fiPal[i].rgbRed;
+                palette[i*3+1] = fiPal[i].rgbGreen;
+                palette[i*3+2] = fiPal[i].rgbBlue;
+            }
+        }
+
+        return result;
     }
 
-    /// Creating a copy is not supported
-    virtual std::unique_ptr<IImageBuffer> GetCopy() const { return nullptr; }
+    unsigned GetWidth() const override { return FreeImage_GetWidth(m_FiBmp.get()); }
+
+    unsigned GetHeight() const override { return FreeImage_GetHeight(m_FiBmp.get()); }
+
+    size_t GetBytesPerRow() const override { return FreeImage_GetLine(m_FiBmp.get()); }
+
+    size_t GetBytesPerPixel() const override { return FreeImage_GetBPP(m_FiBmp.get()) / 8; }
+
+    void* GetRow(size_t row) override { return m_Pixels + (GetHeight() - 1 - row) * m_Stride; /* freeImage stores rows in reverse order */ }
+
+    const void* GetRow(size_t row) const override { return m_Pixels + (GetHeight() - 1 - row) * m_Stride; }
+
+    PixelFormat GetPixelFormat() const override { return m_PixFmt; }
+
+    Palette& GetPalette() override { return m_Palette; }
+
+    const Palette& GetPalette() const override { return m_Palette; }
+
+    /// Creating a copy is not supported.
+    std::unique_ptr<IImageBuffer> GetCopy() const override { IMPPG_ABORT(); }
+
+private:
+    bool SaveToFile(const std::string& fname, OutputFileType outFileType) const override;
 };
 #endif // USE_FREEIMAGE
 
-void NormalizeFpImage(c_Image &img, float minLevel, float maxLevel);
+void NormalizeFpImage(c_Image& img, float minLevel, float maxLevel);
 
-/// Loads the specified image file and converts it to PIX_MONO32F; returns 0 on error
-c_Image LoadImageFileAsMono32f(
-    const std::string &fname,        ///< Full path (including file name and extension)
-    const std::string &extension,    ///< lowercase extension
-    std::string *errorMsg = 0        ///< If not null, may receive an error message (if any)
+/// Loads the specified image file and converts it to PIX_MONO32F.
+std::optional<c_Image> LoadImageFileAsMono32f(
+    const std::string& fname,        ///< Full path (including file name and extension)
+    const std::string& extension,    ///< lowercase extension
+    std::string* errorMsg = nullptr  ///< If not null, may receive an error message (if any)
 );
 
-/// Loads the specified image file and converts it to PIX_MONO8; returns 0 on error
-c_Image LoadImageFileAsMono8(
-    const std::string &fname,     ///< Full path (including file name and extension)
-    const std::string &extension, ///< lowercase extension
-    std::string *errorMsg = 0     ///< If not null, may receive an error message (if any)
+/// Loads the specified image file and converts it to PIX_MONO8.
+std::optional<c_Image> LoadImageFileAsMono8(
+    const std::string& fname,       ///< Full path (including file name and extension)
+    const std::string& extension,   ///< lowercase extension
+    std::string* errorMsg = nullptr ///< If not null, may receive an error message (if any)
 );
 
 #if USE_CFITSIO
 /// Loads an image from a FITS file; the result's pixel format will be PIX_MONO8, PIX_MONO16 or PIX_MONO32F
-c_Image LoadFitsImage(const std::string &fname);
+std::optional<c_Image> LoadFitsImage(const std::string& fname);
 #endif
 
-/// Saves image using the specified output format
-bool SaveImageFile(
-    const std::string &fname, ///< Full destination path
-    const c_Image &img,
-    OutputFormat outputFmt
-);
-
-/// Returns 'true' if image's width and/or height were successfully read; returns 'false' on error
-bool GetImageSize(
-    const std::string &fname,     ///< Full path (including file name and extension)
-    const std::string &extension, ///< lowercase extension
-    unsigned &width,              ///< Receives image width
-    unsigned &height              ///< Receives image height
+/// Returns (width, height).
+std::optional<std::tuple<unsigned, unsigned>> GetImageSize(
+    const std::string& fname,     ///< Full path (including file name and extension).
+    const std::string& extension  ///< Lowercase extension.
 );
 
 #endif // ImPPG_HEADER_H

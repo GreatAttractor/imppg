@@ -57,8 +57,7 @@ enum
     ID_Crop,
     ID_CropBitmap,
     ID_Method,
-    ID_MethodBitmap,
-    ID_AlignMethodText
+    ID_MethodBitmap
 };
 
 const int BORDER = 5; ///< Border size (in pixels) between controls
@@ -84,21 +83,26 @@ wxString GetAlignmentMethodDescription(AlignmentMethod method)
 
 class c_ImageAlignmentParams: public c_ScrollableDialog
 {
-    void OnCommandEvent(wxCommandEvent &event);
-    void OnOutputDirChanged(wxFileDirPickerEvent &event);
-    void OnContentsScrolled(wxScrollWinEvent &event);
-    void OnContentsResized(wxSizeEvent &event);
+    void OnCommandEvent(wxCommandEvent& event);
+    void OnOutputDirChanged(wxFileDirPickerEvent& event);
+    void OnContentsScrolled(wxScrollWinEvent& event);
+    void OnContentsResized(wxSizeEvent& event);
 
-    virtual void DoInitControls();
+    void DoInitControls() override;
 
-    wxEditableListBox m_FileList;
     AlignmentParameters_t m_Parameters;
+
+    wxDirPickerCtrl* m_OutputDirCtrl{nullptr};
+    wxEditableListBox m_FileList;
+    wxGenericStaticBitmap* m_CropBitmapCtrl{nullptr};
+    wxStaticText* m_AlignMethodTextCtrl{nullptr};
+
     wxBitmap m_CropBitmaps[2]; ///< Bitmaps illustrating the "pad to bounding box" and "crop to intersection" output modes
 
 public:
-    c_ImageAlignmentParams(wxWindow *parent);
+    c_ImageAlignmentParams(wxWindow* parent);
 
-    void GetAlignmentParameters(AlignmentParameters_t &params);
+    void GetAlignmentParameters(AlignmentParameters_t& params);
 
     DECLARE_EVENT_TABLE()
 };
@@ -115,15 +119,15 @@ END_EVENT_TABLE()
 
 //--------------------------------------------------------------------------------------------
 
-void c_ImageAlignmentParams::GetAlignmentParameters(AlignmentParameters_t &params)
+void c_ImageAlignmentParams::GetAlignmentParameters(AlignmentParameters_t& params)
 {
     params = m_Parameters;
     params.inputFiles.Clear();
     m_FileList.GetStrings(params.inputFiles);
-    params.outputDir = m_Parameters.outputDir = ((wxDirPickerCtrl *)FindWindowById(ID_OutputDir, this))->GetPath();
+    params.outputDir = m_Parameters.outputDir = m_OutputDirCtrl->GetPath();
 }
 
-void c_ImageAlignmentParams::OnOutputDirChanged(wxFileDirPickerEvent &event)
+void c_ImageAlignmentParams::OnOutputDirChanged(wxFileDirPickerEvent& event)
 {
 #ifdef __WXMSW__
     // There is a bug in Windows in the "FilePicker in Folder Select mode" common dialog,
@@ -139,22 +143,24 @@ void c_ImageAlignmentParams::OnOutputDirChanged(wxFileDirPickerEvent &event)
     {
         path.RemoveLastDir();
         if (path.Exists())
-            ((wxDirPickerCtrl *)FindWindowById(ID_OutputDir, this))->SetPath(path.GetFullPath());
+            m_OutputDirCtrl->SetPath(path.GetFullPath());
         // else: do nothing, apparently the user is editing the path manually, so it's temporarily incorrect
     }
+#else
+    (void)event;
 #endif
 }
 
-void c_ImageAlignmentParams::OnCommandEvent(wxCommandEvent &event)
+void c_ImageAlignmentParams::OnCommandEvent(wxCommandEvent& event)
 {
     switch (event.GetId())
     {
     case ID_Crop:
-        ((wxGenericStaticBitmap *)FindWindowById(ID_CropBitmap, this))->SetBitmap(m_CropBitmaps[event.GetInt()]);
+        m_CropBitmapCtrl->SetBitmap(m_CropBitmaps[event.GetInt()]);
         break;
 
     case ID_Method:
-        ((wxStaticText *)FindWindowById(ID_AlignMethodText, this))->SetLabel(GetAlignmentMethodDescription(static_cast<AlignmentMethod>(event.GetInt())));
+        m_AlignMethodTextCtrl->SetLabel(GetAlignmentMethodDescription(static_cast<AlignmentMethod>(event.GetInt())));
         Layout();
         break;
 
@@ -196,7 +202,7 @@ void c_ImageAlignmentParams::OnCommandEvent(wxCommandEvent &event)
             m_FileList.GetStrings(strings);
             if (strings.Count() == 0)
                 wxMessageBox(_("No input files selected."), _("Error"), wxICON_ERROR, this);
-            else if (!wxFileName::DirExists(((wxDirPickerCtrl *)FindWindowById(ID_OutputDir, this))->GetPath()))
+            else if (!wxFileName::DirExists(m_OutputDirCtrl->GetPath()))
                 wxMessageBox(_("Selected output folder does not exist."), _("Error"), wxICON_ERROR, this);
             else
             {
@@ -209,7 +215,7 @@ void c_ImageAlignmentParams::OnCommandEvent(wxCommandEvent &event)
     }
 }
 
-c_ImageAlignmentParams::c_ImageAlignmentParams(wxWindow *parent)
+c_ImageAlignmentParams::c_ImageAlignmentParams(wxWindow* parent)
     : c_ScrollableDialog(parent, wxID_ANY, _("Image alignment"))
 {
     InitControls(BORDER);
@@ -224,9 +230,9 @@ void c_ImageAlignmentParams::DoInitControls()
     m_CropBitmaps[static_cast<size_t>(CropMode::CROP_TO_INTERSECTION)].LoadFile(wxFileName("images", "crop", "png").GetFullPath(), wxBITMAP_TYPE_PNG);
     m_CropBitmaps[static_cast<size_t>(CropMode::PAD_TO_BOUNDING_BOX)].LoadFile(wxFileName("images", "pad", "png").GetFullPath(), wxBITMAP_TYPE_PNG);
 
-    wxSizer *szContents = new wxBoxSizer(wxVERTICAL);
+    wxSizer* szContents = new wxBoxSizer(wxVERTICAL);
 
-        wxSizer *szListButtons = new wxBoxSizer(wxHORIZONTAL);
+        wxSizer* szListButtons = new wxBoxSizer(wxHORIZONTAL);
         szListButtons->Add(new wxButton(GetContainer(), ID_AddFiles, _("Add files...")), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
         szListButtons->Add(new wxButton(GetContainer(), ID_Sort, _("Sort"), wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
         szListButtons->Add(new wxButton(GetContainer(), ID_RemoveAll, _("Remove all"), wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
@@ -236,41 +242,41 @@ void c_ImageAlignmentParams::DoInitControls()
         m_FileList.Create(GetContainer(), ID_FileList, _("Input image files"), wxDefaultPosition, wxDefaultSize, wxEL_ALLOW_DELETE);
         szContents->Add(&m_FileList, 1, wxALIGN_CENTER | wxGROW | wxALL, BORDER);
 
-        wxSizer *szProcSettings = new wxBoxSizer(wxHORIZONTAL);
+        wxSizer* szProcSettings = new wxBoxSizer(wxHORIZONTAL);
 
-        wxCheckBox *cb = new wxCheckBox(GetContainer(), ID_SubpixelAlignment, _("Sub-pixel alignment"));
+        wxCheckBox* cb = new wxCheckBox(GetContainer(), ID_SubpixelAlignment, _("Sub-pixel alignment"));
         cb->SetValue(true);
         cb->SetToolTip(_("Enable sub-pixel alignment for smoother motion and less drift. Saving of output files will be somewhat slower; sharp, 1-pixel details (if present) may get very slightly blurred"));
         cb->SetValidator(wxGenericValidator(&m_Parameters.subpixelAlignment));
         szProcSettings->Add(cb, 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
         szContents->Add(szProcSettings, 0, wxALIGN_LEFT | wxALL, BORDER);
 
-        wxSizer *szCrop = new wxBoxSizer(wxHORIZONTAL);
+        wxSizer* szCrop = new wxBoxSizer(wxHORIZONTAL);
             wxArrayString cropChoices;
             cropChoices.Add(_("Crop to intersection"));
             cropChoices.Add(_("Pad to bounding box"));
-            wxRadioBox *rb = new wxRadioBox(GetContainer(), ID_Crop, wxEmptyString, wxDefaultPosition, wxDefaultSize, cropChoices, 0, wxRA_SPECIFY_ROWS);
-            rb->SetValidator(wxGenericValidator((int *)&m_Parameters.cropMode));
+            wxRadioBox* rb = new wxRadioBox(GetContainer(), ID_Crop, wxEmptyString, wxDefaultPosition, wxDefaultSize, cropChoices, 0, wxRA_SPECIFY_ROWS);
+            rb->SetValidator(wxGenericValidator(reinterpret_cast<int*>(&m_Parameters.cropMode)));
             szCrop->Add(rb, 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
-            szCrop->Add(new wxGenericStaticBitmap(GetContainer(), ID_CropBitmap, m_CropBitmaps[static_cast<size_t>(CropMode::CROP_TO_INTERSECTION)]),
+            szCrop->Add(m_CropBitmapCtrl = new wxGenericStaticBitmap(GetContainer(), ID_CropBitmap, m_CropBitmaps[static_cast<size_t>(CropMode::CROP_TO_INTERSECTION)]),
                 1, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
         szContents->Add(szCrop, 0, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxGROW | wxLEFT | wxRIGHT, BORDER);
 
-        wxSizer *szMethod = new wxBoxSizer(wxHORIZONTAL);
+        wxSizer* szMethod = new wxBoxSizer(wxHORIZONTAL);
             wxArrayString methodChoices;
             methodChoices.Add(_("Stabilize high-contrast features"));
             methodChoices.Add(_("Align on the solar limb"));
             rb = new wxRadioBox(GetContainer(), ID_Method, wxEmptyString, wxDefaultPosition, wxDefaultSize, methodChoices, 0, wxRA_SPECIFY_ROWS);
-            rb->SetValidator(wxGenericValidator((int *)&m_Parameters.alignmentMethod));
+            rb->SetValidator(wxGenericValidator(reinterpret_cast<int*>(&m_Parameters.alignmentMethod)));
             szMethod->Add(rb, 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
 
-            szMethod->Add(new wxStaticText(GetContainer(), ID_AlignMethodText, GetAlignmentMethodDescription(AlignmentMethod::PHASE_CORRELATION)), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
+            szMethod->Add(m_AlignMethodTextCtrl = new wxStaticText(GetContainer(), wxID_ANY, GetAlignmentMethodDescription(AlignmentMethod::PHASE_CORRELATION)), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
 
         szContents->Add(szMethod, 0, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxGROW | wxLEFT | wxRIGHT, BORDER);
 
-        wxSizer *szOutputDir = new wxBoxSizer(wxHORIZONTAL);
+        wxSizer* szOutputDir = new wxBoxSizer(wxHORIZONTAL);
         szOutputDir->Add(new wxStaticText(GetContainer(), wxID_ANY, _("Output folder:")), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
-        szOutputDir->Add(new wxDirPickerCtrl(GetContainer(), ID_OutputDir, Configuration::AlignOutputPath, _("Select output folder")),
+        szOutputDir->Add(m_OutputDirCtrl = new wxDirPickerCtrl(GetContainer(), ID_OutputDir, Configuration::AlignOutputPath, _("Select output folder")),
             1, wxALIGN_CENTER_VERTICAL | wxGROW | wxALL, BORDER);
         szContents->Add(szOutputDir, 0, wxGROW | wxALL, BORDER);
 
@@ -282,15 +288,15 @@ void c_ImageAlignmentParams::DoInitControls()
 
     GetTopSizer()->Add(new wxStaticLine(this), 0, wxGROW | wxALL);
 
-    wxSizer *szButtons = new wxBoxSizer(wxHORIZONTAL);
+    wxSizer* szButtons = new wxBoxSizer(wxHORIZONTAL);
     szButtons->Add(new wxButton(this, ID_Start, _("Start processing")), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
     szButtons->Add(new wxButton(this, wxID_CANCEL), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
     GetTopSizer()->Add(szButtons, 0, wxALIGN_RIGHT | wxALL, BORDER);
 }
 
 /// Displays the image alignment parameters dialog and receives parameters' values. Returns 'true' if the user clicks "Start processing".
-bool GetAlignmentParameters(wxWindow *parent,
-    AlignmentParameters_t &params ///< Receives alignment parameters
+bool GetAlignmentParameters(wxWindow* parent,
+    AlignmentParameters_t& params ///< Receives alignment parameters
 )
 {
     c_ImageAlignmentParams dlg(parent);

@@ -39,13 +39,13 @@ const int BORDER = 5; ///< Border size (in pixels) between controls
 
 class c_ImageAlignmentProgress: public wxDialog
 {
-    void OnInit(wxInitDialogEvent &event);
-    void OnThreadEvent(wxThreadEvent &event);
+    void OnInit(wxInitDialogEvent& event);
+    void OnThreadEvent(wxThreadEvent& event);
 
-    virtual void EndModal(int retCode);
+    void EndModal(int retCode) override;
 
 
-    c_ImageAlignmentWorkerThread *m_WorkerThread;
+    ExclusiveAccessObject<c_ImageAlignmentWorkerThread*> m_WorkerThread{nullptr};
     wxCriticalSection m_Guard; ///< Guards access to 'm_WorkerThread'
     wxGauge m_ProgressGauge;
     wxStaticText m_InfoText;
@@ -57,7 +57,7 @@ class c_ImageAlignmentProgress: public wxDialog
     AlignmentParameters_t m_Parameters;
 
 public:
-    c_ImageAlignmentProgress(wxWindow *parent, wxWindowID id, AlignmentParameters_t &params);
+    c_ImageAlignmentProgress(wxWindow* parent, wxWindowID id, AlignmentParameters_t& params);
 
 
     DECLARE_EVENT_TABLE()
@@ -79,7 +79,7 @@ END_EVENT_TABLE()
 
 void c_ImageAlignmentProgress::InitControls()
 {
-    wxSizer *szTop = new wxBoxSizer(wxVERTICAL);
+    wxSizer* szTop = new wxBoxSizer(wxVERTICAL);
 
     m_InfoText.Create(this, wxID_ANY, wxEmptyString);
     m_InfoText.SetFont(m_InfoText.GetFont().MakeBold());
@@ -104,7 +104,7 @@ void c_ImageAlignmentProgress::InitControls()
     Fit();
 }
 
-void c_ImageAlignmentProgress::OnThreadEvent(wxThreadEvent &event)
+void c_ImageAlignmentProgress::OnThreadEvent(wxThreadEvent& event)
 {
     AlignmentEventPayload_t payload;
 
@@ -131,7 +131,7 @@ void c_ImageAlignmentProgress::OnThreadEvent(wxThreadEvent &event)
         payload = event.GetPayload<AlignmentEventPayload_t>();
         m_InfoLog.AppendText(wxString::Format(_("Image %d/%d: translated by %.2f, %.2f."),
             event.GetInt()+1,
-            (int)m_Parameters.inputFiles.Count(),
+            static_cast<int>(m_Parameters.inputFiles.Count()),
             payload.translation.x, payload.translation.y) + "\n");
 
         break;
@@ -147,8 +147,8 @@ void c_ImageAlignmentProgress::OnThreadEvent(wxThreadEvent &event)
 
         m_ProgressGauge.SetValue(event.GetInt() + 1);
 
-        m_InfoLog.AppendText(wxString::Format(_("Translated and saved image %d/%d."),
-            event.GetInt()+1, (int)m_Parameters.inputFiles.Count()) + "\n");
+        m_InfoLog.AppendText(wxString::Format(_("Translated and saved image %d/%d.\n"),
+            event.GetInt()+1, static_cast<int>(m_Parameters.inputFiles.Count())));
 
         break;
 
@@ -184,7 +184,7 @@ void c_ImageAlignmentProgress::OnThreadEvent(wxThreadEvent &event)
 
         m_InfoLog.AppendText(wxString::Format(_("Image %d/%d: disc radius = %.2f"),
             event.GetInt()+1,
-            (int)m_Parameters.inputFiles.Count(),
+            static_cast<int>(m_Parameters.inputFiles.Count()),
             payload.radius) + "\n");
         m_ProgressGauge.SetValue(event.GetInt() + 1);
 
@@ -194,12 +194,12 @@ void c_ImageAlignmentProgress::OnThreadEvent(wxThreadEvent &event)
 
 bool c_ImageAlignmentProgress::IsProcessingInProgress()
 {
-    { wxCriticalSectionLocker lock(m_Guard);
-        return (0 != m_WorkerThread);
+    { auto lock = m_WorkerThread.Lock();
+        return lock.Get() != nullptr;
     }
 }
 
-c_ImageAlignmentProgress::c_ImageAlignmentProgress(wxWindow *parent, wxWindowID id, AlignmentParameters_t &params)
+c_ImageAlignmentProgress::c_ImageAlignmentProgress(wxWindow* parent, wxWindowID id, AlignmentParameters_t& params)
 : wxDialog(parent, id, _("Image alignment progress"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER),
 m_Parameters(params)
 {
@@ -208,19 +208,20 @@ m_Parameters(params)
     InitControls();
 }
 
-void c_ImageAlignmentProgress::OnInit(wxInitDialogEvent &event)
+void c_ImageAlignmentProgress::OnInit(wxInitDialogEvent&)
 {
-    m_WorkerThread = new c_ImageAlignmentWorkerThread(*this, m_Guard, &m_WorkerThread, m_Parameters);
-    m_WorkerThread->Run();
+    auto lock = m_WorkerThread.Lock();
+    lock.Get() = new c_ImageAlignmentWorkerThread(*this, m_WorkerThread, m_Parameters);
+    lock.Get()->Run();
 }
 
 void c_ImageAlignmentProgress::EndModal(int retCode)
 {
     if (IsProcessingInProgress())
     {
-        { wxCriticalSectionLocker lock(m_Guard);
-            if (m_WorkerThread)
-                m_WorkerThread->AbortProcessing();
+        { auto lock = m_WorkerThread.Lock();
+            if (lock.Get())
+                lock.Get()->AbortProcessing();
         }
 
         // If it was running, the worker thread will destroy itself any moment; keep polling
@@ -232,7 +233,7 @@ void c_ImageAlignmentProgress::EndModal(int retCode)
 }
 
 /// Displays the alignment progress dialog and starts processing. Returns 'true' if processing has completed.
-bool AlignImages(wxWindow *parent, AlignmentParameters_t &params)
+bool AlignImages(wxWindow* parent, AlignmentParameters_t& params)
 {
     c_ImageAlignmentProgress dlg(parent, wxID_ANY, params);
     wxRect r = Configuration::AlignProgressDialogPosSize;
