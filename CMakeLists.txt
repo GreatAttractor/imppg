@@ -26,6 +26,7 @@ add_executable(imppg WIN32
     src/align_proc.cpp
     src/align_progress.cpp
     src/appconfig.cpp
+    src/backend/cpu_bmp/cpu_bmp_core.cpp
     src/batch.cpp
     src/batch_params.cpp
     src/bmp.cpp

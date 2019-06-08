@@ -38,10 +38,11 @@ File description:
 #include <wx/stattext.h>
 #include <wx/timer.h>
 
+#include "backend/backend.h"
 #include "image.h"
 #include "num_ctrl.h"
-#include "tcrv.h"
 #include "tcrv_edit.h"
+#include "tcrv.h"
 #include "worker.h"
 
 enum class ScalingMethod
@@ -336,6 +337,8 @@ class c_MainWindow: public wxFrame
         /// If 'true', processing has been scheduled to start ASAP (as soon as 'm_Processing.worker' is not running)
         bool processingScheduled;
     } m_Processing;
+
+    std::unique_ptr<imppg::backend::IBackEnd> m_BackEnd;
 
 public:
     c_MainWindow();
