@@ -136,13 +136,13 @@ bool ParseLucyRichardsonSettings(const wxXmlNode* node, float& sigma, int& itera
 {
     std::stringstream parser;
 
-    parser << node->GetAttribute(XmlName::lrSigma);
+    parser.str(node->GetAttribute(XmlName::lrSigma).ToStdString());
     parser >> sigma;
     if (parser.fail())
         return false;
 
     parser.clear();
-    parser << node->GetAttribute(XmlName::lrIters);
+    parser.str(node->GetAttribute(XmlName::lrIters).ToStdString());
     parser >> iterations;
     if (parser.fail())
         return false;
@@ -168,31 +168,31 @@ bool ParseUnsharpMaskingSettings(const wxXmlNode* node, bool& adaptive, float& s
     else
         return false;
 
-    parser << node->GetAttribute(XmlName::unshSigma);
+    parser.str(node->GetAttribute(XmlName::unshSigma).ToStdString());
     parser >> sigma;
     if (parser.fail())
         return false;
 
     parser.clear();
-    parser << node->GetAttribute(XmlName::unshAmountMin);
+    parser.str(node->GetAttribute(XmlName::unshAmountMin).ToStdString());
     parser >> amountMin;
     if (parser.fail())
         return false;
 
     parser.clear();
-    parser << node->GetAttribute(XmlName::unshAmountMax);
+    parser.str(node->GetAttribute(XmlName::unshAmountMax).ToStdString());
     parser >> amountMax;
     if (parser.fail())
         return false;
 
     parser.clear();
-    parser << node->GetAttribute(XmlName::unshThreshold);
+    parser.str(node->GetAttribute(XmlName::unshThreshold).ToStdString());
     parser >> threshold;
     if (parser.fail())
         return false;
 
     parser.clear();
-    parser << node->GetAttribute(XmlName::unshWidth);
+    parser.str(node->GetAttribute(XmlName::unshWidth).ToStdString());
     parser >> width;
     if (parser.fail())
         return false;
@@ -210,13 +210,13 @@ bool ParseNormalizationSetings(const wxXmlNode* node, bool& normalizationEnabled
         return false;
 
     std::stringstream parser;
-    parser << node->GetAttribute(XmlName::normMin);
+    parser.str(node->GetAttribute(XmlName::normMin).ToStdString());
     parser >> normMin;
     if (parser.fail())
         return false;
 
     parser.clear();
-    parser << node->GetAttribute(XmlName::normMax);
+    parser.str(node->GetAttribute(XmlName::normMax).ToStdString());
     parser >> normMax;
     if (parser.fail())
         return false;
@@ -241,7 +241,7 @@ bool ParseToneCurveSettings(const wxXmlNode* node, c_ToneCurve& tcurve)
     {
         tcurve.SetGammaMode(true);
 
-        parser << node->GetAttribute(XmlName::tcGamma);
+        parser.str(node->GetAttribute(XmlName::tcGamma).ToStdString());
         float gamma;
         parser >> gamma;
         if (parser.fail())
@@ -255,7 +255,7 @@ bool ParseToneCurveSettings(const wxXmlNode* node, c_ToneCurve& tcurve)
         return false;
 
     parser.clear();
-    parser << node->GetNodeContent();
+    parser.str(node->GetNodeContent().ToStdString());
 
     tcurve.ClearPoints();
     while (true)

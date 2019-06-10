@@ -43,9 +43,9 @@ void Log::Print(const wxString& msg, bool prependTimestamp, LogLevel level)
         //TODO: use something more precise for time source (microsecond precision or better)
         if (prependTimestamp)
         {
-            *logStream << wxDateTime::UNow().Format("%H:%M:%S.%l").c_str() << " ";
+            *logStream << wxDateTime::UNow().Format("%H:%M:%S.%l").ToStdString() << " ";
         }
-        *logStream << msg.c_str();
+        *logStream << msg.ToStdString();
         logStream->flush();
     }
 }

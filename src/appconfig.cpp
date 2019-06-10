@@ -31,7 +31,7 @@ File description:
 static bool wxFromString(const wxString& string, wxRect* rect)
 {
     std::stringstream parser;
-    parser << string;
+    parser << string.ToStdString();
 
     char sep; // separator
     parser >> (rect->x) >> sep >>

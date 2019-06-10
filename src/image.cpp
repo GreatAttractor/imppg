@@ -278,7 +278,7 @@ public:
         std::unique_ptr<c_SimpleBuffer> copy(new c_SimpleBuffer(m_Width, m_Height, m_PixFmt));
         memcpy(copy->m_Pixels.get(), m_Pixels.get(), m_Width * m_Height * m_BytesPerPixel);
         memcpy(&copy->m_Palette, &m_Palette, sizeof(m_Palette));
-        return std::move(copy);
+        return copy;
     }
 
 private:
