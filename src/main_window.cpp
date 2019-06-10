@@ -799,33 +799,36 @@ void c_MainWindow::OnThreadEvent(wxThreadEvent& /*event*/)
     // }
 }
 
-/// Marks the selection's outline (using physical coords)
-void c_MainWindow::MarkSelection(const wxRect& /*selection*/, wxDC& /*dc*/)
+wxRect c_MainWindow::GetPhysicalSelection() const
 {
-// #ifdef __WXMSW__
-
-//     wxRasterOperationMode oldMode = dc.GetLogicalFunction();
-//     dc.SetLogicalFunction(wxINVERT);
-//     dc.SetPen(*wxBLACK_PEN);
-//     dc.SetBrush(*wxTRANSPARENT_BRUSH);
-//     dc.DrawRectangle(selection);
-//     dc.SetLogicalFunction(oldMode);
-
-// #else
-//     // On other platforms, e.g. GTK 3 or OS X (but not GTK 2), logical DC operations are not supported.
-//     // To be on the safe side, draw the selection using a dashed pen instead.
-
-//     dc.SetBrush(*wxTRANSPARENT_BRUSH);
-
-//     wxPen pen1(*wxWHITE);
-//     dc.SetPen(pen1);
-//     dc.DrawRectangle(selection);
-
-//     wxPen pen2(*wxBLACK, 1, wxPENSTYLE_DOT);
-//     dc.SetPen(pen2);
-//     dc.DrawRectangle(selection);
-
-// #endif
+    const auto& s = m_CurrentSettings;
+    if (s.view.zoomFactor == ZOOM_NONE)
+    {
+        const wxRect currSel = m_MouseOps.dragging ? m_MouseOps.GetSelection(wxRect(0, 0, s.imgWidth, s.imgHeight)) : s.selection;
+        return wxRect(
+            m_ImageView.CalcScrolledPosition(currSel.GetTopLeft()),
+            m_ImageView.CalcScrolledPosition(currSel.GetBottomRight())
+        );
+    }
+    else
+    {
+        if (m_MouseOps.dragging)
+        {
+            return wxRect(
+                std::min(m_MouseOps.View.start.x, m_MouseOps.View.end.x),
+                std::min(m_MouseOps.View.start.y, m_MouseOps.View.end.y),
+                std::abs(m_MouseOps.View.end.x - m_MouseOps.View.start.x) + 1,
+                std::abs(m_MouseOps.View.end.y - m_MouseOps.View.start.y) + 1
+            );
+        }
+        else
+        {
+            return wxRect(
+                m_ImageView.CalcScrolledPosition(s.scaledSelection.GetTopLeft()),
+                m_ImageView.CalcScrolledPosition(s.scaledSelection.GetBottomRight())
+            );
+        }
+    }
 }
 
 void c_MainWindow::OnImageViewMouseDragStart(wxMouseEvent& event)
@@ -853,6 +856,7 @@ void c_MainWindow::OnImageViewMouseDragStart(wxMouseEvent& event)
     m_MouseOps.dragEnd = m_MouseOps.dragStart;
     m_ImageView.CaptureMouse();
     m_MouseOps.prevSelectionBordersErased = false;
+
 }
 
 void c_MainWindow::OnImageViewMouseMove(wxMouseEvent& event)
@@ -995,28 +999,28 @@ void c_MainWindow::OnImageViewMouseCaptureLost(wxMouseCaptureLostEvent&)
 }
 
 void c_MainWindow::OnNewSelection(
-    wxRect /*newSelection*/ ///< Logical coordinates in the image
+    wxRect newSelection ///< Logical coordinates in the image.
 )
 {
-    // auto& s = m_CurrentSettings;
+    auto& s = m_CurrentSettings;
 
-    // Log::Print(wxString::Format("New selection at (%d, %d), w=%d, h=%d\n",
-    //     newSelection.x, newSelection.y, newSelection.width, newSelection.height));
+    Log::Print(wxString::Format("New selection at (%d, %d), w=%d, h=%d\n",
+        newSelection.x, newSelection.y, newSelection.width, newSelection.height));
 
     // // Restore unprocessed image contents in the previous selection
     // wxBitmap restored = ImageToRgbBitmap(s.m_Img.value(), s.selection.x, s.selection.y, s.selection.width, s.selection.height);
     // wxMemoryDC restoredDc(restored);
     // wxMemoryDC(s.m_ImgBmp.value()).Blit(s.selection.GetTopLeft(), s.selection.GetSize(), &restoredDc, wxPoint(0, 0));
 
-    // if (s.view.zoomFactor == ZOOM_NONE)
-    // {
+    if (s.view.zoomFactor == ZOOM_NONE)
+    {
     //     m_ImageView.RefreshRect(wxRect(
     //         m_ImageView.CalcScrolledPosition(s.selection.GetTopLeft()),
     //         m_ImageView.CalcScrolledPosition(s.selection.GetBottomRight())),
     //         false);
-    // }
-    // else if (s.view.bmpScaled)
-    // {
+    }
+    else
+    {
     //     // Restore also the corresponding fragment of the scaled bitmap.
     //     // Before restoring, increase the size of previous (unscaled) image fragment slightly to avoid any left-overs due to round-off errors
     //     int DELTA = std::max(6, static_cast<int>(std::ceil(1.0f/s.view.zoomFactor)));
@@ -1077,11 +1081,11 @@ void c_MainWindow::OnNewSelection(
     //         false);
 
 
-    //     s.scaledSelection = wxRect(m_ImageView.CalcUnscrolledPosition(m_MouseOps.View.start),
-    //                                m_ImageView.CalcUnscrolledPosition(m_MouseOps.View.end));
-    // }
+        s.scaledSelection = wxRect(m_ImageView.CalcUnscrolledPosition(m_MouseOps.View.start),
+                                   m_ImageView.CalcUnscrolledPosition(m_MouseOps.View.end));
+    }
 
-    // s.selection = newSelection;
+    s.selection = newSelection;
 
     // // Process the new selection, starting with sharpening
     // ScheduleProcessing(ProcessingRequest::SHARPENING); //TODO: make this (auto-updating after selection changed) optional
@@ -1153,8 +1157,6 @@ void c_MainWindow::OpenFile(wxFileName path, bool resetSelection)
         if (s.normalization.enabled)
             NormalizeFpImage(newImg, s.normalization.min, s.normalization.max);
 
-
-
         if (resetSelection)
         {
             // Set initial selection to the middle 20% of the image
@@ -1170,12 +1172,14 @@ void c_MainWindow::OpenFile(wxFileName path, bool resetSelection)
             s.scaledSelection.height *= s.view.zoomFactor;
         }
 
-        // Determine the selection's histogram and update the tone curve editor
-        Histogram_t histogram;
-        DetermineHistogram(newImg, s.selection, histogram);
-        m_Ctrls.tcrvEditor->SetHistogram(histogram);
-
         m_BackEnd->FileOpened(std::move(newImg));
+
+        // Determine the selection's histogram and update the tone curve editor
+        // Histogram histogram;
+        // DetermineHistogram(newImg, s.selection, histogram);
+        m_Ctrls.tcrvEditor->SetHistogram(m_BackEnd->GetHistogram());
+
+
 
         // // Initialize the images holding results of processing steps
         // s.output.sharpening.img = c_Image(s.selection.width, s.selection.height, PixelFormat::PIX_MONO32F);
@@ -1287,7 +1291,7 @@ void c_MainWindow::UpdateSelectionAfterProcessing()
     //     m_ImageView.RefreshRect(updateRegion, false);
     // }
 
-    // Histogram_t histogram;
+    // Histogram histogram;
     // // Show histogram of the results of all processing steps up to unsharp masking,
     // // but NOT including tone curve application.
     // DetermineHistogram(s.output.unsharpMasking.img.value(), wxRect(0, 0, s.selection.width, s.selection.height), histogram);
@@ -1686,17 +1690,17 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent& event)
         break;
 
     case ID_SelectAndProcessAll:
-        // if (m_CurrentSettings.m_Img)
-        // {
-        //     // Set 'm_MouseOps' as if this new whole-image selection was marked with mouse by the user.
-        //     // Needed for determining of 'scaledSelection' in OnNewSelection().
-        //     m_MouseOps.View.start = m_ImageView.CalcScrolledPosition(wxPoint(0, 0));
-        //     m_MouseOps.View.end = m_ImageView.CalcScrolledPosition(
-        //             wxPoint(s.m_ImgBmp.value().GetWidth() * s.view.zoomFactor,
-        //                     s.m_ImgBmp.value().GetHeight() * s.view.zoomFactor));
+        if (m_ImageLoaded)
+        {
+            // Set 'm_MouseOps' as if this new whole-image selection was marked with mouse by the user.
+            // Needed for determining of `scaledSelection` in `OnNewSelection()`.
+            m_MouseOps.View.start = m_ImageView.CalcScrolledPosition(wxPoint(0, 0));
+            m_MouseOps.View.end = m_ImageView.CalcScrolledPosition(
+                    wxPoint(s.imgWidth * s.view.zoomFactor,
+                            s.imgHeight * s.view.zoomFactor));
 
-        //     OnNewSelection(wxRect(0, 0, s.m_Img.value().GetWidth(), s.m_Img.value().GetHeight()));
-        // }
+            OnNewSelection(wxRect(0, 0, s.imgWidth, s.imgHeight));
+        }
         break;
 
     case ID_ToggleToneCurveEditor:
@@ -2294,6 +2298,7 @@ void c_MainWindow::InitControls()
     BindAllScrollEvents(m_ImageView, &c_MainWindow::OnImageViewScroll, this);
 
     m_BackEnd = std::make_unique<imppg::backend::c_CpuAndBitmaps>(m_ImageView);
+    m_BackEnd->SetPhysicalSelectionGetter([this] { return GetPhysicalSelection(); });
 
     m_AuiMgr.AddPane(&m_ImageView,
         wxAuiPaneInfo()
@@ -2338,7 +2343,7 @@ c_MainWindow::~c_MainWindow()
 }
 
 /// Determines histogram of the specified area of an image
-void c_MainWindow::DetermineHistogram(const c_Image &img, const wxRect &selection, Histogram_t &histogram)
+void c_MainWindow::DetermineHistogram(const c_Image &img, const wxRect &selection, Histogram &histogram)
 {
     histogram.values.clear();
     histogram.values.insert(histogram.values.begin(), NUM_HISTOGRAM_BINS, 0);

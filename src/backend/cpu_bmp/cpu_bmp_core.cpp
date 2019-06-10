@@ -31,6 +31,35 @@ namespace imppg::backend {
 /// Delay after a scroll or resize event before refreshing the display if zoom level <> 100%.
 constexpr int IMAGE_SCALING_DELAY_MS = 150;
 
+/// Marks the selection's outline (using physical coords).
+static void MarkSelection(const wxRect& physSelection, wxDC& dc)
+{
+#ifdef __WXMSW__
+
+    wxRasterOperationMode oldMode = dc.GetLogicalFunction();
+    dc.SetLogicalFunction(wxINVERT);
+    dc.SetPen(*wxBLACK_PEN);
+    dc.SetBrush(*wxTRANSPARENT_BRUSH);
+    dc.DrawRectangle(physSelection);
+    dc.SetLogicalFunction(oldMode);
+
+#else
+    // On other platforms, e.g. GTK 3 or OS X (but not GTK 2), logical DC operations are not supported.
+    // To be on the safe side, draw the selection using a dashed pen instead.
+
+    dc.SetBrush(*wxTRANSPARENT_BRUSH);
+
+    wxPen pen1(*wxWHITE);
+    dc.SetPen(pen1);
+    dc.DrawRectangle(physSelection);
+
+    wxPen pen2(*wxBLACK, 1, wxPENSTYLE_DOT);
+    dc.SetPen(pen2);
+    dc.DrawRectangle(physSelection);
+
+#endif
+}
+
 /// Converts the specified fragment of `src` to a 24-bit RGB bitmap.
 static wxBitmap ImageToRgbBitmap(const c_Image& src, int x0, int y0, int width, int height)
 {
@@ -88,12 +117,6 @@ void c_CpuAndBitmaps::OnPaint(wxPaintEvent&)
     wxPaintDC dc(&m_ImgView);
     if (!m_ImgBmp)
         return;
-
-    // { //TESTING #################3
-    //     const wxPoint scrollPos = m_ImgView.CalcUnscrolledPosition(wxPoint(0, 0));
-    //     std::cout << "PAINT: " << scrollPos.x << std::endl;
-    // }
-
 
     wxRegionIterator upd(m_ImgView.GetUpdateRegion());
     wxMemoryDC imgDC(m_ImgBmp.value());
@@ -163,28 +186,9 @@ void c_CpuAndBitmaps::OnPaint(wxPaintEvent&)
             dc.Blit(updRect.GetTopLeft(), updRect.GetSize(), &imgDC, srcPt);
             upd++;
         }
-
-        // // selection in physical (`m_ImgView`) coordinates
-        // wxRect physSelection;
-        // if (m_MouseOps.dragging)
-        // {
-        //     physSelection = wxRect(std::min(m_MouseOps.View.start.x, m_MouseOps.View.end.x),
-        //         std::min(m_MouseOps.View.start.y, m_MouseOps.View.end.y),
-        //         std::abs(m_MouseOps.View.end.x - m_MouseOps.View.start.x) + 1,
-        //         std::abs(m_MouseOps.View.end.y - m_MouseOps.View.start.y) + 1);
-        // }
-        // else
-        // {
-        //     physSelection = wxRect(m_ImageView.CalcScrolledPosition(s.scaledSelection.GetTopLeft()),
-        //                             m_ImageView.CalcScrolledPosition(s.scaledSelection.GetBottomRight()));
-        // }
     }
 
-    // selection in physical (m_ImgView) coordinates
-    // wxRect physSelection(
-    //     m_ImageView.CalcScrolledPosition(currSel.GetTopLeft()),
-    //     m_ImageView.CalcScrolledPosition(currSel.GetBottomRight()));
-    // MarkSelection(physSelection, dc);
+    MarkSelection(m_PhysSelectionGetter(), dc);
 }
 
 void c_CpuAndBitmaps::CreateScaledPreview(float zoomFactor)
@@ -219,6 +223,11 @@ void c_CpuAndBitmaps::CreateScaledPreview(float zoomFactor)
         srcBmp.GetHeight() * zoomFactor,
         wxIMAGE_QUALITY_NEAREST/*TODO! GetResizeQuality(s.scalingMethod)*/)
     );
+}
+
+Histogram c_CpuAndBitmaps::GetHistogram()
+{
+    return Histogram{};
 }
 
 } // namespace imppg::backend

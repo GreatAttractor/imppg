@@ -36,21 +36,36 @@ class c_CpuAndBitmaps: public IBackEnd
 public:
     c_CpuAndBitmaps(wxScrolledCanvas& imgView);
 
-    // Events -------------------------------------------------
     void ImageViewScrolledOrResized(float zoomFactor) override;
+
     void ImageViewZoomChanged(float zoomFactor) override;
+
     void FileOpened(c_Image&& img) override;
+
+    Histogram GetHistogram() override;
+
+    void SetPhysicalSelectionGetter(std::function<wxRect()> getter) override { m_PhysSelectionGetter = getter; }
 
 private:
     wxScrolledCanvas& m_ImgView;
+
     std::optional<c_Image> m_Img;
+
     std::optional<wxBitmap> m_ImgBmp; ///< Bitmap which wraps `m_Img` for displaying on `m_ImgView`.
+
     float m_ZoomFactor{ZOOM_NONE};
+
     float m_NewZoomFactor{ZOOM_NONE};
+
     std::optional<wxBitmap> m_BmpScaled; ///< Currently visible scaled fragment (or whole) of `m_ImgBmp`.
+
     wxRect m_ScaledArea; ///< Area within `m_ImgBmp` represented by `m_BmpScaled`.
 
+    /// Provides selection in physical image view coords.
+    std::function<wxRect()> m_PhysSelectionGetter;
+
     void OnPaint(wxPaintEvent& event);
+
     void CreateScaledPreview(float zoomFactor);
 
     class c_ScalingTimer: public wxTimer

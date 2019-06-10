@@ -103,7 +103,7 @@ class c_MainWindow: public wxFrame
     bool ToneCurveEnabled(); ///< Returns 'true' if tone curve has impact on the image (i.e. it is not the identity map)
     void OnProcessingStepCompleted(CompletionStatus status);
     /// Determines histogram of the specified area of an image
-    void DetermineHistogram(const c_Image& img, const wxRect& selection, Histogram_t& histogram);
+    void DetermineHistogram(const c_Image& img, const wxRect& selection, Histogram& histogram);
     wxPanel* CreateLucyRichardsonControlsPanel(wxWindow* parent);
     wxStaticBoxSizer* CreateUnsharpMaskingControls(wxWindow* parent);
     void OnUpdateUnsharpMaskingSettings();
@@ -134,6 +134,7 @@ class c_MainWindow: public wxFrame
     void SetAsMRU(wxString settingsFile);
     void LoadSettingsFromFile(wxString settingsFile, bool moveToMruListStart);
     void IndicateSettingsModified();
+    wxRect GetPhysicalSelection() const; ///< Returns current selection in physical `m_ImageView` coords.
 
     wxAuiManager m_AuiMgr;
     wxScrolledCanvas m_ImageView; ///< Displays 'm_ImgBmp' or 'm_ImgBmpScaled' (i.e. the current image)
@@ -272,7 +273,7 @@ class c_MainWindow: public wxFrame
         } View;
 
         /// Returns the selection made with mouse (logical coords in m_ImgBmp), limited to the specified rectangle
-        wxRect GetSelection(wxRect limit)
+        wxRect GetSelection(wxRect limit) const
         {
             wxPoint topLeft(std::min(dragStart.x, dragEnd.x),
                 std::min(dragStart.y, dragEnd.y));

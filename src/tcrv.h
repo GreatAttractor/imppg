@@ -27,14 +27,6 @@ File description:
 #include <vector>
 #include "common.h"
 
-typedef struct
-{
-    float minValue; ///< Exact minimum value present in image
-    float maxValue; ///< Exact maximum value present in image
-    std::vector<int> values; ///< Histogram values for uniform intervals (bins)
-    int maxCount; ///< Highest count among the histogram bins
-} Histogram_t;
-
 /// Represents a tone curve and associated data. NOTE: LUT contents are not copied by copy constructor and assignment operator.
 class c_ToneCurve
 {

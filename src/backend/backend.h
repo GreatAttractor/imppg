@@ -24,8 +24,10 @@ File description:
 #ifndef IMPPG_BACKEND_HEADER
 #define IMPPG_BACKEND_HEADER
 
+#include <functional>
 #include <wx/scrolwin.h>
 
+#include "../common.h"
 #include "../image.h"
 
 namespace imppg::backend {
@@ -33,10 +35,17 @@ namespace imppg::backend {
 class IBackEnd
 {
 public:
-    // Events -------------------------------------------------
     virtual void ImageViewScrolledOrResized(float zoomFactor) = 0;
+
     virtual void ImageViewZoomChanged(float zoomFactor) = 0;
+
     virtual void FileOpened(c_Image&& img) = 0;
+
+    /// Provides getter of selection in physical image view coords.
+    virtual void SetPhysicalSelectionGetter(std::function<wxRect()> getter) = 0;
+
+    /// Returns histogram of current selection after before applying tone curve.
+    virtual Histogram GetHistogram() = 0;
 
     virtual ~IBackEnd() = default;
 };

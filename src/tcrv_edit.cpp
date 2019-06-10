@@ -103,7 +103,7 @@ void c_ToneCurveEditor::OnToggleLogHist(wxCommandEvent&)
 }
 
 /// Updates the histogram (creates an internal copy)
-void c_ToneCurveEditor::SetHistogram(const Histogram_t& histogram)
+void c_ToneCurveEditor::SetHistogram(const Histogram& histogram)
 {
     m_Histogram = histogram;
     m_CurveArea->Refresh(false);

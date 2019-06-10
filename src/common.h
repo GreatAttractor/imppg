@@ -24,6 +24,7 @@ File description:
 #ifndef IMPGG_COMMON_HEADER
 #define IMPGG_COMMON_HEADER
 
+#include <vector>
 #include <wx/bitmap.h>
 #include <wx/settings.h>
 #include <wx/window.h>
@@ -133,5 +134,13 @@ void BindAllScrollEvents(wxEvtHandler& evtHandler, void(T::* evtFunc)(wxScrollWi
 
 /// Deleter for blocks allocated with `operator new[]`.
 struct BlockDeleter { void operator()(void* ptr) { operator delete[](ptr); } };
+
+struct Histogram
+{
+    float minValue; ///< Exact minimum value present in image
+    float maxValue; ///< Exact maximum value present in image
+    std::vector<int> values; ///< Histogram values for uniform intervals (bins)
+    int maxCount; ///< Highest count among the histogram bins
+};
 
 #endif //  IMPGG_COMMON_HEADER
