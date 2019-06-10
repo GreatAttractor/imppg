@@ -90,7 +90,7 @@ namespace Cursors
             BITM("11110000"), BITM("00000011")
         };
 
-#ifdef __WXMSW__
+#if wxUSE_IMAGE
         wxBitmap bmpHandOpen(static_cast<const char*>(crHandOpenBits), 16, 16);
         wxBitmap bmpHandOpenMask(static_cast<const char*>(crHandOpenMask), 16, 16);
         bmpHandOpen.SetMask(new wxMask(bmpHandOpenMask));
@@ -143,7 +143,7 @@ namespace Cursors
             BITM("11110000"), BITM("00000011")
         };
 
-#ifdef __WXMSW__
+#if wxUSE_IMAGE
         wxBitmap bmpHandClosed(static_cast<const char*>(crHandClosedBits), 16, 16);
         wxBitmap bmpHandClosedMask(static_cast<const char*>(crHandClosedMask), 16, 16);
         bmpHandClosed.SetMask(new wxMask(bmpHandClosedMask));
