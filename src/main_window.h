@@ -163,6 +163,8 @@ class c_MainWindow: public wxFrame
     /// Index of the most recently used item from Configuration::GetMruSettings().
     int m_MruSettingsIdx{wxNOT_FOUND};
 
+    bool m_ImageLoaded{false}; ///< Becomes true after first successful image load.
+
     /// Current image, processing settings and processing steps' results.
     struct
     {

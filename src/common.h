@@ -28,6 +28,8 @@ File description:
 #include <wx/settings.h>
 #include <wx/window.h>
 
+constexpr float ZOOM_NONE = 1.0f;
+
 enum class ToneCurveEditorColors
 {
     ImPPGDefaults = 0,
@@ -116,14 +118,14 @@ wxBitmap LoadBitmap(wxString name, bool scale = false, wxSize scaledSize = wxDef
 template<class T>
 void BindAllScrollEvents(wxEvtHandler& evtHandler, void(T::* evtFunc)(wxScrollWinEvent&), T* parent)
 {
-    for (auto tag: { wxEVT_SCROLLWIN_BOTTOM,
-                     wxEVT_SCROLLWIN_LINEDOWN,
-                     wxEVT_SCROLLWIN_LINEUP,
-                     wxEVT_SCROLLWIN_PAGEDOWN,
-                     wxEVT_SCROLLWIN_PAGEUP,
-                     wxEVT_SCROLLWIN_THUMBRELEASE,
-                     wxEVT_SCROLLWIN_THUMBTRACK,
-                     wxEVT_SCROLLWIN_TOP })
+    for (const auto tag: { wxEVT_SCROLLWIN_BOTTOM,
+                           wxEVT_SCROLLWIN_LINEDOWN,
+                           wxEVT_SCROLLWIN_LINEUP,
+                           wxEVT_SCROLLWIN_PAGEDOWN,
+                           wxEVT_SCROLLWIN_PAGEUP,
+                           wxEVT_SCROLLWIN_THUMBRELEASE,
+                           wxEVT_SCROLLWIN_THUMBTRACK,
+                           wxEVT_SCROLLWIN_TOP })
      {
          evtHandler.Bind(tag, evtFunc, parent);
      }

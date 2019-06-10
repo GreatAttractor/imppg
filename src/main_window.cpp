@@ -63,6 +63,7 @@ File description:
 #include "appconfig.h"
 #include "batch.h"
 #include "bmp.h"
+#include "common.h"
 #include "ctrl_ids.h"
 #include "formats.h"
 #include "imppg_assert.h"
@@ -86,10 +87,6 @@ const int REAL_PREC = 4; ///< Precision of real numbers in text controls
 
 const int NUM_HISTOGRAM_BINS = 1024;
 
-/// Number of milliseconds to wait after a scroll or resize event before refreshing the display if zoom level <> 100%
-const int IMAGE_SCALING_DELAY = 150;
-
-const float ZOOM_NONE = 1.0f;
 const float ZOOM_STEP = 1.5f; ///< Zoom in/zoom out factor
 const float ZOOM_MIN = 0.05f;
 const float ZOOM_MAX = 20.0f;
@@ -156,7 +153,7 @@ BEGIN_EVENT_TABLE(c_MainWindow, wxFrame)
     EVT_TOOL(ID_FitInWindow, c_MainWindow::OnCommandEvent)
     EVT_MENU(ID_FitInWindow, c_MainWindow::OnCommandEvent)
     EVT_AUI_PANE_CLOSE(c_MainWindow::OnAuiPaneClose)
-    EVT_TIMER(ID_ScalingTimer, c_MainWindow::OnTimer)
+    //EVT_TIMER(ID_ScalingTimer, c_MainWindow::OnTimer)
 
     EVT_TOOL(ID_LoadSettings, c_MainWindow::OnSettingsFile)
     EVT_TOOL(ID_SaveSettings, c_MainWindow::OnSettingsFile)
@@ -327,7 +324,7 @@ void c_MainWindow::OnSettingsFile(wxCommandEvent& event)
 
 void c_MainWindow::OnImageViewScroll(wxScrollWinEvent& event)
 {
-    ScheduleScalingRequest();
+    m_BackEnd->ImageViewScrolledOrResized(m_CurrentSettings.view.zoomFactor);
     event.Skip();
 }
 
@@ -439,71 +436,67 @@ void c_MainWindow::OnSaveFile()
 }
 
 void c_MainWindow::ChangeZoom(
-        float /*newZoomFactor*/,
-        wxPoint /*zoomingCenter*/ ///< Point (physical coordinates) in m_ImageView to be kept stationary
+        float newZoomFactor,
+        wxPoint zoomingCenter ///< Point (physical coordinates) in `m_ImageView` to be kept stationary.
 )
 {
-    // auto& s = m_CurrentSettings;
-    // if (s.m_ImgBmp)
-    // {
-    //     m_FitImageInWindow = false;
-    //     GetToolBar()->FindById(ID_FitInWindow)->Toggle(false);
-    //     GetToolBar()->Realize();
-    //     GetMenuBar()->FindItem(ID_FitInWindow)->Check(false);
+    if (!m_ImageLoaded)
+        return;
 
-    //     float prevZoom = s.view.zoomFactor;
+    auto& s = m_CurrentSettings;
+    m_FitImageInWindow = false;
+    GetToolBar()->FindById(ID_FitInWindow)->Toggle(false);
+    GetToolBar()->Realize();
+    GetMenuBar()->FindItem(ID_FitInWindow)->Check(false);
 
-    //     s.view.zoomFactor = newZoomFactor;
+    const float prevZoom = s.view.zoomFactor;
 
-    //     wxPoint imgViewEvtPos;
+    s.view.zoomFactor = newZoomFactor;
 
-    //     wxPoint p = m_ImageView.CalcUnscrolledPosition(wxPoint(0, 0)) + zoomingCenter;
-    //     p.x *= s.view.zoomFactor / prevZoom;
-    //     p.y *= s.view.zoomFactor / prevZoom;
+    wxPoint p = m_ImageView.CalcUnscrolledPosition(wxPoint(0, 0)) + zoomingCenter;
+    p.x *= s.view.zoomFactor / prevZoom;
+    p.y *= s.view.zoomFactor / prevZoom;
 
-    //     // We must freeze it, because SetVirtualSize() and Scroll() (called from OnZoomChanged())
-    //     // force an Update(), i.e. immediately refresh it on screen. We want to do this later
-    //     // in our paint handler.
-    //     m_ImageView.Freeze();
-    //     OnZoomChanged(p - zoomingCenter);
-    //     CreateScaledPreview(true);
-    //     m_ImageView.Thaw();
-    // }
+    // We must freeze it, because SetVirtualSize() and Scroll() (called from OnZoomChanged())
+    // force an Update(), i.e. immediately refresh it on screen. We want to do this later
+    // in our paint handler.
+    m_ImageView.Freeze();
+    OnZoomChanged(p - zoomingCenter);
+    m_BackEnd->ImageViewZoomChanged(s.view.zoomFactor);
+    m_ImageView.Thaw();
 }
 
-/// Must be called to finalize a zoom change
+/// Must be called to finalize a zoom change.
 void c_MainWindow::OnZoomChanged(
-    wxPoint /*zoomingCenter*/ ///< Point (physical coordinates) in m_ImageView to be kept stationary
+    wxPoint zoomingCenter ///< Point (physical coordinates) in m_ImageView to be kept stationary.
 )
 {
-    // auto& s = m_CurrentSettings;
+    auto& s = m_CurrentSettings;
 
-    // if (m_FitImageInWindow)
-    // {
-    //     m_ImageView.SetVirtualSize(m_ImageView.GetSize()); // disable scrolling
-    // }
-    // else
-    // {
-    //     m_ImageView.SetVirtualSize(
-    //         wxSize(s.m_ImgBmp.value().GetWidth()*s.view.zoomFactor,
-    //                s.m_ImgBmp.value().GetHeight()*s.view.zoomFactor));
-    // }
+    if (m_FitImageInWindow)
+    {
+        m_ImageView.SetVirtualSize(m_ImageView.GetSize()); // disable scrolling
+    }
+    else
+    {
+        m_ImageView.SetVirtualSize(
+            wxSize(s.imgWidth * s.view.zoomFactor,
+                   s.imgHeight * s.view.zoomFactor));
+    }
 
-    // if (s.view.zoomFactor != ZOOM_NONE)
-    // {
-    //     s.scaledSelection = s.selection;
-    //     s.scaledSelection.x *= s.view.zoomFactor;
-    //     s.scaledSelection.y *= s.view.zoomFactor;
-    //     s.scaledSelection.width *= s.view.zoomFactor;
-    //     s.scaledSelection.height *= s.view.zoomFactor;
+    if (s.view.zoomFactor != ZOOM_NONE)
+    {
+        s.scaledSelection = s.selection;
+        s.scaledSelection.x *= s.view.zoomFactor;
+        s.scaledSelection.y *= s.view.zoomFactor;
+        s.scaledSelection.width *= s.view.zoomFactor;
+        s.scaledSelection.height *= s.view.zoomFactor;
 
-    //     if (!m_FitImageInWindow)
-    //         m_ImageView.Scroll(zoomingCenter);
-    // }
-    // else
-    //     m_ImageView.Refresh(true);
+        if (!m_FitImageInWindow)
+            m_ImageView.Scroll(zoomingCenter);
+    }
 
-    // UpdateWindowTitle();
+    UpdateWindowTitle();
  }
 
 void c_MainWindow::CreateScaledPreview(bool /*eraseBackground*/)
@@ -679,7 +672,7 @@ c_MainWindow::c_MainWindow()
 
     s.view.zoomFactor = ZOOM_NONE;
     s.view.zoomFactorChanged = false;
-    s.view.scalingTimer.SetOwner(this, ID_ScalingTimer);
+    //s.view.scalingTimer.SetOwner(this, ID_ScalingTimer);
 
     // m_Processing.worker = nullptr;
     // m_Processing.currentThreadId = 0;
@@ -835,147 +828,144 @@ void c_MainWindow::MarkSelection(const wxRect& /*selection*/, wxDC& /*dc*/)
 // #endif
 }
 
-void c_MainWindow::OnImageViewMouseDragStart(wxMouseEvent& /*event*/)
+void c_MainWindow::OnImageViewMouseDragStart(wxMouseEvent& event)
 {
-    // if (m_CurrentSettings.m_Img)
-    // {
-    //     m_MouseOps.dragging = true;
+    if (!m_ImageLoaded)
+        return;
 
-    //     m_MouseOps.View.start = event.GetPosition();
-    //     m_MouseOps.View.end = m_MouseOps.View.start;
+    m_MouseOps.dragging = true;
+    m_MouseOps.View.start = event.GetPosition();
+    m_MouseOps.View.end = m_MouseOps.View.start;
 
-    //     auto& s = m_CurrentSettings;
+    auto& s = m_CurrentSettings;
 
-    //     if (s.view.zoomFactor == ZOOM_NONE)
-    //     {
-    //         m_MouseOps.dragStart = m_ImageView.CalcUnscrolledPosition(event.GetPosition());
-    //     }
-    //     else
-    //     {
-    //         m_MouseOps.dragStart = m_ImageView.CalcUnscrolledPosition(event.GetPosition());
-    //         m_MouseOps.dragStart.x /= s.view.zoomFactor;
-    //         m_MouseOps.dragStart.y /= s.view.zoomFactor;
-    //     }
+    if (s.view.zoomFactor == ZOOM_NONE)
+    {
+        m_MouseOps.dragStart = m_ImageView.CalcUnscrolledPosition(event.GetPosition());
+    }
+    else
+    {
+        m_MouseOps.dragStart = m_ImageView.CalcUnscrolledPosition(event.GetPosition());
+        m_MouseOps.dragStart.x /= s.view.zoomFactor;
+        m_MouseOps.dragStart.y /= s.view.zoomFactor;
+    }
 
-    //     m_MouseOps.dragEnd = m_MouseOps.dragStart;
-
-    //     m_ImageView.CaptureMouse();
-
-    //     m_MouseOps.prevSelectionBordersErased = false;
-    // }
+    m_MouseOps.dragEnd = m_MouseOps.dragStart;
+    m_ImageView.CaptureMouse();
+    m_MouseOps.prevSelectionBordersErased = false;
 }
 
-void c_MainWindow::OnImageViewMouseMove(wxMouseEvent& /*event*/)
+void c_MainWindow::OnImageViewMouseMove(wxMouseEvent& event)
 {
-    // m_ImageView.StopAutoScrolling();
-    // auto& s = m_CurrentSettings;
+    m_ImageView.StopAutoScrolling();
+    auto& s = m_CurrentSettings;
 
-    // if (m_MouseOps.dragging)
-    // {
-    //     if (s.view.zoomFactor == ZOOM_NONE)
-    //         m_MouseOps.dragEnd = m_ImageView.CalcUnscrolledPosition(event.GetPosition());
-    //     else
-    //     {
-    //         m_MouseOps.dragEnd = m_ImageView.CalcUnscrolledPosition(event.GetPosition());
-    //         m_MouseOps.dragEnd.x /= s.view.zoomFactor;
-    //         m_MouseOps.dragEnd.y /= s.view.zoomFactor;
-    //     }
+    if (m_MouseOps.dragging)
+    {
+        if (s.view.zoomFactor == ZOOM_NONE)
+            m_MouseOps.dragEnd = m_ImageView.CalcUnscrolledPosition(event.GetPosition());
+        else
+        {
+            m_MouseOps.dragEnd = m_ImageView.CalcUnscrolledPosition(event.GetPosition());
+            m_MouseOps.dragEnd.x /= s.view.zoomFactor;
+            m_MouseOps.dragEnd.y /= s.view.zoomFactor;
+        }
 
-    //     // Erase the borders of the old selection
-    //     if (!m_MouseOps.prevSelectionBordersErased)
-    //     {
-    //         wxRect physSelection;
+        // Erase the borders of the old selection
+        if (!m_MouseOps.prevSelectionBordersErased)
+        {
+            wxRect physSelection;
 
-    //         if (s.view.zoomFactor == ZOOM_NONE)
-    //         {
-    //             // Selection in physical (m_ImageView) coordinates
-    //             physSelection = wxRect(
-    //                 m_ImageView.CalcScrolledPosition(s.selection.GetTopLeft()),
-    //                 m_ImageView.CalcScrolledPosition(s.selection.GetBottomRight()));
-    //         }
-    //         else
-    //         {
-    //             physSelection.SetTopLeft(m_ImageView.CalcScrolledPosition(s.scaledSelection.GetTopLeft()));
-    //             physSelection.SetBottomRight(m_ImageView.CalcScrolledPosition(s.scaledSelection.GetBottomRight()));
-    //         }
+            if (s.view.zoomFactor == ZOOM_NONE)
+            {
+                // Selection in physical (m_ImageView) coordinates
+                physSelection = wxRect(
+                    m_ImageView.CalcScrolledPosition(s.selection.GetTopLeft()),
+                    m_ImageView.CalcScrolledPosition(s.selection.GetBottomRight()));
+            }
+            else
+            {
+                physSelection.SetTopLeft(m_ImageView.CalcScrolledPosition(s.scaledSelection.GetTopLeft()));
+                physSelection.SetBottomRight(m_ImageView.CalcScrolledPosition(s.scaledSelection.GetBottomRight()));
+            }
 
-    //         m_ImageView.RefreshRect(wxRect(physSelection.GetLeft(), physSelection.GetTop(), physSelection.GetWidth(), 1),
-    //             false);
-    //         m_ImageView.RefreshRect(wxRect(physSelection.GetLeft(), physSelection.GetBottom(), physSelection.GetWidth(), 1),
-    //             false);
-    //         m_ImageView.RefreshRect(wxRect(physSelection.GetLeft(), physSelection.GetTop() + 1, 1, physSelection.GetHeight() - 2),
-    //             false);
-    //         m_ImageView.RefreshRect(wxRect(physSelection.GetRight(), physSelection.GetTop() + 1, 1, physSelection.GetHeight() - 2),
-    //             false);
+            m_ImageView.RefreshRect(wxRect(physSelection.GetLeft(), physSelection.GetTop(), physSelection.GetWidth(), 1),
+                false);
+            m_ImageView.RefreshRect(wxRect(physSelection.GetLeft(), physSelection.GetBottom(), physSelection.GetWidth(), 1),
+                false);
+            m_ImageView.RefreshRect(wxRect(physSelection.GetLeft(), physSelection.GetTop() + 1, 1, physSelection.GetHeight() - 2),
+                false);
+            m_ImageView.RefreshRect(wxRect(physSelection.GetRight(), physSelection.GetTop() + 1, 1, physSelection.GetHeight() - 2),
+                false);
 
-    //         m_MouseOps.prevSelectionBordersErased = true;
-    //     }
+            m_MouseOps.prevSelectionBordersErased = true;
+        }
 
-    //     wxPoint selectionLimitMin = m_ImageView.CalcScrolledPosition(wxPoint(0, 0));
-    //     wxPoint selectionLimitMax = m_ImageView.CalcScrolledPosition(wxPoint(
-    //         (s.view.zoomFactor != ZOOM_NONE) ? s.m_ImgBmp.value().GetWidth() * s.view.zoomFactor : s.m_ImgBmp.value().GetWidth(),
-    //         (s.view.zoomFactor != ZOOM_NONE) ? s.m_ImgBmp.value().GetHeight() * s.view.zoomFactor : s.m_ImgBmp.value().GetHeight()));
+        wxPoint selectionLimitMin = m_ImageView.CalcScrolledPosition(wxPoint(0, 0));
+        wxPoint selectionLimitMax = m_ImageView.CalcScrolledPosition(wxPoint(
+            (s.view.zoomFactor != ZOOM_NONE) ? s.imgWidth * s.view.zoomFactor : s.imgWidth,
+            (s.view.zoomFactor != ZOOM_NONE) ? s.imgHeight * s.view.zoomFactor : s.imgHeight));
 
-    //     // Erase the borders of the previous temporary selection (drawn during dragging)
+        // Erase the borders of the previous temporary selection (drawn during dragging)
 
-    //     wxPoint oldSelTopLeft(std::min(m_MouseOps.View.start.x, m_MouseOps.View.end.x),
-    //                           std::min(m_MouseOps.View.start.y, m_MouseOps.View.end.y));
-    //     wxPoint oldSelBottomRight(std::max(m_MouseOps.View.start.x, m_MouseOps.View.end.x),
-    //                               std::max(m_MouseOps.View.start.y, m_MouseOps.View.end.y));
-    //     int oldSelWidth = oldSelBottomRight.x - oldSelTopLeft.x + 1,
-    //         oldSelHeight = oldSelBottomRight.y - oldSelTopLeft.y + 1;
+        wxPoint oldSelTopLeft(std::min(m_MouseOps.View.start.x, m_MouseOps.View.end.x),
+                              std::min(m_MouseOps.View.start.y, m_MouseOps.View.end.y));
+        wxPoint oldSelBottomRight(std::max(m_MouseOps.View.start.x, m_MouseOps.View.end.x),
+                                  std::max(m_MouseOps.View.start.y, m_MouseOps.View.end.y));
+        int oldSelWidth = oldSelBottomRight.x - oldSelTopLeft.x + 1,
+            oldSelHeight = oldSelBottomRight.y - oldSelTopLeft.y + 1;
 
-    //     m_ImageView.RefreshRect(wxRect(oldSelTopLeft.x, oldSelTopLeft.y, oldSelWidth, 1),
-    //          false);
-    //     m_ImageView.RefreshRect(wxRect(oldSelTopLeft.x, oldSelBottomRight.y, oldSelWidth, 1),
-    //         false);
-    //     m_ImageView.RefreshRect(wxRect(oldSelTopLeft.x, oldSelTopLeft.y, 1, oldSelHeight),
-    //         false);
-    //     m_ImageView.RefreshRect(wxRect(oldSelBottomRight.x, oldSelTopLeft.y, 1, oldSelHeight),
-    //         false);
+        m_ImageView.RefreshRect(wxRect(oldSelTopLeft.x, oldSelTopLeft.y, oldSelWidth, 1),
+             false);
+        m_ImageView.RefreshRect(wxRect(oldSelTopLeft.x, oldSelBottomRight.y, oldSelWidth, 1),
+            false);
+        m_ImageView.RefreshRect(wxRect(oldSelTopLeft.x, oldSelTopLeft.y, 1, oldSelHeight),
+            false);
+        m_ImageView.RefreshRect(wxRect(oldSelBottomRight.x, oldSelTopLeft.y, 1, oldSelHeight),
+            false);
 
-    //     // Refresh the borders of the new selection
+        // Refresh the borders of the new selection
 
-    //     m_MouseOps.View.end = event.GetPosition();
+        m_MouseOps.View.end = event.GetPosition();
 
-    //     if (m_MouseOps.View.end.x < selectionLimitMin.x)
-    //         m_MouseOps.View.end.x = selectionLimitMin.x;
-    //     if (m_MouseOps.View.end.x >= selectionLimitMax.x)
-    //         m_MouseOps.View.end.x = selectionLimitMax.x - 1;
+        if (m_MouseOps.View.end.x < selectionLimitMin.x)
+            m_MouseOps.View.end.x = selectionLimitMin.x;
+        if (m_MouseOps.View.end.x >= selectionLimitMax.x)
+            m_MouseOps.View.end.x = selectionLimitMax.x - 1;
 
-    //     if (m_MouseOps.View.end.y < selectionLimitMin.y)
-    //         m_MouseOps.View.end.y = selectionLimitMin.y;
-    //     if (m_MouseOps.View.end.y >= selectionLimitMax.y)
-    //         m_MouseOps.View.end.y = selectionLimitMax.y - 1;
+        if (m_MouseOps.View.end.y < selectionLimitMin.y)
+            m_MouseOps.View.end.y = selectionLimitMin.y;
+        if (m_MouseOps.View.end.y >= selectionLimitMax.y)
+            m_MouseOps.View.end.y = selectionLimitMax.y - 1;
 
-    //     wxPoint newSelTopLeft(std::min(m_MouseOps.View.start.x, m_MouseOps.View.end.x),
-    //         std::min(m_MouseOps.View.start.y, m_MouseOps.View.end.y));
-    //     wxPoint newSelBottomRight(std::max(m_MouseOps.View.start.x, m_MouseOps.View.end.x),
-    //         std::max(m_MouseOps.View.start.y, m_MouseOps.View.end.y));
-    //     int newSelWidth = newSelBottomRight.x - newSelTopLeft.x + 1,
-    //         newSelHeight = newSelBottomRight.y - newSelTopLeft.y + 1;
+        wxPoint newSelTopLeft(std::min(m_MouseOps.View.start.x, m_MouseOps.View.end.x),
+            std::min(m_MouseOps.View.start.y, m_MouseOps.View.end.y));
+        wxPoint newSelBottomRight(std::max(m_MouseOps.View.start.x, m_MouseOps.View.end.x),
+            std::max(m_MouseOps.View.start.y, m_MouseOps.View.end.y));
+        int newSelWidth = newSelBottomRight.x - newSelTopLeft.x + 1,
+            newSelHeight = newSelBottomRight.y - newSelTopLeft.y + 1;
 
-    //     m_ImageView.RefreshRect(wxRect(newSelTopLeft.x, newSelTopLeft.y, newSelWidth, 1),
-    //         false);
-    //     m_ImageView.RefreshRect(wxRect(newSelTopLeft.x, newSelBottomRight.y, newSelWidth, 1),
-    //         false);
-    //     m_ImageView.RefreshRect(wxRect(newSelTopLeft.x, newSelTopLeft.y, 1, newSelHeight),
-    //         false);
-    //     m_ImageView.RefreshRect(wxRect(newSelBottomRight.x, newSelTopLeft.y, 1, newSelHeight),
-    //         false);
-    // }
-    // else if (m_MouseOps.dragScroll.dragging)
-    // {
-    //     wxPoint diff = m_MouseOps.dragScroll.start - event.GetPosition();
-    //     wxPoint newScrollPos = m_MouseOps.dragScroll.startScrollPos + diff;
-    //     m_ImageView.Scroll(newScrollPos);
-    //     ScheduleScalingRequest();
-    // }
+        m_ImageView.RefreshRect(wxRect(newSelTopLeft.x, newSelTopLeft.y, newSelWidth, 1),
+            false);
+        m_ImageView.RefreshRect(wxRect(newSelTopLeft.x, newSelBottomRight.y, newSelWidth, 1),
+            false);
+        m_ImageView.RefreshRect(wxRect(newSelTopLeft.x, newSelTopLeft.y, 1, newSelHeight),
+            false);
+        m_ImageView.RefreshRect(wxRect(newSelBottomRight.x, newSelTopLeft.y, 1, newSelHeight),
+            false);
+    }
+    else if (m_MouseOps.dragScroll.dragging)
+    {
+        wxPoint diff = m_MouseOps.dragScroll.start - event.GetPosition();
+        wxPoint newScrollPos = m_MouseOps.dragScroll.startScrollPos + diff;
+        m_ImageView.Scroll(newScrollPos);
+        m_BackEnd->ImageViewScrolledOrResized(m_CurrentSettings.view.zoomFactor);
+    }
 }
 
 void c_MainWindow::OnImageViewMouseWheel(wxMouseEvent& event)
 {
-    // auto& s = m_CurrentSettings;
+    auto& s = m_CurrentSettings;
 
     wxPoint imgViewEvtPos; // event's position in m_ImageView's coordinates
     if (event.GetEventObject() == this)
@@ -983,20 +973,19 @@ void c_MainWindow::OnImageViewMouseWheel(wxMouseEvent& event)
     else
         imgViewEvtPos = event.GetPosition();
 
-    // if (s.m_ImgBmp && event.ControlDown() && m_ImageView.GetClientRect().Contains(imgViewEvtPos))
-    // {
-    //     m_FitImageInWindow = false;
+    if (m_ImageLoaded && event.ControlDown() && m_ImageView.GetClientRect().Contains(imgViewEvtPos))
+    {
+        m_FitImageInWindow = false;
 
-    //     float newZoom;
+        float newZoom;
 
-    //     if (event.GetWheelRotation() > 0)
-    //         newZoom = CalcZoomIn(s.view.zoomFactor);
-    //     else
-    //         newZoom = CalcZoomOut(s.view.zoomFactor);
+        if (event.GetWheelRotation() > 0)
+            newZoom = CalcZoomIn(s.view.zoomFactor);
+        else
+            newZoom = CalcZoomOut(s.view.zoomFactor);
 
-
-    //     ChangeZoom(newZoom, imgViewEvtPos);
-    // }
+        ChangeZoom(newZoom, imgViewEvtPos);
+    }
 }
 
 void c_MainWindow::OnImageViewMouseCaptureLost(wxMouseCaptureLostEvent&)
@@ -1100,16 +1089,16 @@ void c_MainWindow::OnNewSelection(
 
 void c_MainWindow::OnImageViewMouseDragEnd(wxMouseEvent&)
 {
-    // if (m_MouseOps.dragging)
-    // {
-    //     m_MouseOps.dragging = false;
-    //     m_ImageView.ReleaseMouse();
+    if (m_MouseOps.dragging)
+    {
+        m_MouseOps.dragging = false;
+        m_ImageView.ReleaseMouse();
 
-    //     if (m_MouseOps.dragStart != m_MouseOps.dragEnd)
-    //         OnNewSelection(m_MouseOps.GetSelection(wxRect(0, 0,
-    //                 m_CurrentSettings.m_Img.value().GetWidth(),
-    //                 m_CurrentSettings.m_Img.value().GetHeight())));
-    // }
+        if (m_MouseOps.dragStart != m_MouseOps.dragEnd)
+            OnNewSelection(m_MouseOps.GetSelection(wxRect(0, 0,
+                    m_CurrentSettings.imgWidth,
+                    m_CurrentSettings.imgHeight)));
+    }
 }
 
 /// Sets text in the first field of the status bar
@@ -1121,13 +1110,11 @@ void c_MainWindow::SetActionText(wxString text)
 /// Returns the ratio of 'm_ImgView' to the size of 'imgSize', assuming uniform scaling in "touch from inside" fashion
 float c_MainWindow::GetViewToImgRatio() const
 {
-    // if (static_cast<float>(m_ImageView.GetSize().GetWidth()) / m_ImageView.GetSize().GetHeight() >
-    //     static_cast<float>(m_CurrentSettings.m_ImgBmp.value().GetWidth()) / m_CurrentSettings.m_ImgBmp.value().GetHeight())
-    //     return static_cast<float>(m_ImageView.GetSize().GetHeight()) / m_CurrentSettings.m_ImgBmp.value().GetHeight();
-    // else
-    //     return static_cast<float>(m_ImageView.GetSize().GetWidth()) / m_CurrentSettings.m_ImgBmp.value().GetWidth();
-
-    return 1.0; //TODO: remove this
+    if (static_cast<float>(m_ImageView.GetSize().GetWidth()) / m_ImageView.GetSize().GetHeight() >
+        static_cast<float>(m_CurrentSettings.imgWidth) / m_CurrentSettings.imgHeight)
+        return static_cast<float>(m_ImageView.GetSize().GetHeight()) / m_CurrentSettings.imgHeight;
+    else
+        return static_cast<float>(m_ImageView.GetSize().GetWidth()) / m_CurrentSettings.imgWidth;
 }
 
 void c_MainWindow::UpdateWindowTitle()
@@ -1209,10 +1196,9 @@ void c_MainWindow::OpenFile(wxFileName path, bool resetSelection)
 
         m_ImageView.SetVirtualSize(s.imgWidth * s.view.zoomFactor, s.imgHeight * s.view.zoomFactor);
         m_ImageView.SetScrollRate(1, 1);
-        if (s.view.zoomFactor != ZOOM_NONE)
-            ;//CreateScaledPreview(true);
-        else
-            m_ImageView.Refresh(true);
+        m_ImageView.Refresh(true);
+
+        m_ImageLoaded = true;
 
         // ScheduleProcessing(ProcessingRequest::SHARPENING);
     }
@@ -1733,16 +1719,16 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent& event)
         GetToolBar()->Realize();
         GetMenuBar()->FindItem(ID_FitInWindow)->Check(m_FitImageInWindow);
 
-        // if (m_CurrentSettings.m_Img)
-        // {
-        //     if (m_FitImageInWindow)
-        //         s.view.zoomFactor = GetViewToImgRatio();
-        //     else
-        //         s.view.zoomFactor = ZOOM_NONE;
+        if (m_ImageLoaded)
+        {
+            if (m_FitImageInWindow)
+                s.view.zoomFactor = GetViewToImgRatio();
+            else
+                s.view.zoomFactor = ZOOM_NONE;
 
-        //     OnZoomChanged(wxPoint(0, 0));
-        //     CreateScaledPreview(true);
-        // }
+            OnZoomChanged(wxPoint(0, 0));
+            m_BackEnd->ImageViewZoomChanged(s.view.zoomFactor);
+        }
         m_ImageView.Thaw();
         break;
 
@@ -1768,12 +1754,12 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent& event)
                 else
                     s.normalization.enabled = false;
 
-                // if (m_CurrentSettings.m_Img)
-                // {
-                //     // We don't keep the original non-normalized contents, so the file needs to be reloaded.
-                //     // Normalization using the new limits (if enabled) is performed by OpenFile().
-                //     OpenFile(wxFileName(s.inputFilePath), false);
-                // }
+                if (m_ImageLoaded)
+                {
+                    // We don't keep the original non-normalized contents, so the file needs to be reloaded.
+                    // Normalization using the new limits (if enabled) is performed by OpenFile().
+                    OpenFile(wxFileName(s.inputFilePath), false);
+                }
 
                 IndicateSettingsModified();
             }
@@ -2213,16 +2199,16 @@ void c_MainWindow::InitStatusBar()
     GetStatusBar()->SetStatusWidths(2, fieldWidths);
 }
 
-void c_MainWindow::OnImageViewDragScrollStart(wxMouseEvent& /*event*/)
+void c_MainWindow::OnImageViewDragScrollStart(wxMouseEvent& event)
 {
-    // if (m_CurrentSettings.m_Img)
-    // {
-    //     m_MouseOps.dragScroll.dragging = true;
-    //     m_MouseOps.dragScroll.start = event.GetPosition();
-    //     m_MouseOps.dragScroll.startScrollPos = m_ImageView.CalcUnscrolledPosition(wxPoint(0, 0));
-    //     m_ImageView.CaptureMouse();
-    //     m_ImageView.SetCursor(wxCURSOR_SIZING);
-    // }
+    if (m_ImageLoaded)
+    {
+        m_MouseOps.dragScroll.dragging = true;
+        m_MouseOps.dragScroll.start = event.GetPosition();
+        m_MouseOps.dragScroll.startScrollPos = m_ImageView.CalcUnscrolledPosition(wxPoint(0, 0));
+        m_ImageView.CaptureMouse();
+        m_ImageView.SetCursor(wxCURSOR_SIZING);
+    }
 }
 
 void c_MainWindow::OnImageViewDragScrollEnd(wxMouseEvent&)
@@ -2307,6 +2293,8 @@ void c_MainWindow::InitControls()
 
     BindAllScrollEvents(m_ImageView, &c_MainWindow::OnImageViewScroll, this);
 
+    m_BackEnd = std::make_unique<imppg::backend::c_CpuAndBitmaps>(m_ImageView);
+
     m_AuiMgr.AddPane(&m_ImageView,
         wxAuiPaneInfo()
         .Name(PaneNames::imageView)
@@ -2319,8 +2307,6 @@ void c_MainWindow::InitControls()
         );
 
     m_AuiMgr.Update();
-
-    m_BackEnd = std::make_unique<imppg::backend::CpuAndBitmaps>(m_ImageView);
 }
 
 void c_MainWindow::ScheduleScalingRequest()
@@ -2335,14 +2321,14 @@ void c_MainWindow::ScheduleScalingRequest()
 
 void c_MainWindow::OnImageViewSize(wxSizeEvent &event)
 {
-    // if (m_FitImageInWindow && m_CurrentSettings.m_ImgBmp)
-    // {
-    //     m_CurrentSettings.view.zoomFactor = GetViewToImgRatio();
-    //     m_CurrentSettings.view.zoomFactorChanged = true;
-    //     OnZoomChanged(wxPoint(0, 0));
-    // }
+    if (m_FitImageInWindow && m_ImageLoaded)
+    {
+        m_CurrentSettings.view.zoomFactor = GetViewToImgRatio();
+        m_CurrentSettings.view.zoomFactorChanged = true;
+        OnZoomChanged(wxPoint(0, 0));
+        m_BackEnd->ImageViewScrolledOrResized(m_CurrentSettings.view.zoomFactor);
+    }
 
-    // ScheduleScalingRequest();
     event.Skip();
 }
 

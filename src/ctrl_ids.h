@@ -95,7 +95,7 @@ enum
     ID_SelectAndProcessAll,
     ID_FitInWindow,
     ID_AlignImages,
-    ID_ScalingTimer,
+
 //----------------------------------------------------------------------
 // Normalization dialog
 

@@ -21,20 +21,23 @@ File description:
     CPU & bitmaps back end declaration.
 */
 
+#include <functional>
 #include <optional>
 #include <wx/bitmap.h>
+#include <wx/timer.h>
 
 #include "../backend.h"
+#include "../../common.h"
 
 namespace imppg::backend {
 
-class CpuAndBitmaps: public IBackEnd
+class c_CpuAndBitmaps: public IBackEnd
 {
 public:
-    CpuAndBitmaps(wxScrolledCanvas& imgView);
+    c_CpuAndBitmaps(wxScrolledCanvas& imgView);
 
     // Events -------------------------------------------------
-    void ImageViewScrolled(const wxScrolledCanvas& imgView) override;
+    void ImageViewScrolledOrResized(float zoomFactor) override;
     void ImageViewZoomChanged(float zoomFactor) override;
     void FileOpened(c_Image&& img) override;
 
@@ -42,8 +45,21 @@ private:
     wxScrolledCanvas& m_ImgView;
     std::optional<c_Image> m_Img;
     std::optional<wxBitmap> m_ImgBmp; ///< Bitmap which wraps `m_Img` for displaying on `m_ImgView`.
+    float m_ZoomFactor{ZOOM_NONE};
+    float m_NewZoomFactor{ZOOM_NONE};
+    std::optional<wxBitmap> m_BmpScaled; ///< Currently visible scaled fragment (or whole) of `m_ImgBmp`.
+    wxRect m_ScaledArea; ///< Area within `m_ImgBmp` represented by `m_BmpScaled`.
 
     void OnPaint(wxPaintEvent& event);
+    void CreateScaledPreview(float zoomFactor);
+
+    class c_ScalingTimer: public wxTimer
+    {
+        std::function<void()> m_Handler;
+    public:
+        void SetHandler(std::function<void()> handler) { m_Handler = handler; }
+        void Notify() override { m_Handler(); }
+    } m_ScalingTimer;
 };
 
 } // namespace imppg::backend

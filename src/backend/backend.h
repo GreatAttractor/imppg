@@ -34,7 +34,7 @@ class IBackEnd
 {
 public:
     // Events -------------------------------------------------
-    virtual void ImageViewScrolled(const wxScrolledCanvas& imgView) = 0;
+    virtual void ImageViewScrolledOrResized(float zoomFactor) = 0;
     virtual void ImageViewZoomChanged(float zoomFactor) = 0;
     virtual void FileOpened(c_Image&& img) = 0;
 
