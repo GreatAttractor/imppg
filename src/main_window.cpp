@@ -85,8 +85,6 @@ DECLARE_APP(c_MyApp)
 const int BORDER = 5; ///< Border size (in pixels) around controls in sizers
 const int REAL_PREC = 4; ///< Precision of real numbers in text controls
 
-const int NUM_HISTOGRAM_BINS = 1024;
-
 const float ZOOM_STEP = 1.5f; ///< Zoom in/zoom out factor
 const float ZOOM_MIN = 0.05f;
 const float ZOOM_MAX = 20.0f;
@@ -1089,6 +1087,7 @@ void c_MainWindow::OnNewSelection(
 
     // // Process the new selection, starting with sharpening
     // ScheduleProcessing(ProcessingRequest::SHARPENING); //TODO: make this (auto-updating after selection changed) optional
+    m_BackEnd->NewSelection(s.selection);
 }
 
 void c_MainWindow::OnImageViewMouseDragEnd(wxMouseEvent&)
@@ -1157,6 +1156,8 @@ void c_MainWindow::OpenFile(wxFileName path, bool resetSelection)
         if (s.normalization.enabled)
             NormalizeFpImage(newImg, s.normalization.min, s.normalization.max);
 
+        m_BackEnd->FileOpened(std::move(newImg));
+
         if (resetSelection)
         {
             // Set initial selection to the middle 20% of the image
@@ -1170,11 +1171,10 @@ void c_MainWindow::OpenFile(wxFileName path, bool resetSelection)
             s.scaledSelection.y *= s.view.zoomFactor;
             s.scaledSelection.width *= s.view.zoomFactor;
             s.scaledSelection.height *= s.view.zoomFactor;
+
+            m_BackEnd->NewSelection(s.selection);
         }
 
-        m_BackEnd->FileOpened(std::move(newImg));
-
-        // Determine the selection's histogram and update the tone curve editor
         // Histogram histogram;
         // DetermineHistogram(newImg, s.selection, histogram);
         m_Ctrls.tcrvEditor->SetHistogram(m_BackEnd->GetHistogram());
@@ -2299,6 +2299,7 @@ void c_MainWindow::InitControls()
 
     m_BackEnd = std::make_unique<imppg::backend::c_CpuAndBitmaps>(m_ImageView);
     m_BackEnd->SetPhysicalSelectionGetter([this] { return GetPhysicalSelection(); });
+    m_BackEnd->SetProcessingCompletedHandler([this] { m_Ctrls.tcrvEditor->SetHistogram(m_BackEnd->GetHistogram()); });
 
     m_AuiMgr.AddPane(&m_ImageView,
         wxAuiPaneInfo()
@@ -2340,36 +2341,6 @@ void c_MainWindow::OnImageViewSize(wxSizeEvent &event)
 c_MainWindow::~c_MainWindow()
 {
     m_AuiMgr.UnInit();
-}
-
-/// Determines histogram of the specified area of an image
-void c_MainWindow::DetermineHistogram(const c_Image &img, const wxRect &selection, Histogram &histogram)
-{
-    histogram.values.clear();
-    histogram.values.insert(histogram.values.begin(), NUM_HISTOGRAM_BINS, 0);
-    histogram.minValue = FLT_MAX;
-    histogram.maxValue = -FLT_MAX;
-
-    for (int y = 0; y < selection.height; y++)
-    {
-        const float* row = img.GetRowAs<float>(selection.y + y) + selection.x;
-        for (int x = 0; x < selection.width; x++)
-        {
-            if (row[x] < histogram.minValue)
-                histogram.minValue = row[x];
-            else if (row[x] > histogram.maxValue)
-                histogram.maxValue = row[x];
-
-            const unsigned hbin = static_cast<unsigned>(row[x] * (NUM_HISTOGRAM_BINS - 1));
-            IMPPG_ASSERT(hbin < NUM_HISTOGRAM_BINS);
-            histogram.values[hbin] += 1;
-        }
-    }
-
-    histogram.maxCount = 0;
-    for (unsigned i = 0; i < histogram.values.size(); i++)
-        if (histogram.values[i] > histogram.maxCount)
-            histogram.maxCount = histogram.values[i];
 }
 
 void c_MainWindow::OnProcessingPanelScrolled(wxScrollWinEvent &event)

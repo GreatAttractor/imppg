@@ -21,6 +21,7 @@ File description:
     CPU & bitmaps back end core implementation.
 */
 
+#include <cfloat>
 #include <wx/dcclient.h>
 #include <wx/dcmemory.h>
 
@@ -225,9 +226,52 @@ void c_CpuAndBitmaps::CreateScaledPreview(float zoomFactor)
     );
 }
 
+static Histogram DetermineHistogram(const c_Image& img, const wxRect& selection)
+{
+    constexpr int NUM_HISTOGRAM_BINS = 1024;
+
+    Histogram histogram{};
+
+    histogram.values.insert(histogram.values.begin(), NUM_HISTOGRAM_BINS, 0);
+    histogram.minValue = FLT_MAX;
+    histogram.maxValue = -FLT_MAX;
+
+    for (int y = 0; y < selection.height; y++)
+    {
+        const float* row = img.GetRowAs<float>(selection.y + y) + selection.x;
+        for (int x = 0; x < selection.width; x++)
+        {
+            if (row[x] < histogram.minValue)
+                histogram.minValue = row[x];
+            else if (row[x] > histogram.maxValue)
+                histogram.maxValue = row[x];
+
+            const unsigned hbin = static_cast<unsigned>(row[x] * (NUM_HISTOGRAM_BINS - 1));
+            IMPPG_ASSERT(hbin < NUM_HISTOGRAM_BINS);
+            histogram.values[hbin] += 1;
+        }
+    }
+
+    histogram.maxCount = 0;
+    for (unsigned i = 0; i < histogram.values.size(); i++)
+        if (histogram.values[i] > histogram.maxCount)
+            histogram.maxCount = histogram.values[i];
+
+    return histogram;
+}
+
 Histogram c_CpuAndBitmaps::GetHistogram()
 {
-    return Histogram{};
+    return DetermineHistogram(m_Img.value(), m_Selection);
+}
+
+void c_CpuAndBitmaps::NewSelection(const wxRect& selection)
+{
+    m_Selection = selection;
+
+    //TESTING ########
+    if (m_OnProcessingCompleted)
+        m_OnProcessingCompleted();
 }
 
 } // namespace imppg::backend

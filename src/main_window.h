@@ -102,8 +102,6 @@ class c_MainWindow: public wxFrame
     bool UnshMaskingEnabled(); ///< Returns 'true' if unsharp masking settings have impact on the image
     bool ToneCurveEnabled(); ///< Returns 'true' if tone curve has impact on the image (i.e. it is not the identity map)
     void OnProcessingStepCompleted(CompletionStatus status);
-    /// Determines histogram of the specified area of an image
-    void DetermineHistogram(const c_Image& img, const wxRect& selection, Histogram& histogram);
     wxPanel* CreateLucyRichardsonControlsPanel(wxWindow* parent);
     wxStaticBoxSizer* CreateUnsharpMaskingControls(wxWindow* parent);
     void OnUpdateUnsharpMaskingSettings();

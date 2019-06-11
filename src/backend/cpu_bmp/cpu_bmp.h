@@ -46,6 +46,10 @@ public:
 
     void SetPhysicalSelectionGetter(std::function<wxRect()> getter) override { m_PhysSelectionGetter = getter; }
 
+    void SetProcessingCompletedHandler(std::function<void()> handler) override { m_OnProcessingCompleted = handler; }
+
+    void NewSelection(const wxRect& selection) override;
+
 private:
     wxScrolledCanvas& m_ImgView;
 
@@ -61,8 +65,12 @@ private:
 
     wxRect m_ScaledArea; ///< Area within `m_ImgBmp` represented by `m_BmpScaled`.
 
+    wxRect m_Selection; ///< Image fragment selected for processing (in logical image coords).
+
     /// Provides selection in physical image view coords.
     std::function<wxRect()> m_PhysSelectionGetter;
+
+    std::function<void()> m_OnProcessingCompleted;
 
     void OnPaint(wxPaintEvent& event);
 

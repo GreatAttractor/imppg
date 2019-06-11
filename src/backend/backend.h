@@ -41,6 +41,12 @@ public:
 
     virtual void FileOpened(c_Image&& img) = 0;
 
+    virtual void NewSelection(
+        const wxRect& selection ///< New selection for processing, in logical image coords.
+    ) = 0;
+
+    virtual void SetProcessingCompletedHandler(std::function<void()>) = 0;
+
     /// Provides getter of selection in physical image view coords.
     virtual void SetPhysicalSelectionGetter(std::function<wxRect()> getter) = 0;
 
