@@ -41,6 +41,7 @@ public:
 
     virtual void FileOpened(c_Image&& img) = 0;
 
+    /// Shall start processing of the selected image fragment immediately.
     virtual void NewSelection(
         const wxRect& selection ///< New selection for processing, in logical image coords.
     ) = 0;

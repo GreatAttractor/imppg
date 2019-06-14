@@ -30,10 +30,8 @@ File description:
 /// Represents a tone curve and associated data. NOTE: LUT contents are not copied by copy constructor and assignment operator.
 class c_ToneCurve
 {
-    /// Look-up table with pre-calculated values of the curve
-    float* m_LUT{nullptr};
-    /// Number of elements in 'm_LUT'
-    int m_LutSize;
+    /// Look-up table with pre-calculated values of the curve.
+    std::vector<float> m_LUT;
 
     typedef std::vector<FloatPoint_t> FloatPointsVector_t;
 
@@ -95,7 +93,7 @@ public:
     ) const
     {
         //TODO: perform a quicker shift when LUT size is a power of 2
-        return m_LUT[static_cast<int>(input * (m_LutSize - 1))];
+        return m_LUT[static_cast<int>(input * (m_LUT.size() - 1))];
     }
 
     /// Applies the tone curve to 'input' using a precise curve value
@@ -139,8 +137,6 @@ public:
 
     /// Stretches the points to fill the interval [min; max]
     void Stretch(float min, float max);
-
-    ~c_ToneCurve();
 };
 
 #endif
