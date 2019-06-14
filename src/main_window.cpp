@@ -198,10 +198,7 @@ void c_MainWindow::LoadSettingsFromFile(wxString settingsFile, bool moveToMruLis
 {
     auto& s = m_CurrentSettings;
 
-    if (!LoadSettings(settingsFile,
-          s.LucyRichardson.sigma, s.LucyRichardson.iterations, s.LucyRichardson.deringing.enabled,
-          s.UnsharpMasking.adaptive, s.UnsharpMasking.sigma, s.UnsharpMasking.amountMin, s.UnsharpMasking.amountMax, s.UnsharpMasking.threshold, s.UnsharpMasking.width,
-          s.toneCurve, s.normalization.enabled, s.normalization.min, s.normalization.max))
+    if (!LoadSettings(settingsFile, s.processing))
     {
         wxMessageBox(_("Failed to load processing settings."), _("Error"), wxOK | wxCENTRE | wxICON_ERROR);
 
@@ -218,18 +215,18 @@ void c_MainWindow::LoadSettingsFromFile(wxString settingsFile, bool moveToMruLis
         if (moveToMruListStart)
             SetAsMRU(settingsFile);
 
-        m_Ctrls.lrSigma->SetValue(s.LucyRichardson.sigma);
-        m_Ctrls.lrIters->SetValue(s.LucyRichardson.iterations);
-        m_Ctrls.lrDeriging->SetValue(s.LucyRichardson.deringing.enabled);
+        m_Ctrls.lrSigma->SetValue(s.processing.LucyRichardson.sigma);
+        m_Ctrls.lrIters->SetValue(s.processing.LucyRichardson.iterations);
+        m_Ctrls.lrDeriging->SetValue(s.processing.LucyRichardson.deringing.enabled);
 
-        m_Ctrls.unshAdaptive->SetValue(s.UnsharpMasking.adaptive);
-        m_Ctrls.unshSigma->SetValue(s.UnsharpMasking.sigma);
-        m_Ctrls.unshAmountMin->SetValue(s.UnsharpMasking.amountMin);
-        m_Ctrls.unshAmountMax->SetValue(s.UnsharpMasking.amountMax);
-        m_Ctrls.unshThreshold->SetValue(s.UnsharpMasking.threshold);
-        m_Ctrls.unshWidth->SetValue(s.UnsharpMasking.width);
+        m_Ctrls.unshAdaptive->SetValue(s.processing.unsharpMasking.adaptive);
+        m_Ctrls.unshSigma->SetValue(s.processing.unsharpMasking.sigma);
+        m_Ctrls.unshAmountMin->SetValue(s.processing.unsharpMasking.amountMin);
+        m_Ctrls.unshAmountMax->SetValue(s.processing.unsharpMasking.amountMax);
+        m_Ctrls.unshThreshold->SetValue(s.processing.unsharpMasking.threshold);
+        m_Ctrls.unshWidth->SetValue(s.processing.unsharpMasking.width);
 
-        m_Ctrls.tcrvEditor->SetToneCurve(&s.toneCurve);
+        m_Ctrls.tcrvEditor->SetToneCurve(&s.processing.toneCurve);
 
         m_LastChosenSettingsFileName = wxFileName(settingsFile).GetName();
         m_LastChosenSettings->SetLabel(m_LastChosenSettingsFileName);
@@ -270,10 +267,8 @@ void c_MainWindow::OnSettingsFile(wxCommandEvent& event)
                 if (fname.GetExt() == wxEmptyString)
                     fname.SetExt("xml");
 
-                if (!SaveSettings(fname.GetFullPath(),
-                        s.LucyRichardson.sigma, s.LucyRichardson.iterations, s.LucyRichardson.deringing.enabled,
-                        s.UnsharpMasking.adaptive, s.UnsharpMasking.sigma, s.UnsharpMasking.amountMin, s.UnsharpMasking.amountMax, s.UnsharpMasking.threshold, s.UnsharpMasking.width,
-                        s.toneCurve, s.normalization.enabled, s.normalization.min, s.normalization.max))
+
+                if (!SaveSettings(fname.GetFullPath(), s.processing))
                 {
                     wxMessageBox(_("Failed to save processing settings."), _("Error"), wxOK | wxCENTRE | wxICON_ERROR);
                 }
@@ -605,21 +600,19 @@ void c_MainWindow::OnToneCurveChanged(wxCommandEvent&)
 /// Returns 'true' if sharpening settings have impact on the image
 bool c_MainWindow::SharpeningEnabled()
 {
-    return (m_CurrentSettings.LucyRichardson.iterations > 0);
+    return (m_CurrentSettings.processing.LucyRichardson.iterations > 0);
 }
 
 /// Returns 'true' if unsharp masking settings have impact on the image
 bool c_MainWindow::UnshMaskingEnabled()
 {
-    auto& s = m_CurrentSettings;
-    return !s.UnsharpMasking.adaptive && s.UnsharpMasking.amountMax != 1.0f ||
-           s.UnsharpMasking.adaptive && (s.UnsharpMasking.amountMin != 1.0f || s.UnsharpMasking.amountMax != 1.0f);
+    return m_CurrentSettings.processing.unsharpMasking.IsEffective();
 }
 
 /// Returns 'true' if tone curve has impact on the image (i.e. it is not the identity map)
 bool c_MainWindow::ToneCurveEnabled()
 {
-    const c_ToneCurve& tc = m_CurrentSettings.toneCurve;
+    const c_ToneCurve& tc = m_CurrentSettings.processing.toneCurve;
     return tc.IsGammaMode() && tc.GetGamma() != 1.0f ||
            tc.GetNumPoints() != 2 ||
            tc.GetPoint(0).x != 0.0f ||
@@ -637,20 +630,20 @@ c_MainWindow::c_MainWindow()
 
     auto& s = m_CurrentSettings;
 
-    s.normalization.enabled = false;
-    s.normalization.min = 0.0;
-    s.normalization.max = 1.0;
+    s.processing.normalization.enabled = false;
+    s.processing.normalization.min = 0.0;
+    s.processing.normalization.max = 1.0;
 
-    s.LucyRichardson.sigma = Default::LR_SIGMA;
-    s.LucyRichardson.iterations = Default::LR_ITERATIONS;
-    s.LucyRichardson.deringing.enabled = false;
+    s.processing.LucyRichardson.sigma = Default::LR_SIGMA;
+    s.processing.LucyRichardson.iterations = Default::LR_ITERATIONS;
+    s.processing.LucyRichardson.deringing.enabled = false;
 
-    s.UnsharpMasking.adaptive = false;
-    s.UnsharpMasking.sigma = Default::UNSHMASK_SIGMA;
-    s.UnsharpMasking.amountMin = Default::UNSHMASK_AMOUNT;
-    s.UnsharpMasking.amountMax = Default::UNSHMASK_AMOUNT;
-    s.UnsharpMasking.threshold = Default::UNSHMASK_THRESHOLD;
-    s.UnsharpMasking.width = Default::UNSHMASK_WIDTH;
+    s.processing.unsharpMasking.adaptive = false;
+    s.processing.unsharpMasking.sigma = Default::UNSHMASK_SIGMA;
+    s.processing.unsharpMasking.amountMin = Default::UNSHMASK_AMOUNT;
+    s.processing.unsharpMasking.amountMax = Default::UNSHMASK_AMOUNT;
+    s.processing.unsharpMasking.threshold = Default::UNSHMASK_THRESHOLD;
+    s.processing.unsharpMasking.width = Default::UNSHMASK_WIDTH;
 
     // m_Processing.processingScheduled = false;
 
@@ -1153,8 +1146,8 @@ void c_MainWindow::OpenFile(wxFileName path, bool resetSelection)
 
         UpdateWindowTitle();
 
-        if (s.normalization.enabled)
-            NormalizeFpImage(newImg, s.normalization.min, s.normalization.max);
+        if (s.processing.normalization.enabled)
+            NormalizeFpImage(newImg, s.processing.normalization.min, s.processing.normalization.max);
 
         m_BackEnd->FileOpened(std::move(newImg));
 
@@ -1530,9 +1523,9 @@ void c_MainWindow::OnUpdateLucyRichardsonSettings()
 {
     TransferDataFromWindow();
 
-    m_CurrentSettings.LucyRichardson.iterations = m_Ctrls.lrIters->GetValue();
-    m_CurrentSettings.LucyRichardson.sigma = m_Ctrls.lrSigma->GetValue();
-    m_CurrentSettings.LucyRichardson.deringing.enabled = m_Ctrls.lrDeriging->GetValue();
+    m_CurrentSettings.processing.LucyRichardson.iterations = m_Ctrls.lrIters->GetValue();
+    m_CurrentSettings.processing.LucyRichardson.sigma = m_Ctrls.lrSigma->GetValue();
+    m_CurrentSettings.processing.LucyRichardson.deringing.enabled = m_Ctrls.lrDeriging->GetValue();
 
     // if (m_CurrentSettings.m_Img)
     //     ScheduleProcessing(ProcessingRequest::SHARPENING);
@@ -1541,11 +1534,11 @@ void c_MainWindow::OnUpdateLucyRichardsonSettings()
 void c_MainWindow::OnUpdateUnsharpMaskingSettings()
 {
     TransferDataFromWindow();
-    m_CurrentSettings.UnsharpMasking.sigma = m_Ctrls.unshSigma->GetValue();
-    m_CurrentSettings.UnsharpMasking.amountMin = m_Ctrls.unshAmountMin->GetValue();
-    m_CurrentSettings.UnsharpMasking.amountMax = m_Ctrls.unshAmountMax->GetValue();
-    m_CurrentSettings.UnsharpMasking.threshold = m_Ctrls.unshThreshold->GetValue();
-    m_CurrentSettings.UnsharpMasking.width = m_Ctrls.unshWidth->GetValue();
+    m_CurrentSettings.processing.unsharpMasking.sigma = m_Ctrls.unshSigma->GetValue();
+    m_CurrentSettings.processing.unsharpMasking.amountMin = m_Ctrls.unshAmountMin->GetValue();
+    m_CurrentSettings.processing.unsharpMasking.amountMax = m_Ctrls.unshAmountMax->GetValue();
+    m_CurrentSettings.processing.unsharpMasking.threshold = m_Ctrls.unshThreshold->GetValue();
+    m_CurrentSettings.processing.unsharpMasking.width = m_Ctrls.unshWidth->GetValue();
 
     // if (m_CurrentSettings.m_Img)
     //     ScheduleProcessing(ProcessingRequest::UNSHARP_MASKING);
@@ -1746,17 +1739,22 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent& event)
 
     case ID_NormalizeImage:
         {
-            c_NormalizeDialog dlg(this, s.normalization.enabled, s.normalization.min, s.normalization.max);
+            c_NormalizeDialog dlg(
+                this,
+                s.processing.normalization.enabled,
+                s.processing.normalization.min,
+                s.processing.normalization.max
+            );
             if (dlg.ShowModal() == wxID_OK)
             {
                 if (dlg.IsNormalizationEnabled())
                 {
-                    s.normalization.enabled = true;
-                    s.normalization.min = dlg.GetMinLevel();
-                    s.normalization.max = dlg.GetMaxLevel();
+                    s.processing.normalization.enabled = true;
+                    s.processing.normalization.min = dlg.GetMinLevel();
+                    s.processing.normalization.max = dlg.GetMaxLevel();
                 }
                 else
-                    s.normalization.enabled = false;
+                    s.processing.normalization.enabled = false;
 
                 if (m_ImageLoaded)
                 {
@@ -1902,7 +1900,7 @@ wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(wxWindow* parent)
     result->Add(m_Ctrls.unshWidth, 0, wxALIGN_CENTER_HORIZONTAL | wxGROW | wxALL, BORDER);
 
     result->Add(m_Ctrls.unshAdaptive = new wxCheckBox(result->GetStaticBox(), ID_UnsharpMaskingAdaptive, _("Adaptive"),
-            wxDefaultPosition, wxDefaultSize, wxCHK_2STATE, wxGenericValidator(&m_CurrentSettings.UnsharpMasking.adaptive)),
+            wxDefaultPosition, wxDefaultSize, wxCHK_2STATE, wxGenericValidator(&m_CurrentSettings.processing.unsharpMasking.adaptive)),
             0, wxALIGN_LEFT | wxALL, BORDER);
     m_Ctrls.unshAdaptive->SetToolTip(_("Enable adaptive mode: amount changes from min to max depending on input brightness"));
 
@@ -2267,7 +2265,7 @@ void c_MainWindow::InitControls()
     m_ToneCurveEditorWindow.SetSizer(new wxBoxSizer(wxHORIZONTAL));
     int maxfreq = Configuration::GetMaxProcessingRequestsPerSec();
     m_ToneCurveEditorWindow.GetSizer()->Add(
-        m_Ctrls.tcrvEditor = new c_ToneCurveEditor(&m_ToneCurveEditorWindow, &m_CurrentSettings.toneCurve, ID_ToneCurveEditor,
+        m_Ctrls.tcrvEditor = new c_ToneCurveEditor(&m_ToneCurveEditorWindow, &m_CurrentSettings.processing.toneCurve, ID_ToneCurveEditor,
         maxfreq ? 1000 / maxfreq : 0, Configuration::LogHistogram),
         1, wxGROW | wxALL);
     m_ToneCurveEditorWindow.Bind(wxEVT_CLOSE_WINDOW, &c_MainWindow::OnCloseToneCurveEditorWindow, this);

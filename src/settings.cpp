@@ -117,17 +117,29 @@ wxXmlNode* CreateNormalizationSettingsNode(bool normalizationEnabled, float norm
     return result;
 }
 
-/// Saves the settings of Lucy-Richardson deconvolution, unsharp masking, tone curve and deringing; returns 'false' on error
-bool SaveSettings(wxString filePath, float lrSigma, int lrIters, bool lrDeringing,
-        bool unshAdaptive, float unshSigma, float unshAmountMin, float unshAmountMax, float unshThreshold, float unshWidth,
-        c_ToneCurve &toneCurve, bool normalizationEnabled, float normMin, float normMax)
+bool SaveSettings(wxString filePath, const ProcessingSettings& settings)
 {
     wxXmlNode* root = new wxXmlNode(wxXML_ELEMENT_NODE, XmlName::root);
 
-    root->AddChild(CreateLucyRichardsonSettingsNode(lrSigma, lrIters, lrDeringing));
-    root->AddChild(CreateUnsharpMaskingSettingsNode(unshAdaptive, unshSigma, unshAmountMin, unshAmountMax, unshThreshold, unshWidth));
-    root->AddChild(CreateToneCurveSettingsNode(toneCurve));
-    root->AddChild(CreateNormalizationSettingsNode(normalizationEnabled, normMin, normMax));
+    root->AddChild(CreateLucyRichardsonSettingsNode(
+        settings.LucyRichardson.sigma,
+        settings.LucyRichardson.iterations,
+        settings.LucyRichardson.deringing.enabled
+    ));
+    root->AddChild(CreateUnsharpMaskingSettingsNode(
+        settings.unsharpMasking.adaptive,
+        settings.unsharpMasking.sigma,
+        settings.unsharpMasking.amountMin,
+        settings.unsharpMasking.amountMax,
+        settings.unsharpMasking.threshold,
+        settings.unsharpMasking.width
+    ));
+    root->AddChild(CreateToneCurveSettingsNode(settings.toneCurve));
+    root->AddChild(CreateNormalizationSettingsNode(
+        settings.normalization.enabled,
+        settings.normalization.min,
+        settings.normalization.max
+    ));
 
     return CreateAndSaveDocument(filePath, root);
 }
@@ -278,11 +290,13 @@ bool ParseToneCurveSettings(const wxXmlNode* node, c_ToneCurve& tcurve)
         return true;
 }
 
-/// Loads the settings of Lucy-Richardson deconvolution, unsharp masking, tone curve and deringing; returns 'false' on error
-/** If the specified file does not contain some of the settings, the corresponding parameters' values will not be updated.*/
-bool LoadSettings(wxString filePath, float& lrSigma, int& lrIters, bool& lrDeringing,
-    bool& unshAdaptive, float& unshSigma, float& unshAmountMin, float& unshAmountMax, float& unshThreshold, float& unshWidth,
-    c_ToneCurve& toneCurve, bool& normalizationEnabled, float& normMin, float& normMax, bool* loadedLR, bool* loadedUnsh, bool* loadedTCurve)
+bool LoadSettings(
+    wxString filePath,
+    ProcessingSettings& settings,
+    bool* loadedLR,
+    bool* loadedUnsh,
+    bool* loadedTCurve
+)
 {
     if (loadedLR)
         *loadedLR = false;
@@ -291,8 +305,8 @@ bool LoadSettings(wxString filePath, float& lrSigma, int& lrIters, bool& lrDerin
     if (loadedTCurve)
         *loadedTCurve = false;
 
-    lrDeringing = false;
-    normalizationEnabled = false;
+    settings.LucyRichardson.deringing.enabled = false;
+    settings.normalization.enabled = false;
 
     wxXmlDocument xdoc;
     if (!xdoc.Load(filePath))
@@ -314,9 +328,9 @@ bool LoadSettings(wxString filePath, float& lrSigma, int& lrIters, bool& lrDerin
             if (!ParseLucyRichardsonSettings(child, sigma, iters, deringing))
                 return false;
 
-            lrSigma = sigma;
-            lrIters = iters;
-            lrDeringing = deringing;
+            settings.LucyRichardson.sigma = sigma;
+            settings.LucyRichardson.iterations = iters;
+            settings.LucyRichardson.deringing.enabled = deringing;
 
             if (loadedLR)
                 *loadedLR = true;
@@ -329,12 +343,12 @@ bool LoadSettings(wxString filePath, float& lrSigma, int& lrIters, bool& lrDerin
             if (!ParseUnsharpMaskingSettings(child,adaptive, sigma, amountMin, amountMax, threshold, width))
                 return false;
 
-            unshAdaptive = adaptive;
-            unshSigma = sigma;
-            unshAmountMin = amountMin;
-            unshAmountMax = amountMax;
-            unshThreshold = threshold;
-            unshWidth = width;
+            settings.unsharpMasking.adaptive = adaptive;
+            settings.unsharpMasking.sigma = sigma;
+            settings.unsharpMasking.amountMin = amountMin;
+            settings.unsharpMasking.amountMax = amountMax;
+            settings.unsharpMasking.threshold = threshold;
+            settings.unsharpMasking.width = width;
 
             if (loadedUnsh)
                 *loadedUnsh = true;
@@ -345,7 +359,7 @@ bool LoadSettings(wxString filePath, float& lrSigma, int& lrIters, bool& lrDerin
             if (!ParseToneCurveSettings(child, tcurve))
                 return false;
 
-            toneCurve = tcurve;
+            settings.toneCurve = tcurve;
 
             if (loadedTCurve)
                 *loadedTCurve = true;
@@ -357,9 +371,9 @@ bool LoadSettings(wxString filePath, float& lrSigma, int& lrIters, bool& lrDerin
 
             if (!ParseNormalizationSetings(child, enabled, nmin, nmax))
                 return false;
-            normalizationEnabled = enabled;
-            normMin = nmin;
-            normMax = nmax;
+            settings.normalization.enabled = enabled;
+            settings.normalization.min = nmin;
+            settings.normalization.max = nmax;
         }
 
         child = child->GetNext();

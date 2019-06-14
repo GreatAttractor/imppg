@@ -41,6 +41,7 @@ File description:
 #include "backend/backend.h"
 #include "image.h"
 #include "num_ctrl.h"
+#include "proc_settings.h"
 #include "tcrv_edit.h"
 #include "tcrv.h"
 #include "worker.h"
@@ -197,13 +198,6 @@ class c_MainWindow: public wxFrame
             wxTimer scalingTimer;
         } view;
 
-        /// Normalization is performed prior to all other processing steps
-        struct
-        {
-            bool enabled;
-            float min, max;
-        } normalization;
-
         // /// Incremental results of processing of the current selection
         // /** Must not be accessed when the relevant background thread is running. */
         // struct
@@ -231,29 +225,8 @@ class c_MainWindow: public wxFrame
         //     } toneCurve;
         // } output;
 
-        c_ToneCurve toneCurve;
+        ProcessingSettings processing;
 
-        struct
-        {
-            float sigma; ///< Lucy-Richardson deconvolution kernel sigma
-            int iterations; ///< Number of Lucy-Richardson deconvolution iterations
-            struct
-            {
-                bool enabled; ///< Experimantal; enables deringing along edges of overexposed areas (see c_LucyRichardsonThread::DoWork())
-            } deringing;
-        } LucyRichardson;
-
-        struct
-        {
-            // See comments in c_UnsharpMaskingThread::DoWork() for details
-
-            bool adaptive; ///If true, adaptive unsharp masking is used
-            float sigma; ///< Gaussian kernel sigma
-            float amountMin; ///< amount (weight) of the unsharped layer; <1.0 blurs, >1.0 sharpens; if adaptive=true, used as the min amount
-            float amountMax; ///< max amount
-            float threshold; ///< Threshold of input image brightness where the min-max amount transition occurs
-            float width; ///< Width of the transition interval
-        } UnsharpMasking;
     } m_CurrentSettings;
 
     struct

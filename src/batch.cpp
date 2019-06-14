@@ -42,6 +42,7 @@ File description:
 #include "image.h"
 #include "imppg_assert.h"
 #include "logging.h"
+#include "proc_settings.h"
 #include "settings.h"
 #include "tiff.h"
 #include "w_lrdeconv.h"
@@ -76,22 +77,7 @@ class c_BatchDialog: public wxDialog
         bool hasUnshMask; ///< 'True' if unsharp masking settings are specified
         bool hasTCurve;   ///< 'True' if tone curve is specified
 
-        float lrSigma;
-        int lrIters;
-
-        // See comments in c_UnsharpMaskingThread::DoWork() for details
-        bool unshAdaptive;
-        float unshSigma, unshAmountMin, unshAmountMax, unshThreshold, unshWidth;
-
-        bool deringing;
-
-        struct
-        {
-            bool enabled;
-            float min, max;
-        } normalization;
-
-        c_ToneCurve tcurve;
+        ProcessingSettings procSettings;
 
         wxString outputDir;
         OutputFormat outputFmt;
@@ -383,17 +369,19 @@ void c_BatchDialog::ScheduleProcessing(ProcessingRequest request)
         }
     }
 
+    const auto& proc = m_Settings.procSettings;
+
     switch (request)
     {
     case ProcessingRequest::SHARPENING:
 
-        if (m_Settings.normalization.enabled)
+        if (proc.normalization.enabled)
         {
-            NormalizeFpImage(m_Img.value(), m_Settings.normalization.min, m_Settings.normalization.max);
+            NormalizeFpImage(m_Img.value(), proc.normalization.min, proc.normalization.max);
             m_RawImg = m_Img;
         }
 
-        if (m_Settings.lrIters > 0)
+        if (proc.LucyRichardson.iterations > 0)
         {
             m_Worker = new c_LucyRichardsonThread(
                 WorkerParameters{
@@ -404,7 +392,12 @@ void c_BatchDialog::ScheduleProcessing(ProcessingRequest request)
                     m_Img.value().GetBuffer(),
                     m_ThreadId
                 },
-                m_Settings.lrSigma, m_Settings.lrIters, m_Settings.deringing, 254.0f/255, true, m_Settings.lrSigma
+                proc.LucyRichardson.sigma,
+                proc.LucyRichardson.iterations,
+                proc.LucyRichardson.deringing.enabled,
+                254.0f/255,
+                true,
+                proc.LucyRichardson.sigma
             );
 
             { auto lock = m_Worker.Lock();
@@ -426,8 +419,7 @@ void c_BatchDialog::ScheduleProcessing(ProcessingRequest request)
         break;
 
     case ProcessingRequest::UNSHARP_MASKING:
-        if (!m_Settings.unshAdaptive && m_Settings.unshAmountMax != 1.0f ||
-             m_Settings.unshAdaptive && (m_Settings.unshAmountMin != 1.0f || m_Settings.unshAmountMax != 1.0f))
+        if (proc.unsharpMasking.IsEffective())
         {
             m_Worker = new c_UnsharpMaskingThread(
                 WorkerParameters{
@@ -439,12 +431,12 @@ void c_BatchDialog::ScheduleProcessing(ProcessingRequest request)
                     m_ThreadId
                 },
                 c_ImageBufferView(m_RawImg.value().GetBuffer()),
-                m_Settings.unshAdaptive,
-                m_Settings.unshSigma,
-                m_Settings.unshAmountMin,
-                m_Settings.unshAmountMax,
-                m_Settings.unshThreshold,
-                m_Settings.unshWidth
+                proc.unsharpMasking.adaptive,
+                proc.unsharpMasking.sigma,
+                proc.unsharpMasking.amountMin,
+                proc.unsharpMasking.amountMax,
+                proc.unsharpMasking.threshold,
+                proc.unsharpMasking.width
             );
 
             { auto lock = m_Worker.Lock();
@@ -461,12 +453,12 @@ void c_BatchDialog::ScheduleProcessing(ProcessingRequest request)
         break;
 
     case ProcessingRequest::TONE_CURVE:
-        if (m_Settings.tcurve.GetNumPoints() != 2 ||
-            m_Settings.tcurve.GetPoint(0).x != 0.0f ||
-            m_Settings.tcurve.GetPoint(0).y != 0.0f ||
-            m_Settings.tcurve.GetPoint(1).x != 1.0f ||
-            m_Settings.tcurve.GetPoint(1).y != 1.0f ||
-            m_Settings.tcurve.IsGammaMode() && m_Settings.tcurve.GetGamma() != 1.0f)
+        if (proc.toneCurve.GetNumPoints() != 2 ||
+            proc.toneCurve.GetPoint(0).x != 0.0f ||
+            proc.toneCurve.GetPoint(0).y != 0.0f ||
+            proc.toneCurve.GetPoint(1).x != 1.0f ||
+            proc.toneCurve.GetPoint(1).y != 1.0f ||
+            proc.toneCurve.IsGammaMode() && proc.toneCurve.GetGamma() != 1.0f)
         {
             m_Worker = new c_ToneCurveThread(
                 WorkerParameters{
@@ -477,7 +469,7 @@ void c_BatchDialog::ScheduleProcessing(ProcessingRequest request)
                     m_Img.value().GetBuffer(),
                     m_ThreadId
                 },
-                m_Settings.tcurve,
+                proc.toneCurve,
                 true
             );
 
@@ -526,10 +518,10 @@ c_BatchDialog::c_BatchDialog(wxWindow* parent, const wxArrayString& fileNames,
     m_FileNames = fileNames;
 
     if (!LoadSettings(settingsFileName,
-            m_Settings.lrSigma, m_Settings.lrIters, m_Settings.deringing,
-            m_Settings.unshAdaptive, m_Settings.unshSigma, m_Settings.unshAmountMin, m_Settings.unshAmountMax, m_Settings.unshThreshold, m_Settings.unshWidth,
-        m_Settings.tcurve, m_Settings.normalization.enabled, m_Settings.normalization.min, m_Settings.normalization.max,
-        &m_Settings.hasLR, &m_Settings.hasUnshMask, &m_Settings.hasTCurve))
+        m_Settings.procSettings,
+        &m_Settings.hasLR,
+        &m_Settings.hasUnshMask,
+        &m_Settings.hasTCurve))
     {
         wxMessageBox(_("Could not load processing settings."), _("Error"), wxICON_ERROR, parent);
         m_Settings.loadedSuccessfully = false;
