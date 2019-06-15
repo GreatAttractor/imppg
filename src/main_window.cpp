@@ -2290,7 +2290,9 @@ void c_MainWindow::InitControls()
     m_ImageView.Bind(wxEVT_MOUSE_CAPTURE_LOST, &c_MainWindow::OnImageViewMouseCaptureLost, this);
     m_ImageView.Bind(wxEVT_SIZE,               &c_MainWindow::OnImageViewSize, this);
     m_ImageView.Bind(wxEVT_MIDDLE_DOWN,        &c_MainWindow::OnImageViewDragScrollStart, this);
+    m_ImageView.Bind(wxEVT_RIGHT_DOWN,         &c_MainWindow::OnImageViewDragScrollStart, this);
     m_ImageView.Bind(wxEVT_MIDDLE_UP,          &c_MainWindow::OnImageViewDragScrollEnd, this);
+    m_ImageView.Bind(wxEVT_RIGHT_UP,           &c_MainWindow::OnImageViewDragScrollEnd, this);
     m_ImageView.Bind(wxEVT_MOUSEWHEEL,         &c_MainWindow::OnImageViewMouseWheel, this);
 
     BindAllScrollEvents(m_ImageView, &c_MainWindow::OnImageViewScroll, this);
