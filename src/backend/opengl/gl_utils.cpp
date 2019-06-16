@@ -125,6 +125,7 @@ c_Program::c_Program(
         glGetProgramiv(m_Program.Get(), GL_INFO_LOG_LENGTH, &logLength);
         auto infoLog = std::make_unique<GLchar[]>(logLength);
         glGetProgramInfoLog(m_Program.Get(), logLength, nullptr, infoLog.get());
+        std::cerr << "Program linking failed:\n\n" << infoLog.get() << std::endl;
         throw std::runtime_error("Failed to create GL shader program");
     }
     else

@@ -37,6 +37,8 @@ c_OpenGLBackEnd::c_OpenGLBackEnd(wxScrolledCanvas& imgView)
         WX_GL_CORE_PROFILE,
         WX_GL_MAJOR_VERSION, 3,
         WX_GL_MINOR_VERSION, 3,
+        WX_GL_RGBA,
+        WX_GL_DOUBLEBUFFER,
         0
     };
     m_GLCanvas = new wxGLCanvas(&imgView, wxID_ANY, glAttributes);
