@@ -76,6 +76,7 @@ class c_Buffer
 {
     static void Deleter(GLuint obj) { glDeleteBuffers(1, &obj); }
     c_Wrapper<Deleter> m_Buffer;
+    GLenum m_Target;
 
 public:
 
@@ -90,10 +91,13 @@ public:
 
     c_Buffer(GLenum target, const void* data, GLsizei size, GLenum usage)
     {
+        m_Target = target;
         glGenBuffers(1, &m_Buffer.Get());
         glBindBuffer(target, m_Buffer.Get());
         glBufferData(target, size, data, usage);
     }
+
+    void Bind() { glBindBuffer(m_Target, m_Buffer.Get()); }
 
     GLuint Get() const { return m_Buffer.GetConst(); }
 };
@@ -250,11 +254,6 @@ public:
 
     void Unbind() { glUseProgram(0); }
 };
-
-void DrawFullscreenQuad();
-
-bool InitFullScreenQuad();
-
 }
 
 #endif // IMPPG_GL_UTILS_HEADER

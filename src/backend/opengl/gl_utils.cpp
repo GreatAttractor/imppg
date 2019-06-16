@@ -56,25 +56,6 @@ static std::tuple<std::unique_ptr<GLchar[]>, GLint> ReadTextFile(const char* fil
     return { std::move(contents), std::move(length) };
 }
 
-bool InitFullScreenQuad()
-{
-    const GLfloat vertexData[] = {
-        -1.0f, -1.0f,
-        1.0f, -1.0f,
-        1.0f, 1.0f,
-        -1.0f, 1.0f
-    };
-
-    fullScreenQuadVertices = c_Buffer(
-        GL_ARRAY_BUFFER,
-        vertexData,
-        sizeof(vertexData),
-        GL_STATIC_DRAW
-    );
-
-    return static_cast<bool>(fullScreenQuadVertices);
-}
-
 c_Shader::c_Shader(GLenum type, const char* srcFileName)
 {
     auto [source, srcLength] = ReadTextFile(srcFileName);
@@ -136,13 +117,6 @@ c_Program::c_Program(
         for (auto attribute: attributes)
             IMPPG_ASSERT(-1 != (Attributes[attribute] = glGetAttribLocation(m_Program.Get(), attribute)));
     }
-}
-
-void DrawFullscreenQuad()
-{
-    IMPPG_ASSERT(fullScreenQuadVertices);
-    glBindBuffer(GL_ARRAY_BUFFER, fullScreenQuadVertices.Get());
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
 
 } // namespace imppg::backend::gl

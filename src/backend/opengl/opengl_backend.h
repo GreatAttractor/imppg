@@ -88,6 +88,12 @@ private:
     {
         gl::c_Program solidColor;
     } m_GLPrograms;
+
+    struct
+    {
+        gl::c_Buffer wholeImg;
+        gl::c_Buffer selection;
+    } m_VBOs;
 };
 
 } // namespace imppg::backend

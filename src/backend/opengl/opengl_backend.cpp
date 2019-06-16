@@ -56,7 +56,7 @@ c_OpenGLBackEnd::c_OpenGLBackEnd(wxScrolledCanvas& imgView)
         0
     };
     m_GLCanvas = new wxGLCanvas(&imgView, wxID_ANY, glAttributes);
-    m_GLCanvas->SetSize({512, 512});
+    m_GLCanvas->SetSize({1, 1});
     m_GLContext = new wxGLContext(m_GLCanvas);
 
     m_GLCanvas->Bind(wxEVT_LEFT_DOWN,          &c_OpenGLBackEnd::PropagateEventToParentUnscrolled, this);
@@ -68,8 +68,6 @@ c_OpenGLBackEnd::c_OpenGLBackEnd(wxScrolledCanvas& imgView)
     m_GLCanvas->Bind(wxEVT_MIDDLE_UP,          &c_OpenGLBackEnd::PropagateEventToParentUnscrolled, this);
     m_GLCanvas->Bind(wxEVT_RIGHT_UP,           &c_OpenGLBackEnd::PropagateEventToParentUnscrolled, this);
     m_GLCanvas->Bind(wxEVT_MOUSEWHEEL,         &c_OpenGLBackEnd::PropagateEventToParentUnscrolled, this);
-
-
 }
 
 void c_OpenGLBackEnd::MainWindowShown()
@@ -88,20 +86,13 @@ void c_OpenGLBackEnd::MainWindowShown()
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
-    IMPPG_ASSERT(gl::InitFullScreenQuad());
-
-    constexpr GLuint vertAttrib = 0; // 0 corresponds to "location = 0" for attribute `Position` in shaders/vertex.vert
-    glVertexAttribPointer(
-        vertAttrib,
-        2,  // 2 components (x, y) per attribute value
-        GL_FLOAT,
-        GL_FALSE,
-        0,
-        nullptr
+    const auto clearColor = m_ImgView.GetBackgroundColour();
+    glClearColor(
+        clearColor.Red()/255.0f,
+        clearColor.Green()/255.0f,
+        clearColor.Blue()/255.0f,
+        1.0f
     );
-    glEnableVertexAttribArray(vertAttrib);
-
-    glClearColor(0.66, 0.0, 0.0, 1.0);
 
     std::cout << glGetString(GL_VERSION) << std::endl;
     std::cout << glGetString(GL_RENDERER) << std::endl;
@@ -114,8 +105,12 @@ void c_OpenGLBackEnd::OnPaint(wxPaintEvent&)
     wxPaintDC dc(m_GLCanvas);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    m_GLPrograms.solidColor.Use();
-    gl::DrawFullscreenQuad();
+    if (m_Img.has_value())
+    {
+        m_GLPrograms.solidColor.Use();
+        m_VBOs.wholeImg.Bind();
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    }
 
     m_GLCanvas->SwapBuffers();
 }
@@ -137,10 +132,49 @@ void c_OpenGLBackEnd::ImageViewZoomChanged(float zoomFactor)
 void c_OpenGLBackEnd::FileOpened(c_Image&& img)
 {
     m_Img = std::move(img);
-    const wxSize newSize{static_cast<int>(m_Img.value().GetWidth() * m_ZoomFactor),
-                         static_cast<int>(m_Img.value().GetHeight() * m_ZoomFactor)};
+    const auto width = m_Img.value().GetWidth();
+    const auto height = m_Img.value().GetHeight();
+    const wxSize newSize{static_cast<int>(width * m_ZoomFactor),
+                         static_cast<int>(height * m_ZoomFactor)};
     m_GLCanvas->SetSize(newSize);
     glViewport(0, 0, newSize.x, newSize.y);
+
+    // each row: vertex coordinates, texture coordinates
+    const GLfloat vertexData[] = {
+        -1.0f, -1.0f,   0, 0,
+         1.0f, -1.0f,   static_cast<GLfloat>(width - 1), 0,
+         1.0f,  1.0f,   static_cast<GLfloat>(width - 1), static_cast<GLfloat>(height - 1),
+        -1.0f,  1.0f,   0, static_cast<GLfloat>(height - 1)
+    };
+
+    m_VBOs.wholeImg = gl::c_Buffer(
+        GL_ARRAY_BUFFER,
+        vertexData,
+        sizeof(vertexData),
+        GL_STATIC_DRAW
+    );
+
+    constexpr GLuint vertPosAttrib = 0; // 0 corresponds to "location = 0" for attribute `Position` in shaders/vertex.vert
+    glVertexAttribPointer(
+        vertPosAttrib,
+        2,  // 2 components (x, y) per attribute value
+        GL_FLOAT,
+        GL_FALSE,
+        4 * sizeof(GLfloat), // our VBOs store 2 vertex and 2 texture coordinates per element
+        nullptr
+    );
+    glEnableVertexAttribArray(vertPosAttrib);
+
+    constexpr GLuint vertTexCoordAttrib = 1; // 1 corresponds to "location = 1" for attribute `TexCoord` in shaders/vertex.vert
+    glVertexAttribPointer(
+        vertTexCoordAttrib,
+        2,  // 2 components (x, y) per attribute value
+        GL_FLOAT,
+        GL_FALSE,
+        4 * sizeof(GLfloat), // our VBOs store 2 vertex and 2 texture coordinates per element
+        reinterpret_cast<void*>(2 * sizeof(GLfloat))
+    );
+    glEnableVertexAttribArray(vertTexCoordAttrib);
 }
 
 Histogram c_OpenGLBackEnd::GetHistogram() { return Histogram{}; }
