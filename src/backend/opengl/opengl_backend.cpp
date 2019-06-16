@@ -24,10 +24,22 @@ File description:
 #include <GL/glew.h>
 #include <wx/dcclient.h>
 #include <wx/sizer.h>
+
+#include "../../common.h"
 #include "opengl_backend.h"
 
 namespace imppg::backend
 {
+
+void c_OpenGLBackEnd::PropagateEventToParentUnscrolled(wxMouseEvent& event)
+{
+    const int viewX = m_ImgView.GetScrollPos(wxHORIZONTAL);
+    const int viewY = m_ImgView.GetScrollPos(wxVERTICAL);
+    const auto eventPos = event.GetPosition();
+    event.SetPosition({ eventPos.x - viewX, eventPos.y - viewY });
+    event.ResumePropagation(1);
+    event.Skip();
+}
 
 c_OpenGLBackEnd::c_OpenGLBackEnd(wxScrolledCanvas& imgView)
 : m_ImgView(imgView)
@@ -37,14 +49,27 @@ c_OpenGLBackEnd::c_OpenGLBackEnd(wxScrolledCanvas& imgView)
         WX_GL_CORE_PROFILE,
         WX_GL_MAJOR_VERSION, 3,
         WX_GL_MINOR_VERSION, 3,
+        // Supposedly the ones below are enabled by default,
+        // but not for Intel HD Graphics 5500 + Mesa DRI + wxWidgets 3.0.4 (Fedora 29)
         WX_GL_RGBA,
         WX_GL_DOUBLEBUFFER,
         0
     };
     m_GLCanvas = new wxGLCanvas(&imgView, wxID_ANY, glAttributes);
     m_GLCanvas->SetSize({512, 512});
-
     m_GLContext = new wxGLContext(m_GLCanvas);
+
+    m_GLCanvas->Bind(wxEVT_LEFT_DOWN,          &c_OpenGLBackEnd::PropagateEventToParentUnscrolled, this);
+    m_GLCanvas->Bind(wxEVT_MOTION,             &c_OpenGLBackEnd::PropagateEventToParentUnscrolled, this);
+    m_GLCanvas->Bind(wxEVT_LEFT_UP,            &c_OpenGLBackEnd::PropagateEventToParentUnscrolled, this);
+    m_GLCanvas->Bind(wxEVT_MOUSE_CAPTURE_LOST, [](wxMouseCaptureLostEvent& event) { event.ResumePropagation(1); event.Skip(); });
+    m_GLCanvas->Bind(wxEVT_MIDDLE_DOWN,        &c_OpenGLBackEnd::PropagateEventToParentUnscrolled, this);
+    m_GLCanvas->Bind(wxEVT_RIGHT_DOWN,         &c_OpenGLBackEnd::PropagateEventToParentUnscrolled, this);
+    m_GLCanvas->Bind(wxEVT_MIDDLE_UP,          &c_OpenGLBackEnd::PropagateEventToParentUnscrolled, this);
+    m_GLCanvas->Bind(wxEVT_RIGHT_UP,           &c_OpenGLBackEnd::PropagateEventToParentUnscrolled, this);
+    m_GLCanvas->Bind(wxEVT_MOUSEWHEEL,         &c_OpenGLBackEnd::PropagateEventToParentUnscrolled, this);
+
+
 }
 
 void c_OpenGLBackEnd::MainWindowShown()

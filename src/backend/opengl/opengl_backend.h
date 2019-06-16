@@ -75,6 +75,9 @@ private:
 
     void OnPaint(wxPaintEvent& event);
 
+    /// Propagates `event` received by m_GLCanvas to `m_ImgView`, taking scroll position into account.
+    void PropagateEventToParentUnscrolled(wxMouseEvent& event);
+
     struct
     {
         gl::c_Shader solidColor;
