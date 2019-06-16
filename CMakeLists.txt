@@ -27,6 +27,8 @@ add_executable(imppg WIN32
     src/align_progress.cpp
     src/appconfig.cpp
     src/backend/cpu_bmp/cpu_bmp_core.cpp
+    src/backend/opengl/gl_utils.cpp
+    src/backend/opengl/opengl_backend.cpp
     src/batch.cpp
     src/batch_params.cpp
     src/bmp.cpp
@@ -87,7 +89,7 @@ target_include_directories(imppg PUBLIC ${Boost_INCLUDE_DIRS})
 
 set(wxWidgets_USE_UNICODE TRUE)
 set(wxWidgets_USE_DEBUG FALSE)
-find_package(wxWidgets REQUIRED COMPONENTS adv aui xml core base)
+find_package(wxWidgets REQUIRED COMPONENTS adv aui xml core base gl) # TODO add `gl` conditionally
 include(${wxWidgets_USE_FILE})
 target_link_libraries(imppg ${wxWidgets_LIBRARIES})
 
@@ -112,6 +114,14 @@ if(USE_FREEIMAGE EQUAL 1)
     # Cannot do `pkg_check_modules` on `freeimage`; as of FreeImage 3.18.0, there is no `.pc` file provided (checked in MSYS2 and Fedora 29)
     target_link_libraries(imppg freeimage)
 endif()
+
+# TODO: conditionally
+target_link_libraries(imppg GL)
+
+# TODO: conditionally
+find_package(GLEW REQUIRED)
+target_include_directories(imppg PUBLIC ${GLEW_INCLUDE_DIRS})
+target_link_libraries(imppg PUBLIC ${GLEW_LIBRARIES})
 
 if(USE_CFITSIO EQUAL 1)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_CFITSIO")

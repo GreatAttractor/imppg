@@ -49,10 +49,16 @@ public:
     virtual void SetProcessingCompletedHandler(std::function<void()>) = 0;
 
     /// Provides getter of selection in physical image view coords.
+    ///
+    /// To be used for marking the selection on screen.
+    ///
     virtual void SetPhysicalSelectionGetter(std::function<wxRect()> getter) = 0;
 
-    /// Returns histogram of current selection after before applying tone curve.
+    /// Returns histogram of current selection before applying tone curve.
     virtual Histogram GetHistogram() = 0;
+
+    /// Called after the main window is first shown.
+    virtual void MainWindowShown() {}
 
     virtual ~IBackEnd() = default;
 };

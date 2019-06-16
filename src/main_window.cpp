@@ -78,6 +78,7 @@ File description:
 #include "w_tcurve.h"
 #include "w_unshmask.h"
 #include "backend/cpu_bmp/cpu_bmp.h"
+#include "backend/opengl/opengl_backend.h"
 
 
 DECLARE_APP(c_MyApp)
@@ -685,6 +686,7 @@ c_MainWindow::c_MainWindow()
     FixWindowPosition(*this);
 
     Show(true);
+    m_BackEnd->MainWindowShown();
 }
 
 void c_MainWindow::OnProcessingStepCompleted(CompletionStatus /*status*/)
@@ -2283,7 +2285,6 @@ void c_MainWindow::InitControls()
     m_ImageView.Create(this, ID_ImageView);
     m_ImageView.SetCursor(wxCURSOR_CROSS);
 
-    // m_ImageView.Bind(wxEVT_PAINT,              &c_MainWindow::OnPaintImageArea, this);
     m_ImageView.Bind(wxEVT_LEFT_DOWN,          &c_MainWindow::OnImageViewMouseDragStart, this);
     m_ImageView.Bind(wxEVT_MOTION,             &c_MainWindow::OnImageViewMouseMove, this);
     m_ImageView.Bind(wxEVT_LEFT_UP,            &c_MainWindow::OnImageViewMouseDragEnd, this);
@@ -2297,7 +2298,9 @@ void c_MainWindow::InitControls()
 
     BindAllScrollEvents(m_ImageView, &c_MainWindow::OnImageViewScroll, this);
 
-    m_BackEnd = std::make_unique<imppg::backend::c_CpuAndBitmaps>(m_ImageView);
+    //m_BackEnd = std::make_unique<imppg::backend::c_CpuAndBitmaps>(m_ImageView);
+    m_BackEnd = std::make_unique<imppg::backend::c_OpenGLBackEnd>(m_ImageView);
+
     m_BackEnd->SetPhysicalSelectionGetter([this] { return GetPhysicalSelection(); });
     m_BackEnd->SetProcessingCompletedHandler([this] { m_Ctrls.tcrvEditor->SetHistogram(m_BackEnd->GetHistogram()); });
 
