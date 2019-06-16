@@ -102,7 +102,7 @@ public:
     GLuint Get() const { return m_Buffer.GetConst(); }
 };
 
-class Texture
+class c_Texture
 {
     static void Deleter(GLuint obj) { glDeleteTextures(1, &obj); }
     c_Wrapper<Deleter> m_Texture;
@@ -111,27 +111,27 @@ public:
 
     explicit operator bool() const { return static_cast<bool>(m_Texture); }
 
-    Texture() = default;
+    c_Texture() = default;
 
-    Texture(const Texture&)            = delete;
-    Texture& operator=(const Texture&) = delete;
-    Texture(Texture&&)                 = default;
-    Texture& operator=(Texture&&)      = default;
+    c_Texture(const c_Texture&)            = delete;
+    c_Texture& operator=(const c_Texture&) = delete;
+    c_Texture(c_Texture&&)                 = default;
+    c_Texture& operator=(c_Texture&&)      = default;
 
-    /// Creates a 2D texture.
-    Texture(GLint internalFormat, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* data, bool interpolated = false)
+    /// Creates a rectangle texture.
+    c_Texture(GLint internalFormat, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* data, bool interpolated = false)
     {
         glGenTextures(1, &m_Texture.Get());
-        glBindTexture(GL_TEXTURE_2D, m_Texture.Get());
-        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, data);
+        glBindTexture(GL_TEXTURE_RECTANGLE, m_Texture.Get());
+        glTexImage2D(GL_TEXTURE_RECTANGLE, 0, internalFormat, width, height, 0, format, type, data);
 
         const GLint interpolation = interpolated ? GL_LINEAR : GL_NEAREST;
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, interpolation);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, interpolation);
+        glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, interpolation);
+        glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, interpolation);
     }
 
     /// Creates a buffer texture.
-    Texture(GLenum internalFormat, const c_Buffer&buffer)
+    c_Texture(GLenum internalFormat, const c_Buffer&buffer)
     {
         glGenTextures(1, &m_Texture.Get());
         glBindTexture(GL_TEXTURE_BUFFER, m_Texture.Get());

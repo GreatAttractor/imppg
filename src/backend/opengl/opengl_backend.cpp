@@ -80,7 +80,10 @@ void c_OpenGLBackEnd::MainWindowShown()
 
     m_GLShaders.vertex = gl::c_Shader(GL_VERTEX_SHADER, "shaders/vertex.vert");
     m_GLShaders.solidColor = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/solid_color.frag");
+    m_GLShaders.unprocessedImg = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/unprocessed_image.frag");
+
     m_GLPrograms.solidColor = gl::c_Program({ &m_GLShaders.solidColor, &m_GLShaders.vertex }, {}, {});
+    m_GLPrograms.unprocessedImg = gl::c_Program({ &m_GLShaders.unprocessedImg, &m_GLShaders.vertex }, { "Image" }, {});
 
     GLuint vao;
     glGenVertexArrays(1, &vao);
@@ -107,7 +110,12 @@ void c_OpenGLBackEnd::OnPaint(wxPaintEvent&)
 
     if (m_Img.has_value())
     {
-        m_GLPrograms.solidColor.Use();
+        m_GLPrograms.unprocessedImg.Use();
+        const int textureUnit = 0;
+        glActiveTexture(GL_TEXTURE0 + textureUnit);
+        glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.originalImg.Get());
+        m_GLPrograms.unprocessedImg.SetUniform1i("Image", textureUnit);
+
         m_VBOs.wholeImg.Bind();
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     }
@@ -175,6 +183,17 @@ void c_OpenGLBackEnd::FileOpened(c_Image&& img)
         reinterpret_cast<void*>(2 * sizeof(GLfloat))
     );
     glEnableVertexAttribArray(vertTexCoordAttrib);
+
+    m_Textures.originalImg = gl::c_Texture(
+        GL_R32F,
+        m_Img.value().GetWidth(), 
+        m_Img.value().GetHeight(),
+        GL_RED,
+        GL_FLOAT,
+        m_Img.value().GetBuffer().GetRow(0),
+        false
+    );
+    IMPPG_ASSERT(m_Textures.originalImg);
 }
 
 Histogram c_OpenGLBackEnd::GetHistogram() { return Histogram{}; }

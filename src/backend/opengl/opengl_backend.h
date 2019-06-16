@@ -81,12 +81,14 @@ private:
     struct
     {
         gl::c_Shader solidColor;
+        gl::c_Shader unprocessedImg;
         gl::c_Shader vertex;
     } m_GLShaders;
 
     struct
     {
         gl::c_Program solidColor;
+        gl::c_Program unprocessedImg;
     } m_GLPrograms;
 
     struct
@@ -94,6 +96,11 @@ private:
         gl::c_Buffer wholeImg;
         gl::c_Buffer selection;
     } m_VBOs;
+
+    struct
+    {
+        gl::c_Texture originalImg;
+    } m_Textures;
 };
 
 } // namespace imppg::backend
