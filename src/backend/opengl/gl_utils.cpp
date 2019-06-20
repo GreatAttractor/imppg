@@ -37,8 +37,6 @@ File description:
 namespace imppg::backend::gl
 {
 
-static c_Buffer fullScreenQuadVertices;
-
 /// Returns (file contents, file length).
 static std::tuple<std::unique_ptr<GLchar[]>, GLint> ReadTextFile(const char* filename)
 {
