@@ -37,7 +37,6 @@ c_ScrolledView::c_ScrolledView(wxWindow* parent): wxPanel(parent, wxID_ANY)
     auto OnScroll = [this](wxScrollEvent&)
     {
         m_ScrollPos = { m_HorzSBar->GetThumbPosition(), m_VertSBar->GetThumbPosition() };
-        std::cout << "pos: " << m_ScrollPos.x << std::endl;
         m_Contents->Refresh();
         if (m_ScrollCallback)
             m_ScrollCallback();
@@ -91,7 +90,7 @@ void c_ScrolledView::SetActualSize(unsigned width, unsigned height)
     m_ActualWidth = width;
     m_ActualHeight = height;
     UpdateScrollBars();
-    Layout();
+    Layout(); // TODO: fix crash when setting width/height equal to m_Contents' size
 }
 
 void c_ScrolledView::ScrollTo(wxPoint position)

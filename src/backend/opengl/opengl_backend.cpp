@@ -31,17 +31,25 @@ File description:
 namespace imppg::backend
 {
 
+namespace uniforms
+{
+    const char* ScrollPos = "ScrollPos";
+    const char* ImageSize = "ImageSize";
+    const char* ZoomFactor = "ZoomFactor";
+
+    const char* Image = "Image";
+}
+
 void c_OpenGLBackEnd::PropagateEventToParentUnscrolled(wxMouseEvent& event)
 {
-    const int viewX = m_ImgView.GetScrollPos(wxHORIZONTAL);
-    const int viewY = m_ImgView.GetScrollPos(wxVERTICAL);
+    const auto viewPos = m_ImgView.GetScrollPos();
     const auto eventPos = event.GetPosition();
-    event.SetPosition({ eventPos.x - viewX, eventPos.y - viewY });
+    event.SetPosition({ eventPos.x - viewPos.x, eventPos.y - viewPos.y });
     event.ResumePropagation(1);
     event.Skip();
 }
 
-c_OpenGLBackEnd::c_OpenGLBackEnd(wxScrolledCanvas& imgView)
+c_OpenGLBackEnd::c_OpenGLBackEnd(c_ScrolledView& imgView)
 : m_ImgView(imgView)
 {
     const int glAttributes[] =
@@ -50,12 +58,12 @@ c_OpenGLBackEnd::c_OpenGLBackEnd(wxScrolledCanvas& imgView)
         WX_GL_MAJOR_VERSION, 3,
         WX_GL_MINOR_VERSION, 3,
         // Supposedly the ones below are enabled by default,
-        // but not for Intel HD Graphics 5500 + Mesa DRI + wxWidgets 3.0.4 (Fedora 29)
+        // but not for Intel HD Graphics 5500 + Mesa DRI + wxWidgets 3.0.4 (Fedora 29).
         WX_GL_RGBA,
         WX_GL_DOUBLEBUFFER,
         0
     };
-    m_GLCanvas = new wxGLCanvas(&imgView, wxID_ANY, glAttributes);
+    m_GLCanvas = new wxGLCanvas(&imgView.GetContentsPanel(), wxID_ANY, glAttributes);
     m_GLCanvas->SetSize({1, 1});
     m_GLContext = new wxGLContext(m_GLCanvas);
 
@@ -79,11 +87,17 @@ void c_OpenGLBackEnd::MainWindowShown()
         throw std::runtime_error("Failed to initialize GLEW");
 
     m_GLShaders.vertex = gl::c_Shader(GL_VERTEX_SHADER, "shaders/vertex.vert");
-    m_GLShaders.solidColor = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/solid_color.frag");
     m_GLShaders.unprocessedImg = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/unprocessed_image.frag");
 
-    m_GLPrograms.solidColor = gl::c_Program({ &m_GLShaders.solidColor, &m_GLShaders.vertex }, {}, {});
-    m_GLPrograms.unprocessedImg = gl::c_Program({ &m_GLShaders.unprocessedImg, &m_GLShaders.vertex }, { "Image" }, {});
+    m_GLPrograms.unprocessedImg = gl::c_Program(
+        { &m_GLShaders.unprocessedImg,
+          &m_GLShaders.vertex },
+        { uniforms::Image,
+          uniforms::ImageSize,
+          uniforms::ScrollPos,
+          uniforms::ZoomFactor },
+        {}
+    );
 
     GLuint vao;
     glGenVertexArrays(1, &vao);
@@ -110,11 +124,17 @@ void c_OpenGLBackEnd::OnPaint(wxPaintEvent&)
 
     if (m_Img.has_value())
     {
-        m_GLPrograms.unprocessedImg.Use();
+        auto& prog = m_GLPrograms.unprocessedImg;
+        prog.Use();
+
         const int textureUnit = 0;
         glActiveTexture(GL_TEXTURE0 + textureUnit);
         glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.originalImg.Get());
-        m_GLPrograms.unprocessedImg.SetUniform1i("Image", textureUnit);
+        prog.SetUniform1i(uniforms::Image, textureUnit);
+        const auto scrollpos = m_ImgView.GetScrollPos();
+        prog.SetUniform2i(uniforms::ScrollPos, scrollpos.x, scrollpos.y);
+        prog.SetUniform2i(uniforms::ImageSize, m_Img.value().GetWidth(), m_Img.value().GetHeight());
+        prog.SetUniform1f(uniforms::ZoomFactor, m_ZoomFactor);
 
         m_VBOs.wholeImg.Bind();
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
@@ -147,12 +167,11 @@ void c_OpenGLBackEnd::FileOpened(c_Image&& img)
     m_GLCanvas->SetSize(newSize);
     glViewport(0, 0, newSize.x, newSize.y);
 
-    // each row: vertex coordinates, texture coordinates
     const GLfloat vertexData[] = {
-        -1.0f, -1.0f,   0, 0,
-         1.0f, -1.0f,   static_cast<GLfloat>(width - 1), 0,
-         1.0f,  1.0f,   static_cast<GLfloat>(width - 1), static_cast<GLfloat>(height - 1),
-        -1.0f,  1.0f,   0, static_cast<GLfloat>(height - 1)
+        -1.0f, -1.0f,
+         1.0f, -1.0f,
+         1.0f,  1.0f,
+        -1.0f,  1.0f,
     };
 
     m_VBOs.wholeImg = gl::c_Buffer(
@@ -168,21 +187,10 @@ void c_OpenGLBackEnd::FileOpened(c_Image&& img)
         2,  // 2 components (x, y) per attribute value
         GL_FLOAT,
         GL_FALSE,
-        4 * sizeof(GLfloat), // our VBOs store 2 vertex and 2 texture coordinates per element
+        0,
         nullptr
     );
     glEnableVertexAttribArray(vertPosAttrib);
-
-    constexpr GLuint vertTexCoordAttrib = 1; // 1 corresponds to "location = 1" for attribute `TexCoord` in shaders/vertex.vert
-    glVertexAttribPointer(
-        vertTexCoordAttrib,
-        2,  // 2 components (x, y) per attribute value
-        GL_FLOAT,
-        GL_FALSE,
-        4 * sizeof(GLfloat), // our VBOs store 2 vertex and 2 texture coordinates per element
-        reinterpret_cast<void*>(2 * sizeof(GLfloat))
-    );
-    glEnableVertexAttribArray(vertTexCoordAttrib);
 
     m_Textures.originalImg = gl::c_Texture(
         GL_R32F,

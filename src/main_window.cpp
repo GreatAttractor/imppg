@@ -2292,8 +2292,8 @@ void c_MainWindow::InitControls()
     m_ImageView->GetContentsPanel().Bind(wxEVT_RIGHT_UP,           &c_MainWindow::OnImageViewDragScrollEnd, this);
     m_ImageView->GetContentsPanel().Bind(wxEVT_MOUSEWHEEL,         &c_MainWindow::OnImageViewMouseWheel, this);
 
-    m_BackEnd = std::make_unique<imppg::backend::c_CpuAndBitmaps>(*m_ImageView);
-    //m_BackEnd = std::make_unique<imppg::backend::c_OpenGLBackEnd>(m_ImageView);
+    //m_BackEnd = std::make_unique<imppg::backend::c_CpuAndBitmaps>(*m_ImageView);
+    m_BackEnd = std::make_unique<imppg::backend::c_OpenGLBackEnd>(*m_ImageView);
 
     m_ImageView->BindScrollCallback([this] { m_BackEnd->ImageViewScrolledOrResized(m_CurrentSettings.view.zoomFactor); });
 

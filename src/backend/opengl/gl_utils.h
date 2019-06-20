@@ -231,6 +231,12 @@ public:
         glUniform2f(Uniforms[uniform], f0, f1);
     }
 
+    void SetUniform2i(const char* uniform, GLint i0, GLint i1)
+    {
+        IMPPG_ASSERT(Uniforms.find(uniform) != Uniforms.end());
+        glUniform2i(Uniforms[uniform], i0, i1);
+    }
+
     void SetUniform3f(const char* uniform, GLfloat f0, GLfloat f1, GLfloat f2)
     {
         IMPPG_ASSERT(Uniforms.find(uniform) != Uniforms.end());

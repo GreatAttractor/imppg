@@ -25,9 +25,10 @@ File description:
 #include <optional>
 #include <wx/bitmap.h>
 
-#include "gl_utils.h"
-#include "../backend.h"
 #include "../../common.h"
+#include "../../scrolled_view.h"
+#include "../backend.h"
+#include "gl_utils.h"
 
 #include <wx/glcanvas.h> // has to be below other OpenGL-related includes
 
@@ -36,7 +37,7 @@ namespace imppg::backend {
 class c_OpenGLBackEnd: public IBackEnd
 {
 public:
-    c_OpenGLBackEnd(wxScrolledCanvas& imgView);
+    c_OpenGLBackEnd(c_ScrolledView& imgView);
 
     void ImageViewScrolledOrResized(float zoomFactor) override;
 
@@ -55,7 +56,7 @@ public:
     void MainWindowShown() override;
 
 private:
-    wxScrolledCanvas& m_ImgView;
+    c_ScrolledView& m_ImgView;
 
     wxGLCanvas* m_GLCanvas{nullptr};
     wxGLContext* m_GLContext{nullptr};
@@ -87,7 +88,6 @@ private:
 
     struct
     {
-        gl::c_Program solidColor;
         gl::c_Program unprocessedImg;
     } m_GLPrograms;
 

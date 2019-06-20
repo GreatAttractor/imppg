@@ -58,6 +58,8 @@ public:
         return wxPoint{ pos.x - m_ScrollPos.x, pos.y - m_ScrollPos.y };
     }
 
+    wxPoint GetScrollPos() const { return m_ScrollPos; }
+
     bool Create(
         wxWindow* parent,
         wxWindowID winid = wxID_ANY,
