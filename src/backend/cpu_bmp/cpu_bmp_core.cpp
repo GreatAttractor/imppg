@@ -70,16 +70,16 @@ static wxBitmap ImageToRgbBitmap(const c_Image& src, int x0, int y0, int width, 
     return wxBitmap(wximg);
 }
 
-c_CpuAndBitmaps::c_CpuAndBitmaps(wxScrolledCanvas& imgView)
+c_CpuAndBitmaps::c_CpuAndBitmaps(c_ScrolledView& imgView)
 : m_ImgView(imgView)
 {
-    imgView.Bind(wxEVT_PAINT, &c_CpuAndBitmaps::OnPaint, this);
+    imgView.GetContentsPanel().Bind(wxEVT_PAINT, &c_CpuAndBitmaps::OnPaint, this);
     m_ScalingTimer.SetHandler([this]
     {
         if (m_ImgBmp)
         {
             CreateScaledPreview(m_NewZoomFactor);
-            m_ImgView.Refresh(m_ZoomFactor != m_NewZoomFactor);
+            m_ImgView.GetContentsPanel().Refresh(m_ZoomFactor != m_NewZoomFactor);
             m_ZoomFactor = m_NewZoomFactor;
         }
     });
@@ -115,11 +115,11 @@ void c_CpuAndBitmaps::FileOpened(c_Image&& img)
 
 void c_CpuAndBitmaps::OnPaint(wxPaintEvent&)
 {
-    wxPaintDC dc(&m_ImgView);
+    wxPaintDC dc(&m_ImgView.GetContentsPanel());
     if (!m_ImgBmp)
         return;
 
-    wxRegionIterator upd(m_ImgView.GetUpdateRegion());
+    wxRegionIterator upd(m_ImgView.GetContentsPanel().GetUpdateRegion());
     wxMemoryDC imgDC(m_ImgBmp.value());
 
     if (m_ZoomFactor == ZOOM_NONE)
@@ -198,7 +198,7 @@ void c_CpuAndBitmaps::CreateScaledPreview(float zoomFactor)
 
     m_ScaledArea.SetLeft(scrollPos.x / zoomFactor);
     m_ScaledArea.SetTop(scrollPos.y / zoomFactor);
-    const wxSize viewSize = m_ImgView.GetSize();
+    const wxSize viewSize = m_ImgView.GetContentsPanel().GetSize();
     m_ScaledArea.SetWidth(viewSize.GetWidth() / zoomFactor);
     m_ScaledArea.SetHeight(viewSize.GetHeight() / zoomFactor);
 

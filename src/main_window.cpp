@@ -316,12 +316,6 @@ void c_MainWindow::OnSettingsFile(wxCommandEvent& event)
     }
 }
 
-void c_MainWindow::OnImageViewScroll(wxScrollWinEvent& event)
-{
-    m_BackEnd->ImageViewScrolledOrResized(m_CurrentSettings.view.zoomFactor);
-    event.Skip();
-}
-
 /// Displays the UI language selection dialog
 void c_MainWindow::SelectLanguage()
 {
@@ -447,17 +441,17 @@ void c_MainWindow::ChangeZoom(
 
     s.view.zoomFactor = newZoomFactor;
 
-    wxPoint p = m_ImageView.CalcUnscrolledPosition(wxPoint(0, 0)) + zoomingCenter;
+    wxPoint p = m_ImageView->CalcUnscrolledPosition(wxPoint(0, 0)) + zoomingCenter;
     p.x *= s.view.zoomFactor / prevZoom;
     p.y *= s.view.zoomFactor / prevZoom;
 
     // We must freeze it, because SetVirtualSize() and Scroll() (called from OnZoomChanged())
     // force an Update(), i.e. immediately refresh it on screen. We want to do this later
     // in our paint handler.
-    m_ImageView.Freeze();
+    m_ImageView->Freeze();
     OnZoomChanged(p - zoomingCenter);
     m_BackEnd->ImageViewZoomChanged(s.view.zoomFactor);
-    m_ImageView.Thaw();
+    m_ImageView->Thaw();
 }
 
 /// Must be called to finalize a zoom change.
@@ -469,11 +463,11 @@ void c_MainWindow::OnZoomChanged(
 
     if (m_FitImageInWindow)
     {
-        m_ImageView.SetVirtualSize(m_ImageView.GetSize()); // disable scrolling
+        m_ImageView->SetActualSize(m_ImageView->GetContentsPanel().GetSize()); // disable scrolling
     }
     else
     {
-        m_ImageView.SetVirtualSize(
+        m_ImageView->SetActualSize(
             wxSize(s.imgWidth * s.view.zoomFactor,
                    s.imgHeight * s.view.zoomFactor));
     }
@@ -487,7 +481,7 @@ void c_MainWindow::OnZoomChanged(
         s.scaledSelection.height *= s.view.zoomFactor;
 
         if (!m_FitImageInWindow)
-            m_ImageView.Scroll(zoomingCenter);
+            m_ImageView->ScrollTo(zoomingCenter);
     }
 
     UpdateWindowTitle();
@@ -499,11 +493,11 @@ void c_MainWindow::CreateScaledPreview(bool /*eraseBackground*/)
     // if (!s.m_ImgBmp)
     //     return;
 
-    // wxPoint scrollPos = m_ImageView.CalcUnscrolledPosition(wxPoint(0, 0));
+    // wxPoint scrollPos = m_ImageView->CalcUnscrolledPosition(wxPoint(0, 0));
     // wxRect &sarea = s.view.scaledArea;
     // sarea.SetLeft(scrollPos.x / s.view.zoomFactor);
     // sarea.SetTop(scrollPos.y / s.view.zoomFactor);
-    // wxSize viewSize = m_ImageView.GetSize();
+    // wxSize viewSize = m_ImageView->GetSize();
     // sarea.SetWidth(viewSize.GetWidth() / s.view.zoomFactor);
     // sarea.SetHeight(viewSize.GetHeight() / s.view.zoomFactor);
 
@@ -529,7 +523,7 @@ void c_MainWindow::CreateScaledPreview(bool /*eraseBackground*/)
     //     srcBmp.GetHeight() * s.view.zoomFactor,
     //     GetResizeQuality(s.scalingMethod)));
 
-    // m_ImageView.Refresh(eraseBackground);
+    // m_ImageView->Refresh(eraseBackground);
 }
 
 void c_MainWindow::OnTimer(wxTimerEvent& /*event*/)
@@ -799,8 +793,8 @@ wxRect c_MainWindow::GetPhysicalSelection() const
     {
         const wxRect currSel = m_MouseOps.dragging ? m_MouseOps.GetSelection(wxRect(0, 0, s.imgWidth, s.imgHeight)) : s.selection;
         return wxRect(
-            m_ImageView.CalcScrolledPosition(currSel.GetTopLeft()),
-            m_ImageView.CalcScrolledPosition(currSel.GetBottomRight())
+            m_ImageView->CalcScrolledPosition(currSel.GetTopLeft()),
+            m_ImageView->CalcScrolledPosition(currSel.GetBottomRight())
         );
     }
     else
@@ -817,8 +811,8 @@ wxRect c_MainWindow::GetPhysicalSelection() const
         else
         {
             return wxRect(
-                m_ImageView.CalcScrolledPosition(s.scaledSelection.GetTopLeft()),
-                m_ImageView.CalcScrolledPosition(s.scaledSelection.GetBottomRight())
+                m_ImageView->CalcScrolledPosition(s.scaledSelection.GetTopLeft()),
+                m_ImageView->CalcScrolledPosition(s.scaledSelection.GetBottomRight())
             );
         }
     }
@@ -837,33 +831,33 @@ void c_MainWindow::OnImageViewMouseDragStart(wxMouseEvent& event)
 
     if (s.view.zoomFactor == ZOOM_NONE)
     {
-        m_MouseOps.dragStart = m_ImageView.CalcUnscrolledPosition(event.GetPosition());
+        m_MouseOps.dragStart = m_ImageView->CalcUnscrolledPosition(event.GetPosition());
     }
     else
     {
-        m_MouseOps.dragStart = m_ImageView.CalcUnscrolledPosition(event.GetPosition());
+        m_MouseOps.dragStart = m_ImageView->CalcUnscrolledPosition(event.GetPosition());
         m_MouseOps.dragStart.x /= s.view.zoomFactor;
         m_MouseOps.dragStart.y /= s.view.zoomFactor;
     }
 
     m_MouseOps.dragEnd = m_MouseOps.dragStart;
-    m_ImageView.CaptureMouse();
+    m_ImageView->GetContentsPanel().CaptureMouse();
     m_MouseOps.prevSelectionBordersErased = false;
 
 }
 
 void c_MainWindow::OnImageViewMouseMove(wxMouseEvent& event)
 {
-    m_ImageView.StopAutoScrolling();
+    //TODO: needed?  m_ImageView->StopAutoScrolling();
     auto& s = m_CurrentSettings;
 
     if (m_MouseOps.dragging)
     {
         if (s.view.zoomFactor == ZOOM_NONE)
-            m_MouseOps.dragEnd = m_ImageView.CalcUnscrolledPosition(event.GetPosition());
+            m_MouseOps.dragEnd = m_ImageView->CalcUnscrolledPosition(event.GetPosition());
         else
         {
-            m_MouseOps.dragEnd = m_ImageView.CalcUnscrolledPosition(event.GetPosition());
+            m_MouseOps.dragEnd = m_ImageView->CalcUnscrolledPosition(event.GetPosition());
             m_MouseOps.dragEnd.x /= s.view.zoomFactor;
             m_MouseOps.dragEnd.y /= s.view.zoomFactor;
         }
@@ -877,29 +871,30 @@ void c_MainWindow::OnImageViewMouseMove(wxMouseEvent& event)
             {
                 // Selection in physical (m_ImageView) coordinates
                 physSelection = wxRect(
-                    m_ImageView.CalcScrolledPosition(s.selection.GetTopLeft()),
-                    m_ImageView.CalcScrolledPosition(s.selection.GetBottomRight()));
+                    m_ImageView->CalcScrolledPosition(s.selection.GetTopLeft()),
+                    m_ImageView->CalcScrolledPosition(s.selection.GetBottomRight()));
             }
             else
             {
-                physSelection.SetTopLeft(m_ImageView.CalcScrolledPosition(s.scaledSelection.GetTopLeft()));
-                physSelection.SetBottomRight(m_ImageView.CalcScrolledPosition(s.scaledSelection.GetBottomRight()));
+                physSelection.SetTopLeft(m_ImageView->CalcScrolledPosition(s.scaledSelection.GetTopLeft()));
+                physSelection.SetBottomRight(m_ImageView->CalcScrolledPosition(s.scaledSelection.GetBottomRight()));
             }
 
-            m_ImageView.RefreshRect(wxRect(physSelection.GetLeft(), physSelection.GetTop(), physSelection.GetWidth(), 1),
+            auto& cp = m_ImageView->GetContentsPanel();
+            cp.RefreshRect(wxRect(physSelection.GetLeft(), physSelection.GetTop(), physSelection.GetWidth(), 1),
                 false);
-            m_ImageView.RefreshRect(wxRect(physSelection.GetLeft(), physSelection.GetBottom(), physSelection.GetWidth(), 1),
+            cp.RefreshRect(wxRect(physSelection.GetLeft(), physSelection.GetBottom(), physSelection.GetWidth(), 1),
                 false);
-            m_ImageView.RefreshRect(wxRect(physSelection.GetLeft(), physSelection.GetTop() + 1, 1, physSelection.GetHeight() - 2),
+            cp.RefreshRect(wxRect(physSelection.GetLeft(), physSelection.GetTop() + 1, 1, physSelection.GetHeight() - 2),
                 false);
-            m_ImageView.RefreshRect(wxRect(physSelection.GetRight(), physSelection.GetTop() + 1, 1, physSelection.GetHeight() - 2),
+            cp.RefreshRect(wxRect(physSelection.GetRight(), physSelection.GetTop() + 1, 1, physSelection.GetHeight() - 2),
                 false);
 
             m_MouseOps.prevSelectionBordersErased = true;
         }
 
-        wxPoint selectionLimitMin = m_ImageView.CalcScrolledPosition(wxPoint(0, 0));
-        wxPoint selectionLimitMax = m_ImageView.CalcScrolledPosition(wxPoint(
+        wxPoint selectionLimitMin = m_ImageView->CalcScrolledPosition(wxPoint(0, 0));
+        wxPoint selectionLimitMax = m_ImageView->CalcScrolledPosition(wxPoint(
             (s.view.zoomFactor != ZOOM_NONE) ? s.imgWidth * s.view.zoomFactor : s.imgWidth,
             (s.view.zoomFactor != ZOOM_NONE) ? s.imgHeight * s.view.zoomFactor : s.imgHeight));
 
@@ -912,13 +907,14 @@ void c_MainWindow::OnImageViewMouseMove(wxMouseEvent& event)
         int oldSelWidth = oldSelBottomRight.x - oldSelTopLeft.x + 1,
             oldSelHeight = oldSelBottomRight.y - oldSelTopLeft.y + 1;
 
-        m_ImageView.RefreshRect(wxRect(oldSelTopLeft.x, oldSelTopLeft.y, oldSelWidth, 1),
+        auto& cp = m_ImageView->GetContentsPanel();
+        cp.RefreshRect(wxRect(oldSelTopLeft.x, oldSelTopLeft.y, oldSelWidth, 1),
              false);
-        m_ImageView.RefreshRect(wxRect(oldSelTopLeft.x, oldSelBottomRight.y, oldSelWidth, 1),
+        cp.RefreshRect(wxRect(oldSelTopLeft.x, oldSelBottomRight.y, oldSelWidth, 1),
             false);
-        m_ImageView.RefreshRect(wxRect(oldSelTopLeft.x, oldSelTopLeft.y, 1, oldSelHeight),
+        cp.RefreshRect(wxRect(oldSelTopLeft.x, oldSelTopLeft.y, 1, oldSelHeight),
             false);
-        m_ImageView.RefreshRect(wxRect(oldSelBottomRight.x, oldSelTopLeft.y, 1, oldSelHeight),
+        cp.RefreshRect(wxRect(oldSelBottomRight.x, oldSelTopLeft.y, 1, oldSelHeight),
             false);
 
         // Refresh the borders of the new selection
@@ -942,20 +938,20 @@ void c_MainWindow::OnImageViewMouseMove(wxMouseEvent& event)
         int newSelWidth = newSelBottomRight.x - newSelTopLeft.x + 1,
             newSelHeight = newSelBottomRight.y - newSelTopLeft.y + 1;
 
-        m_ImageView.RefreshRect(wxRect(newSelTopLeft.x, newSelTopLeft.y, newSelWidth, 1),
+        cp.RefreshRect(wxRect(newSelTopLeft.x, newSelTopLeft.y, newSelWidth, 1),
             false);
-        m_ImageView.RefreshRect(wxRect(newSelTopLeft.x, newSelBottomRight.y, newSelWidth, 1),
+        cp.RefreshRect(wxRect(newSelTopLeft.x, newSelBottomRight.y, newSelWidth, 1),
             false);
-        m_ImageView.RefreshRect(wxRect(newSelTopLeft.x, newSelTopLeft.y, 1, newSelHeight),
+        cp.RefreshRect(wxRect(newSelTopLeft.x, newSelTopLeft.y, 1, newSelHeight),
             false);
-        m_ImageView.RefreshRect(wxRect(newSelBottomRight.x, newSelTopLeft.y, 1, newSelHeight),
+        cp.RefreshRect(wxRect(newSelBottomRight.x, newSelTopLeft.y, 1, newSelHeight),
             false);
     }
     else if (m_MouseOps.dragScroll.dragging)
     {
         wxPoint diff = m_MouseOps.dragScroll.start - event.GetPosition();
         wxPoint newScrollPos = m_MouseOps.dragScroll.startScrollPos + diff;
-        m_ImageView.Scroll(newScrollPos);
+        m_ImageView->ScrollTo(newScrollPos);
         m_BackEnd->ImageViewScrolledOrResized(m_CurrentSettings.view.zoomFactor);
     }
 }
@@ -966,11 +962,11 @@ void c_MainWindow::OnImageViewMouseWheel(wxMouseEvent& event)
 
     wxPoint imgViewEvtPos; // event's position in m_ImageView's coordinates
     if (event.GetEventObject() == this)
-        imgViewEvtPos = event.GetPosition() - m_ImageView.GetPosition();
+        imgViewEvtPos = event.GetPosition() - m_ImageView->GetPosition();
     else
         imgViewEvtPos = event.GetPosition();
 
-    if (m_ImageLoaded && event.ControlDown() && m_ImageView.GetClientRect().Contains(imgViewEvtPos))
+    if (m_ImageLoaded && event.ControlDown() && m_ImageView->GetContentsPanel().GetClientRect().Contains(imgViewEvtPos))
     {
         m_FitImageInWindow = false;
 
@@ -1007,9 +1003,9 @@ void c_MainWindow::OnNewSelection(
 
     if (s.view.zoomFactor == ZOOM_NONE)
     {
-    //     m_ImageView.RefreshRect(wxRect(
-    //         m_ImageView.CalcScrolledPosition(s.selection.GetTopLeft()),
-    //         m_ImageView.CalcScrolledPosition(s.selection.GetBottomRight())),
+    //     m_ImageView->RefreshRect(wxRect(
+    //         m_ImageView->CalcScrolledPosition(s.selection.GetTopLeft()),
+    //         m_ImageView->CalcScrolledPosition(s.selection.GetBottomRight())),
     //         false);
     }
     else
@@ -1022,8 +1018,8 @@ void c_MainWindow::OnNewSelection(
     //     wxRect selectionRst;
     //     // First, take the scaled selection and limit it to visible area.
     //     selectionRst = s.scaledSelection;
-    //     wxPoint scrollPos = m_ImageView.CalcUnscrolledPosition(wxPoint(0, 0));
-    //     wxSize viewSize = m_ImageView.GetSize();
+    //     wxPoint scrollPos = m_ImageView->CalcUnscrolledPosition(wxPoint(0, 0));
+    //     wxSize viewSize = m_ImageView->GetSize();
 
     //     selectionRst.Intersect(wxRect(scrollPos, viewSize));
 
@@ -1057,25 +1053,25 @@ void c_MainWindow::OnNewSelection(
     //             &dcRestoredScaled,
     //             wxPoint(0, 0));
 
-    //     wxRect updateReg(m_ImageView.CalcScrolledPosition(scaledSelectionRst.GetTopLeft()),
-    //                      m_ImageView.CalcScrolledPosition(scaledSelectionRst.GetBottomRight()));
-    //     m_ImageView.RefreshRect(updateReg, false);
+    //     wxRect updateReg(m_ImageView->CalcScrolledPosition(scaledSelectionRst.GetTopLeft()),
+    //                      m_ImageView->CalcScrolledPosition(scaledSelectionRst.GetBottomRight()));
+    //     m_ImageView->RefreshRect(updateReg, false);
 
 
-    //     wxRect prevSelPhys(m_ImageView.CalcScrolledPosition(s.scaledSelection.GetTopLeft()),
-    //                        m_ImageView.CalcScrolledPosition(s.scaledSelection.GetBottomRight()));
-    //     m_ImageView.RefreshRect(wxRect(prevSelPhys.GetLeft(), prevSelPhys.GetTop(), prevSelPhys.GetWidth(), 1),
+    //     wxRect prevSelPhys(m_ImageView->CalcScrolledPosition(s.scaledSelection.GetTopLeft()),
+    //                        m_ImageView->CalcScrolledPosition(s.scaledSelection.GetBottomRight()));
+    //     m_ImageView->RefreshRect(wxRect(prevSelPhys.GetLeft(), prevSelPhys.GetTop(), prevSelPhys.GetWidth(), 1),
     //         false);
-    //     m_ImageView.RefreshRect(wxRect(prevSelPhys.GetLeft(), prevSelPhys.GetBottom(), prevSelPhys.GetWidth(), 1),
+    //     m_ImageView->RefreshRect(wxRect(prevSelPhys.GetLeft(), prevSelPhys.GetBottom(), prevSelPhys.GetWidth(), 1),
     //         false);
-    //     m_ImageView.RefreshRect(wxRect(prevSelPhys.GetLeft(), prevSelPhys.GetTop(), 1, prevSelPhys.GetHeight()),
+    //     m_ImageView->RefreshRect(wxRect(prevSelPhys.GetLeft(), prevSelPhys.GetTop(), 1, prevSelPhys.GetHeight()),
     //         false);
-    //     m_ImageView.RefreshRect(wxRect(prevSelPhys.GetRight(), prevSelPhys.GetTop(), 1, prevSelPhys.GetHeight()),
+    //     m_ImageView->RefreshRect(wxRect(prevSelPhys.GetRight(), prevSelPhys.GetTop(), 1, prevSelPhys.GetHeight()),
     //         false);
 
 
-        s.scaledSelection = wxRect(m_ImageView.CalcUnscrolledPosition(m_MouseOps.View.start),
-                                   m_ImageView.CalcUnscrolledPosition(m_MouseOps.View.end));
+        s.scaledSelection = wxRect(m_ImageView->CalcUnscrolledPosition(m_MouseOps.View.start),
+                                   m_ImageView->CalcUnscrolledPosition(m_MouseOps.View.end));
     }
 
     s.selection = newSelection;
@@ -1090,7 +1086,7 @@ void c_MainWindow::OnImageViewMouseDragEnd(wxMouseEvent&)
     if (m_MouseOps.dragging)
     {
         m_MouseOps.dragging = false;
-        m_ImageView.ReleaseMouse();
+        m_ImageView->GetContentsPanel().ReleaseMouse();
 
         if (m_MouseOps.dragStart != m_MouseOps.dragEnd)
             OnNewSelection(m_MouseOps.GetSelection(wxRect(0, 0,
@@ -1108,11 +1104,12 @@ void c_MainWindow::SetActionText(wxString text)
 /// Returns the ratio of 'm_ImgView' to the size of 'imgSize', assuming uniform scaling in "touch from inside" fashion
 float c_MainWindow::GetViewToImgRatio() const
 {
-    if (static_cast<float>(m_ImageView.GetSize().GetWidth()) / m_ImageView.GetSize().GetHeight() >
+    auto& cp = m_ImageView->GetContentsPanel();
+    if (static_cast<float>(cp.GetSize().GetWidth()) / cp.GetSize().GetHeight() >
         static_cast<float>(m_CurrentSettings.imgWidth) / m_CurrentSettings.imgHeight)
-        return static_cast<float>(m_ImageView.GetSize().GetHeight()) / m_CurrentSettings.imgHeight;
+        return static_cast<float>(cp.GetSize().GetHeight()) / m_CurrentSettings.imgHeight;
     else
-        return static_cast<float>(m_ImageView.GetSize().GetWidth()) / m_CurrentSettings.imgWidth;
+        return static_cast<float>(cp.GetSize().GetWidth()) / m_CurrentSettings.imgWidth;
 }
 
 void c_MainWindow::UpdateWindowTitle()
@@ -1193,9 +1190,8 @@ void c_MainWindow::OpenFile(wxFileName path, bool resetSelection)
         // s.output.toneCurve.valid = false;
         // s.output.toneCurve.preciseValuesApplied = false;
 
-        m_ImageView.SetVirtualSize(s.imgWidth * s.view.zoomFactor, s.imgHeight * s.view.zoomFactor);
-        m_ImageView.SetScrollRate(1, 1);
-        m_ImageView.Refresh(true);
+        m_ImageView->SetActualSize(s.imgWidth * s.view.zoomFactor, s.imgHeight * s.view.zoomFactor);
+        m_ImageView->GetContentsPanel().Refresh(true);
 
         m_ImageLoaded = true;
 
@@ -1233,9 +1229,9 @@ void c_MainWindow::UpdateSelectionAfterProcessing()
 
     // if (s.view.zoomFactor == ZOOM_NONE)
     // {
-    //     m_ImageView.RefreshRect(wxRect(
-    //         m_ImageView.CalcScrolledPosition(s.selection.GetTopLeft()),
-    //         m_ImageView.CalcScrolledPosition(s.selection.GetBottomRight())),
+    //     m_ImageView->RefreshRect(wxRect(
+    //         m_ImageView->CalcScrolledPosition(s.selection.GetTopLeft()),
+    //         m_ImageView->CalcScrolledPosition(s.selection.GetBottomRight())),
     //         false);
     // }
     // else if (s.view.bmpScaled)
@@ -1244,8 +1240,8 @@ void c_MainWindow::UpdateSelectionAfterProcessing()
     //     wxRect selectionRst;
     //     // First, take the scaled selection and limit it to visible area.
     //     selectionRst = s.scaledSelection;
-    //     wxPoint scrollPos = m_ImageView.CalcUnscrolledPosition(wxPoint(0, 0));
-    //     wxSize viewSize = m_ImageView.GetSize();
+    //     wxPoint scrollPos = m_ImageView->CalcUnscrolledPosition(wxPoint(0, 0));
+    //     wxSize viewSize = m_ImageView->GetSize();
 
     //     selectionRst.Intersect(wxRect(scrollPos, viewSize));
 
@@ -1281,9 +1277,9 @@ void c_MainWindow::UpdateSelectionAfterProcessing()
     //             &dcUpdatedScaled,
     //             wxPoint(0, 0)/*FIXME: add origin of scaledSelectionRst*/);
 
-    //     wxRect updateRegion(m_ImageView.CalcScrolledPosition(scaledSelectionRst.GetTopLeft()),
-    //                         m_ImageView.CalcScrolledPosition(scaledSelectionRst.GetBottomRight()));
-    //     m_ImageView.RefreshRect(updateRegion, false);
+    //     wxRect updateRegion(m_ImageView->CalcScrolledPosition(scaledSelectionRst.GetTopLeft()),
+    //                         m_ImageView->CalcScrolledPosition(scaledSelectionRst.GetBottomRight()));
+    //     m_ImageView->RefreshRect(updateRegion, false);
     // }
 
     // Histogram histogram;
@@ -1628,7 +1624,7 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent& event)
 {
     auto& s = m_CurrentSettings;
 
-    wxPoint imgViewMid(m_ImageView.GetSize().GetWidth()/2, m_ImageView.GetSize().GetHeight()/2);
+    wxPoint imgViewMid(m_ImageView->GetSize().GetWidth()/2, m_ImageView->GetSize().GetHeight()/2);
 
     switch (event.GetId())
     {
@@ -1689,8 +1685,8 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent& event)
         {
             // Set 'm_MouseOps' as if this new whole-image selection was marked with mouse by the user.
             // Needed for determining of `scaledSelection` in `OnNewSelection()`.
-            m_MouseOps.View.start = m_ImageView.CalcScrolledPosition(wxPoint(0, 0));
-            m_MouseOps.View.end = m_ImageView.CalcScrolledPosition(
+            m_MouseOps.View.start = m_ImageView->CalcScrolledPosition(wxPoint(0, 0));
+            m_MouseOps.View.end = m_ImageView->CalcScrolledPosition(
                     wxPoint(s.imgWidth * s.view.zoomFactor,
                             s.imgHeight * s.view.zoomFactor));
 
@@ -1713,7 +1709,7 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent& event)
         m_FitImageInWindow = !m_FitImageInWindow;
         // Surprisingly, we have to Freeze() here, because GetToolBar()->Realize()
         // forces an undesired, premature refresh
-        m_ImageView.Freeze();
+        m_ImageView->Freeze();
         GetToolBar()->FindById(ID_FitInWindow)->Toggle(m_FitImageInWindow);
         GetToolBar()->Realize();
         GetMenuBar()->FindItem(ID_FitInWindow)->Check(m_FitImageInWindow);
@@ -1728,7 +1724,7 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent& event)
             OnZoomChanged(wxPoint(0, 0));
             m_BackEnd->ImageViewZoomChanged(s.view.zoomFactor);
         }
-        m_ImageView.Thaw();
+        m_ImageView->Thaw();
         break;
 
     case wxID_SAVE:
@@ -1938,7 +1934,7 @@ wxWindow* c_MainWindow::CreateProcessingControlsPanel()
 void c_MainWindow::OnPaintImageArea(wxPaintEvent&)
 {
     // wxPaintDC dc(&m_ImageView);
-    // wxRegionIterator upd(m_ImageView.GetUpdateRegion());
+    // wxRegionIterator upd(m_ImageView->GetUpdateRegion());
     // auto& s = m_CurrentSettings;
 
     // if (s.m_ImgBmp)
@@ -1998,7 +1994,7 @@ void c_MainWindow::OnPaintImageArea(wxPaintEvent&)
     //         while (upd)
     //         {
     //             wxRect updRect = upd.GetRect();
-    //             wxPoint srcPt = m_ImageView.CalcUnscrolledPosition(updRect.GetTopLeft());
+    //             wxPoint srcPt = m_ImageView->CalcUnscrolledPosition(updRect.GetTopLeft());
     //             srcPt.x -= updateArea.x;
     //             srcPt.y -= updateArea.y;
     //             dc.Blit(updRect.GetTopLeft(), updRect.GetSize(), &imgDC, srcPt);
@@ -2016,8 +2012,8 @@ void c_MainWindow::OnPaintImageArea(wxPaintEvent&)
     //         }
     //         else
     //         {
-    //             physSelection = wxRect(m_ImageView.CalcScrolledPosition(s.scaledSelection.GetTopLeft()),
-    //                                    m_ImageView.CalcScrolledPosition(s.scaledSelection.GetBottomRight()));
+    //             physSelection = wxRect(m_ImageView->CalcScrolledPosition(s.scaledSelection.GetTopLeft()),
+    //                                    m_ImageView->CalcScrolledPosition(s.scaledSelection.GetBottomRight()));
     //         }
 
     //         MarkSelection(physSelection, dc);
@@ -2209,9 +2205,9 @@ void c_MainWindow::OnImageViewDragScrollStart(wxMouseEvent& event)
     {
         m_MouseOps.dragScroll.dragging = true;
         m_MouseOps.dragScroll.start = event.GetPosition();
-        m_MouseOps.dragScroll.startScrollPos = m_ImageView.CalcUnscrolledPosition(wxPoint(0, 0));
-        m_ImageView.CaptureMouse();
-        m_ImageView.SetCursor(wxCURSOR_SIZING);
+        m_MouseOps.dragScroll.startScrollPos = m_ImageView->CalcUnscrolledPosition(wxPoint(0, 0));
+        m_ImageView->GetContentsPanel().CaptureMouse();
+        m_ImageView->GetContentsPanel().SetCursor(wxCURSOR_SIZING);
     }
 }
 
@@ -2220,8 +2216,8 @@ void c_MainWindow::OnImageViewDragScrollEnd(wxMouseEvent&)
     if (m_MouseOps.dragScroll.dragging)
     {
         m_MouseOps.dragScroll.dragging = false;
-        m_ImageView.ReleaseMouse();
-        m_ImageView.SetCursor(wxCURSOR_CROSS);
+        m_ImageView->GetContentsPanel().ReleaseMouse();
+        m_ImageView->GetContentsPanel().SetCursor(wxCURSOR_CROSS);
     }
 }
 
@@ -2282,29 +2278,29 @@ void c_MainWindow::InitControls()
     GetToolBar()->FindById(ID_ToggleToneCurveEditor)->Toggle(m_ToneCurveEditorWindow.IsShown());
     GetToolBar()->Realize();
 
-    m_ImageView.Create(this, ID_ImageView);
-    m_ImageView.SetCursor(wxCURSOR_CROSS);
+    m_ImageView = new c_ScrolledView(this);
+    m_ImageView->GetContentsPanel().SetCursor(wxCURSOR_CROSS);
 
-    m_ImageView.Bind(wxEVT_LEFT_DOWN,          &c_MainWindow::OnImageViewMouseDragStart, this);
-    m_ImageView.Bind(wxEVT_MOTION,             &c_MainWindow::OnImageViewMouseMove, this);
-    m_ImageView.Bind(wxEVT_LEFT_UP,            &c_MainWindow::OnImageViewMouseDragEnd, this);
-    m_ImageView.Bind(wxEVT_MOUSE_CAPTURE_LOST, &c_MainWindow::OnImageViewMouseCaptureLost, this);
-    m_ImageView.Bind(wxEVT_SIZE,               &c_MainWindow::OnImageViewSize, this);
-    m_ImageView.Bind(wxEVT_MIDDLE_DOWN,        &c_MainWindow::OnImageViewDragScrollStart, this);
-    m_ImageView.Bind(wxEVT_RIGHT_DOWN,         &c_MainWindow::OnImageViewDragScrollStart, this);
-    m_ImageView.Bind(wxEVT_MIDDLE_UP,          &c_MainWindow::OnImageViewDragScrollEnd, this);
-    m_ImageView.Bind(wxEVT_RIGHT_UP,           &c_MainWindow::OnImageViewDragScrollEnd, this);
-    m_ImageView.Bind(wxEVT_MOUSEWHEEL,         &c_MainWindow::OnImageViewMouseWheel, this);
+    m_ImageView->GetContentsPanel().Bind(wxEVT_LEFT_DOWN,          &c_MainWindow::OnImageViewMouseDragStart, this);
+    m_ImageView->GetContentsPanel().Bind(wxEVT_MOTION,             &c_MainWindow::OnImageViewMouseMove, this);
+    m_ImageView->GetContentsPanel().Bind(wxEVT_LEFT_UP,            &c_MainWindow::OnImageViewMouseDragEnd, this);
+    m_ImageView->GetContentsPanel().Bind(wxEVT_MOUSE_CAPTURE_LOST, &c_MainWindow::OnImageViewMouseCaptureLost, this);
+    m_ImageView->GetContentsPanel().Bind(wxEVT_SIZE,               &c_MainWindow::OnImageViewSize, this);
+    m_ImageView->GetContentsPanel().Bind(wxEVT_MIDDLE_DOWN,        &c_MainWindow::OnImageViewDragScrollStart, this);
+    m_ImageView->GetContentsPanel().Bind(wxEVT_RIGHT_DOWN,         &c_MainWindow::OnImageViewDragScrollStart, this);
+    m_ImageView->GetContentsPanel().Bind(wxEVT_MIDDLE_UP,          &c_MainWindow::OnImageViewDragScrollEnd, this);
+    m_ImageView->GetContentsPanel().Bind(wxEVT_RIGHT_UP,           &c_MainWindow::OnImageViewDragScrollEnd, this);
+    m_ImageView->GetContentsPanel().Bind(wxEVT_MOUSEWHEEL,         &c_MainWindow::OnImageViewMouseWheel, this);
 
-    BindAllScrollEvents(m_ImageView, &c_MainWindow::OnImageViewScroll, this);
+    m_BackEnd = std::make_unique<imppg::backend::c_CpuAndBitmaps>(*m_ImageView);
+    //m_BackEnd = std::make_unique<imppg::backend::c_OpenGLBackEnd>(m_ImageView);
 
-    //m_BackEnd = std::make_unique<imppg::backend::c_CpuAndBitmaps>(m_ImageView);
-    m_BackEnd = std::make_unique<imppg::backend::c_OpenGLBackEnd>(m_ImageView);
+    m_ImageView->BindScrollCallback([this] { m_BackEnd->ImageViewScrolledOrResized(m_CurrentSettings.view.zoomFactor); });
 
     m_BackEnd->SetPhysicalSelectionGetter([this] { return GetPhysicalSelection(); });
     m_BackEnd->SetProcessingCompletedHandler([this] { m_Ctrls.tcrvEditor->SetHistogram(m_BackEnd->GetHistogram()); });
 
-    m_AuiMgr.AddPane(&m_ImageView,
+    m_AuiMgr.AddPane(m_ImageView,
         wxAuiPaneInfo()
         .Name(PaneNames::imageView)
         .Center()
@@ -2318,16 +2314,6 @@ void c_MainWindow::InitControls()
     m_AuiMgr.Update();
 }
 
-void c_MainWindow::ScheduleScalingRequest()
-{
-    // auto& s = m_CurrentSettings;
-    // if (s.m_Img)
-    // {
-    //     if (s.view.zoomFactor != ZOOM_NONE)
-    //         s.view.scalingTimer.StartOnce(IMAGE_SCALING_DELAY);
-    // }
-}
-
 void c_MainWindow::OnImageViewSize(wxSizeEvent &event)
 {
     if (m_FitImageInWindow && m_ImageLoaded)
@@ -2335,9 +2321,8 @@ void c_MainWindow::OnImageViewSize(wxSizeEvent &event)
         m_CurrentSettings.view.zoomFactor = GetViewToImgRatio();
         m_CurrentSettings.view.zoomFactorChanged = true;
         OnZoomChanged(wxPoint(0, 0));
-        m_BackEnd->ImageViewScrolledOrResized(m_CurrentSettings.view.zoomFactor);
     }
-
+    m_BackEnd->ImageViewScrolledOrResized(m_CurrentSettings.view.zoomFactor);
     event.Skip();
 }
 

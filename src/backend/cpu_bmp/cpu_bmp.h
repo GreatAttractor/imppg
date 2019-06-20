@@ -26,6 +26,7 @@ File description:
 #include <wx/bitmap.h>
 #include <wx/timer.h>
 
+#include "../../scrolled_view.h"
 #include "../backend.h"
 #include "../../common.h"
 
@@ -34,7 +35,7 @@ namespace imppg::backend {
 class c_CpuAndBitmaps: public IBackEnd
 {
 public:
-    c_CpuAndBitmaps(wxScrolledCanvas& imgView);
+    c_CpuAndBitmaps(c_ScrolledView& imgView);
 
     void ImageViewScrolledOrResized(float zoomFactor) override;
 
@@ -51,7 +52,7 @@ public:
     void NewSelection(const wxRect& selection) override;
 
 private:
-    wxScrolledCanvas& m_ImgView;
+    c_ScrolledView& m_ImgView;
 
     std::optional<c_Image> m_Img;
 

@@ -42,6 +42,7 @@ File description:
 #include "image.h"
 #include "num_ctrl.h"
 #include "proc_settings.h"
+#include "scrolled_view.h"
 #include "tcrv_edit.h"
 #include "tcrv.h"
 #include "worker.h"
@@ -75,7 +76,6 @@ class c_MainWindow: public wxFrame
     void OnImageViewMouseCaptureLost(wxMouseCaptureLostEvent& event);
     void OnAuiPaneClose(wxAuiManagerEvent& event);
     void OnTimer(wxTimerEvent& event);
-    void OnImageViewScroll(wxScrollWinEvent& event);
     void OnImageViewMouseWheel(wxMouseEvent& event);
     void OnProcessingPanelScrolled(wxScrollWinEvent& event);
     void OnSettingsFile(wxCommandEvent& event);
@@ -114,7 +114,6 @@ class c_MainWindow: public wxFrame
     void OpenFile(wxFileName path, bool resetSelection);
     /// Displays the UI language selection dialog
     void SelectLanguage();
-    void ScheduleScalingRequest();
     /// Must be called to finalize a zoom change
     void OnZoomChanged(
         wxPoint zoomingCenter ///< Point (physical coordinates) in m_ImageView to be kept stationary
@@ -136,7 +135,7 @@ class c_MainWindow: public wxFrame
     wxRect GetPhysicalSelection() const; ///< Returns current selection in physical `m_ImageView` coords.
 
     wxAuiManager m_AuiMgr;
-    wxScrolledCanvas m_ImageView; ///< Displays 'm_ImgBmp' or 'm_ImgBmpScaled' (i.e. the current image)
+    c_ScrolledView* m_ImageView{nullptr}; ///< Displays 'm_ImgBmp' or 'm_ImgBmpScaled' (i.e. the current image)
     wxFrame m_ToneCurveEditorWindow;
     wxString m_LastChosenSettingsFileName;
     wxStaticText* m_LastChosenSettings; ///< Shows the last chosen settings file name in toolbar

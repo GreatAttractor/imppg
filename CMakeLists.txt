@@ -45,6 +45,7 @@ add_executable(imppg WIN32
     src/normalize.cpp
     src/num_ctrl.cpp
     src/scrollable_dlg.cpp
+    src/scrolled_view.cpp
     src/settings.cpp
     src/tcrv.cpp
     src/tcrv_edit.cpp
