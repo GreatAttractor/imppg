@@ -34,7 +34,7 @@ namespace imppg::backend
 namespace uniforms
 {
     const char* ScrollPos = "ScrollPos";
-    const char* ImageSize = "ImageSize";
+    const char* ViewportSize = "ViewportSize";
     const char* ZoomFactor = "ZoomFactor";
 
     const char* Image = "Image";
@@ -42,9 +42,9 @@ namespace uniforms
 
 void c_OpenGLBackEnd::PropagateEventToParentUnscrolled(wxMouseEvent& event)
 {
-    const auto viewPos = m_ImgView.GetScrollPos();
-    const auto eventPos = event.GetPosition();
-    event.SetPosition({ eventPos.x - viewPos.x, eventPos.y - viewPos.y });
+    // const auto viewPos = m_ImgView.GetScrollPos();
+    // const auto eventPos = event.GetPosition();
+    // event.SetPosition({ eventPos.x - viewPos.x, eventPos.y - viewPos.y });
     event.ResumePropagation(1);
     event.Skip();
 }
@@ -63,9 +63,15 @@ c_OpenGLBackEnd::c_OpenGLBackEnd(c_ScrolledView& imgView)
         WX_GL_DOUBLEBUFFER,
         0
     };
+
+    auto* sz = new wxBoxSizer(wxHORIZONTAL);
     m_GLCanvas = new wxGLCanvas(&imgView.GetContentsPanel(), wxID_ANY, glAttributes);
-    m_GLCanvas->SetSize({1, 1});
+    sz->Add(m_GLCanvas, 1, wxGROW);
+    imgView.GetContentsPanel().SetSizer(sz);
+
     m_GLContext = new wxGLContext(m_GLCanvas);
+
+    m_GLCanvas->Bind(wxEVT_SIZE, [this](wxSizeEvent&) { glViewport(0, 0, m_GLCanvas->GetSize().GetWidth(), m_GLCanvas->GetSize().GetHeight()); });
 
     m_GLCanvas->Bind(wxEVT_LEFT_DOWN,          &c_OpenGLBackEnd::PropagateEventToParentUnscrolled, this);
     m_GLCanvas->Bind(wxEVT_MOTION,             &c_OpenGLBackEnd::PropagateEventToParentUnscrolled, this);
@@ -93,7 +99,7 @@ void c_OpenGLBackEnd::MainWindowShown()
         { &m_GLShaders.unprocessedImg,
           &m_GLShaders.vertex },
         { uniforms::Image,
-          uniforms::ImageSize,
+          uniforms::ViewportSize,
           uniforms::ScrollPos,
           uniforms::ZoomFactor },
         {}
@@ -133,7 +139,11 @@ void c_OpenGLBackEnd::OnPaint(wxPaintEvent&)
         prog.SetUniform1i(uniforms::Image, textureUnit);
         const auto scrollpos = m_ImgView.GetScrollPos();
         prog.SetUniform2i(uniforms::ScrollPos, scrollpos.x, scrollpos.y);
-        prog.SetUniform2i(uniforms::ImageSize, m_Img.value().GetWidth(), m_Img.value().GetHeight());
+        prog.SetUniform2i(
+            uniforms::ViewportSize,
+            m_GLCanvas->GetSize().GetWidth(),
+            m_GLCanvas->GetSize().GetHeight()
+        );
         prog.SetUniform1f(uniforms::ZoomFactor, m_ZoomFactor);
 
         m_VBOs.wholeImg.Bind();
@@ -153,8 +163,6 @@ void c_OpenGLBackEnd::ImageViewZoomChanged(float zoomFactor)
     m_ZoomFactor = zoomFactor;
     const wxSize newSize{static_cast<int>(m_Img.value().GetWidth() * m_ZoomFactor),
                          static_cast<int>(m_Img.value().GetHeight() * m_ZoomFactor)};
-    m_GLCanvas->SetSize(newSize);
-    glViewport(0, 0, newSize.x, newSize.y);
 }
 
 void c_OpenGLBackEnd::FileOpened(c_Image&& img)
@@ -164,14 +172,14 @@ void c_OpenGLBackEnd::FileOpened(c_Image&& img)
     const auto height = m_Img.value().GetHeight();
     const wxSize newSize{static_cast<int>(width * m_ZoomFactor),
                          static_cast<int>(height * m_ZoomFactor)};
-    m_GLCanvas->SetSize(newSize);
-    glViewport(0, 0, newSize.x, newSize.y);
 
+    const GLfloat wf = static_cast<GLfloat>(width);
+    const GLfloat hf = static_cast<GLfloat>(height);
     const GLfloat vertexData[] = {
-        -1.0f, -1.0f,
-         1.0f, -1.0f,
-         1.0f,  1.0f,
-        -1.0f,  1.0f,
+        0.0f, 0.0f,
+        wf, 0.0f,
+        wf, hf,
+        0.0f, hf
     };
 
     m_VBOs.wholeImg = gl::c_Buffer(
@@ -194,7 +202,7 @@ void c_OpenGLBackEnd::FileOpened(c_Image&& img)
 
     m_Textures.originalImg = gl::c_Texture(
         GL_R32F,
-        m_Img.value().GetWidth(), 
+        m_Img.value().GetWidth(),
         m_Img.value().GetHeight(),
         GL_RED,
         GL_FLOAT,

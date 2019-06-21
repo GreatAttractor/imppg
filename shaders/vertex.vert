@@ -1,19 +1,23 @@
 #version 330 core
 
+/// Logical image coordinates ((0, 0) to (img_w, img_h)).
 layout(location = 0) in vec2 Position;
 
 out vec2 TexCoord;
 
+/// Scrolled position of the image view area.
 uniform ivec2 ScrollPos;
-uniform ivec2 ImageSize;
+uniform ivec2 ViewportSize;
 uniform float ZoomFactor;
 
 void main()
 {
-    gl_Position = vec4(Position.x, Position.y, 0.0, 1.0);
+    gl_Position = vec4(
+        2.0 * ZoomFactor / ViewportSize.x * Position.x - 1.0 - 2.0 * ScrollPos.x / ViewportSize.x,
+        -2.0 * ZoomFactor / ViewportSize.y * Position.y + 1.0 + 2.0 * ScrollPos.y / ViewportSize.y,
+        0.0,
+        1.0
+    );
 
-    // calculation assumes that screen coordinates (in `Position`) of (-1, -1) to (1, 1) span the whole
-    // visible portion of the image in the image view widget
-    TexCoord.x = ImageSize.x / (2 * ZoomFactor) * Position.x + (2 * ScrollPos.x + ImageSize.x) / (2 * ZoomFactor);
-    TexCoord.y = -ImageSize.y / (2 * ZoomFactor) * Position.y + (2 * ScrollPos.y + ImageSize.y) / (2 * ZoomFactor);
+    TexCoord.xy = Position.xy;
 }
