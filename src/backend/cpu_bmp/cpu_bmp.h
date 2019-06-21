@@ -51,6 +51,8 @@ public:
 
     void NewSelection(const wxRect& selection) override;
 
+    void RefreshRect(const wxRect& rect) override;
+
 private:
     c_ScrolledView& m_ImgView;
 

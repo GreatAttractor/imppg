@@ -70,6 +70,11 @@ static wxBitmap ImageToRgbBitmap(const c_Image& src, int x0, int y0, int width, 
     return wxBitmap(wximg);
 }
 
+void c_CpuAndBitmaps::RefreshRect(const wxRect& rect)
+{
+    m_ImgView.GetContentsPanel().RefreshRect(rect, false);
+}
+
 c_CpuAndBitmaps::c_CpuAndBitmaps(c_ScrolledView& imgView)
 : m_ImgView(imgView)
 {

@@ -880,15 +880,10 @@ void c_MainWindow::OnImageViewMouseMove(wxMouseEvent& event)
                 physSelection.SetBottomRight(m_ImageView->CalcScrolledPosition(s.scaledSelection.GetBottomRight()));
             }
 
-            auto& cp = m_ImageView->GetContentsPanel();
-            cp.RefreshRect(wxRect(physSelection.GetLeft(), physSelection.GetTop(), physSelection.GetWidth(), 1),
-                false);
-            cp.RefreshRect(wxRect(physSelection.GetLeft(), physSelection.GetBottom(), physSelection.GetWidth(), 1),
-                false);
-            cp.RefreshRect(wxRect(physSelection.GetLeft(), physSelection.GetTop() + 1, 1, physSelection.GetHeight() - 2),
-                false);
-            cp.RefreshRect(wxRect(physSelection.GetRight(), physSelection.GetTop() + 1, 1, physSelection.GetHeight() - 2),
-                false);
+            m_BackEnd->RefreshRect(wxRect(physSelection.GetLeft(), physSelection.GetTop(), physSelection.GetWidth(), 1));
+            m_BackEnd->RefreshRect(wxRect(physSelection.GetLeft(), physSelection.GetBottom(), physSelection.GetWidth(), 1));
+            m_BackEnd->RefreshRect(wxRect(physSelection.GetLeft(), physSelection.GetTop() + 1, 1, physSelection.GetHeight() - 2));
+            m_BackEnd->RefreshRect(wxRect(physSelection.GetRight(), physSelection.GetTop() + 1, 1, physSelection.GetHeight() - 2));
 
             m_MouseOps.prevSelectionBordersErased = true;
         }
@@ -907,15 +902,10 @@ void c_MainWindow::OnImageViewMouseMove(wxMouseEvent& event)
         int oldSelWidth = oldSelBottomRight.x - oldSelTopLeft.x + 1,
             oldSelHeight = oldSelBottomRight.y - oldSelTopLeft.y + 1;
 
-        auto& cp = m_ImageView->GetContentsPanel();
-        cp.RefreshRect(wxRect(oldSelTopLeft.x, oldSelTopLeft.y, oldSelWidth, 1),
-             false);
-        cp.RefreshRect(wxRect(oldSelTopLeft.x, oldSelBottomRight.y, oldSelWidth, 1),
-            false);
-        cp.RefreshRect(wxRect(oldSelTopLeft.x, oldSelTopLeft.y, 1, oldSelHeight),
-            false);
-        cp.RefreshRect(wxRect(oldSelBottomRight.x, oldSelTopLeft.y, 1, oldSelHeight),
-            false);
+        m_BackEnd->RefreshRect(wxRect(oldSelTopLeft.x, oldSelTopLeft.y, oldSelWidth, 1));
+        m_BackEnd->RefreshRect(wxRect(oldSelTopLeft.x, oldSelBottomRight.y, oldSelWidth, 1));
+        m_BackEnd->RefreshRect(wxRect(oldSelTopLeft.x, oldSelTopLeft.y, 1, oldSelHeight));
+        m_BackEnd->RefreshRect(wxRect(oldSelBottomRight.x, oldSelTopLeft.y, 1, oldSelHeight));
 
         // Refresh the borders of the new selection
 
@@ -938,14 +928,10 @@ void c_MainWindow::OnImageViewMouseMove(wxMouseEvent& event)
         int newSelWidth = newSelBottomRight.x - newSelTopLeft.x + 1,
             newSelHeight = newSelBottomRight.y - newSelTopLeft.y + 1;
 
-        cp.RefreshRect(wxRect(newSelTopLeft.x, newSelTopLeft.y, newSelWidth, 1),
-            false);
-        cp.RefreshRect(wxRect(newSelTopLeft.x, newSelBottomRight.y, newSelWidth, 1),
-            false);
-        cp.RefreshRect(wxRect(newSelTopLeft.x, newSelTopLeft.y, 1, newSelHeight),
-            false);
-        cp.RefreshRect(wxRect(newSelBottomRight.x, newSelTopLeft.y, 1, newSelHeight),
-            false);
+        m_BackEnd->RefreshRect(wxRect(newSelTopLeft.x, newSelTopLeft.y, newSelWidth, 1));
+        m_BackEnd->RefreshRect(wxRect(newSelTopLeft.x, newSelBottomRight.y, newSelWidth, 1));
+        m_BackEnd->RefreshRect(wxRect(newSelTopLeft.x, newSelTopLeft.y, 1, newSelHeight));
+        m_BackEnd->RefreshRect(wxRect(newSelBottomRight.x, newSelTopLeft.y, 1, newSelHeight));
     }
     else if (m_MouseOps.dragScroll.dragging)
     {
@@ -2293,7 +2279,10 @@ void c_MainWindow::InitControls()
     m_ImageView->GetContentsPanel().Bind(wxEVT_MOUSEWHEEL,         &c_MainWindow::OnImageViewMouseWheel, this);
 
     //m_BackEnd = std::make_unique<imppg::backend::c_CpuAndBitmaps>(*m_ImageView);
-    m_BackEnd = std::make_unique<imppg::backend::c_OpenGLBackEnd>(*m_ImageView);
+    m_BackEnd = imppg::backend::c_OpenGLBackEnd::Create(*m_ImageView);
+    // TODO:
+    // if (!m_BackEnd)
+    // {
 
     m_ImageView->BindScrollCallback([this] { m_BackEnd->ImageViewScrolledOrResized(m_CurrentSettings.view.zoomFactor); });
 

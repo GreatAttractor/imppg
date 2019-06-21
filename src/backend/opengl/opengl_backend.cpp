@@ -27,6 +27,7 @@ File description:
 
 #include "../../common.h"
 #include "opengl_backend.h"
+#include "../../logging.h"
 
 namespace imppg::backend
 {
@@ -46,23 +47,43 @@ void c_OpenGLBackEnd::PropagateEventToParent(wxMouseEvent& event)
     event.Skip();
 }
 
+static const int IMPPG_GL_ATTRIBUTES[] =
+{
+    WX_GL_CORE_PROFILE,
+    WX_GL_MAJOR_VERSION, 3,
+    WX_GL_MINOR_VERSION, 3,
+    // Supposedly the ones below are enabled by default,
+    // but not for Intel HD Graphics 5500 + Mesa DRI + wxWidgets 3.0.4 (Fedora 29).
+    WX_GL_RGBA,
+    WX_GL_DOUBLEBUFFER,
+    0
+};
+
+static void SpecifyVertexAttribPointer()
+{
+    glVertexAttribPointer(
+        0, // 0 corresponds to "location = 0" for attribute `Position` in shaders/vertex.vert
+        2,  // 2 components (x, y) per attribute value
+        GL_FLOAT,
+        GL_FALSE,
+        0,
+        nullptr
+    );
+}
+
+std::unique_ptr<c_OpenGLBackEnd> c_OpenGLBackEnd::Create(c_ScrolledView& imgView)
+{
+    if (!wxGLCanvas::IsDisplaySupported(IMPPG_GL_ATTRIBUTES))
+        return nullptr;
+    else
+        return std::unique_ptr<c_OpenGLBackEnd>(new c_OpenGLBackEnd(imgView));
+}
+
 c_OpenGLBackEnd::c_OpenGLBackEnd(c_ScrolledView& imgView)
 : m_ImgView(imgView)
 {
-    const int glAttributes[] =
-    {
-        WX_GL_CORE_PROFILE,
-        WX_GL_MAJOR_VERSION, 3,
-        WX_GL_MINOR_VERSION, 3,
-        // Supposedly the ones below are enabled by default,
-        // but not for Intel HD Graphics 5500 + Mesa DRI + wxWidgets 3.0.4 (Fedora 29).
-        WX_GL_RGBA,
-        WX_GL_DOUBLEBUFFER,
-        0
-    };
-
     auto* sz = new wxBoxSizer(wxHORIZONTAL);
-    m_GLCanvas = new wxGLCanvas(&imgView.GetContentsPanel(), wxID_ANY, glAttributes);
+    m_GLCanvas = new wxGLCanvas(&imgView.GetContentsPanel(), wxID_ANY, IMPPG_GL_ATTRIBUTES);
     sz->Add(m_GLCanvas, 1, wxGROW);
     imgView.GetContentsPanel().SetSizer(sz);
 
@@ -81,16 +102,20 @@ c_OpenGLBackEnd::c_OpenGLBackEnd(c_ScrolledView& imgView)
     m_GLCanvas->Bind(wxEVT_MOUSEWHEEL,         &c_OpenGLBackEnd::PropagateEventToParent, this);
 }
 
-void c_OpenGLBackEnd::MainWindowShown()
+bool c_OpenGLBackEnd::MainWindowShown()
 {
     m_GLCanvas->SetCurrent(*m_GLContext);
 
     const GLenum err = glewInit();
     if (GLEW_OK != err)
-        throw std::runtime_error("Failed to initialize GLEW");
+    {
+        Log::Print("Failed to initialize GLEW.");
+        return false;
+    }
 
     m_GLShaders.vertex = gl::c_Shader(GL_VERTEX_SHADER, "shaders/vertex.vert");
     m_GLShaders.unprocessedImg = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/unprocessed_image.frag");
+    m_GLShaders.selectionOutline = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/selection_outline.frag");
 
     m_GLPrograms.unprocessedImg = gl::c_Program(
         { &m_GLShaders.unprocessedImg,
@@ -102,9 +127,13 @@ void c_OpenGLBackEnd::MainWindowShown()
         {}
     );
 
-    GLuint vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
+    m_GLPrograms.selectionOutline = gl::c_Program(
+        { &m_GLShaders.selectionOutline,
+          &m_GLShaders.vertex },
+        { uniforms::ViewportSize,
+          uniforms::ScrollPos },
+        {}
+    );
 
     const auto clearColor = m_ImgView.GetBackgroundColour();
     glClearColor(
@@ -118,6 +147,16 @@ void c_OpenGLBackEnd::MainWindowShown()
     std::cout << glGetString(GL_RENDERER) << std::endl;
 
     m_GLCanvas->Bind(wxEVT_PAINT, &c_OpenGLBackEnd::OnPaint, this);
+
+    m_VBOs.wholeImg = gl::c_Buffer(GL_ARRAY_BUFFER, nullptr, 0, GL_DYNAMIC_DRAW);
+    m_VBOs.selectionScaled = gl::c_Buffer(GL_ARRAY_BUFFER, nullptr, 0, GL_DYNAMIC_DRAW);
+
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+    glEnableVertexAttribArray(0); // 0 corresponds to "location = 0" for attribute `Position` in shaders/vertex.vert
+
+    return true;
 }
 
 void c_OpenGLBackEnd::OnPaint(wxPaintEvent&)
@@ -144,10 +183,44 @@ void c_OpenGLBackEnd::OnPaint(wxPaintEvent&)
         prog.SetUniform1f(uniforms::ZoomFactor, m_ZoomFactor);
 
         m_VBOs.wholeImg.Bind();
+        SpecifyVertexAttribPointer();
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+        MarkSelection();
     }
 
     m_GLCanvas->SwapBuffers();
+}
+
+void c_OpenGLBackEnd::MarkSelection()
+{
+    const wxRect physSelection = m_PhysSelectionGetter();
+    const wxPoint scrollPos = m_ImgView.GetScrollPos();
+
+    const GLfloat x0 = physSelection.x + scrollPos.x;
+    const GLfloat y0 = physSelection.y + scrollPos.y;
+    const GLfloat vertexData[] =
+    {
+        x0, y0,
+        x0 + physSelection.GetWidth(), y0,
+        x0 + physSelection.GetWidth(), y0 + physSelection.GetHeight(),
+        x0, y0 + physSelection.GetHeight()
+    };
+    m_VBOs.selectionScaled.SetData(vertexData, sizeof(vertexData), GL_DYNAMIC_DRAW);
+
+    auto& prog = m_GLPrograms.selectionOutline;
+    prog.Use();
+    const auto scrollpos = m_ImgView.GetScrollPos();
+    prog.SetUniform2i(uniforms::ScrollPos, scrollpos.x, scrollpos.y);
+    prog.SetUniform2i(
+        uniforms::ViewportSize,
+        m_GLCanvas->GetSize().GetWidth(),
+        m_GLCanvas->GetSize().GetHeight()
+    );
+
+    m_VBOs.selectionScaled.Bind();
+    SpecifyVertexAttribPointer();
+    glDrawArrays(GL_LINE_LOOP, 0, 4);
 }
 
 void c_OpenGLBackEnd::ImageViewScrolledOrResized(float /*zoomFactor*/)
@@ -180,19 +253,7 @@ void c_OpenGLBackEnd::FileOpened(c_Image&& img)
 {
     m_Img = std::move(img);
 
-    m_VBOs.wholeImg = gl::c_Buffer(GL_ARRAY_BUFFER, nullptr, 0, GL_DYNAMIC_DRAW);
     FillWholeImgVBO();
-
-    constexpr GLuint vertPosAttrib = 0; // 0 corresponds to "location = 0" for attribute `Position` in shaders/vertex.vert
-    glVertexAttribPointer(
-        vertPosAttrib,
-        2,  // 2 components (x, y) per attribute value
-        GL_FLOAT,
-        GL_FALSE,
-        0,
-        nullptr
-    );
-    glEnableVertexAttribArray(vertPosAttrib);
 
     m_Textures.originalImg = gl::c_Texture(
         GL_R32F,

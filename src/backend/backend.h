@@ -57,8 +57,14 @@ public:
     /// Returns histogram of current selection before applying tone curve.
     virtual Histogram GetHistogram() = 0;
 
-    /// Called after the main window is first shown.
-    virtual void MainWindowShown() {}
+    /// Called after the main window is first shown; returns `false` if back end initialization failed.
+    virtual bool MainWindowShown() { return true; }
+
+    /// Invalidates (marks to be repainted) a rectangle in the image view.
+    ///
+    /// The back-end may choose to repaint the whole image view instead.
+    ///
+    virtual void RefreshRect(const wxRect& rect) = 0;
 
     virtual ~IBackEnd() = default;
 };

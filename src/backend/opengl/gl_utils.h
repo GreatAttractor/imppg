@@ -52,14 +52,14 @@ public:
     {
         Deleter(m_Handle);
         m_Handle = w.m_Handle;
-        w.m_Handle = 0; // subsequent deletion of OpenGL object named '0' does nothing
+        w.m_Handle = 0;
     }
 
     c_Wrapper& operator=(c_Wrapper&& w)
     {
         Deleter(m_Handle);
         m_Handle = w.m_Handle;
-        w.m_Handle = 0; // subsequent deletion of OpenGL object named '0' does nothing
+        w.m_Handle = 0;
         return *this;
     }
 
@@ -74,7 +74,7 @@ public:
 
 class c_Buffer
 {
-    static void Deleter(GLuint obj) { glDeleteBuffers(1, &obj); }
+    static void Deleter(GLuint obj) { if (obj != 0) glDeleteBuffers(1, &obj); }
     c_Wrapper<Deleter> m_Buffer;
     GLenum m_Target;
 
@@ -111,7 +111,7 @@ public:
 
 class c_Texture
 {
-    static void Deleter(GLuint obj) { glDeleteTextures(1, &obj); }
+    static void Deleter(GLuint obj) { if (obj != 0) glDeleteTextures(1, &obj); }
     c_Wrapper<Deleter> m_Texture;
 
 public:
@@ -150,7 +150,7 @@ public:
 
 class c_Shader
 {
-    static void Deleter(GLuint obj) { glDeleteShader(obj); }
+    static void Deleter(GLuint obj) { if (obj != 0) glDeleteShader(obj); }
     c_Wrapper<Deleter> m_Shader;
 
 public:
@@ -171,7 +171,7 @@ public:
 
 class VertexArrayObj
 {
-    static void Deleter(GLuint obj) { glDeleteVertexArrays(1, &obj); }
+    static void Deleter(GLuint obj) { if (obj != 0) glDeleteVertexArrays(1, &obj); }
     c_Wrapper<Deleter> m_VAO;
 
 public:
@@ -194,7 +194,7 @@ public:
 
 class c_Program
 {
-    static void Deleter(GLuint obj) { glDeleteProgram(obj); }
+    static void Deleter(GLuint obj) { if (obj != 0) glDeleteProgram(obj); }
     c_Wrapper<Deleter> m_Program;
 
     std::map<const char*, GLint> Uniforms;

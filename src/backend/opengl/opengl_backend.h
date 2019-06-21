@@ -23,6 +23,7 @@ File description:
 
 #include <functional>
 #include <optional>
+#include <memory>
 #include <wx/bitmap.h>
 
 #include "../../common.h"
@@ -37,7 +38,8 @@ namespace imppg::backend {
 class c_OpenGLBackEnd: public IBackEnd
 {
 public:
-    c_OpenGLBackEnd(c_ScrolledView& imgView);
+    /// Returns `nullptr` if OpenGL cannot be initialized.
+    static std::unique_ptr<c_OpenGLBackEnd> Create(c_ScrolledView& imgView);
 
     void ImageViewScrolledOrResized(float zoomFactor) override;
 
@@ -53,7 +55,9 @@ public:
 
     void NewSelection(const wxRect& selection) override;
 
-    void MainWindowShown() override;
+    bool MainWindowShown() override;
+
+    void RefreshRect(const wxRect&) override { m_ImgView.GetContentsPanel().Refresh(false); }
 
 private:
     c_ScrolledView& m_ImgView;
@@ -74,10 +78,14 @@ private:
 
     std::function<void()> m_OnProcessingCompleted;
 
+    c_OpenGLBackEnd(c_ScrolledView& imgView);
+
     void OnPaint(wxPaintEvent& event);
 
     /// Propagates `event` received by m_GLCanvas to `m_ImgView`, taking scroll position into account.
     void PropagateEventToParent(wxMouseEvent& event);
+
+    void MarkSelection();
 
     void FillWholeImgVBO();
 
@@ -85,18 +93,21 @@ private:
     {
         gl::c_Shader solidColor;
         gl::c_Shader unprocessedImg;
+        gl::c_Shader selectionOutline;
+
         gl::c_Shader vertex;
     } m_GLShaders;
 
     struct
     {
         gl::c_Program unprocessedImg;
+        gl::c_Program selectionOutline;
     } m_GLPrograms;
 
     struct
     {
         gl::c_Buffer wholeImg;
-        gl::c_Buffer selection;
+        gl::c_Buffer selectionScaled; ///< Selection outline (with scaling applied).
     } m_VBOs;
 
     struct
