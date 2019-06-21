@@ -89,12 +89,19 @@ public:
     c_Buffer(c_Buffer&&)                 = default;
     c_Buffer& operator=(c_Buffer&&)      = default;
 
-    c_Buffer(GLenum target, const void* data, GLsizei size, GLenum usage)
+    c_Buffer(GLenum target, const GLvoid* data, GLsizei size, GLenum usage)
     {
         m_Target = target;
         glGenBuffers(1, &m_Buffer.Get());
         glBindBuffer(target, m_Buffer.Get());
         glBufferData(target, size, data, usage);
+    }
+
+    void SetData(const GLvoid* data, GLsizei size, GLenum usage)
+    {
+        IMPPG_ASSERT(m_Buffer);
+        Bind();
+        glBufferData(m_Target, size, data, usage);
     }
 
     void Bind() { glBindBuffer(m_Target, m_Buffer.Get()); }

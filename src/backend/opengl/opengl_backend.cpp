@@ -40,11 +40,8 @@ namespace uniforms
     const char* Image = "Image";
 }
 
-void c_OpenGLBackEnd::PropagateEventToParentUnscrolled(wxMouseEvent& event)
+void c_OpenGLBackEnd::PropagateEventToParent(wxMouseEvent& event)
 {
-    // const auto viewPos = m_ImgView.GetScrollPos();
-    // const auto eventPos = event.GetPosition();
-    // event.SetPosition({ eventPos.x - viewPos.x, eventPos.y - viewPos.y });
     event.ResumePropagation(1);
     event.Skip();
 }
@@ -73,15 +70,15 @@ c_OpenGLBackEnd::c_OpenGLBackEnd(c_ScrolledView& imgView)
 
     m_GLCanvas->Bind(wxEVT_SIZE, [this](wxSizeEvent&) { glViewport(0, 0, m_GLCanvas->GetSize().GetWidth(), m_GLCanvas->GetSize().GetHeight()); });
 
-    m_GLCanvas->Bind(wxEVT_LEFT_DOWN,          &c_OpenGLBackEnd::PropagateEventToParentUnscrolled, this);
-    m_GLCanvas->Bind(wxEVT_MOTION,             &c_OpenGLBackEnd::PropagateEventToParentUnscrolled, this);
-    m_GLCanvas->Bind(wxEVT_LEFT_UP,            &c_OpenGLBackEnd::PropagateEventToParentUnscrolled, this);
+    m_GLCanvas->Bind(wxEVT_LEFT_DOWN,          &c_OpenGLBackEnd::PropagateEventToParent, this);
+    m_GLCanvas->Bind(wxEVT_MOTION,             &c_OpenGLBackEnd::PropagateEventToParent, this);
+    m_GLCanvas->Bind(wxEVT_LEFT_UP,            &c_OpenGLBackEnd::PropagateEventToParent, this);
     m_GLCanvas->Bind(wxEVT_MOUSE_CAPTURE_LOST, [](wxMouseCaptureLostEvent& event) { event.ResumePropagation(1); event.Skip(); });
-    m_GLCanvas->Bind(wxEVT_MIDDLE_DOWN,        &c_OpenGLBackEnd::PropagateEventToParentUnscrolled, this);
-    m_GLCanvas->Bind(wxEVT_RIGHT_DOWN,         &c_OpenGLBackEnd::PropagateEventToParentUnscrolled, this);
-    m_GLCanvas->Bind(wxEVT_MIDDLE_UP,          &c_OpenGLBackEnd::PropagateEventToParentUnscrolled, this);
-    m_GLCanvas->Bind(wxEVT_RIGHT_UP,           &c_OpenGLBackEnd::PropagateEventToParentUnscrolled, this);
-    m_GLCanvas->Bind(wxEVT_MOUSEWHEEL,         &c_OpenGLBackEnd::PropagateEventToParentUnscrolled, this);
+    m_GLCanvas->Bind(wxEVT_MIDDLE_DOWN,        &c_OpenGLBackEnd::PropagateEventToParent, this);
+    m_GLCanvas->Bind(wxEVT_RIGHT_DOWN,         &c_OpenGLBackEnd::PropagateEventToParent, this);
+    m_GLCanvas->Bind(wxEVT_MIDDLE_UP,          &c_OpenGLBackEnd::PropagateEventToParent, this);
+    m_GLCanvas->Bind(wxEVT_RIGHT_UP,           &c_OpenGLBackEnd::PropagateEventToParent, this);
+    m_GLCanvas->Bind(wxEVT_MOUSEWHEEL,         &c_OpenGLBackEnd::PropagateEventToParent, this);
 }
 
 void c_OpenGLBackEnd::MainWindowShown()
@@ -161,33 +158,30 @@ void c_OpenGLBackEnd::ImageViewScrolledOrResized(float /*zoomFactor*/)
 void c_OpenGLBackEnd::ImageViewZoomChanged(float zoomFactor)
 {
     m_ZoomFactor = zoomFactor;
-    const wxSize newSize{static_cast<int>(m_Img.value().GetWidth() * m_ZoomFactor),
-                         static_cast<int>(m_Img.value().GetHeight() * m_ZoomFactor)};
+    FillWholeImgVBO();
+}
+
+void c_OpenGLBackEnd::FillWholeImgVBO()
+{
+    const GLfloat width = m_Img.value().GetWidth() * m_ZoomFactor;
+    const GLfloat height = m_Img.value().GetHeight() * m_ZoomFactor;
+
+    const GLfloat vertexData[] = {
+        0.0f, 0.0f,
+        width, 0.0f,
+        width, height,
+        0.0f, height
+    };
+
+    m_VBOs.wholeImg.SetData(vertexData, sizeof(vertexData), GL_DYNAMIC_DRAW);
 }
 
 void c_OpenGLBackEnd::FileOpened(c_Image&& img)
 {
     m_Img = std::move(img);
-    const auto width = m_Img.value().GetWidth();
-    const auto height = m_Img.value().GetHeight();
-    const wxSize newSize{static_cast<int>(width * m_ZoomFactor),
-                         static_cast<int>(height * m_ZoomFactor)};
 
-    const GLfloat wf = static_cast<GLfloat>(width);
-    const GLfloat hf = static_cast<GLfloat>(height);
-    const GLfloat vertexData[] = {
-        0.0f, 0.0f,
-        wf, 0.0f,
-        wf, hf,
-        0.0f, hf
-    };
-
-    m_VBOs.wholeImg = gl::c_Buffer(
-        GL_ARRAY_BUFFER,
-        vertexData,
-        sizeof(vertexData),
-        GL_STATIC_DRAW
-    );
+    m_VBOs.wholeImg = gl::c_Buffer(GL_ARRAY_BUFFER, nullptr, 0, GL_DYNAMIC_DRAW);
+    FillWholeImgVBO();
 
     constexpr GLuint vertPosAttrib = 0; // 0 corresponds to "location = 0" for attribute `Position` in shaders/vertex.vert
     glVertexAttribPointer(
