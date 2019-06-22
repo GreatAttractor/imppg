@@ -25,7 +25,8 @@ File description:
 #define IMPPG_UNSHARP_MASKING_WORKER_THREAD_H
 
 #include "worker.h"
-#include "tcrv.h"
+
+namespace imppg::backend {
 
 class c_UnsharpMaskingThread: public IWorkerThread
 {
@@ -50,5 +51,7 @@ public:
         float width       ///< Transition width
     );
 };
+
+} // namespace imppg::backend
 
 #endif

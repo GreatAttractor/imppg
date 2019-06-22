@@ -47,7 +47,7 @@ File description:
 #include "tiff.h"
 #include "w_lrdeconv.h"
 #include "w_tcurve.h"
-#include "w_unshmask.h"
+//#include "w_unshmask.h"
 #include "worker.h"
 
 const size_t FILE_IDX_NONE = UINT_MAX;
@@ -133,7 +133,7 @@ void c_BatchDialog::OnClose(wxCloseEvent& event)
         if (lock.Get())
         {
             Log::Print("Closing of the batch processing dialog requested. Waiting for the worker thread to finish...\n");
-            lock.Get()->AbortProcessing();
+            //!!! lock.Get()->AbortProcessing();
         }
     }
 
@@ -383,22 +383,22 @@ void c_BatchDialog::ScheduleProcessing(ProcessingRequest request)
 
         if (proc.LucyRichardson.iterations > 0)
         {
-            m_Worker = new c_LucyRichardsonThread(
-                WorkerParameters{
-                    *this,
-                    m_Worker,
-                    0,
-                    m_Img.value().GetBuffer(),
-                    m_Img.value().GetBuffer(),
-                    m_ThreadId
-                },
-                proc.LucyRichardson.sigma,
-                proc.LucyRichardson.iterations,
-                proc.LucyRichardson.deringing.enabled,
-                254.0f/255,
-                true,
-                proc.LucyRichardson.sigma
-            );
+            // m_Worker = new c_LucyRichardsonThread(
+            //     WorkerParameters{
+            //         *this,
+            //         m_Worker,
+            //         0,
+            //         m_Img.value().GetBuffer(),
+            //         m_Img.value().GetBuffer(),
+            //         m_ThreadId
+            //     },
+            //     proc.LucyRichardson.sigma,
+            //     proc.LucyRichardson.iterations,
+            //     proc.LucyRichardson.deringing.enabled,
+            //     254.0f/255,
+            //     true,
+            //     proc.LucyRichardson.sigma
+            // );
 
             { auto lock = m_Worker.Lock();
                 lock.Get()->Run();
@@ -421,23 +421,23 @@ void c_BatchDialog::ScheduleProcessing(ProcessingRequest request)
     case ProcessingRequest::UNSHARP_MASKING:
         if (proc.unsharpMasking.IsEffective())
         {
-            m_Worker = new c_UnsharpMaskingThread(
-                WorkerParameters{
-                    *this,
-                    m_Worker,
-                    0,
-                    m_Img.value().GetBuffer(),
-                    m_Img.value().GetBuffer(),
-                    m_ThreadId
-                },
-                c_ImageBufferView(m_RawImg.value().GetBuffer()),
-                proc.unsharpMasking.adaptive,
-                proc.unsharpMasking.sigma,
-                proc.unsharpMasking.amountMin,
-                proc.unsharpMasking.amountMax,
-                proc.unsharpMasking.threshold,
-                proc.unsharpMasking.width
-            );
+            // m_Worker = new c_UnsharpMaskingThread(
+            //     WorkerParameters{
+            //         *this,
+            //         m_Worker,
+            //         0,
+            //         m_Img.value().GetBuffer(),
+            //         m_Img.value().GetBuffer(),
+            //         m_ThreadId
+            //     },
+            //     c_ImageBufferView(m_RawImg.value().GetBuffer()),
+            //     proc.unsharpMasking.adaptive,
+            //     proc.unsharpMasking.sigma,
+            //     proc.unsharpMasking.amountMin,
+            //     proc.unsharpMasking.amountMax,
+            //     proc.unsharpMasking.threshold,
+            //     proc.unsharpMasking.width
+            // );
 
             { auto lock = m_Worker.Lock();
                 lock.Get()->Run();
@@ -460,18 +460,18 @@ void c_BatchDialog::ScheduleProcessing(ProcessingRequest request)
             proc.toneCurve.GetPoint(1).y != 1.0f ||
             proc.toneCurve.IsGammaMode() && proc.toneCurve.GetGamma() != 1.0f)
         {
-            m_Worker = new c_ToneCurveThread(
-                WorkerParameters{
-                    *this,
-                    m_Worker,
-                    0,
-                    m_Img.value().GetBuffer(),
-                    m_Img.value().GetBuffer(),
-                    m_ThreadId
-                },
-                proc.toneCurve,
-                true
-            );
+            // m_Worker = new c_ToneCurveThread(
+            //     WorkerParameters{
+            //         *this,
+            //         m_Worker,
+            //         0,
+            //         m_Img.value().GetBuffer(),
+            //         m_Img.value().GetBuffer(),
+            //         m_ThreadId
+            //     },
+            //     proc.toneCurve,
+            //     true
+            // );
 
             { auto lock = m_Worker.Lock();
                 lock.Get()->Run();

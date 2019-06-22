@@ -68,7 +68,6 @@ File description:
 #include "formats.h"
 #include "imppg_assert.h"
 #include "logging.h"
-#include "lrdeconv.h"
 #include "main_window.h"
 #include "normalize.h"
 #include "settings.h"
@@ -76,7 +75,6 @@ File description:
 #include "tiff.h"
 #include "w_lrdeconv.h"
 #include "w_tcurve.h"
-#include "w_unshmask.h"
 #include "backend/cpu_bmp/cpu_bmp.h"
 #include "backend/opengl/opengl_backend.h"
 
@@ -105,17 +103,6 @@ namespace PaneNames
 {
 const wxString imageView = "imageView";
 const wxString processing = "processing";
-}
-
-wxImageResizeQuality GetResizeQuality(ScalingMethod smethod)
-{
-    switch (smethod)
-    {
-    case ScalingMethod::NEAREST: return wxIMAGE_QUALITY_NEAREST;
-    case ScalingMethod::LINEAR: return wxIMAGE_QUALITY_BILINEAR;
-    case ScalingMethod::CUBIC: return wxIMAGE_QUALITY_BICUBIC;
-    default: return wxIMAGE_QUALITY_BICUBIC;
-    }
 }
 
 BEGIN_EVENT_TABLE(c_MainWindow, wxFrame)
@@ -589,7 +576,8 @@ void c_MainWindow::OnToneCurveChanged(wxCommandEvent&)
     // if (m_CurrentSettings.m_Img)
     //     ScheduleProcessing(ProcessingRequest::TONE_CURVE);
 
-    // IndicateSettingsModified();
+    m_BackEnd->ToneCurveChanged(m_CurrentSettings.processing);
+    IndicateSettingsModified();
 }
 
 /// Returns 'true' if sharpening settings have impact on the image
@@ -982,89 +970,13 @@ void c_MainWindow::OnNewSelection(
     Log::Print(wxString::Format("New selection at (%d, %d), w=%d, h=%d\n",
         newSelection.x, newSelection.y, newSelection.width, newSelection.height));
 
-    // // Restore unprocessed image contents in the previous selection
-    // wxBitmap restored = ImageToRgbBitmap(s.m_Img.value(), s.selection.x, s.selection.y, s.selection.width, s.selection.height);
-    // wxMemoryDC restoredDc(restored);
-    // wxMemoryDC(s.m_ImgBmp.value()).Blit(s.selection.GetTopLeft(), s.selection.GetSize(), &restoredDc, wxPoint(0, 0));
-
-    if (s.view.zoomFactor == ZOOM_NONE)
+    s.selection = newSelection;
+    m_BackEnd->NewSelection(s.selection);
+    if (s.view.zoomFactor != ZOOM_NONE)
     {
-    //     m_ImageView->RefreshRect(wxRect(
-    //         m_ImageView->CalcScrolledPosition(s.selection.GetTopLeft()),
-    //         m_ImageView->CalcScrolledPosition(s.selection.GetBottomRight())),
-    //         false);
-    }
-    else
-    {
-    //     // Restore also the corresponding fragment of the scaled bitmap.
-    //     // Before restoring, increase the size of previous (unscaled) image fragment slightly to avoid any left-overs due to round-off errors
-    //     int DELTA = std::max(6, static_cast<int>(std::ceil(1.0f/s.view.zoomFactor)));
-
-    //     // Area in 'm_ImgBmp' to restore; based on 's.scaledSelection', but limited to what is currently visible.
-    //     wxRect selectionRst;
-    //     // First, take the scaled selection and limit it to visible area.
-    //     selectionRst = s.scaledSelection;
-    //     wxPoint scrollPos = m_ImageView->CalcUnscrolledPosition(wxPoint(0, 0));
-    //     wxSize viewSize = m_ImageView->GetSize();
-
-    //     selectionRst.Intersect(wxRect(scrollPos, viewSize));
-
-    //     wxRect scaledSelectionRst = selectionRst; // Scaled area in 'm_ImgView' (logical coords) to restore
-
-    //     // Second, scale it back to 'm_ImgBmp' pixels.
-    //     selectionRst.x /= s.view.zoomFactor;
-    //     selectionRst.y /= s.view.zoomFactor;
-    //     selectionRst.width /= s.view.zoomFactor;
-    //     selectionRst.height /= s.view.zoomFactor;
-
-    //     selectionRst.Inflate(DELTA/2, DELTA/2);
-
-    //     selectionRst.Intersect(wxRect(wxPoint(0, 0), s.m_ImgBmp.value().GetSize()));
-
-    //     // Also expand the scaled area to restore
-    //     int scaledSelectionDelta = static_cast<int>(s.view.zoomFactor * DELTA/2);
-    //     scaledSelectionRst.Inflate(scaledSelectionDelta, scaledSelectionDelta);
-
-    //     // Create the scaled image fragment to restore
-    //     wxBitmap restoredScaled(s.m_ImgBmp.value().GetSubBitmap(selectionRst).ConvertToImage().Scale(
-    //         scaledSelectionRst.GetWidth(), scaledSelectionRst.GetHeight(),
-    //         GetResizeQuality(s.scalingMethod)));
-
-    //     wxMemoryDC dcRestoredScaled(restoredScaled), dcScaled(s.view.bmpScaled.value());
-
-    //     wxPoint destPt = scaledSelectionRst.GetTopLeft();
-    //     destPt.x -= s.view.scaledArea.x * s.view.zoomFactor;
-    //     destPt.y -= s.view.scaledArea.y * s.view.zoomFactor;
-    //     dcScaled.Blit(destPt, restoredScaled.GetSize(),
-    //             &dcRestoredScaled,
-    //             wxPoint(0, 0));
-
-    //     wxRect updateReg(m_ImageView->CalcScrolledPosition(scaledSelectionRst.GetTopLeft()),
-    //                      m_ImageView->CalcScrolledPosition(scaledSelectionRst.GetBottomRight()));
-    //     m_ImageView->RefreshRect(updateReg, false);
-
-
-    //     wxRect prevSelPhys(m_ImageView->CalcScrolledPosition(s.scaledSelection.GetTopLeft()),
-    //                        m_ImageView->CalcScrolledPosition(s.scaledSelection.GetBottomRight()));
-    //     m_ImageView->RefreshRect(wxRect(prevSelPhys.GetLeft(), prevSelPhys.GetTop(), prevSelPhys.GetWidth(), 1),
-    //         false);
-    //     m_ImageView->RefreshRect(wxRect(prevSelPhys.GetLeft(), prevSelPhys.GetBottom(), prevSelPhys.GetWidth(), 1),
-    //         false);
-    //     m_ImageView->RefreshRect(wxRect(prevSelPhys.GetLeft(), prevSelPhys.GetTop(), 1, prevSelPhys.GetHeight()),
-    //         false);
-    //     m_ImageView->RefreshRect(wxRect(prevSelPhys.GetRight(), prevSelPhys.GetTop(), 1, prevSelPhys.GetHeight()),
-    //         false);
-
-
         s.scaledSelection = wxRect(m_ImageView->CalcUnscrolledPosition(m_MouseOps.View.start),
                                    m_ImageView->CalcUnscrolledPosition(m_MouseOps.View.end));
     }
-
-    s.selection = newSelection;
-
-    // // Process the new selection, starting with sharpening
-    // ScheduleProcessing(ProcessingRequest::SHARPENING); //TODO: make this (auto-updating after selection changed) optional
-    m_BackEnd->NewSelection(s.selection);
 }
 
 void c_MainWindow::OnImageViewMouseDragEnd(wxMouseEvent&)
@@ -1134,8 +1046,7 @@ void c_MainWindow::OpenFile(wxFileName path, bool resetSelection)
         if (s.processing.normalization.enabled)
             NormalizeFpImage(newImg, s.processing.normalization.min, s.processing.normalization.max);
 
-        m_BackEnd->FileOpened(std::move(newImg));
-
+        std::optional<wxRect> newSelection;
         if (resetSelection)
         {
             // Set initial selection to the middle 20% of the image
@@ -1150,8 +1061,10 @@ void c_MainWindow::OpenFile(wxFileName path, bool resetSelection)
             s.scaledSelection.width *= s.view.zoomFactor;
             s.scaledSelection.height *= s.view.zoomFactor;
 
-            m_BackEnd->NewSelection(s.selection);
+            newSelection = s.selection;
         }
+
+        m_BackEnd->FileOpened(std::move(newImg), newSelection);
 
         // Histogram histogram;
         // DetermineHistogram(newImg, s.selection, histogram);
@@ -1506,11 +1419,12 @@ void c_MainWindow::StartProcessing()
 void c_MainWindow::OnUpdateLucyRichardsonSettings()
 {
     TransferDataFromWindow();
+    auto& proc = m_CurrentSettings.processing;
+    proc.LucyRichardson.iterations = m_Ctrls.lrIters->GetValue();
+    proc.LucyRichardson.sigma = m_Ctrls.lrSigma->GetValue();
+    proc.LucyRichardson.deringing.enabled = m_Ctrls.lrDeriging->GetValue();
 
-    m_CurrentSettings.processing.LucyRichardson.iterations = m_Ctrls.lrIters->GetValue();
-    m_CurrentSettings.processing.LucyRichardson.sigma = m_Ctrls.lrSigma->GetValue();
-    m_CurrentSettings.processing.LucyRichardson.deringing.enabled = m_Ctrls.lrDeriging->GetValue();
-
+    m_BackEnd->LRSettingsChanged(proc);
     // if (m_CurrentSettings.m_Img)
     //     ScheduleProcessing(ProcessingRequest::SHARPENING);
 }
@@ -1518,12 +1432,14 @@ void c_MainWindow::OnUpdateLucyRichardsonSettings()
 void c_MainWindow::OnUpdateUnsharpMaskingSettings()
 {
     TransferDataFromWindow();
-    m_CurrentSettings.processing.unsharpMasking.sigma = m_Ctrls.unshSigma->GetValue();
-    m_CurrentSettings.processing.unsharpMasking.amountMin = m_Ctrls.unshAmountMin->GetValue();
-    m_CurrentSettings.processing.unsharpMasking.amountMax = m_Ctrls.unshAmountMax->GetValue();
-    m_CurrentSettings.processing.unsharpMasking.threshold = m_Ctrls.unshThreshold->GetValue();
-    m_CurrentSettings.processing.unsharpMasking.width = m_Ctrls.unshWidth->GetValue();
+    auto& proc = m_CurrentSettings.processing;
+    proc.unsharpMasking.sigma = m_Ctrls.unshSigma->GetValue();
+    proc.unsharpMasking.amountMin = m_Ctrls.unshAmountMin->GetValue();
+    proc.unsharpMasking.amountMax = m_Ctrls.unshAmountMax->GetValue();
+    proc.unsharpMasking.threshold = m_Ctrls.unshThreshold->GetValue();
+    proc.unsharpMasking.width = m_Ctrls.unshWidth->GetValue();
 
+    m_BackEnd->UnshMaskSettingsChanged(proc);
     // if (m_CurrentSettings.m_Img)
     //     ScheduleProcessing(ProcessingRequest::UNSHARP_MASKING);
 }
@@ -2278,15 +2194,18 @@ void c_MainWindow::InitControls()
     m_ImageView->GetContentsPanel().Bind(wxEVT_RIGHT_UP,           &c_MainWindow::OnImageViewDragScrollEnd, this);
     m_ImageView->GetContentsPanel().Bind(wxEVT_MOUSEWHEEL,         &c_MainWindow::OnImageViewMouseWheel, this);
 
-    //m_BackEnd = std::make_unique<imppg::backend::c_CpuAndBitmaps>(*m_ImageView);
-    m_BackEnd = imppg::backend::c_OpenGLBackEnd::Create(*m_ImageView);
+    m_BackEnd = std::make_unique<imppg::backend::c_CpuAndBitmaps>(*m_ImageView);
+    //m_BackEnd = imppg::backend::c_OpenGLBackEnd::Create(*m_ImageView);
     // TODO:
     // if (!m_BackEnd)
     // {
 
+    m_BackEnd->NewProcessingSettings(m_CurrentSettings.processing);
+
     m_ImageView->BindScrollCallback([this] { m_BackEnd->ImageViewScrolledOrResized(m_CurrentSettings.view.zoomFactor); });
 
     m_BackEnd->SetPhysicalSelectionGetter([this] { return GetPhysicalSelection(); });
+    m_BackEnd->SetScaledLogicalSelectionGetter([this] { return m_CurrentSettings.scaledSelection; });
     m_BackEnd->SetProcessingCompletedHandler([this] { m_Ctrls.tcrvEditor->SetHistogram(m_BackEnd->GetHistogram()); });
 
     m_AuiMgr.AddPane(m_ImageView,

@@ -608,3 +608,4 @@ void BlurThresholdVicinity(
     for (unsigned row = 0; row < input.GetHeight(); row++)
         memcpy(output.GetRow(row), result.get() + row*input.GetWidth(), input.GetWidth() * sizeof(float));
 }
+

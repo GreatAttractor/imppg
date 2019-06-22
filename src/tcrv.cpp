@@ -31,7 +31,6 @@ const int DEFAULT_LUT_SIZE = 1 << 16;
 c_ToneCurve::c_ToneCurve()
 : m_Smooth(true), m_IsGamma(false), m_Gamma(1.0f)
 {
-    m_LUT.insert(m_LUT.begin(), DEFAULT_LUT_SIZE, 0.0f);
     Reset();
 }
 
@@ -42,9 +41,7 @@ c_ToneCurve::c_ToneCurve(const c_ToneCurve& c)
   m_Smooth(c.m_Smooth),
   m_IsGamma(c.m_IsGamma),
   m_Gamma(c.m_Gamma)
-{
-    m_LUT.insert(m_LUT.begin(), DEFAULT_LUT_SIZE, 0.0f);
-}
+{}
 
 /// Does not copy and does not recalculate LUT contents.
 c_ToneCurve& c_ToneCurve::operator=(const c_ToneCurve& c)
@@ -52,12 +49,10 @@ c_ToneCurve& c_ToneCurve::operator=(const c_ToneCurve& c)
     m_Points = c.m_Points;
     m_Spline = c.m_Spline;
     m_Smooth = c.m_Smooth;
-
-    m_LUT.clear();
-    m_LUT.insert(m_LUT.begin(), DEFAULT_LUT_SIZE, 0.0f);
-
     m_Gamma = c.m_Gamma;
     m_IsGamma = c.m_IsGamma;
+
+    m_LUT = std::nullopt;
 
     return *this;
 }
@@ -206,8 +201,9 @@ int c_ToneCurve::GetIdxOfClosestPoint(
 /// Calculates the 16-bit Look-Up Table for a quick approximated application of the curve
 void c_ToneCurve::RefreshLut()
 {
-    for (size_t i = 0; i < m_LUT.size(); i++)
-        m_LUT[i] = GetPreciseValue(i * 1.0f/(m_LUT.size() - 1));
+    m_LUT = std::vector<float>{};
+    for (size_t i = 0; i < DEFAULT_LUT_SIZE; i++)
+        m_LUT->push_back(GetPreciseValue(i * 1.0f/(DEFAULT_LUT_SIZE - 1)));
 }
 
 /// Applies the tone curve to 'input' using a precise curve value
@@ -332,4 +328,16 @@ void c_ToneCurve::Stretch(float min, float max)
 
     m_Points = newPoints;
     CalculateSpline();
+}
+
+bool c_ToneCurve::IsIdentity() const
+{
+    const bool isFrom0To1 =
+        m_Points.size() == 2 &&
+        m_Points[0].x == 0.0f &&
+        m_Points[0].y == 0.0f &&
+        m_Points[1].x == 1.0f &&
+        m_Points[1].y == 1.0f;
+
+    return isFrom0To1 && (!m_IsGamma || m_Gamma == 1.0f);
 }

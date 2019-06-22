@@ -24,14 +24,16 @@ File description:
 #ifndef IMPPG_TONE_CURVE_H
 #define IMPPG_TONE_CURVE_H
 
+#include <optional>
 #include <vector>
 #include "common.h"
+#include "imppg_assert.h"
 
 /// Represents a tone curve and associated data. NOTE: LUT contents are not copied by copy constructor and assignment operator.
 class c_ToneCurve
 {
     /// Look-up table with pre-calculated values of the curve.
-    std::vector<float> m_LUT;
+    std::optional<std::vector<float>> m_LUT;
 
     typedef std::vector<FloatPoint_t> FloatPointsVector_t;
 
@@ -85,15 +87,20 @@ public:
     bool GetSmooth() const { return m_Smooth; }
     void SetSmooth(bool smooth);
 
-    /// Applies an approximated curve value (one of the pre-calculated values) to 'input'
-    /** LUT is not calculated automatically. Caller must call RefreshLut()
-        after any update to the curve before using this method. */
-    float GetApproximatedValue(
-        float input ///< Value from [0.0f; 1.0f]
-    ) const
+    /// Tone-maps `input` to `output` using approximated tone curve values.
+    /** LUT is not calculated automatically. Caller must call RefreshLut() after any update to the curve before using this method. */
+    void ApplyApproximatedToneCurve(const float input[], float output[], size_t length)
     {
-        //TODO: perform a quicker shift when LUT size is a power of 2
-        return m_LUT[static_cast<int>(input * (m_LUT.size() - 1))];
+        IMPPG_ASSERT(m_LUT.has_value());
+        for (size_t i = 0; i < length; i++)
+            output[i] = (*m_LUT)[static_cast<int>(input[i] * (m_LUT->size() - 1))];
+    }
+
+    /// Tone-maps `input` to `output` using precise tone curve values.
+    void ApplyPreciseToneCurve(const float input[], float output[], size_t length)
+    {
+        for (size_t i = 0; i < length; i++)
+            output[i] = GetPreciseValue(input[i]);
     }
 
     /// Applies the tone curve to 'input' using a precise curve value
@@ -137,6 +144,9 @@ public:
 
     /// Stretches the points to fill the interval [min; max]
     void Stretch(float min, float max);
+
+    /// Returns `true` if the tone curve is an identity map (no impact on the image).
+    bool IsIdentity() const;
 };
 
 #endif

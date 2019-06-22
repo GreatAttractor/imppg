@@ -202,9 +202,9 @@ void c_OpenGLBackEnd::MarkSelection()
     const GLfloat vertexData[] =
     {
         x0, y0,
-        x0 + physSelection.GetWidth(), y0,
-        x0 + physSelection.GetWidth(), y0 + physSelection.GetHeight(),
-        x0, y0 + physSelection.GetHeight()
+        x0 + physSelection.width, y0,
+        x0 + physSelection.width, y0 + physSelection.height,
+        x0, y0 + physSelection.height
     };
     m_VBOs.selectionScaled.SetData(vertexData, sizeof(vertexData), GL_DYNAMIC_DRAW);
 
@@ -249,9 +249,12 @@ void c_OpenGLBackEnd::FillWholeImgVBO()
     m_VBOs.wholeImg.SetData(vertexData, sizeof(vertexData), GL_DYNAMIC_DRAW);
 }
 
-void c_OpenGLBackEnd::FileOpened(c_Image&& img)
+void c_OpenGLBackEnd::FileOpened(c_Image&& img, std::optional<wxRect> newSelection)
 {
     m_Img = std::move(img);
+
+    if (newSelection.has_value())
+        m_Selection = newSelection.value();
 
     FillWholeImgVBO();
 

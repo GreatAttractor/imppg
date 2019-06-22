@@ -32,7 +32,7 @@ File description:
 #include <boost/numeric/ublas/operation.hpp>
 #include <boost/math/special_functions/fpclassify.hpp>
 #include "align_disc.h"
-#include "gauss.h"
+//#include "gauss.h"
 #include "imppg_assert.h"
 
 using namespace boost::numeric::ublas;

@@ -26,35 +26,38 @@ add_executable(imppg WIN32
     src/align_proc.cpp
     src/align_progress.cpp
     src/appconfig.cpp
+
     src/backend/cpu_bmp/cpu_bmp_core.cpp
+    src/backend/cpu_bmp/w_lrdeconv.cpp
+    src/backend/cpu_bmp/w_unshmask.cpp
+    src/backend/cpu_bmp/worker.cpp
+    src/backend/cpu_bmp/w_tcurve.cpp
+
     src/backend/opengl/gl_utils.cpp
     src/backend/opengl/opengl_backend.cpp
-    src/batch.cpp
+
+    src/gauss.cpp
+    src/lrdeconv.cpp
     src/batch_params.cpp
+    src/batch.cpp
     src/bmp.cpp
     src/common.cpp
     src/cursors.cpp
-    src/formats.cpp
     src/fft.cpp
-    src/gauss.cpp
+    src/formats.cpp
     src/image.cpp
     src/logging.cpp
-    src/lrdeconv.cpp
-    src/main.cpp
     src/main_window.cpp
+    src/main.cpp
     src/normalize.cpp
     src/num_ctrl.cpp
     src/scrollable_dlg.cpp
     src/scrolled_view.cpp
     src/settings.cpp
-    src/tcrv.cpp
     src/tcrv_edit.cpp
     src/tcrv_wnd_settings.cpp
+    src/tcrv.cpp
     src/tiff.cpp
-    src/w_lrdeconv.cpp
-    src/w_tcurve.cpp
-    src/w_unshmask.cpp
-    src/worker.cpp
     src/wxapp.cpp
 )
 

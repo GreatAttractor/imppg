@@ -25,10 +25,12 @@ File description:
 #define IMPPG_BACKEND_HEADER
 
 #include <functional>
+#include <optional>
 #include <wx/scrolwin.h>
 
 #include "../common.h"
 #include "../image.h"
+#include "../proc_settings.h"
 
 namespace imppg::backend {
 
@@ -39,7 +41,7 @@ public:
 
     virtual void ImageViewZoomChanged(float zoomFactor) = 0;
 
-    virtual void FileOpened(c_Image&& img) = 0;
+    virtual void FileOpened(c_Image&& img, std::optional<wxRect> newSelection) = 0;
 
     /// Shall start processing of the selected image fragment immediately.
     virtual void NewSelection(
@@ -54,6 +56,8 @@ public:
     ///
     virtual void SetPhysicalSelectionGetter(std::function<wxRect()> getter) = 0;
 
+    virtual void SetScaledLogicalSelectionGetter(std::function<wxRect()> getter) = 0;
+
     /// Returns histogram of current selection before applying tone curve.
     virtual Histogram GetHistogram() = 0;
 
@@ -65,6 +69,14 @@ public:
     /// The back-end may choose to repaint the whole image view instead.
     ///
     virtual void RefreshRect(const wxRect& rect) = 0;
+
+    virtual void NewProcessingSettings(const ProcessingSettings& procSettings) = 0;
+
+    virtual void LRSettingsChanged(const ProcessingSettings& procSettings) = 0;
+
+    virtual void UnshMaskSettingsChanged(const ProcessingSettings& procSettings) = 0;
+
+    virtual void ToneCurveChanged(const ProcessingSettings& procSettings) = 0;
 
     virtual ~IBackEnd() = default;
 };

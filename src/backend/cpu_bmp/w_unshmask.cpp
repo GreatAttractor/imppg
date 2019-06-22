@@ -21,10 +21,12 @@ File description:
     Unsharp masking worker thread implementation.
 */
 
-#include "gauss.h"
-#include "imppg_assert.h"
-#include "lrdeconv.h"
+#include "../../gauss.h"
+#include "../../imppg_assert.h"
+#include "../../lrdeconv.h"
 #include "w_unshmask.h"
+
+namespace imppg::backend {
 
 const float RAW_IMAGE_BLUR_SIGMA = 1.0f;
 
@@ -133,3 +135,5 @@ void c_UnsharpMaskingThread::DoWork()
 
     Clamp(m_Params.output);
 }
+
+} // namespace imppg::backend

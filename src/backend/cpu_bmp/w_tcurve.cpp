@@ -23,8 +23,10 @@ File description:
 
 #include <wx/datetime.h>
 #include "w_tcurve.h"
-#include "logging.h"
+#include "../../logging.h"
+#include "../../ctrl_ids.h"
 
+namespace imppg::backend {
 
 c_ToneCurveThread::c_ToneCurveThread(
     WorkerParameters&& params,
@@ -63,3 +65,5 @@ void c_ToneCurveThread::DoWork()
     }
     Log::Print(wxString::Format("Applying of tone curve finished in %s s\n", (wxDateTime::UNow() - tstart).Format("%S.%l")));
 }
+
+} // namespace imppg::backend

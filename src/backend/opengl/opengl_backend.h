@@ -45,11 +45,13 @@ public:
 
     void ImageViewZoomChanged(float zoomFactor) override;
 
-    void FileOpened(c_Image&& img) override;
+    void FileOpened(c_Image&& img, std::optional<wxRect> newSelection) override;
 
     Histogram GetHistogram() override;
 
     void SetPhysicalSelectionGetter(std::function<wxRect()> getter) override { m_PhysSelectionGetter = getter; }
+
+    void SetScaledLogicalSelectionGetter(std::function<wxRect()>) override {}
 
     void SetProcessingCompletedHandler(std::function<void()> handler) override { m_OnProcessingCompleted = handler; }
 
@@ -58,6 +60,14 @@ public:
     bool MainWindowShown() override;
 
     void RefreshRect(const wxRect&) override { m_ImgView.GetContentsPanel().Refresh(false); }
+
+    void NewProcessingSettings(const ProcessingSettings& /*procSettings*/) override {}
+
+    void LRSettingsChanged(const ProcessingSettings& /*procSettings*/) override {}
+
+    void UnshMaskSettingsChanged(const ProcessingSettings& /*procSettings*/) override {}
+
+    void ToneCurveChanged(const ProcessingSettings& /*procSettings*/) override {}
 
 private:
     c_ScrolledView& m_ImgView;

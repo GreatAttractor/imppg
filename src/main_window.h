@@ -47,15 +47,6 @@ File description:
 #include "tcrv.h"
 #include "worker.h"
 
-enum class ScalingMethod
-{
-    NEAREST = 0,
-    LINEAR,
-    CUBIC,
-
-    NUM_METHODS // This has to be the last entry
-};
-
 class c_MainWindow: public wxFrame
 {
     // Event handlers ----------

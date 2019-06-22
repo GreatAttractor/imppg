@@ -40,6 +40,15 @@ enum class ToneCurveEditorColors
     Last
 };
 
+enum class ScalingMethod
+{
+    NEAREST = 0,
+    LINEAR,
+    CUBIC,
+
+    NUM_METHODS // This has to be the last entry
+};
+
 namespace DefaultColors
 {
 namespace ImPPG
