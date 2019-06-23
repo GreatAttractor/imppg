@@ -117,4 +117,48 @@ c_Program::c_Program(
     }
 }
 
+c_Framebuffer::c_Framebuffer(std::initializer_list<c_Texture*> attachedTextures)
+{
+    GLint maxColorAttachments;
+    glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &maxColorAttachments);
+    IMPPG_ASSERT(static_cast<int>(attachedTextures.size()) <= maxColorAttachments);
+
+    GLint prevBuf;
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &prevBuf);
+
+    glGenFramebuffers(1, &m_Framebuffer.Get());
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_Framebuffer.Get());
+
+    std::vector<GLenum> attachments(attachedTextures.size());
+
+    for (size_t i = 0; i < attachedTextures.size(); i++)
+    {
+        glFramebufferTexture(
+            GL_DRAW_FRAMEBUFFER,
+            GL_COLOR_ATTACHMENT0 + i,
+            static_cast<GLuint>((*(attachedTextures.begin() + i))->Get()),
+            0
+        );
+        attachments[i] = GL_COLOR_ATTACHMENT0 + i;
+    }
+    glDrawBuffers(attachments.size(), attachments.data());
+
+    GLenum fbStatus = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
+    if (fbStatus != GL_FRAMEBUFFER_COMPLETE)
+    {
+        Log::Print("Could not create FBO, status: %d\n", static_cast<int>(fbStatus));
+        throw std::runtime_error("Could not create FBO");
+    }
+
+    m_NumAttachedTextures = attachedTextures.size();
+
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, prevBuf);
+}
+
+void c_Framebuffer::Bind()
+{
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &m_PrevBuf);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_Framebuffer.Get());
+}
+
 } // namespace imppg::backend::gl

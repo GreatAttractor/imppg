@@ -121,6 +121,7 @@ bool c_OpenGLBackEnd::MainWindowShown()
     m_GLShaders.vertex = gl::c_Shader(GL_VERTEX_SHADER, "shaders/vertex.vert");
     m_GLShaders.unprocessedImg = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/unprocessed_image.frag");
     m_GLShaders.selectionOutline = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/selection_outline.frag");
+    m_GLShaders.copy = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/copy.frag");
 
     m_GLPrograms.unprocessedImg = gl::c_Program(
         { &m_GLShaders.unprocessedImg,
@@ -140,6 +141,16 @@ bool c_OpenGLBackEnd::MainWindowShown()
         {}
     );
 
+    m_GLPrograms.copy = gl::c_Program(
+        { &m_GLShaders.copy,
+          &m_GLShaders.vertex },
+        { uniforms::Image,
+          uniforms::ViewportSize,
+          uniforms::ScrollPos,
+          uniforms::ZoomFactor },
+        {}
+    );
+
     const auto clearColor = m_ImgView.GetBackgroundColour();
     glClearColor(
         clearColor.Red()/255.0f,
@@ -153,8 +164,9 @@ bool c_OpenGLBackEnd::MainWindowShown()
 
     m_GLCanvas->Bind(wxEVT_PAINT, &c_OpenGLBackEnd::OnPaint, this);
 
-    m_VBOs.wholeImg = gl::c_Buffer(GL_ARRAY_BUFFER, nullptr, 0, GL_DYNAMIC_DRAW);
+    m_VBOs.wholeImgScaled = gl::c_Buffer(GL_ARRAY_BUFFER, nullptr, 0, GL_DYNAMIC_DRAW);
     m_VBOs.selectionScaled = gl::c_Buffer(GL_ARRAY_BUFFER, nullptr, 0, GL_DYNAMIC_DRAW);
+    m_VBOs.wholeSelection = gl::c_Buffer(GL_ARRAY_BUFFER, nullptr, 0, GL_DYNAMIC_DRAW);
 
     GLuint vao;
     glGenVertexArrays(1, &vao);
@@ -187,14 +199,21 @@ void c_OpenGLBackEnd::OnPaint(wxPaintEvent&)
         );
         prog.SetUniform1f(uniforms::ZoomFactor, m_ZoomFactor);
 
-        m_VBOs.wholeImg.Bind();
+        m_VBOs.wholeImgScaled.Bind();
         SpecifyVertexAttribPointer();
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+        RenderProcessingResults();
 
         MarkSelection();
     }
 
     m_GLCanvas->SwapBuffers();
+}
+
+void c_OpenGLBackEnd::RenderProcessingResults()
+{
+    //
 }
 
 void c_OpenGLBackEnd::MarkSelection()
@@ -239,6 +258,21 @@ void c_OpenGLBackEnd::ImageViewZoomChanged(float zoomFactor)
     FillWholeImgVBO();
 }
 
+void c_OpenGLBackEnd::FillWholeSelectionVBO()
+{
+    const GLfloat width = static_cast<GLfloat>(m_Selection.width);
+    const GLfloat height = static_cast<GLfloat>(m_Selection.height);
+
+    const GLfloat vertexData[] = {
+        0.0f, 0.0f,
+        width, 0.0f,
+        width, height,
+        0.0f, height
+    };
+
+    m_VBOs.wholeSelection.SetData(vertexData, sizeof(vertexData), GL_DYNAMIC_DRAW);    
+}
+
 void c_OpenGLBackEnd::FillWholeImgVBO()
 {
     const GLfloat width = m_Img.value().GetWidth() * m_ZoomFactor;
@@ -251,7 +285,7 @@ void c_OpenGLBackEnd::FillWholeImgVBO()
         0.0f, height
     };
 
-    m_VBOs.wholeImg.SetData(vertexData, sizeof(vertexData), GL_DYNAMIC_DRAW);
+    m_VBOs.wholeImgScaled.SetData(vertexData, sizeof(vertexData), GL_DYNAMIC_DRAW);
 }
 
 void c_OpenGLBackEnd::FileOpened(c_Image&& img, std::optional<wxRect> newSelection)
@@ -261,19 +295,22 @@ void c_OpenGLBackEnd::FileOpened(c_Image&& img, std::optional<wxRect> newSelecti
     if (newSelection.has_value())
     {
         m_Selection = newSelection.value();
-        m_Textures.toneCurve = gl::c_Texture(GL_R32F, m_Selection.width, m_Selection.height, GL_RED, GL_FLOAT, nullptr);
+        m_Textures.toneCurve = gl::c_Texture::CreateMono(m_Selection.width, m_Selection.height, nullptr);
     }
 
     FillWholeImgVBO();
+    FillWholeSelectionVBO();
 
-    m_Textures.originalImg = gl::c_Texture(
-        GL_R32F,
+    /// Only buffers with no row padding are currently accepted.
+    ///
+    /// To change it, use appropriate glPixelStore* calls in `c_Texture` constructor
+    /// before calling `glTexImage2D`.
+    IMPPG_ASSERT(m_Img.value().GetBuffer().GetBytesPerRow() == m_Img.value().GetWidth() * sizeof(float));
+
+    m_Textures.originalImg = gl::c_Texture::CreateMono(
         m_Img.value().GetWidth(),
         m_Img.value().GetHeight(),
-        GL_RED,
-        GL_FLOAT,
-        m_Img.value().GetBuffer().GetRow(0),
-        false
+        m_Img.value().GetBuffer().GetRow(0)
     );
 
     StartProcessing(ProcessingRequest::SHARPENING);
@@ -284,6 +321,7 @@ Histogram c_OpenGLBackEnd::GetHistogram() { return Histogram{}; }
 void c_OpenGLBackEnd::NewSelection(const wxRect& selection)
 {
     m_Selection = selection;
+    FillWholeSelectionVBO();
     StartProcessing(ProcessingRequest::SHARPENING);
 }
 
@@ -296,7 +334,38 @@ void c_OpenGLBackEnd::StartProcessing(ProcessingRequest procRequest)
     if (procRequest == ProcessingRequest::UNSHARP_MASKING && !m_ProcessingOutputValid.sharpening)
         procRequest = ProcessingRequest::SHARPENING;
 
-    //
+    //TESTING ######
+    StartToneMapping();
+}
+
+void c_OpenGLBackEnd::StartToneMapping()
+{
+    auto& tex = m_Textures.toneCurve;
+    if (!tex || tex.GetWidth() != m_Selection.width || tex.GetHeight() != m_Selection.height)
+    {
+        tex = gl::c_Texture::CreateMono(m_Selection.width, m_Selection.height, nullptr);
+        m_FBOs.toneCurve = gl::c_Framebuffer({ &tex });
+    }
+
+    auto& prog = m_GLPrograms.copy;
+    prog.Use();
+
+    const int textureUnit = 0;
+    glActiveTexture(GL_TEXTURE0 + textureUnit);
+    glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.toneCurve.Get());
+    prog.SetUniform1i(uniforms::Image, textureUnit);
+    prog.SetUniform2i(uniforms::ScrollPos, 0, 0);
+    prog.SetUniform2i(
+        uniforms::ViewportSize,
+        m_Textures.toneCurve.GetWidth(),
+        m_Textures.toneCurve.GetHeight()
+    );
+    prog.SetUniform1f(uniforms::ZoomFactor, ZOOM_NONE);
+
+    m_VBOs.wholeSelection.Bind();
+    SpecifyVertexAttribPointer();
+    gl::c_FramebufferBinder binder(m_FBOs.toneCurve);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
 
 } // namespace imppg::backend

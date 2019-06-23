@@ -97,6 +97,7 @@ private:
         gl::c_Shader solidColor;
         gl::c_Shader unprocessedImg;
         gl::c_Shader selectionOutline;
+        gl::c_Shader copy;
 
         gl::c_Shader vertex;
     } m_GLShaders;
@@ -105,12 +106,14 @@ private:
     {
         gl::c_Program unprocessedImg;
         gl::c_Program selectionOutline;
+        gl::c_Program copy;
     } m_GLPrograms;
 
     struct
     {
-        gl::c_Buffer wholeImg;
+        gl::c_Buffer wholeImgScaled; ///< Whole image rectangle (with scaling applied).
         gl::c_Buffer selectionScaled; ///< Selection outline (with scaling applied).
+        gl::c_Buffer wholeSelection; ///< Rectangle at (0,0) with `m_Selection` dimensions.
     } m_VBOs;
 
     struct
@@ -120,6 +123,12 @@ private:
         // Textures below have the same size as `m_Selection`.
         gl::c_Texture toneCurve; ///< Contains results of sharpening, unsharp masking and tone mapping.
     } m_Textures;
+
+    struct
+    {
+        gl::c_Framebuffer toneCurve; ///< FBO to render into `m_Textures.toneCurve`.
+    } m_FBOs;
+    
 
     /// Indicates if a processing step has been completed and corresponding texture
     /// in `m_Textures` contains valid output.
@@ -142,6 +151,12 @@ private:
     void FillWholeImgVBO();
 
     void StartProcessing(ProcessingRequest procRequest);
+
+    void StartToneMapping();
+
+    void FillWholeSelectionVBO();
+
+    void RenderProcessingResults();
 };
 
 } // namespace imppg::backend

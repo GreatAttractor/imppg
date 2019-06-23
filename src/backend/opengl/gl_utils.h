@@ -29,8 +29,7 @@ File description:
 #include <memory>
 #include "../../imppg_assert.h"
 
-namespace imppg::backend::gl
-{
+namespace imppg::backend::gl {
 
 /// Wrapper of an OpenGL object; movable, non-copyable.
 template<void Deleter(GLuint)>
@@ -113,6 +112,8 @@ class c_Texture
 {
     static void Deleter(GLuint obj) { if (obj != 0) glDeleteTextures(1, &obj); }
     c_Wrapper<Deleter> m_Texture;
+    int m_Width{0};
+    int m_Height{0};
 
 public:
 
@@ -125,6 +126,12 @@ public:
     c_Texture(c_Texture&&)                 = default;
     c_Texture& operator=(c_Texture&&)      = default;
 
+    /// Creates a mono rectangle texture.
+    static c_Texture CreateMono(GLsizei width, GLsizei height, const GLvoid* data, bool interpolated = false)
+    {
+        return c_Texture(GL_R32F, width, height, GL_RED, GL_FLOAT, data, interpolated);
+    }
+
     /// Creates a rectangle texture.
     c_Texture(GLint internalFormat, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* data, bool interpolated = false)
     {
@@ -136,6 +143,9 @@ public:
         const GLint interpolation = interpolated ? GL_LINEAR : GL_NEAREST;
         glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, interpolation);
         glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, interpolation);
+
+        m_Width = width;
+        m_Height = height;
     }
 
     /// Creates a buffer texture.
@@ -145,6 +155,9 @@ public:
         glBindTexture(GL_TEXTURE_BUFFER, m_Texture.Get());
         glTexBuffer(GL_TEXTURE_BUFFER, internalFormat, buffer.Get());
     }
+
+    int GetWidth() const { return m_Width; }
+    int GetHeight() const { return m_Height; }
 
     GLuint Get() const { return m_Texture.GetConst(); }
 };
@@ -268,6 +281,58 @@ public:
 
     void Unbind() { glUseProgram(0); }
 };
-}
+
+class c_Framebuffer
+{
+    static void Deleter(GLuint obj) { glDeleteFramebuffers(1, &obj); }
+    c_Wrapper<Deleter> m_Framebuffer;
+
+    size_t m_NumAttachedTextures;
+    GLint m_PrevBuf{0};
+
+public:
+    explicit operator bool() const { return static_cast<bool>(m_Framebuffer); }
+
+    c_Framebuffer() = default;
+
+    c_Framebuffer(const c_Framebuffer&)             = delete;
+    c_Framebuffer& operator=(const c_Framebuffer &) = delete;
+    c_Framebuffer(c_Framebuffer&&)                  = default;
+    c_Framebuffer& operator=(c_Framebuffer&&)       = default;
+
+    c_Framebuffer(std::initializer_list<c_Texture*> attachedTextures);
+
+    void Bind();
+
+    /// Binds the framebuffer that was bound prior to calling `Bind()`.
+    void Unbind()
+    {
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_PrevBuf);
+    }
+};
+
+class c_FramebufferBinder
+{
+    c_Framebuffer &m_FB;
+public:
+
+    c_FramebufferBinder(c_Framebuffer& fb): m_FB(fb)
+    {
+        m_FB.Bind();
+    }
+
+    ~c_FramebufferBinder()
+    {
+        m_FB.Unbind();
+    }
+
+    c_FramebufferBinder()                                      = delete;
+    c_FramebufferBinder(const c_FramebufferBinder&)            = delete;
+    c_FramebufferBinder& operator=(const c_FramebufferBinder&) = delete;
+    c_FramebufferBinder(c_FramebufferBinder&&)                 = delete;
+    c_FramebufferBinder& operator=(c_FramebufferBinder&&)      = delete;
+};
+
+} // namespace imppg::backend::gl
 
 #endif // IMPPG_GL_UTILS_HEADER
