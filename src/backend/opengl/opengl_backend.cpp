@@ -79,7 +79,7 @@ std::unique_ptr<c_OpenGLBackEnd> c_OpenGLBackEnd::Create(c_ScrolledView& imgView
         return std::unique_ptr<c_OpenGLBackEnd>(new c_OpenGLBackEnd(imgView));
 }
 
-void c_OpenGLBackEnd::OnIdle(wxIdleEvent& event)
+void c_OpenGLBackEnd::OnIdle(wxIdleEvent& /*event*/)
 {
     //event.RequestMore();
 }

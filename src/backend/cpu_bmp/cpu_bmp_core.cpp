@@ -580,7 +580,13 @@ void c_CpuAndBitmaps::UpdateSelectionAfterProcessing()
 
 void c_CpuAndBitmaps::StartLRDeconvolution()
 {
-    m_Processing.output.sharpening.img = c_Image(m_Selection.width, m_Selection.height, PixelFormat::PIX_MONO32F);
+    auto& img = m_Processing.output.sharpening.img;
+    if (!img.has_value() ||
+        static_cast<int>(img->GetWidth()) != m_Selection.width ||
+        static_cast<int>(img->GetHeight()) != m_Selection.height)
+    {
+        img = c_Image(m_Selection.width, m_Selection.height, PixelFormat::PIX_MONO32F);
+    }
 
     // invalidate the current output and those of subsequent steps
     m_Processing.output.sharpening.valid = false;
@@ -638,7 +644,13 @@ void c_CpuAndBitmaps::StartLRDeconvolution()
 
 void c_CpuAndBitmaps::StartUnsharpMasking()
 {
-    m_Processing.output.unsharpMasking.img = c_Image(m_Selection.width, m_Selection.height, PixelFormat::PIX_MONO32F);
+    auto& img = m_Processing.output.unsharpMasking.img;
+    if (!img.has_value() ||
+        static_cast<int>(img->GetWidth()) != m_Selection.width ||
+        static_cast<int>(img->GetHeight()) != m_Selection.height)
+    {
+        img = c_Image(m_Selection.width, m_Selection.height, PixelFormat::PIX_MONO32F);
+    }
 
     // invalidate the current output and those of subsequent steps
     m_Processing.output.unsharpMasking.valid = false;
@@ -685,7 +697,13 @@ void c_CpuAndBitmaps::StartUnsharpMasking()
 
 void c_CpuAndBitmaps::StartToneCurve()
 {
-    m_Processing.output.toneCurve.img = c_Image(m_Selection.width, m_Selection.height, PixelFormat::PIX_MONO32F);
+    auto& img = m_Processing.output.toneCurve.img;
+    if (!img.has_value() ||
+        static_cast<int>(img->GetWidth()) != m_Selection.width ||
+        static_cast<int>(img->GetHeight()) != m_Selection.height)
+    {
+        img = c_Image(m_Selection.width, m_Selection.height, PixelFormat::PIX_MONO32F);
+    }
 
     Log::Print("Created tone curve output image\n");
 
