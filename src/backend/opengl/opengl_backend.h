@@ -94,17 +94,24 @@ private:
 
     struct
     {
-        gl::c_Shader solidColor;
-        gl::c_Shader unprocessedImg;
-        gl::c_Shader selectionOutline;
-        gl::c_Shader copy;
+        struct
+        {
+            gl::c_Shader solidColor;
+            gl::c_Shader monoOutput;
+            gl::c_Shader selectionOutline;
+            gl::c_Shader copy;
+        } frag;
 
-        gl::c_Shader vertex;
+        struct
+        {
+            gl::c_Shader vertex;
+            gl::c_Shader copy;
+        } vert;
     } m_GLShaders;
 
     struct
     {
-        gl::c_Program unprocessedImg;
+        gl::c_Program monoOutput;
         gl::c_Program selectionOutline;
         gl::c_Program copy;
     } m_GLPrograms;
@@ -112,8 +119,9 @@ private:
     struct
     {
         gl::c_Buffer wholeImgScaled; ///< Whole image rectangle (with scaling applied).
-        gl::c_Buffer selectionScaled; ///< Selection outline (with scaling applied).
-        gl::c_Buffer wholeSelection; ///< Rectangle at (0,0) with `m_Selection` dimensions.
+        gl::c_Buffer selectionScaled; ///< Selection outline (with scaling applied); changes when new selection is being made.
+        gl::c_Buffer lastChosenSelectionScaled; ///< Selection outline (with scaling applied); corresponds to `m_Selection * m_ZoomFactor`.
+        gl::c_Buffer wholeSelection; ///< Corresponds to `m_Selection`.
     } m_VBOs;
 
     struct
@@ -128,7 +136,7 @@ private:
     {
         gl::c_Framebuffer toneCurve; ///< FBO to render into `m_Textures.toneCurve`.
     } m_FBOs;
-    
+
 
     /// Indicates if a processing step has been completed and corresponding texture
     /// in `m_Textures` contains valid output.
@@ -149,6 +157,8 @@ private:
     void MarkSelection();
 
     void FillWholeImgVBO();
+
+    void FillLastChosenSelectionScaledVBO();
 
     void StartProcessing(ProcessingRequest procRequest);
 
