@@ -49,6 +49,14 @@ enum class ScalingMethod
     NUM_METHODS // This has to be the last entry
 };
 
+enum class ProcessingRequest
+{
+    NONE = 0,
+    SHARPENING,
+    UNSHARP_MASKING,
+    TONE_CURVE
+};
+
 namespace DefaultColors
 {
 namespace ImPPG

@@ -78,6 +78,9 @@ public:
 
     virtual void ToneCurveChanged(const ProcessingSettings& procSettings) = 0;
 
+    /// Shall be called by the main window from "on idle" handler; the back-end may call `event.RequestMore()`.
+    virtual void OnIdle(wxIdleEvent&) {}
+
     virtual ~IBackEnd() = default;
 };
 

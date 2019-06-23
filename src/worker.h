@@ -39,14 +39,6 @@ enum class CompletionStatus
     ABORTED
 };
 
-enum class ProcessingRequest
-{
-    NONE = 0,
-    SHARPENING,
-    UNSHARP_MASKING,
-    TONE_CURVE
-};
-
 // The structure is later encapsulated in wxThreadEvent in a wxAny object,
 // so let us keep its size small (below 16 bytes) for better performance
 struct WorkerEventPayload

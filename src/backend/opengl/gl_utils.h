@@ -129,6 +129,7 @@ public:
     c_Texture(GLint internalFormat, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* data, bool interpolated = false)
     {
         glGenTextures(1, &m_Texture.Get());
+        IMPPG_ASSERT(m_Texture);
         glBindTexture(GL_TEXTURE_RECTANGLE, m_Texture.Get());
         glTexImage2D(GL_TEXTURE_RECTANGLE, 0, internalFormat, width, height, 0, format, type, data);
 

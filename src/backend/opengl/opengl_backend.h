@@ -25,6 +25,7 @@ File description:
 #include <optional>
 #include <memory>
 #include <wx/bitmap.h>
+#include <wx/event.h>
 
 #include "../../common.h"
 #include "../../scrolled_view.h"
@@ -69,10 +70,13 @@ public:
 
     void ToneCurveChanged(const ProcessingSettings& /*procSettings*/) override {}
 
+    void OnIdle(wxIdleEvent& event) override;
+
 private:
     c_ScrolledView& m_ImgView;
 
     wxGLCanvas* m_GLCanvas{nullptr};
+
     wxGLContext* m_GLContext{nullptr};
 
     std::optional<c_Image> m_Img;
@@ -87,17 +91,6 @@ private:
     std::function<wxRect()> m_PhysSelectionGetter;
 
     std::function<void()> m_OnProcessingCompleted;
-
-    c_OpenGLBackEnd(c_ScrolledView& imgView);
-
-    void OnPaint(wxPaintEvent& event);
-
-    /// Propagates `event` received by m_GLCanvas to `m_ImgView`, taking scroll position into account.
-    void PropagateEventToParent(wxMouseEvent& event);
-
-    void MarkSelection();
-
-    void FillWholeImgVBO();
 
     struct
     {
@@ -123,7 +116,32 @@ private:
     struct
     {
         gl::c_Texture originalImg;
+
+        // Textures below have the same size as `m_Selection`.
+        gl::c_Texture toneCurve; ///< Contains results of sharpening, unsharp masking and tone mapping.
     } m_Textures;
+
+    /// Indicates if a processing step has been completed and corresponding texture
+    /// in `m_Textures` contains valid output.
+    struct
+    {
+        bool sharpening{false};
+        bool unshMask{false};
+        bool toneCurve{false};
+    } m_ProcessingOutputValid;
+
+    c_OpenGLBackEnd(c_ScrolledView& imgView);
+
+    void OnPaint(wxPaintEvent& event);
+
+    /// Propagates `event` received by m_GLCanvas to `m_ImgView`.
+    void PropagateEventToParent(wxMouseEvent& event);
+
+    void MarkSelection();
+
+    void FillWholeImgVBO();
+
+    void StartProcessing(ProcessingRequest procRequest);
 };
 
 } // namespace imppg::backend

@@ -374,10 +374,6 @@ void c_CpuAndBitmaps::NewSelection(const wxRect& selection)
 
     m_Selection = selection;
 
-    //TESTING ########
-    if (m_OnProcessingCompleted)
-        m_OnProcessingCompleted();
-
     ScheduleProcessing(ProcessingRequest::SHARPENING);
 }
 
@@ -488,6 +484,9 @@ void c_CpuAndBitmaps::OnProcessingStepCompleted(CompletionStatus status)
 
             // all steps completed, draw the processed fragment
             UpdateSelectionAfterProcessing();
+
+            if (m_OnProcessingCompleted)
+                m_OnProcessingCompleted();
         }
     }
     else if (status == CompletionStatus::ABORTED)

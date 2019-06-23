@@ -79,6 +79,11 @@ std::unique_ptr<c_OpenGLBackEnd> c_OpenGLBackEnd::Create(c_ScrolledView& imgView
         return std::unique_ptr<c_OpenGLBackEnd>(new c_OpenGLBackEnd(imgView));
 }
 
+void c_OpenGLBackEnd::OnIdle(wxIdleEvent& event)
+{
+    //event.RequestMore();
+}
+
 c_OpenGLBackEnd::c_OpenGLBackEnd(c_ScrolledView& imgView)
 : m_ImgView(imgView)
 {
@@ -254,7 +259,10 @@ void c_OpenGLBackEnd::FileOpened(c_Image&& img, std::optional<wxRect> newSelecti
     m_Img = std::move(img);
 
     if (newSelection.has_value())
+    {
         m_Selection = newSelection.value();
+        m_Textures.toneCurve = gl::c_Texture(GL_R32F, m_Selection.width, m_Selection.height, GL_RED, GL_FLOAT, nullptr);
+    }
 
     FillWholeImgVBO();
 
@@ -267,12 +275,28 @@ void c_OpenGLBackEnd::FileOpened(c_Image&& img, std::optional<wxRect> newSelecti
         m_Img.value().GetBuffer().GetRow(0),
         false
     );
-    IMPPG_ASSERT(m_Textures.originalImg);
+
+    StartProcessing(ProcessingRequest::SHARPENING);
 }
 
 Histogram c_OpenGLBackEnd::GetHistogram() { return Histogram{}; }
 
-void c_OpenGLBackEnd::NewSelection(const wxRect& /*selection*/) {}
+void c_OpenGLBackEnd::NewSelection(const wxRect& selection)
+{
+    m_Selection = selection;
+    StartProcessing(ProcessingRequest::SHARPENING);
+}
 
+void c_OpenGLBackEnd::StartProcessing(ProcessingRequest procRequest)
+{
+    // if the previous processing step(s) did not complete, we have to execute it (them) first
+    if (procRequest == ProcessingRequest::TONE_CURVE && !m_ProcessingOutputValid.unshMask)
+        procRequest = ProcessingRequest::UNSHARP_MASKING;
+
+    if (procRequest == ProcessingRequest::UNSHARP_MASKING && !m_ProcessingOutputValid.sharpening)
+        procRequest = ProcessingRequest::SHARPENING;
+
+    //
+}
 
 } // namespace imppg::backend

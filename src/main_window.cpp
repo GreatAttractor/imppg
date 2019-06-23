@@ -669,6 +669,8 @@ c_MainWindow::c_MainWindow()
 
     Show(true);
     m_BackEnd->MainWindowShown();
+
+    Bind(wxEVT_IDLE, [this](wxIdleEvent& event) { m_BackEnd->OnIdle(event); });
 }
 
 void c_MainWindow::OnProcessingStepCompleted(CompletionStatus /*status*/)
@@ -2194,8 +2196,8 @@ void c_MainWindow::InitControls()
     m_ImageView->GetContentsPanel().Bind(wxEVT_RIGHT_UP,           &c_MainWindow::OnImageViewDragScrollEnd, this);
     m_ImageView->GetContentsPanel().Bind(wxEVT_MOUSEWHEEL,         &c_MainWindow::OnImageViewMouseWheel, this);
 
-    m_BackEnd = std::make_unique<imppg::backend::c_CpuAndBitmaps>(*m_ImageView);
-    //m_BackEnd = imppg::backend::c_OpenGLBackEnd::Create(*m_ImageView);
+    //m_BackEnd = std::make_unique<imppg::backend::c_CpuAndBitmaps>(*m_ImageView);
+    m_BackEnd = imppg::backend::c_OpenGLBackEnd::Create(*m_ImageView);
     // TODO:
     // if (!m_BackEnd)
     // {
