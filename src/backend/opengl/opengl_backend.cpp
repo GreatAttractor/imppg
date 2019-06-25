@@ -294,7 +294,7 @@ void c_OpenGLBackEnd::MarkSelection()
 
 void c_OpenGLBackEnd::ImageViewScrolledOrResized(float /*zoomFactor*/)
 {
-    m_GLCanvas->Refresh();
+    m_GLCanvas->Refresh(false);
 }
 
 void c_OpenGLBackEnd::ImageViewZoomChanged(float zoomFactor)
@@ -432,7 +432,8 @@ void c_OpenGLBackEnd::StartToneMapping()
 
     glViewport(0, 0, m_GLCanvas->GetSize().GetWidth(), m_GLCanvas->GetSize().GetHeight());
 
-    m_GLCanvas->Refresh();
+    m_GLCanvas->Refresh(false);
+    m_GLCanvas->Update();
 }
 
 } // namespace imppg::backend
