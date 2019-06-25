@@ -65,19 +65,7 @@ static const int IMPPG_GL_ATTRIBUTES[] =
     0
 };
 
-// static void SpecifyVertexAttribPointer_Position()
-// {
-//     glVertexAttribPointer(
-//         attributes::Position,
-//         2,  // 2 components (x, y) per attribute value
-//         GL_FLOAT,
-//         GL_FALSE,
-//         0,
-//         nullptr
-//     );
-// }
-
-static void SpecifyVertexAttribPointer_PositionAndTexCoord()
+static void SpecifyVertexAttribPointers()
 {
     glVertexAttribPointer(
         attributes::Position,
@@ -227,7 +215,7 @@ void c_OpenGLBackEnd::OnPaint(wxPaintEvent&)
         );
 
         m_VBOs.wholeImgScaled.Bind();
-        SpecifyVertexAttribPointer_PositionAndTexCoord();
+        SpecifyVertexAttribPointers();
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
         RenderProcessingResults();
@@ -256,7 +244,7 @@ void c_OpenGLBackEnd::RenderProcessingResults()
     );
 
     m_VBOs.lastChosenSelectionScaled.Bind();
-    SpecifyVertexAttribPointer_PositionAndTexCoord();
+    SpecifyVertexAttribPointers();
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
 
@@ -288,7 +276,7 @@ void c_OpenGLBackEnd::MarkSelection()
     );
 
     m_VBOs.selectionScaled.Bind();
-    SpecifyVertexAttribPointer_PositionAndTexCoord();
+    SpecifyVertexAttribPointers();
     glDrawArrays(GL_LINE_LOOP, 0, 4);
 }
 
@@ -427,7 +415,7 @@ void c_OpenGLBackEnd::StartToneMapping()
     glActiveTexture(GL_TEXTURE0 + textureUnit);
     glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.originalImg.Get());
     m_VBOs.wholeSelection.Bind();
-    SpecifyVertexAttribPointer_PositionAndTexCoord();
+    SpecifyVertexAttribPointers();
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
     glViewport(0, 0, m_GLCanvas->GetSize().GetWidth(), m_GLCanvas->GetSize().GetHeight());
