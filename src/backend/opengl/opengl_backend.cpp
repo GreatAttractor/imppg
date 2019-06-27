@@ -86,6 +86,17 @@ static void SpecifyVertexAttribPointers()
     );
 }
 
+void c_OpenGLBackEnd::CopyTextureFragment(gl::c_Texture& srcTex, gl::c_Framebuffer& destFBO, gl::c_Buffer& vbo)
+{
+    gl::c_FramebufferBinder binder(destFBO);
+    m_GLPrograms.copy.Use();
+    const int textureUnit = 0;
+    glActiveTexture(GL_TEXTURE0 + textureUnit);
+    glBindTexture(GL_TEXTURE_RECTANGLE, srcTex.Get());
+    vbo.Bind();
+    SpecifyVertexAttribPointers();
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+}
 
 std::unique_ptr<c_OpenGLBackEnd> c_OpenGLBackEnd::Create(c_ScrolledView& imgView)
 {
@@ -406,19 +417,7 @@ void c_OpenGLBackEnd::StartToneMapping()
         m_FBOs.toneCurve = gl::c_Framebuffer({ &tex });
     }
 
-    // copy selected fragment from original image to tone curve output
-    gl::c_FramebufferBinder binder(m_FBOs.toneCurve);
-    glViewport(0, 0, tex.GetWidth(), tex.GetHeight());
-    auto& prog = m_GLPrograms.copy;
-    prog.Use();
-    const int textureUnit = 0;
-    glActiveTexture(GL_TEXTURE0 + textureUnit);
-    glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.originalImg.Get());
-    m_VBOs.wholeSelection.Bind();
-    SpecifyVertexAttribPointers();
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
-    glViewport(0, 0, m_GLCanvas->GetSize().GetWidth(), m_GLCanvas->GetSize().GetHeight());
+    CopyTextureFragment(m_Textures.originalImg, m_FBOs.toneCurve, m_VBOs.wholeSelection);
 
     m_GLCanvas->Refresh(false);
     m_GLCanvas->Update();

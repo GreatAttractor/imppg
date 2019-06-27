@@ -290,6 +290,9 @@ class c_Framebuffer
     size_t m_NumAttachedTextures;
     GLint m_PrevBuf{0};
 
+    int m_Width{0};
+    int m_Height{0};
+
 public:
     explicit operator bool() const { return static_cast<bool>(m_Framebuffer); }
 
@@ -309,21 +312,28 @@ public:
     {
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_PrevBuf);
     }
+
+    int GetWidth() const { return m_Width; }
+    int GetHeight() const { return m_Height; }
 };
 
 class c_FramebufferBinder
 {
-    c_Framebuffer &m_FB;
-public:
+    c_Framebuffer& m_FB;
+    GLint m_PrevViewport[4]{0};
 
+public:
     c_FramebufferBinder(c_Framebuffer& fb): m_FB(fb)
     {
+        glGetIntegerv(GL_VIEWPORT, m_PrevViewport);
         m_FB.Bind();
+        glViewport(0, 0, m_FB.GetWidth(), m_FB.GetHeight());   
     }
 
     ~c_FramebufferBinder()
     {
         m_FB.Unbind();
+        glViewport(m_PrevViewport[0], m_PrevViewport[1], m_PrevViewport[2], m_PrevViewport[3]);
     }
 
     c_FramebufferBinder()                                      = delete;

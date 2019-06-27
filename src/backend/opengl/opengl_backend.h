@@ -121,7 +121,7 @@ private:
         gl::c_Buffer wholeImgScaled; ///< Whole image rectangle (with scaling applied).
         gl::c_Buffer selectionScaled; ///< Selection outline (with scaling applied); changes when new selection is being made.
         gl::c_Buffer lastChosenSelectionScaled; ///< Selection outline (with scaling applied); corresponds to `m_Selection * m_ZoomFactor`.
-        gl::c_Buffer wholeSelection; ///< Corresponds to `m_Selection`.
+        gl::c_Buffer wholeSelection; ///< Vertices specify a full-screen quad, tex. coords correspond to `m_Selection`.
     } m_VBOs;
 
     struct
@@ -167,6 +167,9 @@ private:
     void FillWholeSelectionVBO();
 
     void RenderProcessingResults();
+
+    /// Reads a fragment of `srcTex` given by `vbo` and writes it to `destFBO` (and texture(s) attached to it).
+    void CopyTextureFragment(gl::c_Texture& srcTex, gl::c_Framebuffer& destFBO, gl::c_Buffer& vbo);
 };
 
 } // namespace imppg::backend

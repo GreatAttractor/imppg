@@ -122,6 +122,10 @@ c_Framebuffer::c_Framebuffer(std::initializer_list<c_Texture*> attachedTextures)
     GLint maxColorAttachments;
     glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &maxColorAttachments);
     IMPPG_ASSERT(static_cast<int>(attachedTextures.size()) <= maxColorAttachments);
+    IMPPG_ASSERT(attachedTextures.size() > 0);
+
+    m_Width = (*attachedTextures.begin())->GetWidth();
+    m_Height = (*attachedTextures.begin())->GetHeight();
 
     GLint prevBuf;
     glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &prevBuf);
