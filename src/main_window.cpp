@@ -474,45 +474,6 @@ void c_MainWindow::OnZoomChanged(
     UpdateWindowTitle();
  }
 
-void c_MainWindow::CreateScaledPreview(bool /*eraseBackground*/)
-{
-    // auto& s = m_CurrentSettings;
-    // if (!s.m_ImgBmp)
-    //     return;
-
-    // wxPoint scrollPos = m_ImageView->CalcUnscrolledPosition(wxPoint(0, 0));
-    // wxRect &sarea = s.view.scaledArea;
-    // sarea.SetLeft(scrollPos.x / s.view.zoomFactor);
-    // sarea.SetTop(scrollPos.y / s.view.zoomFactor);
-    // wxSize viewSize = m_ImageView->GetSize();
-    // sarea.SetWidth(viewSize.GetWidth() / s.view.zoomFactor);
-    // sarea.SetHeight(viewSize.GetHeight() / s.view.zoomFactor);
-
-    // // Limit the scaling request area to fit inside m_ImgBmp
-
-    // if (sarea.x < 0)
-    //     sarea.x = 0;
-    // if (sarea.x >= s.m_ImgBmp.value().GetWidth())
-    //     sarea.x = s.m_ImgBmp.value().GetWidth() - 1;
-    // if (sarea.GetRight() >= s.m_ImgBmp.value().GetWidth())
-    //     sarea.SetRight(s.m_ImgBmp.value().GetWidth() - 1);
-
-    // if (sarea.y < 0)
-    //     sarea.y = 0;
-    // if (sarea.y >= s.m_ImgBmp.value().GetHeight())
-    //     sarea.y = s.m_ImgBmp.value().GetHeight() - 1;
-    // if (sarea.GetBottom() >= s.m_ImgBmp.value().GetHeight())
-    //     sarea.SetBottom(s.m_ImgBmp.value().GetHeight() - 1);
-
-    // wxBitmap srcBmp = s.m_ImgBmp.value().GetSubBitmap(sarea);
-    // s.view.bmpScaled = wxBitmap(srcBmp.ConvertToImage().Scale(
-    //     srcBmp.GetWidth() * s.view.zoomFactor,
-    //     srcBmp.GetHeight() * s.view.zoomFactor,
-    //     GetResizeQuality(s.scalingMethod)));
-
-    // m_ImageView->Refresh(eraseBackground);
-}
-
 void c_MainWindow::OnTimer(wxTimerEvent& /*event*/)
 {
     // switch (event.GetId())
@@ -669,6 +630,7 @@ c_MainWindow::c_MainWindow()
 
     Show(true);
     m_BackEnd->MainWindowShown();
+    m_BackEnd->SetScalingMethod(s.scalingMethod);
 
     Bind(wxEVT_IDLE, [this](wxIdleEvent& event) { m_BackEnd->OnIdle(event); });
 }
@@ -1719,17 +1681,17 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent& event)
 
     case ID_ScalingNearest:
         s.scalingMethod = ScalingMethod::NEAREST;
-        CreateScaledPreview(true);
+        m_BackEnd->SetScalingMethod(s.scalingMethod);
         break;
 
     case ID_ScalingLinear:
         s.scalingMethod = ScalingMethod::LINEAR;
-        CreateScaledPreview(true);
+        m_BackEnd->SetScalingMethod(s.scalingMethod);
         break;
 
     case ID_ScalingCubic:
         s.scalingMethod = ScalingMethod::CUBIC;
-        CreateScaledPreview(true);
+        m_BackEnd->SetScalingMethod(s.scalingMethod);
         break;
     }
 }
@@ -2196,8 +2158,8 @@ void c_MainWindow::InitControls()
     m_ImageView->GetContentsPanel().Bind(wxEVT_RIGHT_UP,           &c_MainWindow::OnImageViewDragScrollEnd, this);
     m_ImageView->GetContentsPanel().Bind(wxEVT_MOUSEWHEEL,         &c_MainWindow::OnImageViewMouseWheel, this);
 
-    //m_BackEnd = std::make_unique<imppg::backend::c_CpuAndBitmaps>(*m_ImageView);
-    m_BackEnd = imppg::backend::c_OpenGLBackEnd::Create(*m_ImageView);
+    m_BackEnd = std::make_unique<imppg::backend::c_CpuAndBitmaps>(*m_ImageView);
+    //m_BackEnd = imppg::backend::c_OpenGLBackEnd::Create(*m_ImageView);
     // TODO:
     // if (!m_BackEnd)
     // {

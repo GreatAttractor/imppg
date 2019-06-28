@@ -249,7 +249,7 @@ void c_CpuAndBitmaps::CreateScaledPreview(float zoomFactor)
     m_BmpScaled = wxBitmap(srcBmp.ConvertToImage().Scale(
         srcBmp.GetWidth() * zoomFactor,
         srcBmp.GetHeight() * zoomFactor,
-        wxIMAGE_QUALITY_NEAREST/*TODO! GetResizeQuality(s.scalingMethod)*/)
+        GetResizeQuality(m_ScalingMethod))
     );
 }
 
@@ -340,7 +340,7 @@ void c_CpuAndBitmaps::NewSelection(const wxRect& selection)
         // create the scaled image fragment to restore
         wxBitmap restoredScaled(m_ImgBmp.value().GetSubBitmap(selectionRst).ConvertToImage().Scale(
             scaledSelectionRst.GetWidth(), scaledSelectionRst.GetHeight(),
-            GetResizeQuality(/*s.scalingMethod*/ScalingMethod::NEAREST)));
+            GetResizeQuality(m_ScalingMethod)));
 
         wxMemoryDC dcRestoredScaled(restoredScaled), dcScaled(m_BmpScaled.value());
 
@@ -545,7 +545,7 @@ void c_CpuAndBitmaps::UpdateSelectionAfterProcessing()
 
         wxBitmap updatedAreaScaled(((updatedArea.GetSubBitmap(selectionRst).ConvertToImage().Scale(
             scaledSelectionRst.GetWidth(), scaledSelectionRst.GetHeight(),
-            GetResizeQuality(/*s.scalingMethod*/ScalingMethod::NEAREST)))));
+            GetResizeQuality(m_ScalingMethod)))));
 
         wxMemoryDC dcUpdatedScaled(updatedAreaScaled), dcScaled(m_BmpScaled.value());
 
@@ -845,6 +845,17 @@ void c_CpuAndBitmaps::OnThreadEvent(wxThreadEvent& event)
             }
             break;
         }
+    }
+}
+
+void c_CpuAndBitmaps::SetScalingMethod(ScalingMethod scalingMethod)
+{
+    m_ScalingMethod = scalingMethod;
+    if (m_ZoomFactor != ZOOM_NONE)
+    {
+        CreateScaledPreview(m_ZoomFactor);
+        m_ImgView.GetContentsPanel().Refresh();
+        m_ImgView.GetContentsPanel().Update();
     }
 }
 

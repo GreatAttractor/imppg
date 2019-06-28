@@ -69,6 +69,8 @@ public:
 
     void ToneCurveChanged(const ProcessingSettings& procSettings) override;
 
+    void SetScalingMethod(ScalingMethod scalingMethod) override;
+
 private:
     wxEvtHandler m_EvtHandler;
 
@@ -104,6 +106,8 @@ private:
     } m_ScalingTimer;
 
     ProcessingSettings m_ProcSettings{};
+
+    ScalingMethod m_ScalingMethod{ScalingMethod::LINEAR};
 
     /// Background processing-related variables
     struct

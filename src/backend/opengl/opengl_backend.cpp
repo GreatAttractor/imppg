@@ -423,4 +423,10 @@ void c_OpenGLBackEnd::StartToneMapping()
     m_GLCanvas->Update();
 }
 
+void c_OpenGLBackEnd::SetScalingMethod(ScalingMethod scalingMethod)
+{
+    m_ScalingMethod = scalingMethod;
+    //
+}
+
 } // namespace imppg::backend

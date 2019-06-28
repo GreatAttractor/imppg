@@ -72,6 +72,8 @@ public:
 
     void OnIdle(wxIdleEvent& event) override;
 
+    void SetScalingMethod(ScalingMethod scalingMethod) override;
+
 private:
     c_ScrolledView& m_ImgView;
 
@@ -146,6 +148,8 @@ private:
         bool unshMask{false};
         bool toneCurve{false};
     } m_ProcessingOutputValid;
+
+    ScalingMethod m_ScalingMethod{ScalingMethod::LINEAR};
 
     c_OpenGLBackEnd(c_ScrolledView& imgView);
 

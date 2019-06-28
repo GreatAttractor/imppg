@@ -81,6 +81,8 @@ public:
     /// Shall be called by the main window from "on idle" handler; the back-end may call `event.RequestMore()`.
     virtual void OnIdle(wxIdleEvent&) {}
 
+    virtual void SetScalingMethod(ScalingMethod scalingMethod) = 0;
+
     virtual ~IBackEnd() = default;
 };
 

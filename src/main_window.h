@@ -116,7 +116,6 @@ class c_MainWindow: public wxFrame
             );
     float CalcZoomIn(float currentZoom);
     float CalcZoomOut(float currentZoom);
-    void CreateScaledPreview(bool eraseBackground);
     void SetUnsharpMaskingControlsVisibility();
     /// Adds or moves 'settingsFile' to the beginning of the most recently used list
     /** Also updates m_MruSettingsIdx. */
