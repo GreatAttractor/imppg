@@ -100,6 +100,7 @@ private:
         {
             gl::c_Shader solidColor;
             gl::c_Shader monoOutput;
+            gl::c_Shader monoOutputCubic;
             gl::c_Shader selectionOutline;
             gl::c_Shader copy;
         } frag;
@@ -114,6 +115,7 @@ private:
     struct
     {
         gl::c_Program monoOutput;
+        gl::c_Program monoOutputCubic;
         gl::c_Program selectionOutline;
         gl::c_Program copy;
     } m_GLPrograms;

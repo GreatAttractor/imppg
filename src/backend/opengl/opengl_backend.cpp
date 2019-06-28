@@ -146,6 +146,8 @@ bool c_OpenGLBackEnd::MainWindowShown()
     }
 
     m_GLShaders.frag.monoOutput = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/mono_output.frag");
+    m_GLShaders.frag.monoOutput = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/mono_output.frag");
+    m_GLShaders.frag.monoOutputCubic = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/mono_output_cubic.frag");
     m_GLShaders.frag.selectionOutline = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/selection_outline.frag");
     m_GLShaders.frag.copy = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/copy.frag");
 
@@ -154,6 +156,15 @@ bool c_OpenGLBackEnd::MainWindowShown()
 
     m_GLPrograms.monoOutput = gl::c_Program(
         { &m_GLShaders.frag.monoOutput,
+          &m_GLShaders.vert.vertex },
+        { uniforms::Image,
+          uniforms::ViewportSize,
+          uniforms::ScrollPos },
+        {}
+    );
+
+    m_GLPrograms.monoOutputCubic = gl::c_Program(
+        { &m_GLShaders.frag.monoOutputCubic,
           &m_GLShaders.vert.vertex },
         { uniforms::Image,
           uniforms::ViewportSize,
@@ -210,7 +221,7 @@ void c_OpenGLBackEnd::OnPaint(wxPaintEvent&)
 
     if (m_Img.has_value())
     {
-        auto& prog = m_GLPrograms.monoOutput;
+        auto& prog = (m_ScalingMethod == ScalingMethod::CUBIC) ? m_GLPrograms.monoOutputCubic : m_GLPrograms.monoOutput;
         prog.Use();
 
         const int textureUnit = 0;
@@ -239,7 +250,7 @@ void c_OpenGLBackEnd::OnPaint(wxPaintEvent&)
 
 void c_OpenGLBackEnd::RenderProcessingResults()
 {
-    auto& prog = m_GLPrograms.monoOutput;
+    auto& prog = (m_ScalingMethod == ScalingMethod::CUBIC) ? m_GLPrograms.monoOutputCubic : m_GLPrograms.monoOutput;
     prog.Use();
 
     const int textureUnit = 0;
