@@ -379,7 +379,8 @@ void c_OpenGLBackEnd::FileOpened(c_Image&& img, std::optional<wxRect> newSelecti
     m_Textures.originalImg = gl::c_Texture::CreateMono(
         m_Img.value().GetWidth(),
         m_Img.value().GetHeight(),
-        m_Img.value().GetBuffer().GetRow(0)
+        m_Img.value().GetBuffer().GetRow(0),
+        ScalingMethod::LINEAR == m_ScalingMethod
     );
 
     StartProcessing(ProcessingRequest::SHARPENING);
@@ -413,7 +414,7 @@ void c_OpenGLBackEnd::StartToneMapping()
     auto& tex = m_Textures.toneCurve;
     if (!tex || tex.GetWidth() != m_Selection.width || tex.GetHeight() != m_Selection.height)
     {
-        tex = gl::c_Texture::CreateMono(m_Selection.width, m_Selection.height, nullptr);
+        tex = gl::c_Texture::CreateMono(m_Selection.width, m_Selection.height, nullptr, ScalingMethod::LINEAR == m_ScalingMethod);
         m_FBOs.toneCurve = gl::c_Framebuffer({ &tex });
     }
 
@@ -426,7 +427,11 @@ void c_OpenGLBackEnd::StartToneMapping()
 void c_OpenGLBackEnd::SetScalingMethod(ScalingMethod scalingMethod)
 {
     m_ScalingMethod = scalingMethod;
-    //
+    bool linearInterpolation = (ScalingMethod::LINEAR == m_ScalingMethod);
+    m_Textures.originalImg.SetLinearInterpolation(linearInterpolation);
+    m_Textures.toneCurve.SetLinearInterpolation(linearInterpolation);
+    m_GLCanvas->Refresh();
+    m_GLCanvas->Update();
 }
 
 } // namespace imppg::backend

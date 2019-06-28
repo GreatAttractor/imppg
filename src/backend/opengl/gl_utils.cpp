@@ -165,4 +165,12 @@ void c_Framebuffer::Bind()
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_Framebuffer.Get());
 }
 
+void c_Texture::SetLinearInterpolation(bool enabled)
+{
+    glBindTexture(GL_TEXTURE_RECTANGLE, m_Texture.Get());
+    const GLint interpolation = enabled ? GL_LINEAR : GL_NEAREST;
+    glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, interpolation);
+    glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, interpolation);
+}
+
 } // namespace imppg::backend::gl

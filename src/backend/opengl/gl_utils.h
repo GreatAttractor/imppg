@@ -127,20 +127,20 @@ public:
     c_Texture& operator=(c_Texture&&)      = default;
 
     /// Creates a mono rectangle texture.
-    static c_Texture CreateMono(GLsizei width, GLsizei height, const GLvoid* data, bool interpolated = false)
+    static c_Texture CreateMono(GLsizei width, GLsizei height, const GLvoid* data, bool linearInterpolation = false)
     {
-        return c_Texture(GL_R32F, width, height, GL_RED, GL_FLOAT, data, interpolated);
+        return c_Texture(GL_R32F, width, height, GL_RED, GL_FLOAT, data, linearInterpolation);
     }
 
     /// Creates a rectangle texture.
-    c_Texture(GLint internalFormat, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* data, bool interpolated = false)
+    c_Texture(GLint internalFormat, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* data, bool linearInterpolation = false)
     {
         glGenTextures(1, &m_Texture.Get());
         IMPPG_ASSERT(m_Texture);
         glBindTexture(GL_TEXTURE_RECTANGLE, m_Texture.Get());
         glTexImage2D(GL_TEXTURE_RECTANGLE, 0, internalFormat, width, height, 0, format, type, data);
 
-        const GLint interpolation = interpolated ? GL_LINEAR : GL_NEAREST;
+        const GLint interpolation = linearInterpolation ? GL_LINEAR : GL_NEAREST;
         glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, interpolation);
         glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, interpolation);
 
@@ -155,6 +155,8 @@ public:
         glBindTexture(GL_TEXTURE_BUFFER, m_Texture.Get());
         glTexBuffer(GL_TEXTURE_BUFFER, internalFormat, buffer.Get());
     }
+
+    void SetLinearInterpolation(bool enabled);
 
     int GetWidth() const { return m_Width; }
     int GetHeight() const { return m_Height; }
@@ -327,7 +329,7 @@ public:
     {
         glGetIntegerv(GL_VIEWPORT, m_PrevViewport);
         m_FB.Bind();
-        glViewport(0, 0, m_FB.GetWidth(), m_FB.GetHeight());   
+        glViewport(0, 0, m_FB.GetWidth(), m_FB.GetHeight());
     }
 
     ~c_FramebufferBinder()
