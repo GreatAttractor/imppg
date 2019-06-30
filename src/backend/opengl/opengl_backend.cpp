@@ -42,6 +42,8 @@ namespace uniforms
     const char* Splines = "Splines";
     const char* Image = "Image";
     const char* Smooth = "Smooth";
+    const char* IsGamma = "IsGamma";
+    const char* Gamma = "Gamma";
 }
 
 namespace attributes
@@ -199,7 +201,9 @@ bool c_OpenGLBackEnd::MainWindowShown()
           uniforms::NumPoints,
           uniforms::CurvePoints,
           uniforms::Splines,
-          uniforms::Smooth },
+          uniforms::Smooth,
+          uniforms::IsGamma,
+          uniforms::Gamma },
         {}
     );
 
@@ -455,6 +459,8 @@ void c_OpenGLBackEnd::StartToneMapping()
     prog.SetUniform1i(uniforms::Image, textureUnit);
     prog.SetUniform1i(uniforms::NumPoints, m_ToneCurve.GetNumPoints());
     prog.SetUniform1i(uniforms::Smooth, m_ToneCurve.GetSmooth());
+    prog.SetUniform1i(uniforms::IsGamma, m_ToneCurve.IsGammaMode());
+    prog.SetUniform1f(uniforms::Gamma, m_ToneCurve.GetGamma());
     glUniform2fv(prog.GetUniform(uniforms::CurvePoints), m_ToneCurve.GetNumPoints(), reinterpret_cast<const GLfloat*>(m_ToneCurve.GetPoints().data()));
     glUniform4fv(prog.GetUniform(uniforms::Splines), m_ToneCurve.GetNumPoints() - 1, reinterpret_cast<const GLfloat*>(m_ToneCurve.GetSplines().data()));
 
