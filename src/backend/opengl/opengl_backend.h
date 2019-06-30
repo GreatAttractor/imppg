@@ -68,7 +68,7 @@ public:
 
     void UnshMaskSettingsChanged(const ProcessingSettings& /*procSettings*/) override {}
 
-    void ToneCurveChanged(const ProcessingSettings& /*procSettings*/) override {}
+    void ToneCurveChanged(const ProcessingSettings& procSettings) override;
 
     void OnIdle(wxIdleEvent& event) override;
 
@@ -94,6 +94,8 @@ private:
 
     std::function<void()> m_OnProcessingCompleted;
 
+    c_ToneCurve m_ToneCurve;
+
     struct
     {
         struct
@@ -103,6 +105,7 @@ private:
             gl::c_Shader monoOutputCubic;
             gl::c_Shader selectionOutline;
             gl::c_Shader copy;
+            gl::c_Shader toneCurve;
         } frag;
 
         struct
@@ -118,6 +121,7 @@ private:
         gl::c_Program monoOutputCubic;
         gl::c_Program selectionOutline;
         gl::c_Program copy;
+        gl::c_Program toneCurve;
     } m_GLPrograms;
 
     struct

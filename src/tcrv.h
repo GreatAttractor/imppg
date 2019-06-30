@@ -32,23 +32,23 @@ File description:
 /// Represents a tone curve and associated data. NOTE: LUT contents are not copied by copy constructor and assignment operator.
 class c_ToneCurve
 {
+public:
+    /// Coefficients of a spline. Spline value = a*t^3+b*t^2+c*t+d, where 0<=t<=1.
+    struct SplineParams
+    {
+        float a, b, c, d;
+    };
+
+private:
     /// Look-up table with pre-calculated values of the curve.
     std::optional<std::vector<float>> m_LUT;
 
-    typedef std::vector<FloatPoint_t> FloatPointsVector_t;
-
     /// Collection of curve points(X = curve argument, Y = curve value), sorted by X
-    FloatPointsVector_t m_Points;
-
-    /// Coefficients of a spline. Spline value = a*t^3+b*t^2+c*t+d, where 0<=t<=1
-    typedef struct
-    {
-        float a, b, c, d;
-    } SplineParams_t;
+    std::vector<FloatPoint_t> m_Points;
 
     /// Spline coefficients (Catmull-Rom); i-th element corresponds to the interval [m_Points[i]; m_Points[i+1]]
     /** Number of elements = m_Points.size()-1. */
-    std::vector<SplineParams_t> m_Spline;
+    std::vector<SplineParams> m_Spline;
 
     /// If 'true', control points are interpolated by a Catmull-Rom spline
     bool m_Smooth;
@@ -125,6 +125,10 @@ public:
     {
         return m_Points.size();
     }
+
+    const std::vector<FloatPoint_t>& GetPoints() const { return m_Points; }
+
+    const std::vector<SplineParams>& GetSplines() const { return m_Spline; }
 
     /// Returns 'true' if the curve is defined as output = input^(1/m_Gamma)
     bool IsGammaMode() const { return m_IsGamma; }

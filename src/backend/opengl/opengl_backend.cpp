@@ -37,8 +37,11 @@ namespace uniforms
     const char* ScrollPos = "ScrollPos";
     const char* ViewportSize = "ViewportSize";
     const char* ZoomFactor = "ZoomFactor";
-
+    const char* NumPoints = "NumPoints";
+    const char* CurvePoints = "CurvePoints";
+    const char* Splines = "Splines";
     const char* Image = "Image";
+    const char* Smooth = "Smooth";
 }
 
 namespace attributes
@@ -93,6 +96,7 @@ void c_OpenGLBackEnd::CopyTextureFragment(gl::c_Texture& srcTex, gl::c_Framebuff
     const int textureUnit = 0;
     glActiveTexture(GL_TEXTURE0 + textureUnit);
     glBindTexture(GL_TEXTURE_RECTANGLE, srcTex.Get());
+    m_GLPrograms.copy.SetUniform1i(uniforms::Image, textureUnit);
     vbo.Bind();
     SpecifyVertexAttribPointers();
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
@@ -150,6 +154,7 @@ bool c_OpenGLBackEnd::MainWindowShown()
     m_GLShaders.frag.monoOutputCubic = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/mono_output_cubic.frag");
     m_GLShaders.frag.selectionOutline = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/selection_outline.frag");
     m_GLShaders.frag.copy = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/copy.frag");
+    m_GLShaders.frag.toneCurve = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/tone_curve.frag");
 
     m_GLShaders.vert.vertex = gl::c_Shader(GL_VERTEX_SHADER, "shaders/vertex.vert");
     m_GLShaders.vert.copy = gl::c_Shader(GL_VERTEX_SHADER, "shaders/copy_texture.vert");
@@ -184,6 +189,17 @@ bool c_OpenGLBackEnd::MainWindowShown()
         { &m_GLShaders.frag.copy,
           &m_GLShaders.vert.copy },
         {},
+        {}
+    );
+
+    m_GLPrograms.toneCurve = gl::c_Program(
+        { &m_GLShaders.frag.toneCurve,
+          &m_GLShaders.vert.copy },
+        { uniforms::Image,
+          uniforms::NumPoints,
+          uniforms::CurvePoints,
+          uniforms::Splines,
+          uniforms::Smooth },
         {}
     );
 
@@ -429,7 +445,22 @@ void c_OpenGLBackEnd::StartToneMapping()
         m_FBOs.toneCurve = gl::c_Framebuffer({ &tex });
     }
 
-    CopyTextureFragment(m_Textures.originalImg, m_FBOs.toneCurve, m_VBOs.wholeSelection);
+    gl::c_FramebufferBinder binder(m_FBOs.toneCurve);
+
+    auto& prog = m_GLPrograms.toneCurve;
+    prog.Use();
+    const int textureUnit = 0;
+    glActiveTexture(GL_TEXTURE0 + textureUnit);
+    glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.originalImg.Get());
+    prog.SetUniform1i(uniforms::Image, textureUnit);
+    prog.SetUniform1i(uniforms::NumPoints, m_ToneCurve.GetNumPoints());
+    prog.SetUniform1i(uniforms::Smooth, m_ToneCurve.GetSmooth());
+    glUniform2fv(prog.GetUniform(uniforms::CurvePoints), m_ToneCurve.GetNumPoints(), reinterpret_cast<const GLfloat*>(m_ToneCurve.GetPoints().data()));
+    glUniform4fv(prog.GetUniform(uniforms::Splines), m_ToneCurve.GetNumPoints() - 1, reinterpret_cast<const GLfloat*>(m_ToneCurve.GetSplines().data()));
+
+    m_VBOs.wholeSelection.Bind();
+    SpecifyVertexAttribPointers();
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
     m_GLCanvas->Refresh(false);
     m_GLCanvas->Update();
@@ -443,6 +474,12 @@ void c_OpenGLBackEnd::SetScalingMethod(ScalingMethod scalingMethod)
     m_Textures.toneCurve.SetLinearInterpolation(linearInterpolation);
     m_GLCanvas->Refresh();
     m_GLCanvas->Update();
+}
+
+void c_OpenGLBackEnd::ToneCurveChanged(const ProcessingSettings& procSettings)
+{
+    m_ToneCurve = procSettings.toneCurve;
+    StartToneMapping();
 }
 
 } // namespace imppg::backend

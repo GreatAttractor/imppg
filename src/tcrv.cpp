@@ -114,7 +114,7 @@ void c_ToneCurve::CalculateSpline()
         tan1 *= dx;
         tan2 *= dx;
 
-        SplineParams_t sp;
+        SplineParams sp;
 
         // Treat the first and last intervals specially and use 2-degree (quadratic) curves to avoid inflection points
         if (m_Points.size() > 2 && i == 0)
@@ -250,7 +250,7 @@ float c_ToneCurve::GetPreciseValue(
         {
             float t = (input - m_Points[nextIdx-1].x) / deltaX;
 
-            const SplineParams_t& sp = m_Spline[nextIdx-1];
+            const SplineParams& sp = m_Spline[nextIdx-1];
             result = t*(t*(t * sp.a + sp.b) + sp.c) + sp.d;
         }
     }
@@ -307,7 +307,7 @@ void c_ToneCurve::Invert()
     float xmax = m_Points.front().x,
           xmin = m_Points.back().x;
 
-    FloatPointsVector_t newPoints;
+    std::vector<FloatPoint_t> newPoints;
     for (int i = static_cast<int>(m_Points.size())-1; i >= 0; i--)
         newPoints.push_back(FloatPoint_t(xmin + xmax - m_Points[i].x, m_Points[i].y));
 
@@ -321,7 +321,7 @@ void c_ToneCurve::Stretch(float min, float max)
     float currentMin = m_Points.front().x,
           currentMax = m_Points.back().x;
 
-    FloatPointsVector_t newPoints;
+    std::vector<FloatPoint_t> newPoints;
     for (unsigned i = 0; i < m_Points.size(); i++)
         newPoints.push_back(FloatPoint_t(min + (m_Points[i].x - currentMin) * (max - min) / (currentMax - currentMin),
                 m_Points[i].y));
