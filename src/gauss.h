@@ -24,6 +24,8 @@ File description:
 #ifndef IMPPG_GAUSSIAN_H
 #define IMPPG_GAUSSIAN_H
 
+#include <vector>
+
 /// Calculates a (quarter of) 2D Gaussian kernel; element [0] is the peak (middle)
 void CalculateGaussianKernel(
         float kernel[], ///< Quarter of 2D kernel; element [0] is the middle (peak)
@@ -44,6 +46,15 @@ void GaussianBlur1D(
     float values[], ///< Float vector to blur
     int numValues, ///< Number of elements in 'values'
     float sigma ///< Gaussian sigma
+);
+
+/// Calculates half of a 1D normalized Gaussian kernel.
+///
+/// Returns a vector with `radius` elements. Element [0] is the kernel's middle (highest value).
+///
+std::vector<float> CalculateHalf1DGaussianKernel(
+    int radius, ///< Number of kernel elements; should be at least 3*`sigma`.
+    float sigma ///< Gaussian sigma.
 );
 
 #endif // IMPPG_GAUSSIAN_H

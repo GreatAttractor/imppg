@@ -62,11 +62,11 @@ public:
 
     void RefreshRect(const wxRect&) override { m_ImgView.GetContentsPanel().Refresh(false); }
 
-    void NewProcessingSettings(const ProcessingSettings& /*procSettings*/) override {}
+    void NewProcessingSettings(const ProcessingSettings& procSettings) override;
 
     void LRSettingsChanged(const ProcessingSettings& /*procSettings*/) override {}
 
-    void UnshMaskSettingsChanged(const ProcessingSettings& /*procSettings*/) override {}
+    void UnshMaskSettingsChanged(const ProcessingSettings& procSettings) override;
 
     void ToneCurveChanged(const ProcessingSettings& procSettings) override;
 
@@ -94,7 +94,7 @@ private:
 
     std::function<void()> m_OnProcessingCompleted;
 
-    c_ToneCurve m_ToneCurve;
+    ProcessingSettings m_ProcessingSettings;
 
     struct
     {
@@ -106,6 +106,9 @@ private:
             gl::c_Shader selectionOutline;
             gl::c_Shader copy;
             gl::c_Shader toneCurve;
+            gl::c_Shader gaussianHorz;
+            gl::c_Shader gaussianVert;
+            gl::c_Shader unsharpMask;
         } frag;
 
         struct
@@ -122,6 +125,9 @@ private:
         gl::c_Program selectionOutline;
         gl::c_Program copy;
         gl::c_Program toneCurve;
+        gl::c_Program gaussianHorz;
+        gl::c_Program gaussianVert;
+        gl::c_Program unsharpMask;
     } m_GLPrograms;
 
     struct
@@ -130,6 +136,7 @@ private:
         gl::c_Buffer selectionScaled; ///< Selection outline (with scaling applied); changes when new selection is being made.
         gl::c_Buffer lastChosenSelectionScaled; ///< Selection outline (with scaling applied); corresponds to `m_Selection * m_ZoomFactor`.
         gl::c_Buffer wholeSelection; ///< Vertices specify a full-screen quad, tex. coords correspond to `m_Selection`.
+        gl::c_Buffer wholeSelectionAtZero; ///< Vertices specify a full-screen quad, tex. coords correspond to `m_Selection` positioned at (0, 0).
     } m_VBOs;
 
     struct
@@ -137,17 +144,23 @@ private:
         gl::c_Texture originalImg;
 
         // Textures below have the same size as `m_Selection`.
-        gl::c_Texture toneCurve; ///< Contains results of sharpening, unsharp masking and tone mapping.
+        gl::c_Texture aux;
+        gl::c_Texture gaussianBlur; ///< Result of Gaussian blur of the sharpened image.
+        gl::c_Texture unsharpMask; ///< Result of sharpening and unsharp masking.
+        gl::c_Texture toneCurve; ///< Result of sharpening, unsharp masking and tone mapping.
     } m_Textures;
 
     struct
     {
+        gl::c_Framebuffer gaussianBlur; ///< FBO to render into `m_Textures.gaussianBlur`.
+        gl::c_Framebuffer aux; ///< FBO to render into `m_Textures.aux`.
         gl::c_Framebuffer toneCurve; ///< FBO to render into `m_Textures.toneCurve`.
+        gl::c_Framebuffer unsharpMask; ///< FBO to render into `m_Textures.unsharpMask`.
     } m_FBOs;
 
 
-    /// Indicates if a processing step has been completed and corresponding texture
-    /// in `m_Textures` contains valid output.
+    /// Indicates if all OpenGL commands required for the processing step have been submitted for execution;
+    /// if `true`, any new commands can rely on `m_Textures` containing valid output.
     struct
     {
         bool sharpening{false};
@@ -156,6 +169,9 @@ private:
     } m_ProcessingOutputValid;
 
     ScalingMethod m_ScalingMethod{ScalingMethod::LINEAR};
+
+    std::vector<float> m_LRGaussian; // element [0] = max value
+    std::vector<float> m_UnshMaskGaussian; // element [0] = max value
 
     c_OpenGLBackEnd(c_ScrolledView& imgView);
 
@@ -171,6 +187,8 @@ private:
     void FillLastChosenSelectionScaledVBO();
 
     void StartProcessing(ProcessingRequest procRequest);
+
+    void StartUnsharpMasking();
 
     void StartToneMapping();
 

@@ -89,6 +89,25 @@ void CalculateGaussianKernelProjection(
     }
 }
 
+std::vector<float> CalculateHalf1DGaussianKernel(int radius, float sigma)
+{
+    std::vector<float> kernel(radius);
+    for (int i = 0; i < radius; i++)
+    {
+        kernel[i] = expf(-i*i / (2.0f * sigma * sigma));
+    }
+
+    float sum = kernel[0];
+    for (size_t i = 1; i < kernel.size(); i++)
+        sum += 2 * kernel[i];
+
+    for (float& f: kernel)
+        f /= sum;
+
+    return kernel;
+}
+
+
 /// Applies Gaussian blur to the specified vector
 void GaussianBlur1D(
     float values[], ///< Float vector to blur

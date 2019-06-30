@@ -31,6 +31,8 @@ File description:
 
 constexpr float ZOOM_NONE = 1.0f;
 
+constexpr double MAX_GAUSSIAN_SIGMA = 10.0; // shaders/unsh_mask.frag uses the same value
+
 enum class ToneCurveEditorColors
 {
     ImPPGDefaults = 0,

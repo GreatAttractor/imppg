@@ -630,6 +630,7 @@ c_MainWindow::c_MainWindow()
 
     Show(true);
     m_BackEnd->MainWindowShown();
+    m_BackEnd->NewProcessingSettings(m_CurrentSettings.processing);
     m_BackEnd->SetScalingMethod(s.scalingMethod);
 
     Bind(wxEVT_IDLE, [this](wxIdleEvent& event) { m_BackEnd->OnIdle(event); });
@@ -1404,8 +1405,6 @@ void c_MainWindow::OnUpdateUnsharpMaskingSettings()
     proc.unsharpMasking.width = m_Ctrls.unshWidth->GetValue();
 
     m_BackEnd->UnshMaskSettingsChanged(proc);
-    // if (m_CurrentSettings.m_Img)
-    //     ScheduleProcessing(ProcessingRequest::UNSHARP_MASKING);
 }
 
 float c_MainWindow::CalcZoomIn(float currentZoom)
@@ -1703,7 +1702,7 @@ wxPanel* c_MainWindow::CreateLucyRichardsonControlsPanel(wxWindow* parent)
     wxPanel* result = new wxPanel(parent);
     wxSizer* szTop = new wxBoxSizer(wxVERTICAL);
 
-    szTop->Add(m_Ctrls.lrSigma = new c_NumericalCtrl(result, ID_LucyRichardsonSigma, _("Sigma:"), 0.5, 100.0,
+    szTop->Add(m_Ctrls.lrSigma = new c_NumericalCtrl(result, ID_LucyRichardsonSigma, _("Sigma:"), 0.5, MAX_GAUSSIAN_SIGMA,
         Default::LR_SIGMA, 0.05, 4, 2, 100, true, maxfreq ? 1000/maxfreq : 0),
         0, wxALIGN_CENTER_HORIZONTAL | wxGROW | wxALL, BORDER);
 
@@ -1737,7 +1736,7 @@ wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(wxWindow* parent)
 
     result->Add(m_Ctrls.unshSigma = new c_NumericalCtrl(
         result->GetStaticBox(), ID_UnsharpMaskingSigma,
-        _("Sigma:"), 0.5, 200.0, Default::UNSHMASK_SIGMA, 0.05, 4, 2.0, 100, true, maxfreq ? 1000/maxfreq : 0),
+        _("Sigma:"), 0.5, MAX_GAUSSIAN_SIGMA, Default::UNSHMASK_SIGMA, 0.05, 4, 2.0, 100, true, maxfreq ? 1000/maxfreq : 0),
         0, wxALIGN_CENTER_HORIZONTAL | wxGROW | wxALL, BORDER);
 
     m_Ctrls.unshAmountMin = new c_NumericalCtrl(result->GetStaticBox(), ID_UnsharpMaskingAmountMin,
@@ -2163,8 +2162,6 @@ void c_MainWindow::InitControls()
     // TODO:
     // if (!m_BackEnd)
     // {
-
-    m_BackEnd->NewProcessingSettings(m_CurrentSettings.processing);
 
     m_ImageView->BindScrollCallback([this] { m_BackEnd->ImageViewScrolledOrResized(m_CurrentSettings.view.zoomFactor); });
 

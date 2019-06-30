@@ -26,8 +26,9 @@ File description:
 #include <wx/sizer.h>
 
 #include "../../common.h"
-#include "opengl_backend.h"
+#include "../../gauss.h"
 #include "../../logging.h"
+#include "opengl_backend.h"
 
 namespace imppg::backend
 {
@@ -44,6 +45,12 @@ namespace uniforms
     const char* Smooth = "Smooth";
     const char* IsGamma = "IsGamma";
     const char* Gamma = "Gamma";
+    const char* KernelRadius = "KernelRadius";
+    const char* GaussianKernel = "GaussianKernel";
+    const char* BlurredImage = "BlurredImage";
+    const char* SelectionPos = "SelectionPos";
+    const char* AmountMin = "AmountMin";
+    const char* AmountMax = "AmountMax";
 }
 
 namespace attributes
@@ -157,6 +164,9 @@ bool c_OpenGLBackEnd::MainWindowShown()
     m_GLShaders.frag.selectionOutline = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/selection_outline.frag");
     m_GLShaders.frag.copy = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/copy.frag");
     m_GLShaders.frag.toneCurve = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/tone_curve.frag");
+    m_GLShaders.frag.gaussianHorz = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/gaussian_horz.frag");
+    m_GLShaders.frag.gaussianVert = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/gaussian_vert.frag");
+    m_GLShaders.frag.unsharpMask = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/unsharp_mask.frag");
 
     m_GLShaders.vert.vertex = gl::c_Shader(GL_VERTEX_SHADER, "shaders/vertex.vert");
     m_GLShaders.vert.copy = gl::c_Shader(GL_VERTEX_SHADER, "shaders/copy_texture.vert");
@@ -190,7 +200,7 @@ bool c_OpenGLBackEnd::MainWindowShown()
     m_GLPrograms.copy = gl::c_Program(
         { &m_GLShaders.frag.copy,
           &m_GLShaders.vert.copy },
-        {},
+        { uniforms::Image },
         {}
     );
 
@@ -204,6 +214,34 @@ bool c_OpenGLBackEnd::MainWindowShown()
           uniforms::Smooth,
           uniforms::IsGamma,
           uniforms::Gamma },
+        {}
+    );
+
+    m_GLPrograms.gaussianHorz = gl::c_Program(
+        { &m_GLShaders.frag.gaussianHorz,
+          &m_GLShaders.vert.copy },
+        { uniforms::Image,
+          uniforms::KernelRadius,
+          uniforms::GaussianKernel },
+        {}
+    );
+
+    m_GLPrograms.gaussianVert = gl::c_Program(
+        { &m_GLShaders.frag.gaussianVert,
+          &m_GLShaders.vert.copy },
+        { uniforms::Image,
+          uniforms::KernelRadius,
+          uniforms::GaussianKernel },
+        {}
+    );
+
+    m_GLPrograms.unsharpMask = gl::c_Program(
+        { &m_GLShaders.frag.unsharpMask,
+          &m_GLShaders.vert.copy },
+        { uniforms::Image,
+          uniforms::BlurredImage,
+          uniforms::SelectionPos,
+          uniforms::AmountMax },
         {}
     );
 
@@ -223,6 +261,7 @@ bool c_OpenGLBackEnd::MainWindowShown()
     m_VBOs.wholeImgScaled = gl::c_Buffer(GL_ARRAY_BUFFER, nullptr, 0, GL_DYNAMIC_DRAW);
     m_VBOs.selectionScaled = gl::c_Buffer(GL_ARRAY_BUFFER, nullptr, 0, GL_DYNAMIC_DRAW);
     m_VBOs.wholeSelection = gl::c_Buffer(GL_ARRAY_BUFFER, nullptr, 0, GL_DYNAMIC_DRAW);
+    m_VBOs.wholeSelectionAtZero = gl::c_Buffer(GL_ARRAY_BUFFER, nullptr, 0, GL_DYNAMIC_DRAW);
     m_VBOs.lastChosenSelectionScaled = gl::c_Buffer(GL_ARRAY_BUFFER, nullptr, 0, GL_DYNAMIC_DRAW);
 
     GLuint vao;
@@ -349,6 +388,15 @@ void c_OpenGLBackEnd::FillWholeSelectionVBO()
         -1.0f, 1.0f,     x0, y0 + height
     };
     m_VBOs.wholeSelection.SetData(vertexData, sizeof(vertexData), GL_DYNAMIC_DRAW);
+
+    /// 4 values per vertex: position (a full-screen quad), texture coords
+    const GLfloat vertexDataAtZero[] = {
+        -1.0f, -1.0f,    0, 0,
+        1.0f, -1.0f,     width, 0,
+        1.0f, 1.0f,      width, height,
+        -1.0f, 1.0f,     0, height
+    };
+    m_VBOs.wholeSelectionAtZero.SetData(vertexDataAtZero, sizeof(vertexDataAtZero), GL_DYNAMIC_DRAW);
 }
 
 void c_OpenGLBackEnd::FillLastChosenSelectionScaledVBO()
@@ -436,12 +484,116 @@ void c_OpenGLBackEnd::StartProcessing(ProcessingRequest procRequest)
     if (procRequest == ProcessingRequest::UNSHARP_MASKING && !m_ProcessingOutputValid.sharpening)
         procRequest = ProcessingRequest::SHARPENING;
 
-    //TESTING ######
-    StartToneMapping();
+    switch (procRequest)
+    {
+    case ProcessingRequest::SHARPENING: // TESTING: fall-through
+    case ProcessingRequest::UNSHARP_MASKING:
+        StartUnsharpMasking();
+        break;
+
+    case ProcessingRequest::TONE_CURVE:
+        StartToneMapping();
+        break;
+
+    case ProcessingRequest::NONE: IMPPG_ABORT();
+    }
+}
+
+void c_OpenGLBackEnd::StartUnsharpMasking()
+{
+    m_ProcessingOutputValid.unshMask = false;
+    m_ProcessingOutputValid.toneCurve = false;
+
+    auto& tex = m_Textures.unsharpMask;
+    if (!tex || tex.GetWidth() != m_Selection.width || tex.GetHeight() != m_Selection.height)
+    {
+        tex = gl::c_Texture::CreateMono(m_Selection.width, m_Selection.height, nullptr);
+        m_FBOs.unsharpMask = gl::c_Framebuffer({ &tex });
+    }
+
+    auto& aux = m_Textures.aux;
+    if (!aux || aux.GetWidth() != m_Selection.width || aux.GetHeight() != m_Selection.height)
+    {
+        aux = gl::c_Texture::CreateMono(m_Selection.width, m_Selection.height, nullptr);
+        m_FBOs.aux = gl::c_Framebuffer({ &aux });
+    }
+
+    auto& blurred = m_Textures.gaussianBlur;
+    if (!blurred || blurred.GetWidth() != m_Selection.width || blurred.GetHeight() != m_Selection.height)
+    {
+        blurred = gl::c_Texture::CreateMono(m_Selection.width, m_Selection.height, nullptr);
+        m_FBOs.gaussianBlur = gl::c_Framebuffer({ &blurred });
+    }
+
+    // horizontal convolution: originalImg -> aux
+    {
+        gl::c_FramebufferBinder binder(m_FBOs.aux);
+        m_VBOs.wholeSelection.Bind();
+        SpecifyVertexAttribPointers();
+
+        auto& prog = m_GLPrograms.gaussianHorz;
+        prog.Use();
+        const int textureUnit = 0;
+        glActiveTexture(GL_TEXTURE0 + textureUnit);
+        glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.originalImg.Get());
+        prog.SetUniform1i(uniforms::Image, textureUnit);
+        prog.SetUniform1i(uniforms::KernelRadius, m_UnshMaskGaussian.size());
+        glUniform1fv(prog.GetUniform(uniforms::GaussianKernel), m_UnshMaskGaussian.size(), m_UnshMaskGaussian.data());
+
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    }
+
+    // vertical convolution: aux -> gaussianBlur
+    {
+        gl::c_FramebufferBinder binder(m_FBOs.gaussianBlur);
+        m_VBOs.wholeSelectionAtZero.Bind();
+        SpecifyVertexAttribPointers();
+
+        auto& prog = m_GLPrograms.gaussianVert;
+        prog.Use();
+        const int textureUnit = 0;
+        glActiveTexture(GL_TEXTURE0 + textureUnit);
+        glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.aux.Get());
+        prog.SetUniform1i(uniforms::Image, textureUnit);
+        prog.SetUniform1i(uniforms::KernelRadius, m_UnshMaskGaussian.size());
+        glUniform1fv(prog.GetUniform(uniforms::GaussianKernel), m_UnshMaskGaussian.size(), m_UnshMaskGaussian.data());
+
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    }
+
+    // apply the unsharp mask
+    {
+        gl::c_FramebufferBinder binder(m_FBOs.unsharpMask);
+        m_VBOs.wholeSelection.Bind();
+        SpecifyVertexAttribPointers();
+
+        auto& prog = m_GLPrograms.unsharpMask;
+        prog.Use();
+
+        int textureUnit = 0;
+        glActiveTexture(GL_TEXTURE0 + textureUnit);
+        glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.originalImg.Get());
+        prog.SetUniform1i(uniforms::Image, textureUnit);
+
+        textureUnit++;
+        glActiveTexture(GL_TEXTURE0 + textureUnit);
+        glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.gaussianBlur.Get());
+        prog.SetUniform1i(uniforms::BlurredImage, textureUnit);
+        prog.SetUniform2f(uniforms::SelectionPos, static_cast<GLfloat>(m_Selection.x), static_cast<GLfloat>(m_Selection.y));
+        prog.SetUniform1f(uniforms::AmountMax, m_ProcessingSettings.unsharpMasking.amountMax);
+
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    }
+
+    m_ProcessingOutputValid.unshMask = true;
+
+    StartProcessing(ProcessingRequest::TONE_CURVE);
 }
 
 void c_OpenGLBackEnd::StartToneMapping()
 {
+    m_ProcessingOutputValid.toneCurve = false;
+
     auto& tex = m_Textures.toneCurve;
     if (!tex || tex.GetWidth() != m_Selection.width || tex.GetHeight() != m_Selection.height)
     {
@@ -455,18 +607,21 @@ void c_OpenGLBackEnd::StartToneMapping()
     prog.Use();
     const int textureUnit = 0;
     glActiveTexture(GL_TEXTURE0 + textureUnit);
-    glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.originalImg.Get());
+    glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.unsharpMask.Get());
+    const auto& tcurve = m_ProcessingSettings.toneCurve;
     prog.SetUniform1i(uniforms::Image, textureUnit);
-    prog.SetUniform1i(uniforms::NumPoints, m_ToneCurve.GetNumPoints());
-    prog.SetUniform1i(uniforms::Smooth, m_ToneCurve.GetSmooth());
-    prog.SetUniform1i(uniforms::IsGamma, m_ToneCurve.IsGammaMode());
-    prog.SetUniform1f(uniforms::Gamma, m_ToneCurve.GetGamma());
-    glUniform2fv(prog.GetUniform(uniforms::CurvePoints), m_ToneCurve.GetNumPoints(), reinterpret_cast<const GLfloat*>(m_ToneCurve.GetPoints().data()));
-    glUniform4fv(prog.GetUniform(uniforms::Splines), m_ToneCurve.GetNumPoints() - 1, reinterpret_cast<const GLfloat*>(m_ToneCurve.GetSplines().data()));
+    prog.SetUniform1i(uniforms::NumPoints, tcurve.GetNumPoints());
+    prog.SetUniform1i(uniforms::Smooth, tcurve.GetSmooth());
+    prog.SetUniform1i(uniforms::IsGamma, tcurve.IsGammaMode());
+    prog.SetUniform1f(uniforms::Gamma, tcurve.GetGamma());
+    glUniform2fv(prog.GetUniform(uniforms::CurvePoints), tcurve.GetNumPoints(), reinterpret_cast<const GLfloat*>(tcurve.GetPoints().data()));
+    glUniform4fv(prog.GetUniform(uniforms::Splines), tcurve.GetNumPoints() - 1, reinterpret_cast<const GLfloat*>(tcurve.GetSplines().data()));
 
-    m_VBOs.wholeSelection.Bind();
+    m_VBOs.wholeSelectionAtZero.Bind();
     SpecifyVertexAttribPointers();
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+    m_ProcessingOutputValid.toneCurve = true;
 
     m_GLCanvas->Refresh(false);
     m_GLCanvas->Update();
@@ -484,8 +639,46 @@ void c_OpenGLBackEnd::SetScalingMethod(ScalingMethod scalingMethod)
 
 void c_OpenGLBackEnd::ToneCurveChanged(const ProcessingSettings& procSettings)
 {
-    m_ToneCurve = procSettings.toneCurve;
+    m_ProcessingSettings.toneCurve = procSettings.toneCurve;
     StartToneMapping();
+}
+
+void c_OpenGLBackEnd::UnshMaskSettingsChanged(const ProcessingSettings& procSettings)
+{
+    const bool recalculateUnshMaskGaussian = (m_ProcessingSettings.unsharpMasking.sigma != procSettings.unsharpMasking.sigma);
+    m_ProcessingSettings.unsharpMasking = procSettings.unsharpMasking;
+    if (recalculateUnshMaskGaussian)
+    {
+        m_UnshMaskGaussian = CalculateHalf1DGaussianKernel(
+            static_cast<int>(ceilf(m_ProcessingSettings.unsharpMasking.sigma) * 3),
+            m_ProcessingSettings.unsharpMasking.sigma
+        );
+    }
+
+    StartProcessing(ProcessingRequest::UNSHARP_MASKING);
+}
+
+void c_OpenGLBackEnd::NewProcessingSettings(const ProcessingSettings& procSettings)
+{
+    const bool recalculateLRGaussian = (m_ProcessingSettings.LucyRichardson.sigma != procSettings.LucyRichardson.sigma);
+    const bool recalculateUnshMaskGaussian = (m_ProcessingSettings.unsharpMasking.sigma != procSettings.unsharpMasking.sigma);
+
+    m_ProcessingSettings = procSettings;
+
+    if (recalculateLRGaussian)
+        m_LRGaussian = CalculateHalf1DGaussianKernel(
+            static_cast<int>(ceilf(m_ProcessingSettings.LucyRichardson.sigma) * 3),
+            m_ProcessingSettings.LucyRichardson.sigma
+        );
+
+    if (recalculateUnshMaskGaussian)
+        m_UnshMaskGaussian = CalculateHalf1DGaussianKernel(
+            static_cast<int>(ceilf(m_ProcessingSettings.unsharpMasking.sigma) * 3),
+            m_ProcessingSettings.unsharpMasking.sigma
+        );
+
+    if (m_Img)
+        StartProcessing(ProcessingRequest::SHARPENING);
 }
 
 } // namespace imppg::backend
