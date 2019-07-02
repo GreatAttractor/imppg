@@ -465,7 +465,13 @@ void c_OpenGLBackEnd::FileOpened(c_Image&& img, std::optional<wxRect> newSelecti
     StartProcessing(ProcessingRequest::SHARPENING);
 }
 
-Histogram c_OpenGLBackEnd::GetHistogram() { return Histogram{}; }
+Histogram c_OpenGLBackEnd::GetHistogram()
+{ 
+    if (m_Img)
+        return DetermineHistogram(m_Img.value(), m_Selection);
+    else
+        return Histogram{};
+}
 
 void c_OpenGLBackEnd::NewSelection(const wxRect& selection)
 {

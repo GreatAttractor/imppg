@@ -29,6 +29,8 @@ File description:
 #include <wx/settings.h>
 #include <wx/window.h>
 
+#include "image.h"
+
 constexpr float ZOOM_NONE = 1.0f;
 
 constexpr double MAX_GAUSSIAN_SIGMA = 10.0; // shaders/unsh_mask.frag uses the same value
@@ -161,5 +163,7 @@ struct Histogram
     std::vector<int> values; ///< Histogram values for uniform intervals (bins)
     int maxCount; ///< Highest count among the histogram bins
 };
+
+Histogram DetermineHistogram(const c_Image& img, const wxRect& selection);
 
 #endif //  IMPGG_COMMON_HEADER
