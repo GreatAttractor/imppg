@@ -137,6 +137,10 @@ void c_CpuAndBitmaps::FileOpened(c_Image&& img, std::optional<wxRect> newSelecti
     if (newSelection.has_value())
         m_Selection = newSelection.value();
 
+    m_Processing.output.sharpening.valid = false;
+    m_Processing.output.unsharpMasking.valid = false;
+    m_Processing.output.toneCurve.valid = false;
+
     ScheduleProcessing(ProcessingRequest::SHARPENING);
 }
 
@@ -263,6 +267,7 @@ static Histogram DetermineHistogram(const c_Image& img, const wxRect& selection)
     histogram.minValue = FLT_MAX;
     histogram.maxValue = -FLT_MAX;
 
+    #pragma omp parallel for
     for (int y = 0; y < selection.height; y++)
     {
         const float* row = img.GetRowAs<float>(selection.y + y) + selection.x;
@@ -289,7 +294,14 @@ static Histogram DetermineHistogram(const c_Image& img, const wxRect& selection)
 
 Histogram c_CpuAndBitmaps::GetHistogram()
 {
-    return DetermineHistogram(m_Img.value(), m_Selection);
+    if (!m_Img)
+        return Histogram{};
+
+    const auto& output = m_Processing.output.unsharpMasking;
+    if (output.img.has_value() && output.valid)
+        return DetermineHistogram(output.img.value(), output.img.value().GetImageRect());
+    else
+        return DetermineHistogram(m_Img.value(), m_Selection);
 }
 
 void c_CpuAndBitmaps::NewSelection(const wxRect& selection)

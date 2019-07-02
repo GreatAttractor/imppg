@@ -150,6 +150,8 @@ public:
 
     void ClearToZero(); ///< Clears all pixels to zero value.
 
+    wxRect GetImageRect() const { return wxRect{ 0, 0, static_cast<int>(GetWidth()), static_cast<int>(GetHeight()) }; };
+
     unsigned GetWidth() const { return m_Buffer->GetWidth(); }
     unsigned GetHeight() const { return m_Buffer->GetHeight(); }
     unsigned GetNumPixels() const { return GetWidth() * GetHeight(); }
