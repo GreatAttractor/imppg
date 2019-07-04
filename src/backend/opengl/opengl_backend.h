@@ -94,7 +94,7 @@ private:
 
     std::function<void()> m_OnProcessingCompleted;
 
-    ProcessingSettings m_ProcessingSettings;
+    ProcessingSettings m_ProcessingSettings{};
 
     struct
     {

@@ -317,6 +317,8 @@ public:
 
     int GetWidth() const { return m_Width; }
     int GetHeight() const { return m_Height; }
+
+    GLuint Get() const { return m_Framebuffer.GetConst(); }
 };
 
 class c_FramebufferBinder

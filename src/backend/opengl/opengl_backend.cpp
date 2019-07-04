@@ -466,8 +466,17 @@ void c_OpenGLBackEnd::FileOpened(c_Image&& img, std::optional<wxRect> newSelecti
 }
 
 Histogram c_OpenGLBackEnd::GetHistogram()
-{ 
-    if (m_Img)
+{
+    if (m_ProcessingOutputValid.unshMask)
+    {
+        const auto& tex = m_Textures.unsharpMask;
+        c_Image unshMaskOutputImg(tex.GetWidth(), tex.GetHeight(), PixelFormat::PIX_MONO32F);
+        glBindTexture(GL_TEXTURE_RECTANGLE, tex.Get());
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glGetTexImage(GL_TEXTURE_RECTANGLE, 0, GL_RED, GL_FLOAT, unshMaskOutputImg.GetRow(0));
+        return DetermineHistogram(unshMaskOutputImg, unshMaskOutputImg.GetImageRect());
+    }
+    else if (m_Img)
         return DetermineHistogram(m_Img.value(), m_Selection);
     else
         return Histogram{};
@@ -631,6 +640,9 @@ void c_OpenGLBackEnd::StartToneMapping()
 
     m_GLCanvas->Refresh(false);
     m_GLCanvas->Update();
+
+    if (m_OnProcessingCompleted)
+        m_OnProcessingCompleted();
 }
 
 void c_OpenGLBackEnd::SetScalingMethod(ScalingMethod scalingMethod)

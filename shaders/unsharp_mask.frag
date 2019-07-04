@@ -38,5 +38,7 @@ void main()
     float outputValue = AmountMax * texture(Image, TexCoord).r +
                         (1.0 - AmountMax) * texture(BlurredImage, TexCoord - SelectionPos).r;
 
+    outputValue = clamp(outputValue, 0.0, 1.0);
+
     Color = vec4(outputValue, outputValue, outputValue, 1.0);
 }
