@@ -64,7 +64,7 @@ public:
 
     void NewProcessingSettings(const ProcessingSettings& procSettings) override;
 
-    void LRSettingsChanged(const ProcessingSettings& /*procSettings*/) override {}
+    void LRSettingsChanged(const ProcessingSettings& procSettings) override;
 
     void UnshMaskSettingsChanged(const ProcessingSettings& procSettings) override;
 
@@ -109,25 +109,29 @@ private:
             gl::c_Shader gaussianHorz;
             gl::c_Shader gaussianVert;
             gl::c_Shader unsharpMask;
+            gl::c_Shader divide;
+            gl::c_Shader multiply;
         } frag;
 
         struct
         {
             gl::c_Shader vertex;
-            gl::c_Shader copy;
+            gl::c_Shader passthrough;
         } vert;
     } m_GLShaders;
 
     struct
     {
+        gl::c_Program copy;
         gl::c_Program monoOutput;
         gl::c_Program monoOutputCubic;
         gl::c_Program selectionOutline;
-        gl::c_Program copy;
         gl::c_Program toneCurve;
         gl::c_Program gaussianHorz;
         gl::c_Program gaussianVert;
         gl::c_Program unsharpMask;
+        gl::c_Program multiply;
+        gl::c_Program divide;
     } m_GLPrograms;
 
     struct
@@ -139,23 +143,51 @@ private:
         gl::c_Buffer wholeSelectionAtZero; ///< Vertices specify a full-screen quad, tex. coords correspond to `m_Selection` positioned at (0, 0).
     } m_VBOs;
 
+    /// All textures are GL_TEXTURE_RECTANGLE, GL_RED, GL_FLOAT (single-component 32-bit floating-point).
     struct
     {
         gl::c_Texture originalImg;
 
         // Textures below have the same size as `m_Selection`.
+
         gl::c_Texture aux;
+
+        gl::c_Texture lrSharpened; ///< Result of L-R deconvolution sharpening of the original image.
         gl::c_Texture gaussianBlur; ///< Result of Gaussian blur of the sharpened image.
         gl::c_Texture unsharpMask; ///< Result of sharpening and unsharp masking.
         gl::c_Texture toneCurve; ///< Result of sharpening, unsharp masking and tone mapping.
+
+        /// Lucy-Richardson deconvolution intermediate data.
+        struct
+        {
+            gl::c_Texture original;
+            gl::c_Texture buf1;
+            gl::c_Texture buf2;
+            gl::c_Texture estimateConvolved;
+            gl::c_Texture convolvedDiv;
+            gl::c_Texture convolved2;
+        } LR;
     } m_Textures;
 
+    /// Each FBO renders into the same-named texture from `m_Textures`.
     struct
     {
-        gl::c_Framebuffer gaussianBlur; ///< FBO to render into `m_Textures.gaussianBlur`.
-        gl::c_Framebuffer aux; ///< FBO to render into `m_Textures.aux`.
-        gl::c_Framebuffer toneCurve; ///< FBO to render into `m_Textures.toneCurve`.
-        gl::c_Framebuffer unsharpMask; ///< FBO to render into `m_Textures.unsharpMask`.
+        gl::c_Framebuffer gaussianBlur;
+        gl::c_Framebuffer aux;
+        gl::c_Framebuffer lrSharpened;
+        gl::c_Framebuffer toneCurve;
+        gl::c_Framebuffer unsharpMask;
+
+        struct
+        {
+            gl::c_Framebuffer original;
+            gl::c_Framebuffer buf1;
+            gl::c_Framebuffer original_buf1; ///< Special case: renders to both `original` and `buf1`.
+            gl::c_Framebuffer buf2;
+            gl::c_Framebuffer estimateConvolved;
+            gl::c_Framebuffer convolvedDiv;
+            gl::c_Framebuffer convolved2;
+        } LR;
     } m_FBOs;
 
 
@@ -188,6 +220,8 @@ private:
 
     void StartProcessing(ProcessingRequest procRequest);
 
+    void StartLRDeconvolution();
+
     void StartUnsharpMasking();
 
     void StartToneMapping();
@@ -196,8 +230,17 @@ private:
 
     void RenderProcessingResults();
 
-    /// Reads a fragment of `srcTex` given by `vbo` and writes it to `destFBO` (and texture(s) attached to it).
-    void CopyTextureFragment(gl::c_Texture& srcTex, gl::c_Framebuffer& destFBO, gl::c_Buffer& vbo);
+    /// Convolves `src` with `gaussian` and writes the output to `dest`.
+    ///
+    /// Does not bind VBOs nor activates vertex attribute pointers.
+    ///
+    void GaussianConvolution(gl::c_Texture& src, gl::c_Framebuffer& dest, const std::vector<float>& gaussian);
+
+    /// Does not bind VBOs nor activates vertex attribute pointers.
+    void MultiplyTextures(gl::c_Texture& tex1, gl::c_Texture& tex2, gl::c_Framebuffer& dest);
+
+    /// Does not bind VBOs nor activates vertex attribute pointers.
+    void DivideTextures(gl::c_Texture& tex1, gl::c_Texture& tex2, gl::c_Framebuffer& dest);
 };
 
 } // namespace imppg::backend

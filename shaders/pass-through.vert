@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with ImPPG.  If not, see <http://www.gnu.org/licenses/>.
 
 File description:
-    Vertex shader: copy between textures.
+    Vertex shader: pass-through.
 */
 
 #version 330 core
