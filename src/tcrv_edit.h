@@ -97,7 +97,7 @@ private:
         int draggedPointIdx;
     } m_MouseOps;
 
-    Histogram m_Histogram;
+    Histogram m_Histogram{};
 
     /// 'True' if histogram is displayed using logarithmic scale (values only)
     bool m_LogarithmicHistogram;

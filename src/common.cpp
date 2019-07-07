@@ -47,7 +47,6 @@ Histogram DetermineHistogram(const c_Image& img, const wxRect& selection)
     histogram.minValue = FLT_MAX;
     histogram.maxValue = -FLT_MAX;
 
-    #pragma omp parallel for
     for (int y = 0; y < selection.height; y++)
     {
         const float* row = img.GetRowAs<float>(selection.y + y) + selection.x;
