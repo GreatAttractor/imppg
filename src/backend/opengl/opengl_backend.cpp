@@ -549,10 +549,6 @@ void c_OpenGLBackEnd::StartLRDeconvolution()
 
     needInitOriginalOrBuf1 |= InitTextureAndFBO(m_Textures.LR.original, m_FBOs.LR.original, m_Selection.GetSize());
     needInitOriginalOrBuf1 |= InitTextureAndFBO(m_Textures.LR.buf1, m_FBOs.LR.buf1, m_Selection.GetSize());
-    if (needInitOriginalOrBuf1)
-    {
-        m_FBOs.LR.original_buf1 = gl::c_Framebuffer({ &m_Textures.LR.original, &m_Textures.LR.buf1 });
-    }
     InitTextureAndFBO(m_Textures.LR.buf2, m_FBOs.LR.buf2, m_Selection.GetSize());
     InitTextureAndFBO(m_Textures.LR.estimateConvolved, m_FBOs.LR.estimateConvolved, m_Selection.GetSize());
     InitTextureAndFBO(m_Textures.LR.convolvedDiv, m_FBOs.LR.convolvedDiv, m_Selection.GetSize());
@@ -576,36 +572,39 @@ void c_OpenGLBackEnd::StartLRDeconvolution()
     {
         m_VBOs.wholeSelection.Bind();
         SpecifyVertexAttribPointers();
-        gl::c_FramebufferBinder binder(m_FBOs.LR.original_buf1);
         auto& prog = m_GLPrograms.copy;
         prog.Use();
         const int textureUnit = 0;
         glActiveTexture(GL_TEXTURE0 + textureUnit);
         glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.originalImg.Get());
         prog.SetUniform1i(uniforms::Image, textureUnit);
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+        // Under "AMD PITCAIRN (DRM 2.50.0, 5.1.16-200.fc29.x86_64, LLVM 7.0.1)" renderer (Radeon R370, Fedora 29) cannot attach
+        // the textures `LR.original` and `LR.buf1` to a single FBO and just render once - only the first attachment gets filled.
+        // So we have to render to each separately.
+        {
+            gl::c_FramebufferBinder binder(m_FBOs.LR.original);
+            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+        }
+        {
+            gl::c_FramebufferBinder binder(m_FBOs.LR.buf1);
+            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+        }
     }
-    //----------
 
-    struct TexFbo
-    {
-        gl::c_Texture* tex;
-        gl::c_Framebuffer* fbo;
-    };
-    TexFbo prev{ &m_Textures.LR.buf1, &m_FBOs.LR.buf1 };
-    TexFbo next{ &m_Textures.LR.buf2, &m_FBOs.LR.buf2 };
-
-    //----------
+    // `buf1` and `buf2` are used as ping-pong buffers
+    std::pair<gl::c_Texture*, gl::c_Framebuffer*> prev{ &m_Textures.LR.buf1, &m_FBOs.LR.buf1 },
+                                                  next{ &m_Textures.LR.buf2, &m_FBOs.LR.buf2 };
 
     m_VBOs.wholeSelectionAtZero.Bind();
     SpecifyVertexAttribPointers();
 
     for (int i = 0; i < m_ProcessingSettings.LucyRichardson.iterations; i++)
     {
-        GaussianConvolution(*prev.tex, m_FBOs.LR.estimateConvolved, m_LRGaussian);
+        std::cerr << "iter " << i << std::endl;
+        GaussianConvolution(*prev.first, m_FBOs.LR.estimateConvolved, m_LRGaussian);
         DivideTextures(m_Textures.LR.original, m_Textures.LR.estimateConvolved, m_FBOs.LR.convolvedDiv);
         GaussianConvolution(m_Textures.LR.convolvedDiv, m_FBOs.LR.convolved2, m_LRGaussian);
-        MultiplyTextures(*prev.tex, m_Textures.LR.convolved2, *next.fbo);
+        MultiplyTextures(*prev.first, m_Textures.LR.convolved2, *next.second);
         std::swap(prev, next);
     }
 
@@ -615,13 +614,14 @@ void c_OpenGLBackEnd::StartLRDeconvolution()
         prog.Use();
         const int textureUnit = 0;
         glActiveTexture(GL_TEXTURE0 + textureUnit);
-        glBindTexture(GL_TEXTURE_RECTANGLE, next.tex->Get());
+        glBindTexture(GL_TEXTURE_RECTANGLE, next.first->Get());
         prog.SetUniform1i(uniforms::Image, textureUnit);
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     }
 
-    // //END TESTING ############################
+    //END TESTING ############################
 
+    m_ProcessingOutputValid.sharpening = true;
 
     StartUnsharpMasking();
 }
@@ -660,6 +660,8 @@ void c_OpenGLBackEnd::DivideTextures(gl::c_Texture& tex1, gl::c_Texture& tex2, g
 
 void c_OpenGLBackEnd::GaussianConvolution(gl::c_Texture& src, gl::c_Framebuffer& dest, const std::vector<float>& gaussian)
 {
+    InitTextureAndFBO(m_Textures.aux, m_FBOs.aux, wxSize{src.GetWidth(), src.GetHeight()});
+
     // horizontal convolution: src -> aux
     {
         gl::c_FramebufferBinder binder(m_FBOs.aux);
@@ -695,7 +697,6 @@ void c_OpenGLBackEnd::StartUnsharpMasking()
     m_ProcessingOutputValid.toneCurve = false;
 
     InitTextureAndFBO(m_Textures.unsharpMask, m_FBOs.unsharpMask, m_Selection.GetSize());
-    InitTextureAndFBO(m_Textures.aux, m_FBOs.aux, m_Selection.GetSize());
 
     auto& blurred = m_Textures.gaussianBlur;
     if (!blurred || blurred.GetWidth() != m_Selection.width || blurred.GetHeight() != m_Selection.height)
