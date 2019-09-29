@@ -115,6 +115,14 @@ static struct
         fName.SetName("anim");
         fName.SetExt("bin");
 
+        if (!fName.Exists())
+        {
+            fName.AssignCwd();
+            fName.AppendDir("images");
+            fName.SetName("anim");
+            fName.SetExt("bin");
+        }
+
         wxFileInputStream fstream(fName.GetFullPath());
         if (!fstream.IsOk())
             return false;

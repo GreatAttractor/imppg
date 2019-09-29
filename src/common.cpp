@@ -26,6 +26,14 @@ wxBitmap LoadBitmap(wxString name, bool scale, wxSize scaledSize)
     fName.SetName(name);
     fName.SetExt("png");
 
+    if (!fName.Exists())
+    {
+        fName.AssignCwd();
+        fName.AppendDir("images");
+        fName.SetName(name);
+        fName.SetExt("png");
+    }
+
     wxBitmap result(fName.GetFullPath(), wxBITMAP_TYPE_ANY);
     if (!result.IsOk())
         result = wxBitmap(16, 16); //TODO: show some warning/working path suggestion message
