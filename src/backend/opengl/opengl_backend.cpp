@@ -556,68 +556,70 @@ void c_OpenGLBackEnd::StartLRDeconvolution()
     InitTextureAndFBO(m_Textures.lrSharpened, m_FBOs.lrSharpened, m_Selection.GetSize());
 
     //TESTING: copy input w/out change
-    // gl::c_FramebufferBinder binder(m_FBOs.lrSharpened);
-    // m_VBOs.wholeSelection.Bind();
-    // SpecifyVertexAttribPointers();
-    // auto& prog = m_GLPrograms.copy;
-    // prog.Use();
-    // const int textureUnit = 0;
-    // glActiveTexture(GL_TEXTURE0 + textureUnit);
-    // glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.originalImg.Get());
-    // prog.SetUniform1i(uniforms::Image, textureUnit);
-    // glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    gl::c_FramebufferBinder binder(m_FBOs.lrSharpened);
+    m_VBOs.wholeSelection.Bind();
+    SpecifyVertexAttribPointers();
+    auto& prog = m_GLPrograms.copy;
+    prog.Use();
+    const int textureUnit = 0;
+    glActiveTexture(GL_TEXTURE0 + textureUnit);
+    glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.originalImg.Get());
+    prog.SetUniform1i(uniforms::Image, textureUnit);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+
 
     //TESTING: all iters once ################
 
-    {
-        m_VBOs.wholeSelection.Bind();
-        SpecifyVertexAttribPointers();
-        auto& prog = m_GLPrograms.copy;
-        prog.Use();
-        const int textureUnit = 0;
-        glActiveTexture(GL_TEXTURE0 + textureUnit);
-        glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.originalImg.Get());
-        prog.SetUniform1i(uniforms::Image, textureUnit);
-        // Under "AMD PITCAIRN (DRM 2.50.0, 5.1.16-200.fc29.x86_64, LLVM 7.0.1)" renderer (Radeon R370, Fedora 29) cannot attach
-        // the textures `LR.original` and `LR.buf1` to a single FBO and just render once - only the first attachment gets filled.
-        // So we have to render to each separately.
-        {
-            gl::c_FramebufferBinder binder(m_FBOs.LR.original);
-            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-        }
-        {
-            gl::c_FramebufferBinder binder(m_FBOs.LR.buf1);
-            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-        }
-    }
+    // {
+    //     m_VBOs.wholeSelection.Bind();
+    //     SpecifyVertexAttribPointers();
+    //     auto& prog = m_GLPrograms.copy;
+    //     prog.Use();
+    //     const int textureUnit = 0;
+    //     glActiveTexture(GL_TEXTURE0 + textureUnit);
+    //     glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.originalImg.Get());
+    //     prog.SetUniform1i(uniforms::Image, textureUnit);
+    //     // Under "AMD PITCAIRN (DRM 2.50.0, 5.1.16-200.fc29.x86_64, LLVM 7.0.1)" renderer (Radeon R370, Fedora 29) cannot attach
+    //     // the textures `LR.original` and `LR.buf1` to a single FBO and just render once - only the first attachment gets filled.
+    //     // So we have to render to each separately.
+    //     {
+    //         gl::c_FramebufferBinder binder(m_FBOs.LR.original);
+    //         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    //     }
+    //     {
+    //         gl::c_FramebufferBinder binder(m_FBOs.LR.buf1);
+    //         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    //     }
+    // }
 
-    // `buf1` and `buf2` are used as ping-pong buffers
-    std::pair<gl::c_Texture*, gl::c_Framebuffer*> prev{ &m_Textures.LR.buf1, &m_FBOs.LR.buf1 },
-                                                  next{ &m_Textures.LR.buf2, &m_FBOs.LR.buf2 };
+    // // `buf1` and `buf2` are used as ping-pong buffers
+    // std::pair<gl::c_Texture*, gl::c_Framebuffer*> prev{ &m_Textures.LR.buf1, &m_FBOs.LR.buf1 },
+    //                                               next{ &m_Textures.LR.buf2, &m_FBOs.LR.buf2 };
 
-    m_VBOs.wholeSelectionAtZero.Bind();
-    SpecifyVertexAttribPointers();
+    // m_VBOs.wholeSelectionAtZero.Bind();
+    // SpecifyVertexAttribPointers();
 
-    for (int i = 0; i < m_ProcessingSettings.LucyRichardson.iterations; i++)
-    {
-        std::cerr << "iter " << i << std::endl;
-        GaussianConvolution(*prev.first, m_FBOs.LR.estimateConvolved, m_LRGaussian);
-        DivideTextures(m_Textures.LR.original, m_Textures.LR.estimateConvolved, m_FBOs.LR.convolvedDiv);
-        GaussianConvolution(m_Textures.LR.convolvedDiv, m_FBOs.LR.convolved2, m_LRGaussian);
-        MultiplyTextures(*prev.first, m_Textures.LR.convolved2, *next.second);
-        std::swap(prev, next);
-    }
+    // for (int i = 0; i < m_ProcessingSettings.LucyRichardson.iterations; i++)
+    // {
+    //     std::cerr << "iter " << i << std::endl;
+    //     GaussianConvolution(*prev.first, m_FBOs.LR.estimateConvolved, m_LRGaussian);
+    //     DivideTextures(m_Textures.LR.original, m_Textures.LR.estimateConvolved, m_FBOs.LR.convolvedDiv);
+    //     GaussianConvolution(m_Textures.LR.convolvedDiv, m_FBOs.LR.convolved2, m_LRGaussian);
+    //     MultiplyTextures(*prev.first, m_Textures.LR.convolved2, *next.second);
+    //     std::swap(prev, next);
+    // }
 
-    {
-        gl::c_FramebufferBinder binder(m_FBOs.lrSharpened);
-        auto& prog = m_GLPrograms.copy;
-        prog.Use();
-        const int textureUnit = 0;
-        glActiveTexture(GL_TEXTURE0 + textureUnit);
-        glBindTexture(GL_TEXTURE_RECTANGLE, next.first->Get());
-        prog.SetUniform1i(uniforms::Image, textureUnit);
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-    }
+    // {
+    //     gl::c_FramebufferBinder binder(m_FBOs.lrSharpened);
+    //     auto& prog = m_GLPrograms.copy;
+    //     prog.Use();
+    //     const int textureUnit = 0;
+    //     glActiveTexture(GL_TEXTURE0 + textureUnit);
+    //     glBindTexture(GL_TEXTURE_RECTANGLE, next.first->Get());
+    //     prog.SetUniform1i(uniforms::Image, textureUnit);
+    //     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    // }
 
     //END TESTING ############################
 
