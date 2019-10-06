@@ -527,6 +527,9 @@ void c_OpenGLBackEnd::StartProcessing(ProcessingRequest procRequest)
 }
 
 /// Reinitializes `tex` and `fbo` if their size differs from `size`.
+///
+/// Returns `true` if reinitialization was required.
+//
 static bool InitTextureAndFBO(gl::c_Texture& tex, gl::c_Framebuffer& fbo, const wxSize& size)
 {
     if (!tex || tex.GetWidth() != size.GetWidth() || tex.GetHeight() != size.GetHeight())

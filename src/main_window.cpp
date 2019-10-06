@@ -504,7 +504,7 @@ void c_MainWindow::OnAuiPaneClose(wxAuiManagerEvent& event)
 /// Updates state of menu items and toolbar buttons responsible for toggling the processing panel and tone curve editor
 void c_MainWindow::UpdateToggleControlsState()
 {
-    bool processingPaneShown = m_AuiMgr.GetPane(PaneNames::processing).IsShown();
+    bool processingPaneShown = m_AuiMgr->GetPane(PaneNames::processing).IsShown();
     GetMenuBar()->FindItem(ID_ToggleProcessingPanel)->Check(processingPaneShown);
     GetToolBar()->FindById(ID_ToggleProcessingPanel)->Toggle(processingPaneShown);
 
@@ -1565,8 +1565,8 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent& event)
         break;
 
     case ID_ToggleProcessingPanel:
-        m_AuiMgr.GetPane(PaneNames::processing).Show(!m_AuiMgr.GetPane(PaneNames::processing).IsShown());
-        m_AuiMgr.Update();
+        m_AuiMgr->GetPane(PaneNames::processing).Show(!m_AuiMgr->GetPane(PaneNames::processing).IsShown());
+        m_AuiMgr->Update();
         UpdateToggleControlsState();
         break;
 
@@ -2092,9 +2092,9 @@ void c_MainWindow::InitControls()
     InitStatusBar();
     InitMenu();
 
-    m_AuiMgr.SetManagedWindow(this);
-    if (m_AuiMgr.GetArtProvider()->GetMetric(wxAUI_DOCKART_SASH_SIZE) < 3)
-        m_AuiMgr.GetArtProvider()->SetMetric(wxAUI_DOCKART_SASH_SIZE, 3);
+    m_AuiMgr = new wxAuiManager(this);
+    if (m_AuiMgr->GetArtProvider()->GetMetric(wxAUI_DOCKART_SASH_SIZE) < 3)
+        m_AuiMgr->GetArtProvider()->SetMetric(wxAUI_DOCKART_SASH_SIZE, 3);
 
     wxWindow* processingPanel = CreateProcessingControlsPanel();
 
@@ -2103,7 +2103,7 @@ void c_MainWindow::InitControls()
     if (procPanelSavedWidth != -1)
         procPanelSize.SetWidth(procPanelSavedWidth);
 
-    m_AuiMgr.AddPane(processingPanel,
+    m_AuiMgr->AddPane(processingPanel,
         wxAuiPaneInfo()
         .Name(PaneNames::processing)
         .Caption(wxEmptyString)
@@ -2118,9 +2118,9 @@ void c_MainWindow::InitControls()
         .BestSize(procPanelSize)
         );
 
-    m_AuiMgr.Update();
-    m_AuiMgr.GetPane(PaneNames::processing).MinSize(wxSize(1, 1));
-    m_AuiMgr.Update();
+    m_AuiMgr->Update();
+    m_AuiMgr->GetPane(PaneNames::processing).MinSize(wxSize(1, 1));
+    m_AuiMgr->Update();
 
     wxRect tcrvEditorPos = Configuration::ToneCurveEditorPosSize;
     m_ToneCurveEditorWindow.Create(this, wxID_ANY, _("Tone curve"), tcrvEditorPos.GetTopLeft(), tcrvEditorPos.GetSize(),
@@ -2169,7 +2169,7 @@ void c_MainWindow::InitControls()
     m_BackEnd->SetScaledLogicalSelectionGetter([this] { return m_CurrentSettings.scaledSelection; });
     m_BackEnd->SetProcessingCompletedHandler([this] { m_Ctrls.tcrvEditor->SetHistogram(m_BackEnd->GetHistogram()); });
 
-    m_AuiMgr.AddPane(m_ImageView,
+    m_AuiMgr->AddPane(m_ImageView,
         wxAuiPaneInfo()
         .Name(PaneNames::imageView)
         .Center()
@@ -2180,7 +2180,7 @@ void c_MainWindow::InitControls()
         .PaneBorder(false)
         );
 
-    m_AuiMgr.Update();
+    m_AuiMgr->Update();
 }
 
 void c_MainWindow::OnImageViewSize(wxSizeEvent &event)
@@ -2197,7 +2197,10 @@ void c_MainWindow::OnImageViewSize(wxSizeEvent &event)
 
 c_MainWindow::~c_MainWindow()
 {
-    m_AuiMgr.UnInit();
+    if (m_AuiMgr)
+    {
+        m_AuiMgr->UnInit();
+    }
 }
 
 void c_MainWindow::OnProcessingPanelScrolled(wxScrollWinEvent &event)

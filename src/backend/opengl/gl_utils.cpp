@@ -59,8 +59,9 @@ c_Shader::c_Shader(GLenum type, const char* srcFileName)
     auto [source, srcLength] = ReadTextFile(srcFileName);
     if (!source)
     {
-        Log::Print(wxString::Format("Could not load shader from source file %s", srcFileName));
-        throw std::runtime_error("Could not load shader");
+        const wxString msg = wxString::Format("Could not load shader: %s", srcFileName);
+        Log::Print(msg);
+        throw std::runtime_error(msg);
     }
     else
     {

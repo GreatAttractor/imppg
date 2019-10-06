@@ -39,6 +39,7 @@ class c_MyApp: public wxApp
 
     bool OnInit() override;
     int OnExit() override;
+    void OnUnhandledException() override;
 
 public:
     /// Returns current UI language

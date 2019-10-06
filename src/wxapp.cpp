@@ -24,6 +24,7 @@ File description:
 #include <wx/log.h>
 #include <wx/tooltip.h>
 #include <wx/filename.h>
+#include <wx/msgdlg.h>
 #ifdef __WXMSW__
 #include <wx/sysopt.h>
 #endif
@@ -120,4 +121,15 @@ int c_MyApp::OnExit()
 #endif
 
     return 0;
+}
+
+void c_MyApp::OnUnhandledException()
+{
+    try { throw; }
+    catch(std::runtime_error& exc)
+    {
+        std::cerr << "Runtime error: " << exc.what() << std::endl;
+        wxMessageBox(wxString("Fatal exception:\n\n") + exc.what(), "Error", wxICON_ERROR | wxCLOSE);
+        throw;
+    }
 }
