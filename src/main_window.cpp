@@ -2092,7 +2092,7 @@ void c_MainWindow::InitControls()
     InitStatusBar();
     InitMenu();
 
-    m_AuiMgr = new wxAuiManager(this);
+    m_AuiMgr = std::make_unique<wxAuiManager>(this);
     if (m_AuiMgr->GetArtProvider()->GetMetric(wxAUI_DOCKART_SASH_SIZE) < 3)
         m_AuiMgr->GetArtProvider()->SetMetric(wxAUI_DOCKART_SASH_SIZE, 3);
 

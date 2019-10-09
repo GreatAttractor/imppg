@@ -123,7 +123,7 @@ c_OpenGLBackEnd::c_OpenGLBackEnd(c_ScrolledView& imgView)
     sz->Add(m_GLCanvas, 1, wxGROW);
     imgView.GetContentsPanel().SetSizer(sz);
 
-    m_GLContext = new wxGLContext(m_GLCanvas);
+    m_GLContext = std::make_unique<wxGLContext>(m_GLCanvas);
 
     m_GLCanvas->Bind(wxEVT_SIZE, [this](wxSizeEvent&) { glViewport(0, 0, m_GLCanvas->GetSize().GetWidth(), m_GLCanvas->GetSize().GetHeight()); });
 

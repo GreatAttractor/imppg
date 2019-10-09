@@ -79,7 +79,7 @@ private:
 
     wxGLCanvas* m_GLCanvas{nullptr};
 
-    wxGLContext* m_GLContext{nullptr};
+    std::unique_ptr<wxGLContext> m_GLContext;
 
     std::optional<c_Image> m_Img;
 
