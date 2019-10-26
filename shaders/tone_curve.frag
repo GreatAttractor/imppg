@@ -58,11 +58,13 @@ void main()
     {
         int nextIdx = NumPoints; // index of the first curve point whose X >= inputValue
         for (int i = 0; i < NumPoints; i++)
+        {
             if (CurvePoints[i].x >= inputValue)
             {
                 nextIdx = i;
                 break;
             }
+        }
 
         // if `input` is at or past the last point, return the value at the last point
         if (nextIdx == NumPoints)

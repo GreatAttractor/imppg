@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with ImPPG.  If not, see <http://www.gnu.org/licenses/>.
 
 File description:
-    Fragment shader: perform usharp masking.
+    Fragment shader: perform unsharp masking.
 */
 
 #version 330 core
@@ -36,7 +36,7 @@ uniform vec2 SelectionPos;
 void main()
 {
     float outputValue = AmountMax * texture(Image, TexCoord).r +
-                        (1.0 - AmountMax) * texture(BlurredImage, TexCoord - SelectionPos).r;
+        (1.0 - AmountMax) * texture(BlurredImage, TexCoord - SelectionPos).r;
 
     outputValue = clamp(outputValue, 0.0, 1.0);
 

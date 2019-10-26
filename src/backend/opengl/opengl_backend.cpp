@@ -24,7 +24,9 @@ File description:
 #include <GL/glew.h>
 #include <utility>
 #include <wx/dcclient.h>
+#include <wx/filename.h>
 #include <wx/sizer.h>
+#include <wx/stdpaths.h>
 
 #include "../../common.h"
 #include "../../gauss.h"
@@ -138,6 +140,11 @@ c_OpenGLBackEnd::c_OpenGLBackEnd(c_ScrolledView& imgView)
     m_GLCanvas->Bind(wxEVT_MOUSEWHEEL,         &c_OpenGLBackEnd::PropagateEventToParent, this);
 }
 
+static wxString FromDir(const wxFileName& dir, wxString fname)
+{
+    return wxFileName(dir.GetFullPath(), fname).GetFullPath();
+}
+
 bool c_OpenGLBackEnd::MainWindowShown()
 {
     m_GLCanvas->SetCurrent(*m_GLContext);
@@ -149,17 +156,25 @@ bool c_OpenGLBackEnd::MainWindowShown()
         return false;
     }
 
-    m_GLShaders.frag.monoOutput = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/mono_output.frag");
-    m_GLShaders.frag.monoOutput = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/mono_output.frag");
-    m_GLShaders.frag.monoOutputCubic = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/mono_output_cubic.frag");
-    m_GLShaders.frag.selectionOutline = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/selection_outline.frag");
-    m_GLShaders.frag.copy = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/copy.frag");
-    m_GLShaders.frag.toneCurve = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/tone_curve.frag");
-    m_GLShaders.frag.gaussianHorz = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/gaussian_horz.frag");
-    m_GLShaders.frag.gaussianVert = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/gaussian_vert.frag");
-    m_GLShaders.frag.unsharpMask = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/unsharp_mask.frag");
-    m_GLShaders.frag.divide = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/divide.frag");
-    m_GLShaders.frag.multiply = gl::c_Shader(GL_FRAGMENT_SHADER, "shaders/multiply.frag");
+    auto shaderDir = wxFileName(wxStandardPaths::Get().GetExecutablePath());
+    shaderDir.AppendDir("shaders");
+    if (!shaderDir.Exists())
+    {
+        shaderDir.AssignCwd();
+        shaderDir.AppendDir("shaders");
+    }
+
+    m_GLShaders.frag.monoOutput       = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "mono_output.frag"));
+    m_GLShaders.frag.monoOutput       = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "mono_output.frag"));
+    m_GLShaders.frag.monoOutputCubic  = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "mono_output_cubic.frag"));
+    m_GLShaders.frag.selectionOutline = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "selection_outline.frag"));
+    m_GLShaders.frag.copy             = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "copy.frag"));
+    m_GLShaders.frag.toneCurve        = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "tone_curve.frag"));
+    m_GLShaders.frag.gaussianHorz     = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "gaussian_horz.frag"));
+    m_GLShaders.frag.gaussianVert     = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "gaussian_vert.frag"));
+    m_GLShaders.frag.unsharpMask      = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "unsharp_mask.frag"));
+    m_GLShaders.frag.divide           = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "divide.frag"));
+    m_GLShaders.frag.multiply         = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "multiply.frag"));
 
     m_GLShaders.vert.vertex = gl::c_Shader(GL_VERTEX_SHADER, "shaders/vertex.vert");
     m_GLShaders.vert.passthrough = gl::c_Shader(GL_VERTEX_SHADER, "shaders/pass-through.vert");
