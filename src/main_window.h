@@ -125,7 +125,7 @@ class c_MainWindow: public wxFrame
     void IndicateSettingsModified();
     wxRect GetPhysicalSelection() const; ///< Returns current selection in physical `m_ImageView` coords.
 
-    std::unique_ptr<wxAuiManager> m_AuiMgr;
+    wxAuiManager* m_AuiMgr{nullptr};
     c_ScrolledView* m_ImageView{nullptr}; ///< Displays 'm_ImgBmp' or 'm_ImgBmpScaled' (i.e. the current image)
     wxFrame m_ToneCurveEditorWindow;
     wxString m_LastChosenSettingsFileName;
