@@ -100,7 +100,6 @@ private:
     {
         struct
         {
-            gl::c_Shader solidColor;
             gl::c_Shader monoOutput;
             gl::c_Shader monoOutputCubic;
             gl::c_Shader selectionOutline;
@@ -182,7 +181,7 @@ private:
         {
             gl::c_Framebuffer original;
             gl::c_Framebuffer buf1;
-            gl::c_Framebuffer original_buf1; ///< Special case: renders to both `original` and `buf1`.
+            //TODO: REMOVE   gl::c_Framebuffer original_buf1; ///< Special case: renders to both `original` and `buf1`.
             gl::c_Framebuffer buf2;
             gl::c_Framebuffer estimateConvolved;
             gl::c_Framebuffer convolvedDiv;

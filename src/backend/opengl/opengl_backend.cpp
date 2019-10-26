@@ -165,7 +165,6 @@ bool c_OpenGLBackEnd::MainWindowShown()
     }
 
     m_GLShaders.frag.monoOutput       = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "mono_output.frag"));
-    m_GLShaders.frag.monoOutput       = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "mono_output.frag"));
     m_GLShaders.frag.monoOutputCubic  = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "mono_output_cubic.frag"));
     m_GLShaders.frag.selectionOutline = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "selection_outline.frag"));
     m_GLShaders.frag.copy             = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "copy.frag"));
@@ -176,8 +175,8 @@ bool c_OpenGLBackEnd::MainWindowShown()
     m_GLShaders.frag.divide           = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "divide.frag"));
     m_GLShaders.frag.multiply         = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "multiply.frag"));
 
-    m_GLShaders.vert.vertex = gl::c_Shader(GL_VERTEX_SHADER, "shaders/vertex.vert");
-    m_GLShaders.vert.passthrough = gl::c_Shader(GL_VERTEX_SHADER, "shaders/pass-through.vert");
+    m_GLShaders.vert.vertex      = gl::c_Shader(GL_VERTEX_SHADER, FromDir(shaderDir, "vertex.vert"));
+    m_GLShaders.vert.passthrough = gl::c_Shader(GL_VERTEX_SHADER, FromDir(shaderDir, "pass-through.vert"));
 
     m_GLPrograms.copy = gl::c_Program(
         { &m_GLShaders.frag.copy,
@@ -248,7 +247,6 @@ bool c_OpenGLBackEnd::MainWindowShown()
           &m_GLShaders.vert.passthrough },
         { uniforms::Image,
           uniforms::BlurredImage,
-          uniforms::SelectionPos,
           uniforms::AmountMax },
         {}
     );
@@ -563,83 +561,66 @@ void c_OpenGLBackEnd::StartLRDeconvolution()
     m_ProcessingOutputValid.unshMask = false;
     m_ProcessingOutputValid.toneCurve = false;
 
-    bool needInitOriginalOrBuf1 = false;
-
-    needInitOriginalOrBuf1 |= InitTextureAndFBO(m_Textures.LR.original, m_FBOs.LR.original, m_Selection.GetSize());
-    needInitOriginalOrBuf1 |= InitTextureAndFBO(m_Textures.LR.buf1, m_FBOs.LR.buf1, m_Selection.GetSize());
+    InitTextureAndFBO(m_Textures.LR.original, m_FBOs.LR.original, m_Selection.GetSize());
+    InitTextureAndFBO(m_Textures.LR.buf1, m_FBOs.LR.buf1, m_Selection.GetSize());
     InitTextureAndFBO(m_Textures.LR.buf2, m_FBOs.LR.buf2, m_Selection.GetSize());
     InitTextureAndFBO(m_Textures.LR.estimateConvolved, m_FBOs.LR.estimateConvolved, m_Selection.GetSize());
     InitTextureAndFBO(m_Textures.LR.convolvedDiv, m_FBOs.LR.convolvedDiv, m_Selection.GetSize());
     InitTextureAndFBO(m_Textures.LR.convolved2, m_FBOs.LR.convolved2, m_Selection.GetSize());
     InitTextureAndFBO(m_Textures.lrSharpened, m_FBOs.lrSharpened, m_Selection.GetSize());
 
-    //TESTING: copy input w/out change
-    gl::c_FramebufferBinder binder(m_FBOs.lrSharpened);
-    m_VBOs.wholeSelection.Bind();
+    //TESTING: all iters at once ################
+
+    {
+        m_VBOs.wholeSelection.Bind();
+        SpecifyVertexAttribPointers();
+        auto& prog = m_GLPrograms.copy;
+        prog.Use();
+        const int textureUnit = 0;
+        glActiveTexture(GL_TEXTURE0 + textureUnit);
+        glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.originalImg.Get());
+        prog.SetUniform1i(uniforms::Image, textureUnit);
+        // Under "AMD PITCAIRN (DRM 2.50.0, 5.1.16-200.fc29.x86_64, LLVM 7.0.1)" renderer (Radeon R370, Fedora 29) cannot attach
+        // the textures `LR.original` and `LR.buf1` to a single FBO and just render once - only the first attachment gets filled.
+        // So we have to render to each separately.
+        {
+            gl::c_FramebufferBinder binder(m_FBOs.LR.original);
+            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+        }
+        {
+            gl::c_FramebufferBinder binder(m_FBOs.LR.buf1);
+            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+        }
+    }
+
+    // `buf1` and `buf2` are used as ping-pong buffers
+    std::pair<gl::c_Texture*, gl::c_Framebuffer*> prev{ &m_Textures.LR.buf1, &m_FBOs.LR.buf1 },
+                                                  next{ &m_Textures.LR.buf2, &m_FBOs.LR.buf2 };
+
+    m_VBOs.wholeSelectionAtZero.Bind();
     SpecifyVertexAttribPointers();
-    auto& prog = m_GLPrograms.copy;
-    prog.Use();
-    const int textureUnit = 0;
-    glActiveTexture(GL_TEXTURE0 + textureUnit);
-    glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.originalImg.Get());
-    prog.SetUniform1i(uniforms::Image, textureUnit);
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
+    for (int i = 0; i < m_ProcessingSettings.LucyRichardson.iterations; i++)
+    {
+        GaussianConvolution(*prev.first, m_FBOs.LR.estimateConvolved, m_LRGaussian);
+        DivideTextures(m_Textures.LR.original, m_Textures.LR.estimateConvolved, m_FBOs.LR.convolvedDiv);
+        GaussianConvolution(m_Textures.LR.convolvedDiv, m_FBOs.LR.convolved2, m_LRGaussian);
+        MultiplyTextures(*prev.first, m_Textures.LR.convolved2, *next.second);
+        std::swap(prev, next);
+    }
 
+    {
+        gl::c_FramebufferBinder binder(m_FBOs.lrSharpened);
+        auto& prog = m_GLPrograms.copy;
+        prog.Use();
+        const int textureUnit = 0;
+        glActiveTexture(GL_TEXTURE0 + textureUnit);
+        glBindTexture(GL_TEXTURE_RECTANGLE, next.first->Get());
+        prog.SetUniform1i(uniforms::Image, textureUnit);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    }
 
-    //TESTING: all iters once ################
-
-    // {
-    //     m_VBOs.wholeSelection.Bind();
-    //     SpecifyVertexAttribPointers();
-    //     auto& prog = m_GLPrograms.copy;
-    //     prog.Use();
-    //     const int textureUnit = 0;
-    //     glActiveTexture(GL_TEXTURE0 + textureUnit);
-    //     glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.originalImg.Get());
-    //     prog.SetUniform1i(uniforms::Image, textureUnit);
-    //     // Under "AMD PITCAIRN (DRM 2.50.0, 5.1.16-200.fc29.x86_64, LLVM 7.0.1)" renderer (Radeon R370, Fedora 29) cannot attach
-    //     // the textures `LR.original` and `LR.buf1` to a single FBO and just render once - only the first attachment gets filled.
-    //     // So we have to render to each separately.
-    //     {
-    //         gl::c_FramebufferBinder binder(m_FBOs.LR.original);
-    //         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-    //     }
-    //     {
-    //         gl::c_FramebufferBinder binder(m_FBOs.LR.buf1);
-    //         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-    //     }
-    // }
-
-    // // `buf1` and `buf2` are used as ping-pong buffers
-    // std::pair<gl::c_Texture*, gl::c_Framebuffer*> prev{ &m_Textures.LR.buf1, &m_FBOs.LR.buf1 },
-    //                                               next{ &m_Textures.LR.buf2, &m_FBOs.LR.buf2 };
-
-    // m_VBOs.wholeSelectionAtZero.Bind();
-    // SpecifyVertexAttribPointers();
-
-    // for (int i = 0; i < m_ProcessingSettings.LucyRichardson.iterations; i++)
-    // {
-    //     std::cerr << "iter " << i << std::endl;
-    //     GaussianConvolution(*prev.first, m_FBOs.LR.estimateConvolved, m_LRGaussian);
-    //     DivideTextures(m_Textures.LR.original, m_Textures.LR.estimateConvolved, m_FBOs.LR.convolvedDiv);
-    //     GaussianConvolution(m_Textures.LR.convolvedDiv, m_FBOs.LR.convolved2, m_LRGaussian);
-    //     MultiplyTextures(*prev.first, m_Textures.LR.convolved2, *next.second);
-    //     std::swap(prev, next);
-    // }
-
-    // {
-    //     gl::c_FramebufferBinder binder(m_FBOs.lrSharpened);
-    //     auto& prog = m_GLPrograms.copy;
-    //     prog.Use();
-    //     const int textureUnit = 0;
-    //     glActiveTexture(GL_TEXTURE0 + textureUnit);
-    //     glBindTexture(GL_TEXTURE_RECTANGLE, next.first->Get());
-    //     prog.SetUniform1i(uniforms::Image, textureUnit);
-    //     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-    // }
-
-    //END TESTING ############################
+    // //END TESTING ############################
 
     m_ProcessingOutputValid.sharpening = true;
 
@@ -717,13 +698,7 @@ void c_OpenGLBackEnd::StartUnsharpMasking()
     m_ProcessingOutputValid.toneCurve = false;
 
     InitTextureAndFBO(m_Textures.unsharpMask, m_FBOs.unsharpMask, m_Selection.GetSize());
-
-    auto& blurred = m_Textures.gaussianBlur;
-    if (!blurred || blurred.GetWidth() != m_Selection.width || blurred.GetHeight() != m_Selection.height)
-    {
-        blurred = gl::c_Texture::CreateMono(m_Selection.width, m_Selection.height, nullptr);
-        m_FBOs.gaussianBlur = gl::c_Framebuffer({ &blurred });
-    }
+    InitTextureAndFBO(m_Textures.gaussianBlur, m_FBOs.gaussianBlur, m_Selection.GetSize());
 
     m_VBOs.wholeSelectionAtZero.Bind();
     SpecifyVertexAttribPointers();
@@ -732,22 +707,19 @@ void c_OpenGLBackEnd::StartUnsharpMasking()
     // apply the unsharp mask
     {
         gl::c_FramebufferBinder binder(m_FBOs.unsharpMask);
-        m_VBOs.wholeSelection.Bind();
-        SpecifyVertexAttribPointers();
 
         auto& prog = m_GLPrograms.unsharpMask;
         prog.Use();
 
         int textureUnit = 0;
         glActiveTexture(GL_TEXTURE0 + textureUnit);
-        glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.originalImg.Get());
+        glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.lrSharpened.Get());
         prog.SetUniform1i(uniforms::Image, textureUnit);
 
         textureUnit++;
         glActiveTexture(GL_TEXTURE0 + textureUnit);
         glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.gaussianBlur.Get());
         prog.SetUniform1i(uniforms::BlurredImage, textureUnit);
-        prog.SetUniform2f(uniforms::SelectionPos, static_cast<GLfloat>(m_Selection.x), static_cast<GLfloat>(m_Selection.y));
         prog.SetUniform1f(uniforms::AmountMax, m_ProcessingSettings.unsharpMasking.amountMax);
 
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);

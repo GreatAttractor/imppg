@@ -31,12 +31,11 @@ uniform sampler2DRect BlurredImage;
 uniform float AmountMin;
 uniform float AmountMax;
 uniform bool Adaptive;
-uniform vec2 SelectionPos;
 
 void main()
 {
     float outputValue = AmountMax * texture(Image, TexCoord).r +
-        (1.0 - AmountMax) * texture(BlurredImage, TexCoord - SelectionPos).r;
+        (1.0 - AmountMax) * texture(BlurredImage, TexCoord).r;
 
     outputValue = clamp(outputValue, 0.0, 1.0);
 
