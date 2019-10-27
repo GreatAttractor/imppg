@@ -305,10 +305,8 @@ void c_OpenGLBackEnd::OnPaint(wxPaintEvent&)
         auto& prog = (m_ScalingMethod == ScalingMethod::CUBIC) ? m_GLPrograms.monoOutputCubic : m_GLPrograms.monoOutput;
         prog.Use();
 
-        const int textureUnit = 0;
-        glActiveTexture(GL_TEXTURE0 + textureUnit);
-        glBindTexture(GL_TEXTURE_RECTANGLE, m_OriginalImg.Get());
-        prog.SetUniform1i(uniforms::Image, textureUnit);
+        gl::BindProgramTextures(prog, { {&m_OriginalImg, uniforms::Image} });
+
         const auto scrollpos = m_ImgView.GetScrollPos();
         prog.SetUniform2i(uniforms::ScrollPos, scrollpos.x, scrollpos.y);
         prog.SetUniform2i(
@@ -334,10 +332,8 @@ void c_OpenGLBackEnd::RenderProcessingResults()
     auto& prog = (m_ScalingMethod == ScalingMethod::CUBIC) ? m_GLPrograms.monoOutputCubic : m_GLPrograms.monoOutput;
     prog.Use();
 
-    const int textureUnit = 0;
-    glActiveTexture(GL_TEXTURE0 + textureUnit);
-    glBindTexture(GL_TEXTURE_RECTANGLE, m_TexFBOs.toneCurve.tex.Get());
-    prog.SetUniform1i(uniforms::Image, textureUnit);
+    gl::BindProgramTextures(prog, { {&m_TexFBOs.toneCurve.tex, uniforms::Image} });
+
     const auto scrollpos = m_ImgView.GetScrollPos();
     prog.SetUniform2i(uniforms::ScrollPos, scrollpos.x, scrollpos.y);
     prog.SetUniform2i(
@@ -574,10 +570,9 @@ void c_OpenGLBackEnd::StartLRDeconvolution()
         SpecifyVertexAttribPointers();
         auto& prog = m_GLPrograms.copy;
         prog.Use();
-        const int textureUnit = 0;
-        glActiveTexture(GL_TEXTURE0 + textureUnit);
-        glBindTexture(GL_TEXTURE_RECTANGLE, m_OriginalImg.Get());
-        prog.SetUniform1i(uniforms::Image, textureUnit);
+
+        gl::BindProgramTextures(prog, { {&m_OriginalImg, uniforms::Image} });
+
         // Under "AMD PITCAIRN (DRM 2.50.0, 5.1.16-200.fc29.x86_64, LLVM 7.0.1)" renderer (Radeon R370, Fedora 29) cannot attach
         // the textures `LR.original` and `LR.buf1` to a single FBO and just render once - only the first attachment gets filled.
         // So we have to render to each separately.
@@ -611,10 +606,7 @@ void c_OpenGLBackEnd::StartLRDeconvolution()
         gl::c_FramebufferBinder binder(m_TexFBOs.lrSharpened.fbo);
         auto& prog = m_GLPrograms.copy;
         prog.Use();
-        const int textureUnit = 0;
-        glActiveTexture(GL_TEXTURE0 + textureUnit);
-        glBindTexture(GL_TEXTURE_RECTANGLE, next->tex.Get());
-        prog.SetUniform1i(uniforms::Image, textureUnit);
+        gl::BindProgramTextures(prog, { {&next->tex, uniforms::Image} });
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     }
 
@@ -630,14 +622,7 @@ void c_OpenGLBackEnd::MultiplyTextures(gl::c_Texture& tex1, gl::c_Texture& tex2,
     gl::c_FramebufferBinder binder(dest);
     auto& prog = m_GLPrograms.multiply;
     prog.Use();
-    int textureUnit = 0;
-    glActiveTexture(GL_TEXTURE0 + textureUnit);
-    glBindTexture(GL_TEXTURE_RECTANGLE, tex1.Get());
-    prog.SetUniform1i(uniforms::InputArray1, textureUnit);
-    textureUnit++;
-    glActiveTexture(GL_TEXTURE0 + textureUnit);
-    glBindTexture(GL_TEXTURE_RECTANGLE, tex2.Get());
-    prog.SetUniform1i(uniforms::InputArray2, textureUnit);
+    gl::BindProgramTextures(prog, { {&tex1, uniforms::InputArray1}, {&tex2, uniforms::InputArray2} });
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
 
@@ -646,14 +631,7 @@ void c_OpenGLBackEnd::DivideTextures(gl::c_Texture& tex1, gl::c_Texture& tex2, g
     gl::c_FramebufferBinder binder(dest);
     auto& prog = m_GLPrograms.divide;
     prog.Use();
-    int textureUnit = 0;
-    glActiveTexture(GL_TEXTURE0 + textureUnit);
-    glBindTexture(GL_TEXTURE_RECTANGLE, tex1.Get());
-    prog.SetUniform1i(uniforms::InputArray1, textureUnit);
-    textureUnit++;
-    glActiveTexture(GL_TEXTURE0 + textureUnit);
-    glBindTexture(GL_TEXTURE_RECTANGLE, tex2.Get());
-    prog.SetUniform1i(uniforms::InputArray2, textureUnit);
+    gl::BindProgramTextures(prog, { {&tex1, uniforms::InputArray1}, {&tex2, uniforms::InputArray2} });
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
 
@@ -666,10 +644,7 @@ void c_OpenGLBackEnd::GaussianConvolution(gl::c_Texture& src, gl::c_Framebuffer&
         gl::c_FramebufferBinder binder(m_TexFBOs.aux.fbo);
         auto& prog = m_GLPrograms.gaussianHorz;
         prog.Use();
-        const int textureUnit = 0;
-        glActiveTexture(GL_TEXTURE0 + textureUnit);
-        glBindTexture(GL_TEXTURE_RECTANGLE, src.Get());
-        prog.SetUniform1i(uniforms::Image, textureUnit);
+        gl::BindProgramTextures(prog, { {&src, uniforms::Image} });
         prog.SetUniform1i(uniforms::KernelRadius, gaussian.size());
         glUniform1fv(prog.GetUniform(uniforms::GaussianKernel), gaussian.size(), gaussian.data());
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
@@ -679,10 +654,7 @@ void c_OpenGLBackEnd::GaussianConvolution(gl::c_Texture& src, gl::c_Framebuffer&
         gl::c_FramebufferBinder binder(dest);
         auto& prog = m_GLPrograms.gaussianVert;
         prog.Use();
-        const int textureUnit = 0;
-        glActiveTexture(GL_TEXTURE0 + textureUnit);
-        glBindTexture(GL_TEXTURE_RECTANGLE, m_TexFBOs.aux.tex.Get());
-        prog.SetUniform1i(uniforms::Image, textureUnit);
+        gl::BindProgramTextures(prog, { {&m_TexFBOs.aux.tex, uniforms::Image} });
         prog.SetUniform1i(uniforms::KernelRadius, gaussian.size());
         glUniform1fv(prog.GetUniform(uniforms::GaussianKernel), gaussian.size(), gaussian.data());
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
@@ -708,16 +680,10 @@ void c_OpenGLBackEnd::StartUnsharpMasking()
 
         auto& prog = m_GLPrograms.unsharpMask;
         prog.Use();
-
-        int textureUnit = 0;
-        glActiveTexture(GL_TEXTURE0 + textureUnit);
-        glBindTexture(GL_TEXTURE_RECTANGLE, m_TexFBOs.lrSharpened.tex.Get());
-        prog.SetUniform1i(uniforms::Image, textureUnit);
-
-        textureUnit++;
-        glActiveTexture(GL_TEXTURE0 + textureUnit);
-        glBindTexture(GL_TEXTURE_RECTANGLE, m_TexFBOs.gaussianBlur.tex.Get());
-        prog.SetUniform1i(uniforms::BlurredImage, textureUnit);
+        gl::BindProgramTextures(prog, {
+            {&m_TexFBOs.lrSharpened.tex, uniforms::Image},
+            {&m_TexFBOs.gaussianBlur.tex, uniforms::BlurredImage},
+        });
         prog.SetUniform1f(uniforms::AmountMax, m_ProcessingSettings.unsharpMasking.amountMax);
 
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
@@ -738,11 +704,9 @@ void c_OpenGLBackEnd::StartToneMapping()
 
     auto& prog = m_GLPrograms.toneCurve;
     prog.Use();
-    const int textureUnit = 0;
-    glActiveTexture(GL_TEXTURE0 + textureUnit);
-    glBindTexture(GL_TEXTURE_RECTANGLE, m_TexFBOs.unsharpMask.tex.Get());
+    gl::BindProgramTextures(prog, { {&m_TexFBOs.unsharpMask.tex, uniforms::Image} });
+
     const auto& tcurve = m_ProcessingSettings.toneCurve;
-    prog.SetUniform1i(uniforms::Image, textureUnit);
     prog.SetUniform1i(uniforms::NumPoints, tcurve.GetNumPoints());
     prog.SetUniform1i(uniforms::Smooth, tcurve.GetSmooth());
     prog.SetUniform1i(uniforms::IsGamma, tcurve.IsGammaMode());

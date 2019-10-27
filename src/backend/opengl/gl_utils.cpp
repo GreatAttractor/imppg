@@ -174,4 +174,17 @@ void c_Texture::SetLinearInterpolation(bool enabled)
     glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, interpolation);
 }
 
+void BindProgramTextures(c_Program& program, std::initializer_list<std::pair<c_Texture*, const char*>> texUniforms)
+{
+    int textureUnit = 0;
+
+    for (const auto& texUniform: texUniforms)
+    {
+        glActiveTexture(GL_TEXTURE0 + textureUnit);
+        glBindTexture(GL_TEXTURE_RECTANGLE, texUniform.first->Get());
+        program.SetUniform1i(texUniform.second, textureUnit);
+        ++textureUnit;
+    }
+}
+
 } // namespace imppg::backend::gl

@@ -25,8 +25,11 @@ File description:
 #define IMPPG_GL_UTILS_HEADER
 
 #include <GL/glew.h>
+#include <initializer_list>
 #include <map>
 #include <memory>
+#include <utility>
+
 #include "../../imppg_assert.h"
 
 namespace imppg::backend::gl {
@@ -346,6 +349,9 @@ public:
     c_FramebufferBinder(c_FramebufferBinder&&)                 = delete;
     c_FramebufferBinder& operator=(c_FramebufferBinder&&)      = delete;
 };
+
+/// For the given `program`, binds textures and assigns them to corresponding uniforms.
+void BindProgramTextures(c_Program& program, std::initializer_list<std::pair<c_Texture*, const char*>> texUniforms);
 
 } // namespace imppg::backend::gl
 
