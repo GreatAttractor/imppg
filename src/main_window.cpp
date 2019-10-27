@@ -116,8 +116,6 @@ BEGIN_EVENT_TABLE(c_MainWindow, wxFrame)
     EVT_TOOL(ID_ToggleToneCurveEditor, c_MainWindow::OnCommandEvent)
     EVT_MENU(ID_ToggleProcessingPanel, c_MainWindow::OnCommandEvent)
     EVT_TOOL(ID_ToggleProcessingPanel, c_MainWindow::OnCommandEvent)
-    EVT_THREAD(ID_FINISHED_PROCESSING, c_MainWindow::OnThreadEvent)
-    EVT_THREAD(ID_PROCESSING_PROGRESS, c_MainWindow::OnThreadEvent)
     EVT_COMMAND(ID_ToneCurveEditor, EVT_TONE_CURVE, c_MainWindow::OnToneCurveChanged)
     EVT_SPINCTRL(ID_LucyRichardsonIters, c_MainWindow::OnLucyRichardsonIters)
 #ifdef __WXMSW__
@@ -589,17 +587,8 @@ c_MainWindow::c_MainWindow()
     s.processing.unsharpMasking.threshold = Default::UNSHMASK_THRESHOLD;
     s.processing.unsharpMasking.width = Default::UNSHMASK_WIDTH;
 
-    // m_Processing.processingScheduled = false;
-
     s.selection.x = s.selection.y = -1;
     s.selection.width = s.selection.height = 0;
-
-    // s.output.sharpening.valid = false;
-
-    // s.output.unsharpMasking.valid = false;
-
-    // s.output.toneCurve.valid = false;
-    // s.output.toneCurve.preciseValuesApplied = false;
 
     s.m_FileSaveScheduled = false;
 
@@ -607,12 +596,6 @@ c_MainWindow::c_MainWindow()
 
     s.view.zoomFactor = ZOOM_NONE;
     s.view.zoomFactorChanged = false;
-    //s.view.scalingTimer.SetOwner(this, ID_ScalingTimer);
-
-    // m_Processing.worker = nullptr;
-    // m_Processing.currentThreadId = 0;
-    // m_Processing.processingRequest = ProcessingRequest::NONE;
-    // m_Processing.usePreciseTCurveVals = false;
 
     m_MouseOps.dragging = false;
     m_MouseOps.dragScroll.dragging = false;
@@ -629,114 +612,29 @@ c_MainWindow::c_MainWindow()
     FixWindowPosition(*this);
 
     Show(true);
-    m_BackEnd->MainWindowShown();
-    m_BackEnd->NewProcessingSettings(m_CurrentSettings.processing);
-    m_BackEnd->SetScalingMethod(s.scalingMethod);
+    FinalizeBackEndInitialization(std::nullopt);
 
     Bind(wxEVT_IDLE, [this](wxIdleEvent& event) { m_BackEnd->OnIdle(event); });
 }
 
-void c_MainWindow::OnProcessingStepCompleted(CompletionStatus /*status*/)
+void c_MainWindow::FinalizeBackEndInitialization(std::optional<c_Image> img)
 {
-    // SetActionText(_("Idle"));
+    m_BackEnd->MainWindowShown();
 
-    // if (m_Processing.processingRequest == ProcessingRequest::TONE_CURVE ||
-    //     status == CompletionStatus::ABORTED)
-    // {
-    //     if (m_Processing.processingRequest == ProcessingRequest::TONE_CURVE && status == CompletionStatus::COMPLETED)
-    //     {
-    //         m_CurrentSettings.output.toneCurve.preciseValuesApplied = m_Processing.usePreciseTCurveVals;
-    //     }
+    m_ImageView->BindScrollCallback([this] { m_BackEnd->ImageViewScrolledOrResized(m_CurrentSettings.view.zoomFactor); });
+    m_BackEnd->SetPhysicalSelectionGetter([this] { return GetPhysicalSelection(); });
+    m_BackEnd->SetScaledLogicalSelectionGetter([this] { return m_CurrentSettings.scaledSelection; });
+    m_BackEnd->SetProcessingCompletedHandler([this] { m_Ctrls.tcrvEditor->SetHistogram(m_BackEnd->GetHistogram()); });
 
-    //     // This flag is set only for saving the output file. Clear it if the TONE_CURVE processing request
-    //     // has finished for any reason or there was an abort regardless of the current request.
-    //     m_Processing.usePreciseTCurveVals = false;
-    // }
+    m_BackEnd->NewProcessingSettings(m_CurrentSettings.processing);
+    m_BackEnd->SetScalingMethod(m_CurrentSettings.scalingMethod);
 
-    // if (status == CompletionStatus::COMPLETED)
-    // {
-    //     Log::Print("Processing step completed\n");
+    if (img.has_value())
+    {
+        m_BackEnd->SetImage(std::move(img.value()), m_CurrentSettings.selection);
+    }
 
-    //     if (m_Processing.processingRequest == ProcessingRequest::SHARPENING)
-    //     {
-    //         m_CurrentSettings.output.sharpening.valid = true;
-    //         ScheduleProcessing(ProcessingRequest::UNSHARP_MASKING);
-    //     }
-    //     else if (m_Processing.processingRequest == ProcessingRequest::UNSHARP_MASKING)
-    //     {
-    //         m_CurrentSettings.output.unsharpMasking.valid = true;
-    //         ScheduleProcessing(ProcessingRequest::TONE_CURVE);
-    //     }
-    //     else if (m_Processing.processingRequest == ProcessingRequest::TONE_CURVE)
-    //     {
-    //         m_CurrentSettings.output.toneCurve.valid = true;
-
-    //         // All steps completed, draw the processed fragment
-    //         UpdateSelectionAfterProcessing();
-    //     }
-    // }
-    // else if (status == CompletionStatus::ABORTED)
-    //     m_CurrentSettings.m_FileSaveScheduled = false;
-}
-
-void c_MainWindow::OnThreadEvent(wxThreadEvent& /*event*/)
-{
-    // // On rare occasions it may happen that the event is outdated and had been sent
-    // // by a previously launched worker thread, which has already deleted itself.
-    // // In such case, ignore the event.
-    // //
-    // // Otherwise, we would operate on (and delete!) on of the the 'output' images,
-    // // causing a crash, as the current worker thread (if present) could be writing to it.
-    // if (event.GetInt() != m_Processing.currentThreadId)
-    // {
-    //     Log::Print(wxString::Format("Received an outdated event (%s) with threadId = %d\n",
-    //             event.GetId() == ID_PROCESSING_PROGRESS ? "progress" : "completion", event.GetInt()));
-    //     return;
-    // }
-
-    // switch (event.GetId())
-    // {
-    // case ID_PROCESSING_PROGRESS:
-    // {
-    //     Log::Print(wxString::Format("Received a processing progress (%d%%) event from threadId = %d\n",
-    //             event.GetPayload<WorkerEventPayload>().percentageComplete, event.GetInt()));
-
-    //     wxString action;
-    //     if (m_Processing.processingRequest == ProcessingRequest::SHARPENING)
-    //         action = _(L"Lucy\u2013Richardson deconvolution");
-    //     else if (m_Processing.processingRequest == ProcessingRequest::UNSHARP_MASKING)
-    //         action = _("Unsharp masking");
-    //     else if (m_Processing.processingRequest == ProcessingRequest::TONE_CURVE)
-    //         action = _("Applying tone curve");
-
-    //     SetActionText(wxString::Format(action + ": %d%%", event.GetPayload<WorkerEventPayload>().percentageComplete));
-    //     break;
-    // }
-
-    // case ID_FINISHED_PROCESSING:
-    //     {
-    //         const WorkerEventPayload &p = event.GetPayload<WorkerEventPayload>();
-
-    //         Log::Print(wxString::Format("Received a processing completion event from threadId = %d, status = %s\n",
-    //                 event.GetInt(), p.completionStatus == CompletionStatus::COMPLETED ? "COMPLETED" : "ABORTED"));
-
-    //         OnProcessingStepCompleted(p.completionStatus);
-
-    //         if (m_Processing.processingScheduled)
-    //         {
-    //             Log::Print("Waiting for the worker thread to finish... ");
-
-    //             // Since we have just received the "finished processing" event, the worker thread will destroy itself any moment; keep polling
-    //             while (IsProcessingInProgress())
-    //                 wxThread::Yield();
-
-    //             Log::Print("done\n");
-
-    //             StartProcessing();
-    //         }
-    //         break;
-    //     }
-    // }
+    m_BackEnd->ImageViewZoomChanged(m_CurrentSettings.view.zoomFactor);
 }
 
 wxRect c_MainWindow::GetPhysicalSelection() const
@@ -1029,37 +927,14 @@ void c_MainWindow::OpenFile(wxFileName path, bool resetSelection)
             newSelection = s.selection;
         }
 
-        m_BackEnd->FileOpened(std::move(newImg), newSelection);
+        m_BackEnd->SetImage(std::move(newImg), newSelection);
 
-        // Histogram histogram;
-        // DetermineHistogram(newImg, s.selection, histogram);
         m_Ctrls.tcrvEditor->SetHistogram(m_BackEnd->GetHistogram());
-
-
-
-        // // Initialize the images holding results of processing steps
-        // s.output.sharpening.img = c_Image(s.selection.width, s.selection.height, PixelFormat::PIX_MONO32F);
-        // c_Image::Copy(s.m_Img.value(), s.output.sharpening.img.value(), s.selection.x, s.selection.y,
-        //     s.selection.width, s.selection.height, 0, 0);
-        // s.output.sharpening.valid = false;
-
-        // s.output.unsharpMasking.img = c_Image(s.selection.width, s.selection.height, PixelFormat::PIX_MONO32F);
-        // c_Image::Copy(s.m_Img.value(), s.output.unsharpMasking.img.value(), s.selection.x, s.selection.y,
-        //     s.selection.width, s.selection.height, 0, 0);
-        // s.output.unsharpMasking.valid = false;
-
-        // s.output.toneCurve.img = c_Image(s.selection.width, s.selection.height, PixelFormat::PIX_MONO32F);
-        // c_Image::Copy(s.m_Img.value(), s.output.toneCurve.img.value(), s.selection.x, s.selection.y,
-        //     s.selection.width, s.selection.height, 0, 0);
-        // s.output.toneCurve.valid = false;
-        // s.output.toneCurve.preciseValuesApplied = false;
 
         m_ImageView->SetActualSize(s.imgWidth * s.view.zoomFactor, s.imgHeight * s.view.zoomFactor);
         m_ImageView->GetContentsPanel().Refresh(true);
 
         m_ImageLoaded = true;
-
-        // ScheduleProcessing(ProcessingRequest::SHARPENING);
     }
 }
 
@@ -1168,219 +1043,6 @@ bool c_MainWindow::IsProcessingInProgress()
     return false; //TODO: remove this
 }
 
-/// Aborts processing and schedules new processing to start ASAP (as soon as 'm_Processing.worker' is not running)
-void c_MainWindow::ScheduleProcessing(ProcessingRequest /*request*/)
-{
-    // ProcessingRequest originalReq = request;
-
-    // // If the previous processing step(s) did not complete, we have to execute it (them) first
-
-    // if (request == ProcessingRequest::TONE_CURVE && !m_CurrentSettings.output.unsharpMasking.valid)
-    //     request = ProcessingRequest::UNSHARP_MASKING;
-
-    // if (request == ProcessingRequest::UNSHARP_MASKING && !m_CurrentSettings.output.sharpening.valid)
-    //     request = ProcessingRequest::SHARPENING;
-
-    // Log::Print(wxString::Format("Scheduling processing; requested: %d, scheduled: %d\n",
-    //     static_cast<int>(originalReq),
-    //     static_cast<int>(request))
-    // );
-
-    // m_Processing.processingRequest = request;
-
-    // if (!IsProcessingInProgress())
-    //     StartProcessing();
-    // else
-    // {
-    //     // Signal the worker thread to finish ASAP.
-    //     { auto lock = m_Processing.worker.Lock();
-    //         if (lock.Get())
-    //         {
-    //             Log::Print("Sending abort request to the worker thread\n");
-    //             lock.Get()->AbortProcessing();
-    //         }
-    //     }
-
-    //     // Set a flag so that we immediately restart the worker thread
-    //     // after receiving the "processing finished" message.
-    //     m_Processing.processingScheduled = true;
-    // }
-}
-
-/// Creates and starts a background processing thread
-void c_MainWindow::StartProcessing()
-{
-    // Log::Print("Starting processing\n");
-
-    // // Sanity check; the background thread should be finished and deleted at this point
-    // if (IsProcessingInProgress())
-    // {
-    //     Log::Print("WARNING: The worker thread is still running!\n");
-    //     return;
-    // }
-
-    // m_Processing.processingScheduled = false;
-
-    // auto& s = m_CurrentSettings;
-
-    // // Make sure that if there are outdated thread events out there, they will be recognized
-    // // as such and discarded ('currentThreadId' will be sent from worker in event.GetInt()).
-    // // See also: c_MainWindow::OnThreadEvent()
-    // m_Processing.currentThreadId += 1;
-
-    // switch (m_Processing.processingRequest)
-    // {
-    // case ProcessingRequest::SHARPENING:
-    //     s.output.sharpening.img = c_Image(s.selection.width, s.selection.height, PixelFormat::PIX_MONO32F);
-
-    //     // Invalidate the current output and those of subsequent steps
-    //     s.output.sharpening.valid = false;
-    //     s.output.unsharpMasking.valid = false;
-    //     s.output.toneCurve.valid = false;
-
-    //     if (!SharpeningEnabled())
-    //     {
-    //         Log::Print("Sharpening disabled, no work needed\n");
-
-    //         // No processing required, just copy the selection into 'output.sharpening.img',
-    //         // as it will be used by the subsequent processing steps.
-
-    //         c_Image::Copy(s.m_Img.value(), s.output.sharpening.img.value(),
-    //             s.selection.x,
-    //             s.selection.y,
-    //             s.selection.width,
-    //             s.selection.height,
-    //             0, 0);
-    //         OnProcessingStepCompleted(CompletionStatus::COMPLETED);
-    //     }
-    //     else
-    //     {
-    //         Log::Print(wxString::Format("Launching L-R deconvolution worker thread (id = %d)\n",
-    //                 m_Processing.currentThreadId));
-
-    //         // Sharpening thread takes the currently selected fragment of the original image as input
-    //         m_Processing.worker = new c_LucyRichardsonThread(
-    //             WorkerParameters{
-    //                 *this,
-    //                 m_Processing.worker,
-    //                 0, // in the future we will pass the index of the currently open image
-    //                 c_ImageBufferView(
-    //                     s.m_Img.value().GetBuffer(),
-    //                     s.selection.x,
-    //                     s.selection.y,
-    //                     s.selection.width,
-    //                     s.selection.height
-    //                 ),
-    //                 s.output.sharpening.img.value().GetBuffer(),
-    //                 m_Processing.currentThreadId
-    //             },
-    //             s.LucyRichardson.sigma,
-    //             s.LucyRichardson.iterations,
-    //             s.LucyRichardson.deringing.enabled,
-    //             254.0f/255, true, s.LucyRichardson.sigma
-    //         );
-
-    //         SetActionText(wxString::Format(_(L"L\u2013R deconvolution") + ": %d%%", 0));
-    //         { auto lock = m_Processing.worker.Lock();
-    //             lock.Get()->Run();
-    //         }
-    //     }
-
-    //     break;
-
-    // case ProcessingRequest::UNSHARP_MASKING:
-    //     s.output.unsharpMasking.img = c_Image(s.selection.width, s.selection.height, PixelFormat::PIX_MONO32F);
-
-    //     // Invalidate the current output and those of subsequent steps
-    //     s.output.unsharpMasking.valid = false;
-    //     s.output.toneCurve.valid = false;
-
-    //     if (!UnshMaskingEnabled())
-    //     {
-    //         Log::Print("Unsharp masking disabled, no work needed\n");
-
-    //         // No processing required, just copy the selection into 'output.sharpening.img',
-    //         // as it will be used by the subsequent processing steps.
-    //         c_Image::Copy(s.output.sharpening.img.value(), s.output.unsharpMasking.img.value(), 0, 0, s.selection.width, s.selection.height, 0, 0);
-    //         OnProcessingStepCompleted(CompletionStatus::COMPLETED);
-    //     }
-    //     else
-    //     {
-    //         Log::Print(wxString::Format("Launching unsharp masking worker thread (id = %d)\n",
-    //                 m_Processing.currentThreadId));
-
-    //         // Unsharp masking thread takes the output of sharpening as input
-    //         m_Processing.worker = new c_UnsharpMaskingThread(
-    //             WorkerParameters{
-    //                 *this,
-    //                 m_Processing.worker,
-    //                 0, // in the future we will pass the index of currently open image
-    //                 s.output.sharpening.img.value().GetBuffer(),
-    //                 m_CurrentSettings.output.unsharpMasking.img.value().GetBuffer(),
-    //                 m_Processing.currentThreadId
-    //             },
-    //             c_ImageBufferView(s.m_Img.value().GetBuffer(), s.selection),
-    //             s.UnsharpMasking.adaptive,
-    //             s.UnsharpMasking.sigma,
-    //             s.UnsharpMasking.amountMin,
-    //             s.UnsharpMasking.amountMax,
-    //             s.UnsharpMasking.threshold,
-    //             s.UnsharpMasking.width
-    //         );
-    //         SetActionText(wxString::Format(_("Unsharp masking: %d%%"), 0));
-    //         { auto lock = m_Processing.worker.Lock();
-    //             lock.Get()->Run();
-    //         }
-    //     }
-    //     break;
-
-    // case ProcessingRequest::TONE_CURVE:
-    //     s.output.toneCurve.img = c_Image(s.selection.width, s.selection.height, PixelFormat::PIX_MONO32F);
-
-    //     Log::Print("Created tone curve output image\n");
-
-    //     // Invalidate the current output
-    //     s.output.toneCurve.valid = false;
-
-    //     if (!ToneCurveEnabled())
-    //     {
-    //         Log::Print("Tone curve is an identity map, no work needed\n");
-
-    //         c_Image::Copy(s.output.unsharpMasking.img.value(), s.output.toneCurve.img.value(),
-    //             0, 0, s.selection.width, s.selection.height, 0, 0);
-
-    //         OnProcessingStepCompleted(CompletionStatus::COMPLETED);
-    //     }
-    //     else
-    //     {
-    //         Log::Print(wxString::Format("Launching tone curve worker thread (id = %d)\n",
-    //                 m_Processing.currentThreadId));
-
-    //         // tone curve thread takes the output of unsharp masking as input
-
-    //         m_Processing.worker = new c_ToneCurveThread(
-    //             WorkerParameters{
-    //                 *this,
-    //                 m_Processing.worker,
-    //                 0, // in the future we will pass the index of currently open image
-    //                 s.output.unsharpMasking.img.value().GetBuffer(),
-    //                 m_CurrentSettings.output.toneCurve.img.value().GetBuffer(),
-    //                 m_Processing.currentThreadId
-    //             },
-    //             m_CurrentSettings.toneCurve,
-    //             m_Processing.usePreciseTCurveVals
-    //         );
-    //         SetActionText(wxString::Format(_("Applying tone curve: %d%%"), 0));
-    //         { auto lock = m_Processing.worker.Lock();
-    //             lock.Get()->Run();
-    //         }
-    //     }
-    //     break;
-
-    //     case ProcessingRequest::NONE: IMPPG_ABORT();
-    // }
-}
-
 void c_MainWindow::OnUpdateLucyRichardsonSettings()
 {
     TransferDataFromWindow();
@@ -1390,8 +1052,6 @@ void c_MainWindow::OnUpdateLucyRichardsonSettings()
     proc.LucyRichardson.deringing.enabled = m_Ctrls.lrDeriging->GetValue();
 
     m_BackEnd->LRSettingsChanged(proc);
-    // if (m_CurrentSettings.m_Img)
-    //     ScheduleProcessing(ProcessingRequest::SHARPENING);
 }
 
 void c_MainWindow::OnUpdateUnsharpMaskingSettings()
@@ -1988,23 +1648,51 @@ void c_MainWindow::InitMenu()
     menuEdit->Append(ID_SelectAndProcessAll, _("Select (and process) all\tCtrl+A"));
 
     wxMenu* menuSettings = new wxMenu();
+
+    auto* menuBackEnd = new wxMenu();
+    menuBackEnd->AppendRadioItem(ID_CpuBmpBackEnd, _("CPU && bitmaps"));
+    menuBackEnd->AppendRadioItem(ID_OpenGLBackEnd, _("GPU (OpenGL)"));
+    menuBackEnd->Check(ID_OpenGLBackEnd, true); //TODO: do it properly
+
+    menuBackEnd->Bind(wxEVT_MENU,
+        [this](wxCommandEvent&)
+        {
+            std::optional<c_Image> img = m_BackEnd->GetImage();
+            m_BackEnd = std::make_unique<imppg::backend::c_CpuAndBitmaps>(*m_ImageView);
+            FinalizeBackEndInitialization(img);
+        },
+        ID_CpuBmpBackEnd
+    );
+
+    menuBackEnd->Bind(wxEVT_MENU,
+        [this](wxCommandEvent&)
+        {
+            std::optional<c_Image> img = m_BackEnd->GetImage();
+            m_BackEnd = imppg::backend::c_OpenGLBackEnd::Create(*m_ImageView); //TODO: react to nullptr
+            FinalizeBackEndInitialization(img);
+        },
+        ID_OpenGLBackEnd
+    );
+
+    menuSettings->AppendSubMenu(menuBackEnd, _("Processing back end"));
     menuSettings->Append(ID_NormalizeImage, _("Normalize brightness levels..."), wxEmptyString, false);
     menuSettings->Append(ID_ChooseLanguage, _("Language..."), wxEmptyString, false);
     menuSettings->Append(ID_ToolIconSize, _(L"Tool icons\u2019 size..."), wxEmptyString, false); // u2019 = apostrophe
 
     menuSettings->Bind(wxEVT_MENU,
-                       [this](wxCommandEvent&)
-                       {
-                           long result = wxGetNumberFromUser(_("Size of toolbar icons in pixels:"), wxEmptyString,
-                                                             _(L"Tool Icons\u2019 Size"), Configuration::ToolIconSize,
-                                                             16, 128, this);
-                            if (result != -1)
-                            {
-                                Configuration::ToolIconSize = result;
-                                InitToolbar();
-                            }
-                       },
-                       ID_ToolIconSize);
+        [this](wxCommandEvent&)
+        {
+            long result = wxGetNumberFromUser(_("Size of toolbar icons in pixels:"), wxEmptyString,
+                                                _(L"Tool Icons\u2019 Size"), Configuration::ToolIconSize,
+                                                16, 128, this);
+            if (result != -1)
+            {
+                Configuration::ToolIconSize = result;
+                InitToolbar();
+            }
+        },
+        ID_ToolIconSize
+    );
 
     menuSettings->Append(ID_ToneCurveWindowSettings, _("Tone curve editor..."), wxEmptyString, false);
 
@@ -2162,12 +1850,6 @@ void c_MainWindow::InitControls()
     // TODO:
     // if (!m_BackEnd)
     // {
-
-    m_ImageView->BindScrollCallback([this] { m_BackEnd->ImageViewScrolledOrResized(m_CurrentSettings.view.zoomFactor); });
-
-    m_BackEnd->SetPhysicalSelectionGetter([this] { return GetPhysicalSelection(); });
-    m_BackEnd->SetScaledLogicalSelectionGetter([this] { return m_CurrentSettings.scaledSelection; });
-    m_BackEnd->SetProcessingCompletedHandler([this] { m_Ctrls.tcrvEditor->SetHistogram(m_BackEnd->GetHistogram()); });
 
     m_AuiMgr->AddPane(m_ImageView,
         wxAuiPaneInfo()

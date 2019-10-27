@@ -42,11 +42,13 @@ public:
     /// Returns `nullptr` if OpenGL cannot be initialized.
     static std::unique_ptr<c_OpenGLBackEnd> Create(c_ScrolledView& imgView);
 
+    ~c_OpenGLBackEnd() override;
+
     void ImageViewScrolledOrResized(float zoomFactor) override;
 
     void ImageViewZoomChanged(float zoomFactor) override;
 
-    void FileOpened(c_Image&& img, std::optional<wxRect> newSelection) override;
+    void SetImage(c_Image&& img, std::optional<wxRect> newSelection) override;
 
     Histogram GetHistogram() override;
 
@@ -74,10 +76,13 @@ public:
 
     void SetScalingMethod(ScalingMethod scalingMethod) override;
 
+    const std::optional<c_Image>& GetImage() const override { return m_Img; }
+
+
 private:
     c_ScrolledView& m_ImgView;
 
-    wxGLCanvas* m_GLCanvas{nullptr};
+    std::unique_ptr<wxGLCanvas> m_GLCanvas;
 
     std::unique_ptr<wxGLContext> m_GLContext;
 

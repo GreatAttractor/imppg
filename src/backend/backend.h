@@ -41,7 +41,7 @@ public:
 
     virtual void ImageViewZoomChanged(float zoomFactor) = 0;
 
-    virtual void FileOpened(c_Image&& img, std::optional<wxRect> newSelection) = 0;
+    virtual void SetImage(c_Image&& img, std::optional<wxRect> newSelection) = 0;
 
     /// Shall start processing of the selected image fragment immediately.
     virtual void NewSelection(
@@ -61,7 +61,8 @@ public:
     /// Returns histogram of current selection after processing, but before applying tone curve.
     virtual Histogram GetHistogram() = 0;
 
-    /// Called after the main window is first shown; returns `false` if back end initialization failed.
+    /// Called after the main window is first shown with this back end instance; returns `false`
+    /// if back end initialization failed.
     virtual bool MainWindowShown() { return true; }
 
     /// Invalidates (marks to be repainted) a rectangle in the image view.
@@ -82,6 +83,9 @@ public:
     virtual void OnIdle(wxIdleEvent&) {}
 
     virtual void SetScalingMethod(ScalingMethod scalingMethod) = 0;
+
+    /// Returns the original image being edited.
+    virtual const std::optional<c_Image>& GetImage() const = 0;
 
     virtual ~IBackEnd() = default;
 };

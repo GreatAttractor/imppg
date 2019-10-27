@@ -117,10 +117,13 @@ void c_CpuAndBitmaps::ImageViewScrolledOrResized(float zoomFactor)
 void c_CpuAndBitmaps::ImageViewZoomChanged(float zoomFactor)
 {
     m_ZoomFactor = zoomFactor;
-    CreateScaledPreview(m_ZoomFactor);
+    if (m_Img.has_value())
+    {
+        CreateScaledPreview(m_ZoomFactor);
+    }
 }
 
-void c_CpuAndBitmaps::FileOpened(c_Image&& img, std::optional<wxRect> newSelection)
+void c_CpuAndBitmaps::SetImage(c_Image&& img, std::optional<wxRect> newSelection)
 {
     m_Img = std::move(img);
     m_ImgBmp = ImageToRgbBitmap(
@@ -834,6 +837,24 @@ void c_CpuAndBitmaps::SetScalingMethod(ScalingMethod scalingMethod)
         m_ImgView.GetContentsPanel().Refresh();
         m_ImgView.GetContentsPanel().Update();
     }
+}
+
+c_CpuAndBitmaps::~c_CpuAndBitmaps()
+{
+    // Signal the worker thread to finish ASAP.
+    { auto lock = m_Processing.worker.Lock();
+        if (lock.Get())
+        {
+            Log::Print("Sending abort request to the worker thread.\n");
+            lock.Get()->AbortProcessing();
+        }
+    }
+    while (IsProcessingInProgress())
+    {
+        wxThread::Yield();
+    }
+
+    m_ImgView.GetContentsPanel().Unbind(wxEVT_PAINT, &c_CpuAndBitmaps::OnPaint, this);
 }
 
 } // namespace imppg::backend

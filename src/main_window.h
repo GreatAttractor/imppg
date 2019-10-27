@@ -61,7 +61,6 @@ class c_MainWindow: public wxFrame
     void OnImageViewDragScrollStart(wxMouseEvent& event);
     void OnImageViewDragScrollEnd(wxMouseEvent& event);
     void OnOpenFile(wxCommandEvent& event);
-    void OnThreadEvent(wxThreadEvent& event);
     void OnToneCurveChanged(wxCommandEvent& event);
     void OnCloseToneCurveEditorWindow(wxCloseEvent& event);
     void OnLucyRichardsonIters(wxSpinEvent& event);
@@ -85,16 +84,12 @@ class c_MainWindow: public wxFrame
     wxWindow* CreateProcessingControlsPanel();
     /// Marks the selection's outline (using physical coords) on the specified DC
     void MarkSelection(const wxRect& selection, wxDC& dc);
-    /// Aborts processing and schedules new processing to start ASAP (as soon as 'm_Processing.worker' is not running)
-    void ScheduleProcessing(ProcessingRequest request);
-    void StartProcessing(); ///< Creates and starts a background processing thread
     void UpdateSelectionAfterProcessing();
     bool IsProcessingInProgress(); ///< Returns 'true' if the processing thread is running
     void SetActionText(wxString text); ///< Sets text in the first field of the status bar
     bool SharpeningEnabled(); ///< Returns 'true' if sharpening settings have impact on the image
     bool UnshMaskingEnabled(); ///< Returns 'true' if unsharp masking settings have impact on the image
     bool ToneCurveEnabled(); ///< Returns 'true' if tone curve has impact on the image (i.e. it is not the identity map)
-    void OnProcessingStepCompleted(CompletionStatus status);
     wxPanel* CreateLucyRichardsonControlsPanel(wxWindow* parent);
     wxStaticBoxSizer* CreateUnsharpMaskingControls(wxWindow* parent);
     void OnUpdateUnsharpMaskingSettings();
@@ -124,6 +119,7 @@ class c_MainWindow: public wxFrame
     void LoadSettingsFromFile(wxString settingsFile, bool moveToMruListStart);
     void IndicateSettingsModified();
     wxRect GetPhysicalSelection() const; ///< Returns current selection in physical `m_ImageView` coords.
+    void FinalizeBackEndInitialization(std::optional<c_Image> img);
 
     wxAuiManager* m_AuiMgr{nullptr};
     c_ScrolledView* m_ImageView{nullptr}; ///< Displays 'm_ImgBmp' or 'm_ImgBmpScaled' (i.e. the current image)
@@ -160,9 +156,6 @@ class c_MainWindow: public wxFrame
     {
         wxString inputFilePath;
 
-        // std::optional<c_Image> m_Img; ///< Image (mono) in floating-point format.
-        // std::optional<wxBitmap> m_ImgBmp; ///< Bitmap which wraps `m_Img` for displaying on `m_ImageView`.
-
         ScalingMethod scalingMethod;
 
         bool m_FileSaveScheduled;
@@ -179,41 +172,11 @@ class c_MainWindow: public wxFrame
         struct
         {
             float zoomFactor;
-            // std::optional<wxBitmap> bmpScaled; ///< Currently visible scaled fragment (or whole) of 'm_ImgBmp'
-            // wxRect scaledArea; ///< Area within 'm_ImgBmp' represented by 'bmpScaled'
-
             bool zoomFactorChanged; ///< If 'true', the next Refresh() after scaling needs to erase background; the flag is then cleared
 
             /// Triggers the image view's bitmap scaling some time after the last scrolling, zooming, etc.
             wxTimer scalingTimer;
         } view;
-
-        // /// Incremental results of processing of the current selection
-        // /** Must not be accessed when the relevant background thread is running. */
-        // struct
-        // {
-        //     /// Results of sharpening
-        //     struct
-        //     {
-        //         std::optional<c_Image> img;
-        //         bool valid; ///< 'true' if the last sharpening request completed
-        //     } sharpening;
-
-        //     /// Results of sharpening and unsharp masking
-        //     struct
-        //     {
-        //         std::optional<c_Image> img;
-        //         bool valid; ///< 'true' if the last unsharp masking request completed
-        //     } unsharpMasking;
-
-        //     /// Results of sharpening, unsharp masking and applying of tone curve
-        //     struct
-        //     {
-        //         std::optional<c_Image> img;
-        //         bool valid; ///< 'true' if the last tone curve application request completed
-        //         bool preciseValuesApplied; ///< 'true' if precise values of tone curve have been applied; happens only when saving output file
-        //     } toneCurve;
-        // } output;
 
         ProcessingSettings processing;
 
@@ -276,32 +239,6 @@ class c_MainWindow: public wxFrame
             wxPoint startScrollPos;
         } dragScroll;
     } m_MouseOps;
-
-    // /// Background processing-related variables
-    // struct
-    // {
-    //     ExclusiveAccessObject<IWorkerThread*> worker{nullptr};
-
-    //     /// Identifier increased by 1 after each creation of a new thread
-    //     int currentThreadId;
-    //     /// If 'true', tone curve is applied using its precise values. Otherwise, the curve's LUT is used.
-    //     /** Set to 'false' when user is just editing and adjusting settings. Set to 'true' when an output file is saved. */
-    //     bool usePreciseTCurveVals;
-
-    //     /// Currently scheduled processing request.
-    //     /** When a request of type 'n' (from the enum below) is generated (by user actions in the GUI),
-    //     all processing steps designated by values >=n are performed.
-
-    //     For example, if the user changes sharpening settings (e.g. the L-R kernel sigma),
-    //     the currently selected area is sharpened, then unsharp masking is performed,
-    //     and finally the tone curve applied. If, however, the user changes only a control point
-    //     in the tone curve editor, only the (updated) tone curve is applied (to the results
-    //     of the last performed unsharp masking). */
-    //     ProcessingRequest processingRequest;
-
-    //     /// If 'true', processing has been scheduled to start ASAP (as soon as 'm_Processing.worker' is not running)
-    //     bool processingScheduled;
-    // } m_Processing;
 
     std::unique_ptr<imppg::backend::IBackEnd> m_BackEnd;
 

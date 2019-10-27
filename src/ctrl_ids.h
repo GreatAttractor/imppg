@@ -67,6 +67,8 @@ enum
     ID_FileMenuEnd,
 
     // Settings menu items
+    ID_CpuBmpBackEnd,
+    ID_OpenGLBackEnd,
     ID_NormalizeImage,
     ID_ChooseLanguage,
     ID_ToolIconSize,

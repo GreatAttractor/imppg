@@ -43,11 +43,13 @@ class c_CpuAndBitmaps: public IBackEnd
 public:
     c_CpuAndBitmaps(c_ScrolledView& imgView);
 
+    ~c_CpuAndBitmaps() override;
+
     void ImageViewScrolledOrResized(float zoomFactor) override;
 
     void ImageViewZoomChanged(float zoomFactor) override;
 
-    void FileOpened(c_Image&& img, std::optional<wxRect> newSelection) override;
+    void SetImage(c_Image&& img, std::optional<wxRect> newSelection) override;
 
     Histogram GetHistogram() override;
 
@@ -70,6 +72,8 @@ public:
     void ToneCurveChanged(const ProcessingSettings& procSettings) override;
 
     void SetScalingMethod(ScalingMethod scalingMethod) override;
+
+    const std::optional<c_Image>& GetImage() const override { return m_Img; }
 
 private:
     wxEvtHandler m_EvtHandler;

@@ -121,11 +121,11 @@ c_OpenGLBackEnd::c_OpenGLBackEnd(c_ScrolledView& imgView)
 : m_ImgView(imgView)
 {
     auto* sz = new wxBoxSizer(wxHORIZONTAL);
-    m_GLCanvas = new wxGLCanvas(&imgView.GetContentsPanel(), wxID_ANY, IMPPG_GL_ATTRIBUTES);
-    sz->Add(m_GLCanvas, 1, wxGROW);
+    m_GLCanvas = std::make_unique<wxGLCanvas>(&imgView.GetContentsPanel(), wxID_ANY, IMPPG_GL_ATTRIBUTES);
+    sz->Add(m_GLCanvas.get(), 1, wxGROW);
     imgView.GetContentsPanel().SetSizer(sz);
 
-    m_GLContext = std::make_unique<wxGLContext>(m_GLCanvas);
+    m_GLContext = std::make_unique<wxGLContext>(m_GLCanvas.get());
 
     m_GLCanvas->Bind(wxEVT_SIZE, [this](wxSizeEvent&) { glViewport(0, 0, m_GLCanvas->GetSize().GetWidth(), m_GLCanvas->GetSize().GetHeight()); });
 
@@ -147,7 +147,11 @@ static wxString FromDir(const wxFileName& dir, wxString fname)
 
 bool c_OpenGLBackEnd::MainWindowShown()
 {
-    m_GLCanvas->SetCurrent(*m_GLContext);
+    if (!m_GLCanvas->SetCurrent(*m_GLContext))
+    {
+        Log::Print("Failed to make GL context current.");
+        return false;
+    }
 
     const GLenum err = glewInit();
     if (GLEW_OK != err)
@@ -297,7 +301,7 @@ bool c_OpenGLBackEnd::MainWindowShown()
 
 void c_OpenGLBackEnd::OnPaint(wxPaintEvent&)
 {
-    wxPaintDC dc(m_GLCanvas);
+    wxPaintDC dc(m_GLCanvas.get());
     glClear(GL_COLOR_BUFFER_BIT);
 
     if (m_Img.has_value())
@@ -387,8 +391,11 @@ void c_OpenGLBackEnd::ImageViewScrolledOrResized(float /*zoomFactor*/)
 void c_OpenGLBackEnd::ImageViewZoomChanged(float zoomFactor)
 {
     m_ZoomFactor = zoomFactor;
-    FillWholeImgVBO();
-    FillLastChosenSelectionScaledVBO();
+    if (m_Img.has_value())
+    {
+        FillWholeImgVBO();
+        FillLastChosenSelectionScaledVBO();
+    }
 }
 
 void c_OpenGLBackEnd::FillWholeSelectionVBO()
@@ -454,7 +461,7 @@ void c_OpenGLBackEnd::FillWholeImgVBO()
     m_VBOs.wholeImgScaled.SetData(vertexData, sizeof(vertexData), GL_DYNAMIC_DRAW);
 }
 
-void c_OpenGLBackEnd::FileOpened(c_Image&& img, std::optional<wxRect> newSelection)
+void c_OpenGLBackEnd::SetImage(c_Image&& img, std::optional<wxRect> newSelection)
 {
     m_Img = std::move(img);
 
@@ -801,6 +808,12 @@ void c_OpenGLBackEnd::NewProcessingSettings(const ProcessingSettings& procSettin
 
     if (m_Img)
         StartProcessing(ProcessingRequest::SHARPENING);
+}
+
+c_OpenGLBackEnd::~c_OpenGLBackEnd()
+{
+    // TODO: flush/discontinue any OpenGL operations
+    m_ImgView.GetContentsPanel().SetSizer(nullptr);
 }
 
 } // namespace imppg::backend
