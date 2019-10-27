@@ -142,52 +142,38 @@ private:
         gl::c_Buffer wholeSelectionAtZero; ///< Vertices specify a full-screen quad, tex. coords correspond to `m_Selection` positioned at (0, 0).
     } m_VBOs;
 
-    /// All textures are GL_TEXTURE_RECTANGLE, GL_RED, GL_FLOAT (single-component 32-bit floating-point).
+    // All textures are GL_TEXTURE_RECTANGLE, GL_RED, GL_FLOAT (single-component 32-bit floating-point).
+
+    gl::c_Texture m_OriginalImg;
+
+    /// Framebuffer object and its associated texture; rendering to the FBO fills the texture.
+    struct TexFbo
+    {
+        gl::c_Texture tex;
+        gl::c_Framebuffer fbo;
+    };
+
+    // Textures & FBOs below have the same size as `m_Selection`.
     struct
     {
-        gl::c_Texture originalImg;
-
-        // Textures below have the same size as `m_Selection`.
-
-        gl::c_Texture aux;
-
-        gl::c_Texture lrSharpened; ///< Result of L-R deconvolution sharpening of the original image.
-        gl::c_Texture gaussianBlur; ///< Result of Gaussian blur of the sharpened image.
-        gl::c_Texture unsharpMask; ///< Result of sharpening and unsharp masking.
-        gl::c_Texture toneCurve; ///< Result of sharpening, unsharp masking and tone mapping.
+        TexFbo gaussianBlur; ///< Result of Gaussian blur of `lrSharpened`.
+        TexFbo aux;
+        TexFbo lrSharpened; ///< Result of L-R deconvolution sharpening of the original image.
+        TexFbo toneCurve; ///< Result of sharpening, unsharp masking and tone mapping.
+        TexFbo unsharpMask; ///< Result of sharpening and unsharp masking.
 
         /// Lucy-Richardson deconvolution intermediate data.
         struct
         {
-            gl::c_Texture original;
-            gl::c_Texture buf1;
-            gl::c_Texture buf2;
-            gl::c_Texture estimateConvolved;
-            gl::c_Texture convolvedDiv;
-            gl::c_Texture convolved2;
+            TexFbo original;
+            TexFbo buf1;
+            TexFbo buf2;
+            TexFbo estimateConvolved;
+            TexFbo convolvedDiv;
+            TexFbo convolved2;
         } LR;
-    } m_Textures;
+    } m_TexFBOs;
 
-    /// Each FBO renders into the same-named texture from `m_Textures`.
-    struct
-    {
-        gl::c_Framebuffer gaussianBlur;
-        gl::c_Framebuffer aux;
-        gl::c_Framebuffer lrSharpened;
-        gl::c_Framebuffer toneCurve;
-        gl::c_Framebuffer unsharpMask;
-
-        struct
-        {
-            gl::c_Framebuffer original;
-            gl::c_Framebuffer buf1;
-            //TODO: REMOVE   gl::c_Framebuffer original_buf1; ///< Special case: renders to both `original` and `buf1`.
-            gl::c_Framebuffer buf2;
-            gl::c_Framebuffer estimateConvolved;
-            gl::c_Framebuffer convolvedDiv;
-            gl::c_Framebuffer convolved2;
-        } LR;
-    } m_FBOs;
 
 
     /// Indicates if all OpenGL commands required for the processing step have been submitted for execution;
@@ -240,6 +226,9 @@ private:
 
     /// Does not bind VBOs nor activates vertex attribute pointers.
     void DivideTextures(gl::c_Texture& tex1, gl::c_Texture& tex2, gl::c_Framebuffer& dest);
+
+    /// Reinitializes texture and FBO if their size differs from `size`.
+    void InitTextureAndFBO(TexFbo& texFbo, const wxSize& size);
 };
 
 } // namespace imppg::backend

@@ -307,7 +307,7 @@ void c_OpenGLBackEnd::OnPaint(wxPaintEvent&)
 
         const int textureUnit = 0;
         glActiveTexture(GL_TEXTURE0 + textureUnit);
-        glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.originalImg.Get());
+        glBindTexture(GL_TEXTURE_RECTANGLE, m_OriginalImg.Get());
         prog.SetUniform1i(uniforms::Image, textureUnit);
         const auto scrollpos = m_ImgView.GetScrollPos();
         prog.SetUniform2i(uniforms::ScrollPos, scrollpos.x, scrollpos.y);
@@ -336,7 +336,7 @@ void c_OpenGLBackEnd::RenderProcessingResults()
 
     const int textureUnit = 0;
     glActiveTexture(GL_TEXTURE0 + textureUnit);
-    glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.toneCurve.Get());
+    glBindTexture(GL_TEXTURE_RECTANGLE, m_TexFBOs.toneCurve.tex.Get());
     prog.SetUniform1i(uniforms::Image, textureUnit);
     const auto scrollpos = m_ImgView.GetScrollPos();
     prog.SetUniform2i(uniforms::ScrollPos, scrollpos.x, scrollpos.y);
@@ -477,7 +477,7 @@ void c_OpenGLBackEnd::FileOpened(c_Image&& img, std::optional<wxRect> newSelecti
     /// before calling `glTexImage2D`.
     IMPPG_ASSERT(m_Img.value().GetBuffer().GetBytesPerRow() == m_Img.value().GetWidth() * sizeof(float));
 
-    m_Textures.originalImg = gl::c_Texture::CreateMono(
+    m_OriginalImg = gl::c_Texture::CreateMono(
         m_Img.value().GetWidth(),
         m_Img.value().GetHeight(),
         m_Img.value().GetBuffer().GetRow(0),
@@ -491,7 +491,7 @@ Histogram c_OpenGLBackEnd::GetHistogram()
 {
     if (m_ProcessingOutputValid.unshMask)
     {
-        const auto& tex = m_Textures.unsharpMask;
+        const auto& tex = m_TexFBOs.unsharpMask.tex;
         c_Image unshMaskOutputImg(tex.GetWidth(), tex.GetHeight(), PixelFormat::PIX_MONO32F);
         glBindTexture(GL_TEXTURE_RECTANGLE, tex.Get());
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -543,16 +543,13 @@ void c_OpenGLBackEnd::StartProcessing(ProcessingRequest procRequest)
 ///
 /// Returns `true` if reinitialization was required.
 //
-static bool InitTextureAndFBO(gl::c_Texture& tex, gl::c_Framebuffer& fbo, const wxSize& size)
+void c_OpenGLBackEnd::InitTextureAndFBO(c_OpenGLBackEnd::TexFbo& texFbo, const wxSize& size)
 {
-    if (!tex || tex.GetWidth() != size.GetWidth() || tex.GetHeight() != size.GetHeight())
+    if (!texFbo.tex || texFbo.tex.GetWidth() != size.GetWidth() || texFbo.tex.GetHeight() != size.GetHeight())
     {
-        tex = gl::c_Texture::CreateMono(size.GetWidth(), size.GetHeight(), nullptr);
-        fbo = gl::c_Framebuffer({ &tex });
-        return true;
+        texFbo.tex = gl::c_Texture::CreateMono(size.GetWidth(), size.GetHeight(), nullptr);
+        texFbo.fbo = gl::c_Framebuffer({ &texFbo.tex });
     }
-    else
-        return false;
 }
 
 void c_OpenGLBackEnd::StartLRDeconvolution()
@@ -561,13 +558,14 @@ void c_OpenGLBackEnd::StartLRDeconvolution()
     m_ProcessingOutputValid.unshMask = false;
     m_ProcessingOutputValid.toneCurve = false;
 
-    InitTextureAndFBO(m_Textures.LR.original, m_FBOs.LR.original, m_Selection.GetSize());
-    InitTextureAndFBO(m_Textures.LR.buf1, m_FBOs.LR.buf1, m_Selection.GetSize());
-    InitTextureAndFBO(m_Textures.LR.buf2, m_FBOs.LR.buf2, m_Selection.GetSize());
-    InitTextureAndFBO(m_Textures.LR.estimateConvolved, m_FBOs.LR.estimateConvolved, m_Selection.GetSize());
-    InitTextureAndFBO(m_Textures.LR.convolvedDiv, m_FBOs.LR.convolvedDiv, m_Selection.GetSize());
-    InitTextureAndFBO(m_Textures.LR.convolved2, m_FBOs.LR.convolved2, m_Selection.GetSize());
-    InitTextureAndFBO(m_Textures.lrSharpened, m_FBOs.lrSharpened, m_Selection.GetSize());
+    const wxSize ssize = m_Selection.GetSize();
+    InitTextureAndFBO(m_TexFBOs.LR.original, ssize);
+    InitTextureAndFBO(m_TexFBOs.LR.buf1, ssize);
+    InitTextureAndFBO(m_TexFBOs.LR.buf2, ssize);
+    InitTextureAndFBO(m_TexFBOs.LR.estimateConvolved, ssize);
+    InitTextureAndFBO(m_TexFBOs.LR.convolvedDiv, ssize);
+    InitTextureAndFBO(m_TexFBOs.LR.convolved2, ssize);
+    InitTextureAndFBO(m_TexFBOs.lrSharpened, ssize);
 
     //TESTING: all iters at once ################
 
@@ -578,44 +576,44 @@ void c_OpenGLBackEnd::StartLRDeconvolution()
         prog.Use();
         const int textureUnit = 0;
         glActiveTexture(GL_TEXTURE0 + textureUnit);
-        glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.originalImg.Get());
+        glBindTexture(GL_TEXTURE_RECTANGLE, m_OriginalImg.Get());
         prog.SetUniform1i(uniforms::Image, textureUnit);
         // Under "AMD PITCAIRN (DRM 2.50.0, 5.1.16-200.fc29.x86_64, LLVM 7.0.1)" renderer (Radeon R370, Fedora 29) cannot attach
         // the textures `LR.original` and `LR.buf1` to a single FBO and just render once - only the first attachment gets filled.
         // So we have to render to each separately.
         {
-            gl::c_FramebufferBinder binder(m_FBOs.LR.original);
+            gl::c_FramebufferBinder binder(m_TexFBOs.LR.original.fbo);
             glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
         }
         {
-            gl::c_FramebufferBinder binder(m_FBOs.LR.buf1);
+            gl::c_FramebufferBinder binder(m_TexFBOs.LR.buf1.fbo);
             glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
         }
     }
 
     // `buf1` and `buf2` are used as ping-pong buffers
-    std::pair<gl::c_Texture*, gl::c_Framebuffer*> prev{ &m_Textures.LR.buf1, &m_FBOs.LR.buf1 },
-                                                  next{ &m_Textures.LR.buf2, &m_FBOs.LR.buf2 };
+    TexFbo* prev = &m_TexFBOs.LR.buf1;
+    TexFbo* next = &m_TexFBOs.LR.buf2;
 
     m_VBOs.wholeSelectionAtZero.Bind();
     SpecifyVertexAttribPointers();
 
     for (int i = 0; i < m_ProcessingSettings.LucyRichardson.iterations; i++)
     {
-        GaussianConvolution(*prev.first, m_FBOs.LR.estimateConvolved, m_LRGaussian);
-        DivideTextures(m_Textures.LR.original, m_Textures.LR.estimateConvolved, m_FBOs.LR.convolvedDiv);
-        GaussianConvolution(m_Textures.LR.convolvedDiv, m_FBOs.LR.convolved2, m_LRGaussian);
-        MultiplyTextures(*prev.first, m_Textures.LR.convolved2, *next.second);
+        GaussianConvolution(prev->tex, m_TexFBOs.LR.estimateConvolved.fbo, m_LRGaussian);
+        DivideTextures(m_TexFBOs.LR.original.tex, m_TexFBOs.LR.estimateConvolved.tex, m_TexFBOs.LR.convolvedDiv.fbo);
+        GaussianConvolution(m_TexFBOs.LR.convolvedDiv.tex, m_TexFBOs.LR.convolved2.fbo, m_LRGaussian);
+        MultiplyTextures(prev->tex, m_TexFBOs.LR.convolved2.tex, next->fbo);
         std::swap(prev, next);
     }
 
     {
-        gl::c_FramebufferBinder binder(m_FBOs.lrSharpened);
+        gl::c_FramebufferBinder binder(m_TexFBOs.lrSharpened.fbo);
         auto& prog = m_GLPrograms.copy;
         prog.Use();
         const int textureUnit = 0;
         glActiveTexture(GL_TEXTURE0 + textureUnit);
-        glBindTexture(GL_TEXTURE_RECTANGLE, next.first->Get());
+        glBindTexture(GL_TEXTURE_RECTANGLE, next->tex.Get());
         prog.SetUniform1i(uniforms::Image, textureUnit);
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     }
@@ -661,11 +659,11 @@ void c_OpenGLBackEnd::DivideTextures(gl::c_Texture& tex1, gl::c_Texture& tex2, g
 
 void c_OpenGLBackEnd::GaussianConvolution(gl::c_Texture& src, gl::c_Framebuffer& dest, const std::vector<float>& gaussian)
 {
-    InitTextureAndFBO(m_Textures.aux, m_FBOs.aux, wxSize{src.GetWidth(), src.GetHeight()});
+    InitTextureAndFBO(m_TexFBOs.aux, wxSize{src.GetWidth(), src.GetHeight()});
 
     // horizontal convolution: src -> aux
     {
-        gl::c_FramebufferBinder binder(m_FBOs.aux);
+        gl::c_FramebufferBinder binder(m_TexFBOs.aux.fbo);
         auto& prog = m_GLPrograms.gaussianHorz;
         prog.Use();
         const int textureUnit = 0;
@@ -683,7 +681,7 @@ void c_OpenGLBackEnd::GaussianConvolution(gl::c_Texture& src, gl::c_Framebuffer&
         prog.Use();
         const int textureUnit = 0;
         glActiveTexture(GL_TEXTURE0 + textureUnit);
-        glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.aux.Get());
+        glBindTexture(GL_TEXTURE_RECTANGLE, m_TexFBOs.aux.tex.Get());
         prog.SetUniform1i(uniforms::Image, textureUnit);
         prog.SetUniform1i(uniforms::KernelRadius, gaussian.size());
         glUniform1fv(prog.GetUniform(uniforms::GaussianKernel), gaussian.size(), gaussian.data());
@@ -697,28 +695,28 @@ void c_OpenGLBackEnd::StartUnsharpMasking()
     m_ProcessingOutputValid.unshMask = false;
     m_ProcessingOutputValid.toneCurve = false;
 
-    InitTextureAndFBO(m_Textures.unsharpMask, m_FBOs.unsharpMask, m_Selection.GetSize());
-    InitTextureAndFBO(m_Textures.gaussianBlur, m_FBOs.gaussianBlur, m_Selection.GetSize());
+    InitTextureAndFBO(m_TexFBOs.unsharpMask, m_Selection.GetSize());
+    InitTextureAndFBO(m_TexFBOs.gaussianBlur, m_Selection.GetSize());
 
     m_VBOs.wholeSelectionAtZero.Bind();
     SpecifyVertexAttribPointers();
-    GaussianConvolution(m_Textures.lrSharpened, m_FBOs.gaussianBlur, m_UnshMaskGaussian);
+    GaussianConvolution(m_TexFBOs.lrSharpened.tex, m_TexFBOs.gaussianBlur.fbo, m_UnshMaskGaussian);
 
     // apply the unsharp mask
     {
-        gl::c_FramebufferBinder binder(m_FBOs.unsharpMask);
+        gl::c_FramebufferBinder binder(m_TexFBOs.unsharpMask.fbo);
 
         auto& prog = m_GLPrograms.unsharpMask;
         prog.Use();
 
         int textureUnit = 0;
         glActiveTexture(GL_TEXTURE0 + textureUnit);
-        glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.lrSharpened.Get());
+        glBindTexture(GL_TEXTURE_RECTANGLE, m_TexFBOs.lrSharpened.tex.Get());
         prog.SetUniform1i(uniforms::Image, textureUnit);
 
         textureUnit++;
         glActiveTexture(GL_TEXTURE0 + textureUnit);
-        glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.gaussianBlur.Get());
+        glBindTexture(GL_TEXTURE_RECTANGLE, m_TexFBOs.gaussianBlur.tex.Get());
         prog.SetUniform1i(uniforms::BlurredImage, textureUnit);
         prog.SetUniform1f(uniforms::AmountMax, m_ProcessingSettings.unsharpMasking.amountMax);
 
@@ -734,15 +732,15 @@ void c_OpenGLBackEnd::StartToneMapping()
 {
     m_ProcessingOutputValid.toneCurve = false;
 
-    InitTextureAndFBO(m_Textures.toneCurve, m_FBOs.toneCurve, m_Selection.GetSize());
+    InitTextureAndFBO(m_TexFBOs.toneCurve, m_Selection.GetSize());
 
-    gl::c_FramebufferBinder binder(m_FBOs.toneCurve);
+    gl::c_FramebufferBinder binder(m_TexFBOs.toneCurve.fbo);
 
     auto& prog = m_GLPrograms.toneCurve;
     prog.Use();
     const int textureUnit = 0;
     glActiveTexture(GL_TEXTURE0 + textureUnit);
-    glBindTexture(GL_TEXTURE_RECTANGLE, m_Textures.unsharpMask.Get());
+    glBindTexture(GL_TEXTURE_RECTANGLE, m_TexFBOs.unsharpMask.tex.Get());
     const auto& tcurve = m_ProcessingSettings.toneCurve;
     prog.SetUniform1i(uniforms::Image, textureUnit);
     prog.SetUniform1i(uniforms::NumPoints, tcurve.GetNumPoints());
@@ -769,8 +767,8 @@ void c_OpenGLBackEnd::SetScalingMethod(ScalingMethod scalingMethod)
 {
     m_ScalingMethod = scalingMethod;
     bool linearInterpolation = (ScalingMethod::LINEAR == m_ScalingMethod);
-    m_Textures.originalImg.SetLinearInterpolation(linearInterpolation);
-    m_Textures.toneCurve.SetLinearInterpolation(linearInterpolation);
+    m_OriginalImg.SetLinearInterpolation(linearInterpolation);
+    m_TexFBOs.toneCurve.tex.SetLinearInterpolation(linearInterpolation);
     m_GLCanvas->Refresh();
     m_GLCanvas->Update();
 }
