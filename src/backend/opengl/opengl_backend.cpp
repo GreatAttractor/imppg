@@ -535,10 +535,6 @@ void c_OpenGLBackEnd::StartProcessing(ProcessingRequest procRequest)
     }
 }
 
-/// Reinitializes `tex` and `fbo` if their size differs from `size`.
-///
-/// Returns `true` if reinitialization was required.
-//
 void c_OpenGLBackEnd::InitTextureAndFBO(c_OpenGLBackEnd::TexFbo& texFbo, const wxSize& size)
 {
     if (!texFbo.tex || texFbo.tex.GetWidth() != size.GetWidth() || texFbo.tex.GetHeight() != size.GetHeight())
@@ -563,54 +559,65 @@ void c_OpenGLBackEnd::StartLRDeconvolution()
     InitTextureAndFBO(m_TexFBOs.LR.convolved2, ssize);
     InitTextureAndFBO(m_TexFBOs.lrSharpened, ssize);
 
-    //TESTING: all iters at once ################
-
+    if (m_ProcessingSettings.LucyRichardson.iterations == 0)
     {
         m_VBOs.wholeSelection.Bind();
         SpecifyVertexAttribPointers();
         auto& prog = m_GLPrograms.copy;
         prog.Use();
-
         gl::BindProgramTextures(prog, { {&m_OriginalImg, uniforms::Image} });
-
-        // Under "AMD PITCAIRN (DRM 2.50.0, 5.1.16-200.fc29.x86_64, LLVM 7.0.1)" renderer (Radeon R370, Fedora 29) cannot attach
-        // the textures `LR.original` and `LR.buf1` to a single FBO and just render once - only the first attachment gets filled.
-        // So we have to render to each separately.
-        {
-            gl::c_FramebufferBinder binder(m_TexFBOs.LR.original.fbo);
-            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-        }
-        {
-            gl::c_FramebufferBinder binder(m_TexFBOs.LR.buf1.fbo);
-            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-        }
-    }
-
-    // `buf1` and `buf2` are used as ping-pong buffers
-    TexFbo* prev = &m_TexFBOs.LR.buf1;
-    TexFbo* next = &m_TexFBOs.LR.buf2;
-
-    m_VBOs.wholeSelectionAtZero.Bind();
-    SpecifyVertexAttribPointers();
-
-    for (int i = 0; i < m_ProcessingSettings.LucyRichardson.iterations; i++)
-    {
-        GaussianConvolution(prev->tex, m_TexFBOs.LR.estimateConvolved.fbo, m_LRGaussian);
-        DivideTextures(m_TexFBOs.LR.original.tex, m_TexFBOs.LR.estimateConvolved.tex, m_TexFBOs.LR.convolvedDiv.fbo);
-        GaussianConvolution(m_TexFBOs.LR.convolvedDiv.tex, m_TexFBOs.LR.convolved2.fbo, m_LRGaussian);
-        MultiplyTextures(prev->tex, m_TexFBOs.LR.convolved2.tex, next->fbo);
-        std::swap(prev, next);
-    }
-
-    {
         gl::c_FramebufferBinder binder(m_TexFBOs.lrSharpened.fbo);
-        auto& prog = m_GLPrograms.copy;
-        prog.Use();
-        gl::BindProgramTextures(prog, { {&next->tex, uniforms::Image} });
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     }
+    else
+    {
+        //TESTING: all iters at once ################
+        {
+            m_VBOs.wholeSelection.Bind();
+            SpecifyVertexAttribPointers();
+            auto& prog = m_GLPrograms.copy;
+            prog.Use();
 
-    // //END TESTING ############################
+            gl::BindProgramTextures(prog, { {&m_OriginalImg, uniforms::Image} });
+
+            // Under "AMD PITCAIRN (DRM 2.50.0, 5.1.16-200.fc29.x86_64, LLVM 7.0.1)" renderer (Radeon R370, Fedora 29) cannot attach
+            // the textures `LR.original` and `LR.buf1` to a single FBO and just render once - only the first attachment gets filled.
+            // So we have to render to each separately.
+            {
+                gl::c_FramebufferBinder binder(m_TexFBOs.LR.original.fbo);
+                glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+            }
+            {
+                gl::c_FramebufferBinder binder(m_TexFBOs.LR.buf1.fbo);
+                glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+            }
+        }
+
+        // `buf1` and `buf2` are used as ping-pong buffers
+        TexFbo* prev = &m_TexFBOs.LR.buf1;
+        TexFbo* next = &m_TexFBOs.LR.buf2;
+
+        m_VBOs.wholeSelectionAtZero.Bind();
+        SpecifyVertexAttribPointers();
+
+        for (int i = 0; i < m_ProcessingSettings.LucyRichardson.iterations; i++)
+        {
+            GaussianConvolution(prev->tex, m_TexFBOs.LR.estimateConvolved.fbo, m_LRGaussian);
+            DivideTextures(m_TexFBOs.LR.original.tex, m_TexFBOs.LR.estimateConvolved.tex, m_TexFBOs.LR.convolvedDiv.fbo);
+            GaussianConvolution(m_TexFBOs.LR.convolvedDiv.tex, m_TexFBOs.LR.convolved2.fbo, m_LRGaussian);
+            MultiplyTextures(prev->tex, m_TexFBOs.LR.convolved2.tex, next->fbo);
+            std::swap(prev, next);
+        }
+
+        {
+            gl::c_FramebufferBinder binder(m_TexFBOs.lrSharpened.fbo);
+            auto& prog = m_GLPrograms.copy;
+            prog.Use();
+            gl::BindProgramTextures(prog, { {&next->tex, uniforms::Image} });
+            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+        }
+        // //END TESTING ############################
+    }
 
     m_ProcessingOutputValid.sharpening = true;
 
