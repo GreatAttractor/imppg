@@ -87,10 +87,13 @@ void c_ScrolledView::UpdateScrollBars()
 
 void c_ScrolledView::SetActualSize(unsigned width, unsigned height)
 {
-    m_ActualWidth = width;
-    m_ActualHeight = height;
-    UpdateScrollBars();
-    Layout(); // TODO: fix crash when setting width/height equal to m_Contents' size
+    if (m_ActualWidth != width || m_ActualHeight != height)
+    {
+        m_ActualWidth = width;
+        m_ActualHeight = height;
+        UpdateScrollBars();
+        Layout();
+    }
 }
 
 void c_ScrolledView::ScrollTo(wxPoint position)

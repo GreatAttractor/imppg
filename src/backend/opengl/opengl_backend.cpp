@@ -390,9 +390,17 @@ void c_OpenGLBackEnd::MarkSelection()
     glDrawArrays(GL_LINE_LOOP, 0, 4);
 }
 
-void c_OpenGLBackEnd::ImageViewScrolledOrResized(float /*zoomFactor*/)
+void c_OpenGLBackEnd::ImageViewScrolledOrResized(float zoomFactor)
 {
-    m_GLCanvas->Refresh(false);
+//    m_GLCanvas->Refresh(false);
+
+    m_ZoomFactor = zoomFactor;
+    if (m_Img.has_value())
+    {
+        FillWholeImgVBO();
+        FillLastChosenSelectionScaledVBO();
+    }
+
 }
 
 void c_OpenGLBackEnd::ImageViewZoomChanged(float zoomFactor)
@@ -519,7 +527,10 @@ void c_OpenGLBackEnd::NewSelection(const wxRect& selection)
     m_Selection = selection;
     FillWholeSelectionVBO();
     FillLastChosenSelectionScaledVBO();
-    StartProcessing(ProcessingRequest::SHARPENING);
+    if (m_Img.has_value())
+    {
+        StartProcessing(ProcessingRequest::SHARPENING);
+    }
 }
 
 void c_OpenGLBackEnd::StartProcessing(ProcessingRequest procRequest)
@@ -761,7 +772,10 @@ void c_OpenGLBackEnd::SetScalingMethod(ScalingMethod scalingMethod)
 void c_OpenGLBackEnd::ToneCurveChanged(const ProcessingSettings& procSettings)
 {
     m_ProcessingSettings.toneCurve = procSettings.toneCurve;
-    StartToneMapping();
+    if (m_Img.has_value())
+    {
+        StartToneMapping();
+    }
 }
 
 void c_OpenGLBackEnd::UnshMaskSettingsChanged(const ProcessingSettings& procSettings)
@@ -776,7 +790,10 @@ void c_OpenGLBackEnd::UnshMaskSettingsChanged(const ProcessingSettings& procSett
         );
     }
 
-    StartProcessing(ProcessingRequest::UNSHARP_MASKING);
+    if (m_Img.has_value())
+    {
+        StartProcessing(ProcessingRequest::UNSHARP_MASKING);
+    }
 }
 
 void c_OpenGLBackEnd::LRSettingsChanged(const ProcessingSettings& procSettings)
@@ -791,7 +808,10 @@ void c_OpenGLBackEnd::LRSettingsChanged(const ProcessingSettings& procSettings)
         );
     }
 
-    StartProcessing(ProcessingRequest::SHARPENING);
+    if (m_Img.has_value())
+    {
+        StartProcessing(ProcessingRequest::SHARPENING);
+    }
 }
 
 void c_OpenGLBackEnd::NewProcessingSettings(const ProcessingSettings& procSettings)
@@ -813,8 +833,10 @@ void c_OpenGLBackEnd::NewProcessingSettings(const ProcessingSettings& procSettin
             m_ProcessingSettings.unsharpMasking.sigma
         );
 
-    if (m_Img)
+    if (m_Img.has_value())
+    {
         StartProcessing(ProcessingRequest::SHARPENING);
+    }
 }
 
 c_OpenGLBackEnd::~c_OpenGLBackEnd()
