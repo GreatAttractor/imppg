@@ -127,7 +127,11 @@ c_OpenGLBackEnd::c_OpenGLBackEnd(c_ScrolledView& imgView)
 
     m_GLContext = std::make_unique<wxGLContext>(m_GLCanvas.get());
 
-    m_GLCanvas->Bind(wxEVT_SIZE, [this](wxSizeEvent&) { glViewport(0, 0, m_GLCanvas->GetSize().GetWidth(), m_GLCanvas->GetSize().GetHeight()); });
+    m_GLCanvas->Bind(wxEVT_SIZE, [this](wxSizeEvent& event) {
+        const auto s = event.GetSize();
+        glViewport(0, 0, s.GetWidth(), s.GetHeight());
+        event.Skip();
+    });
 
     m_GLCanvas->Bind(wxEVT_LEFT_DOWN,          &c_OpenGLBackEnd::PropagateEventToParent, this);
     m_GLCanvas->Bind(wxEVT_MOTION,             &c_OpenGLBackEnd::PropagateEventToParent, this);
@@ -295,6 +299,9 @@ bool c_OpenGLBackEnd::MainWindowShown()
     glBindVertexArray(vao);
     glEnableVertexAttribArray(attributes::Position);
     glEnableVertexAttribArray(attributes::TexCoord);
+
+    m_ImgView.Layout();
+    //m_GLCanvas->GetEventHandler()->QueueEvent(new wxSizeEvent());
 
     return true;
 }

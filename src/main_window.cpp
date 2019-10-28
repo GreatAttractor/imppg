@@ -1873,7 +1873,10 @@ void c_MainWindow::OnImageViewSize(wxSizeEvent &event)
         m_CurrentSettings.view.zoomFactorChanged = true;
         OnZoomChanged(wxPoint(0, 0));
     }
-    m_BackEnd->ImageViewScrolledOrResized(m_CurrentSettings.view.zoomFactor);
+    if (m_BackEnd)
+    {
+        m_BackEnd->ImageViewScrolledOrResized(m_CurrentSettings.view.zoomFactor);
+    }
     event.Skip();
 }
 
