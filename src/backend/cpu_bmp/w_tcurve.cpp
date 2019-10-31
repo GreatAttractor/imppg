@@ -22,9 +22,10 @@ File description:
 */
 
 #include <wx/datetime.h>
-#include "w_tcurve.h"
-#include "../../logging.h"
-#include "../../ctrl_ids.h"
+
+#include "backend/cpu_bmp/w_tcurve.h"
+#include "logging.h"
+#include "ctrl_ids.h"
 
 namespace imppg::backend {
 

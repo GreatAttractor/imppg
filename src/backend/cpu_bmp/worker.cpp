@@ -22,9 +22,9 @@ File description:
 */
 
 #include <wx/event.h>
-#include "worker.h"
-#include "../../ctrl_ids.h"
-#include "../../logging.h"
+#include "backend/cpu_bmp/worker.h"
+#include "ctrl_ids.h"
+#include "logging.h"
 
 namespace imppg::backend {
 

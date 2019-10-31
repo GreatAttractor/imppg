@@ -30,7 +30,7 @@ File description:
 #include <memory>
 #include <utility>
 
-#include "../../imppg_assert.h"
+#include "imppg_assert.h"
 
 namespace imppg::backend::gl {
 

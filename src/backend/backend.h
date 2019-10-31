@@ -28,9 +28,9 @@ File description:
 #include <optional>
 #include <wx/scrolwin.h>
 
-#include "../common.h"
-#include "../image.h"
-#include "../proc_settings.h"
+#include "common.h"
+#include "image.h"
+#include "proc_settings.h"
 
 namespace imppg::backend {
 

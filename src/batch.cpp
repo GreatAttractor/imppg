@@ -35,6 +35,7 @@ File description:
 #include <wx/statline.h>
 
 #include "appconfig.h"
+#include "backend/cpu_bmp/worker.h"
 #include "batch_params.h"
 #include "batch.h"
 #include "bmp.h"
@@ -45,10 +46,8 @@ File description:
 #include "proc_settings.h"
 #include "settings.h"
 #include "tiff.h"
-#include "w_lrdeconv.h"
-#include "w_tcurve.h"
-//#include "w_unshmask.h"
-#include "worker.h"
+
+using namespace imppg::backend;
 
 const size_t FILE_IDX_NONE = UINT_MAX;
 
@@ -89,7 +88,7 @@ class c_BatchDialog: public wxDialog
     ProcessingRequest m_ProcessingRequest;
     int m_ThreadId; ///< Unique worker thread id (not reused by new threads)
 
-    ExclusiveAccessObject<IWorkerThread*> m_Worker{nullptr};
+    ExclusiveAccessObject<imppg::backend::IWorkerThread*> m_Worker{nullptr};
 
     /// Starts processing of the next file
     void ProcessNextFile();

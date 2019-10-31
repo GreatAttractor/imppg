@@ -25,6 +25,7 @@ File description:
 #include <memory>
 #include <cstring>
 #include <algorithm>
+
 #include "gauss.h"
 #include "common.h"
 

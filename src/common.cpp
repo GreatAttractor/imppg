@@ -3,6 +3,7 @@
 #include <wx/display.h>
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
+
 #include "common.h"
 
 /// Checks if a window is visible on any display; if not, sets its size and position to default

@@ -27,6 +27,7 @@ File description:
 #include <wx/thread.h>
 #include <wx/window.h>
 #include <wx/arrstr.h>
+
 #include "align.h"
 #include "common.h"
 #include "exclusive_access.h"

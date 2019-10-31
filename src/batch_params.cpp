@@ -31,9 +31,10 @@ File description:
 #include <wx/filepicker.h>
 #include <wx/choice.h>
 #include <wx/statline.h>
+
 #include "appconfig.h"
-#include "common.h"
 #include "batch_params.h"
+#include "common.h"
 #include "image.h"
 
 enum

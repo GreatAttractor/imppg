@@ -24,7 +24,7 @@ File description:
 #ifndef IMPPG_LR_DECONV_WORKER_THREAD_H
 #define IMPPG_LR_DECONV_WORKER_THREAD_H
 
-#include "worker.h"
+#include "backend/cpu_bmp/worker.h"
 
 namespace imppg::backend {
 

@@ -26,6 +26,7 @@ File description:
 
 #include <optional>
 #include <string>
+
 #include "image.h"
 
 /// Returns (width, height).

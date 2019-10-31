@@ -23,6 +23,7 @@ File description:
 
 #include <sstream>
 #include <wx/xml/xml.h>
+
 #include "settings.h"
 
 const int XML_INDENT = 4;

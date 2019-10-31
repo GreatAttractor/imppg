@@ -33,8 +33,9 @@ File description:
 #include <wx/timer.h>
 #include <wx/checkbox.h>
 #include <wx/spinctrl.h>
-#include "tcrv.h"
+
 #include "daction.h"
+#include "tcrv.h"
 
 // Event sent to parent every time the curve is changed
 wxDECLARE_EVENT(EVT_TONE_CURVE, wxCommandEvent);

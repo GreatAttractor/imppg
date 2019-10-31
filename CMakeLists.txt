@@ -29,15 +29,13 @@ add_executable(imppg WIN32
 
     src/backend/cpu_bmp/cpu_bmp_core.cpp
     src/backend/cpu_bmp/w_lrdeconv.cpp
+    src/backend/cpu_bmp/w_tcurve.cpp
     src/backend/cpu_bmp/w_unshmask.cpp
     src/backend/cpu_bmp/worker.cpp
-    src/backend/cpu_bmp/w_tcurve.cpp
 
     src/backend/opengl/gl_utils.cpp
     src/backend/opengl/opengl_backend.cpp
 
-    src/gauss.cpp
-    src/lrdeconv.cpp
     src/batch_params.cpp
     src/batch.cpp
     src/bmp.cpp
@@ -45,8 +43,10 @@ add_executable(imppg WIN32
     src/cursors.cpp
     src/fft.cpp
     src/formats.cpp
+    src/gauss.cpp
     src/image.cpp
     src/logging.cpp
+    src/lrdeconv.cpp
     src/main_window.cpp
     src/main.cpp
     src/normalize.cpp
@@ -60,7 +60,7 @@ add_executable(imppg WIN32
     src/tiff.cpp
     src/wxapp.cpp
 )
-
+target_include_directories(imppg PRIVATE src)
 target_compile_options(imppg PRIVATE -Werror -Wall -Wextra -Wpedantic -Wold-style-cast -Wno-parentheses)
 
 if (CMAKE_VERSION VERSION_LESS "3.1")

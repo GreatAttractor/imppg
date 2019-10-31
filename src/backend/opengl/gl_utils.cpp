@@ -30,9 +30,9 @@ File description:
 #include <tuple>
 #include <vector>
 
-#include "../../imppg_assert.h"
-#include "../../logging.h"
-#include "gl_utils.h"
+#include "imppg_assert.h"
+#include "logging.h"
+#include "backend/opengl/gl_utils.h"
 
 namespace imppg::backend::gl
 {

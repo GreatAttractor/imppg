@@ -61,6 +61,8 @@ File description:
 #include "wxapp.h" // must be included before others due to wxWidgets' header problems
 #include "align.h"
 #include "appconfig.h"
+#include "backend/cpu_bmp/cpu_bmp.h"
+#include "backend/opengl/opengl_backend.h"
 #include "batch.h"
 #include "bmp.h"
 #include "common.h"
@@ -73,10 +75,6 @@ File description:
 #include "settings.h"
 #include "tcrv_wnd_settings.h"
 #include "tiff.h"
-#include "w_lrdeconv.h"
-#include "w_tcurve.h"
-#include "backend/cpu_bmp/cpu_bmp.h"
-#include "backend/opengl/opengl_backend.h"
 
 
 DECLARE_APP(c_MyApp)

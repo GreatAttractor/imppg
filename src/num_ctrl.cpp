@@ -26,6 +26,7 @@ File description:
 #include <wx/stattext.h>
 #include <wx/textctrl.h>
 #include <wx/valnum.h>
+
 #include "num_ctrl.h"
 
 /// Border size in pixels between constituent controls

@@ -23,6 +23,7 @@ File description:
 
 #include <math.h>
 #include <algorithm>
+
 #include "tcrv.h"
 #include "common.h"
 

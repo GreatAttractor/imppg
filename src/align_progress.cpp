@@ -31,6 +31,7 @@ File description:
 #include <wx/textctrl.h>
 #include <wx/gauge.h>
 #include <wx/settings.h>
+
 #include "align.h"
 #include "align_proc.h"
 #include "appconfig.h"

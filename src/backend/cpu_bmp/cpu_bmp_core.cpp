@@ -25,12 +25,12 @@ File description:
 #include <wx/dcclient.h>
 #include <wx/dcmemory.h>
 
-#include "../../ctrl_ids.h"
-#include "../../logging.h"
-#include "cpu_bmp.h"
-#include "w_lrdeconv.h"
-#include "w_unshmask.h"
-#include "w_tcurve.h"
+#include "ctrl_ids.h"
+#include "logging.h"
+#include "backend/cpu_bmp/cpu_bmp.h"
+#include "backend/cpu_bmp/w_lrdeconv.h"
+#include "backend/cpu_bmp/w_unshmask.h"
+#include "backend/cpu_bmp/w_tcurve.h"
 
 namespace imppg::backend {
 

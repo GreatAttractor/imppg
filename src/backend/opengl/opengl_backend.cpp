@@ -28,10 +28,10 @@ File description:
 #include <wx/sizer.h>
 #include <wx/stdpaths.h>
 
-#include "../../common.h"
-#include "../../gauss.h"
-#include "../../logging.h"
-#include "opengl_backend.h"
+#include "common.h"
+#include "gauss.h"
+#include "logging.h"
+#include "backend/opengl/opengl_backend.h"
 
 namespace imppg::backend
 {

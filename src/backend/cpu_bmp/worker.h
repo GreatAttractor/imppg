@@ -29,8 +29,8 @@ File description:
 #include <wx/thread.h>
 #include <wx/gdicmn.h>
 
-#include "../../exclusive_access.h"
-#include "../../image.h"
+#include "exclusive_access.h"
+#include "image.h"
 
 namespace imppg::backend {
 

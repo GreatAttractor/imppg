@@ -26,6 +26,7 @@ File description:
 
 #include <cstdint>
 #include <vector>
+
 #include "common.h"
 #include "image.h"
 

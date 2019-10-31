@@ -29,10 +29,10 @@ File description:
 #include <optional>
 #include <string>
 #include <wx/gdicmn.h>
+
 #if USE_FREEIMAGE
 #include "FreeImage.h"
 #endif
-
 #include "formats.h"
 #include "imppg_assert.h"
 

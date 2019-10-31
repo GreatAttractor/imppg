@@ -30,11 +30,11 @@ File description:
 #include <wx/event.h>
 #include <wx/timer.h>
 
-#include "../../common.h"
-#include "../../exclusive_access.h"
-#include "../../scrolled_view.h"
-#include "../backend.h"
-#include "worker.h"
+#include "common.h"
+#include "exclusive_access.h"
+#include "scrolled_view.h"
+#include "backend/backend.h"
+#include "backend/cpu_bmp/worker.h"
 
 namespace imppg::backend {
 

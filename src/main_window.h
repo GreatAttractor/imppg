@@ -46,7 +46,6 @@ File description:
 #include "scrolled_view.h"
 #include "tcrv_edit.h"
 #include "tcrv.h"
-#include "worker.h"
 
 class c_MainWindow: public wxFrame
 {

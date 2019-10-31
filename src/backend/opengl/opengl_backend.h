@@ -27,10 +27,10 @@ File description:
 #include <wx/bitmap.h>
 #include <wx/event.h>
 
-#include "../../common.h"
-#include "../../scrolled_view.h"
-#include "../backend.h"
-#include "gl_utils.h"
+#include "common.h"
+#include "scrolled_view.h"
+#include "backend/backend.h"
+#include "backend/opengl/gl_utils.h"
 
 #include <wx/glcanvas.h> // has to be below other OpenGL-related includes
 

@@ -37,10 +37,10 @@ File description:
 #include <wx/settings.h>
 
 #include "appconfig.h"
-#include "tcrv_edit.h"
-#include "cursors.h"
-#include "ctrl_ids.h"
 #include "common.h"
+#include "ctrl_ids.h"
+#include "cursors.h"
+#include "tcrv_edit.h"
 #include "tcrv_wnd_settings.h"
 
 // Event sent to parent every time the curve is changed

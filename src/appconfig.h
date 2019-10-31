@@ -27,6 +27,7 @@ File description:
 #include <wx/arrstr.h>
 #include <wx/fileconf.h>
 #include <wx/gdicmn.h>
+
 #include "common.h"
 #include "formats.h"
 

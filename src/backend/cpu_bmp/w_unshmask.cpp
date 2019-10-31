@@ -21,10 +21,10 @@ File description:
     Unsharp masking worker thread implementation.
 */
 
-#include "../../gauss.h"
-#include "../../imppg_assert.h"
-#include "../../lrdeconv.h"
-#include "w_unshmask.h"
+#include "gauss.h"
+#include "imppg_assert.h"
+#include "lrdeconv.h"
+#include "backend/cpu_bmp/w_unshmask.h"
 
 namespace imppg::backend {
 

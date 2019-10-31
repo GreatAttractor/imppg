@@ -28,11 +28,12 @@ File description:
 #ifdef __WXMSW__
 #include <wx/sysopt.h>
 #endif
+
 #include "wxapp.h"
-#include "main_window.h"
+#include "appconfig.h"
 #include "cursors.h"
 #include "logging.h"
-#include "appconfig.h"
+#include "main_window.h"
 #if USE_FREEIMAGE
 #include "FreeImage.h" // on MSW it has to be the last include (to make sure no wxW header follows it)
 #endif

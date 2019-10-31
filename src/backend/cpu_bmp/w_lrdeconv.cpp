@@ -22,10 +22,10 @@ File description:
 */
 
 #include <wx/datetime.h>
-#include "w_lrdeconv.h"
-#include "../../lrdeconv.h"
-#include "../../ctrl_ids.h"
-#include "../../logging.h"
+#include "backend/cpu_bmp/w_lrdeconv.h"
+#include "lrdeconv.h"
+#include "ctrl_ids.h"
+#include "logging.h"
 
 namespace imppg::backend {
 

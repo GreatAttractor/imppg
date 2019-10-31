@@ -24,8 +24,8 @@ File description:
 #ifndef IMPPG_TONE_CURVE_WORKER_THREAD_H
 #define IMPPG_TONE_CURVE_WORKER_THREAD_H
 
-#include "worker.h"
-#include "../../tcrv.h"
+#include "backend/cpu_bmp/worker.h"
+#include "tcrv.h"
 
 namespace imppg::backend {
 
