@@ -87,6 +87,9 @@ public:
     /// Returns the original image being edited.
     virtual const std::optional<c_Image>& GetImage() const = 0;
 
+    /// Provides a function to be called when progress text of back end's operations changes.
+    virtual void SetProgressTextHandler(std::function<void(wxString)>) {}
+
     virtual ~IBackEnd() = default;
 };
 

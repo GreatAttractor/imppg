@@ -75,6 +75,8 @@ public:
 
     const std::optional<c_Image>& GetImage() const override { return m_Img; }
 
+    void SetProgressTextHandler(std::function<void(wxString)> handler) override { m_ProgressTextHandler = handler; }
+
 private:
     wxEvtHandler m_EvtHandler;
 
@@ -100,6 +102,8 @@ private:
     std::function<wxRect()> m_ScaledLogicalSelectionGetter;
 
     std::function<void()> m_OnProcessingCompleted;
+
+    std::function<void(wxString)> m_ProgressTextHandler;
 
     class c_ScalingTimer: public wxTimer
     {

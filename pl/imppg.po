@@ -485,11 +485,6 @@ msgstr "Nie można otworzyć %s."
 msgid "Open image file"
 msgstr "Otwórz plik graficzny"
 
-#: src/main_window.cpp:1458
-#, c-format
-msgid "Unsharp masking: %d%%"
-msgstr "Unsharp masking: %d%%"
-
 #: src/main_window.cpp:1496
 #, c-format
 msgid "Applying tone curve: %d%%"

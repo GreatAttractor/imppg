@@ -103,6 +103,11 @@ const wxString imageView = "imageView";
 const wxString processing = "processing";
 }
 
+namespace StatusBarField
+{
+constexpr int ACTION = 0;
+}
+
 BEGIN_EVENT_TABLE(c_MainWindow, wxFrame)
     EVT_CLOSE(c_MainWindow::OnClose)
     EVT_MENU(wxID_OPEN, c_MainWindow::OnOpenFile)
@@ -603,7 +608,7 @@ c_MainWindow::c_MainWindow()
     m_MruSettingsIdx = wxNOT_FOUND;
 
     InitControls();
-    SetStatusText(_("Idle"));
+    SetStatusText(_("Idle"), StatusBarField::ACTION);
     if (Configuration::MainWindowMaximized)
         Maximize();
 
@@ -633,6 +638,7 @@ void c_MainWindow::FinalizeBackEndInitialization(std::optional<c_Image> img)
     }
 
     m_BackEnd->ImageViewZoomChanged(m_CurrentSettings.view.zoomFactor);
+    m_BackEnd->SetProgressTextHandler([this](wxString progressText) { SetStatusText(progressText, StatusBarField::ACTION); });
 }
 
 wxRect c_MainWindow::GetPhysicalSelection() const
@@ -857,7 +863,7 @@ void c_MainWindow::OnImageViewMouseDragEnd(wxMouseEvent&)
 /// Sets text in the first field of the status bar
 void c_MainWindow::SetActionText(wxString text)
 {
-    GetStatusBar()->SetStatusText(text, 0);
+    GetStatusBar()->SetStatusText(text, StatusBarField::ACTION);
 }
 
 /// Returns the ratio of 'm_ImgView' to the size of 'imgSize', assuming uniform scaling in "touch from inside" fashion

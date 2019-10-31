@@ -429,7 +429,10 @@ void c_CpuAndBitmaps::ScheduleProcessing(ProcessingRequest request)
 
 void c_CpuAndBitmaps::OnProcessingStepCompleted(CompletionStatus status)
 {
-    // SetActionText(_("Idle"));
+    if (m_ProgressTextHandler)
+    {
+        m_ProgressTextHandler(std::move(_("Idle")));
+    }
 
     if (m_Processing.processingRequest == ProcessingRequest::TONE_CURVE ||
         status == CompletionStatus::ABORTED)
@@ -615,7 +618,11 @@ void c_CpuAndBitmaps::StartLRDeconvolution()
             254.0f/255, true, m_ProcSettings.LucyRichardson.sigma
         );
 
-        // SetActionText(wxString::Format(_(L"L\u2013R deconvolution") + ": %d%%", 0));
+        if (m_ProgressTextHandler)
+        {
+            m_ProgressTextHandler(std::move(wxString::Format(_(L"L\u2013R deconvolution") + ": %d%%", 0)));
+        }
+
         { auto lock = m_Processing.worker.Lock();
             lock.Get()->Run();
         }
@@ -668,7 +675,12 @@ void c_CpuAndBitmaps::StartUnsharpMasking()
             m_ProcSettings.unsharpMasking.threshold,
             m_ProcSettings.unsharpMasking.width
         );
-        //SetActionText(wxString::Format(_("Unsharp masking: %d%%"), 0));
+
+        if (m_ProgressTextHandler)
+        {
+            m_ProgressTextHandler(std::move(wxString(_("Unsharp masking..."))));
+        }
+
         { auto lock = m_Processing.worker.Lock();
             lock.Get()->Run();
         }
@@ -726,7 +738,12 @@ void c_CpuAndBitmaps::StartToneCurve()
             m_ProcSettings.toneCurve,
             m_Processing.usePreciseTCurveVals
         );
-        //SetActionText(wxString::Format(_("Applying tone curve: %d%%"), 0));
+
+        if (m_ProgressTextHandler)
+        {
+            m_ProgressTextHandler(std::move(wxString::Format(_("Applying tone curve: %d%%"), 0)));
+        }
+
         { auto lock = m_Processing.worker.Lock();
             lock.Get()->Run();
         }
@@ -798,7 +815,10 @@ void c_CpuAndBitmaps::OnThreadEvent(wxThreadEvent& event)
             else if (m_Processing.processingRequest == ProcessingRequest::TONE_CURVE)
                 action = _("Applying tone curve");
 
-            //SetActionText(wxString::Format(action + ": %d%%", event.GetPayload<WorkerEventPayload>().percentageComplete));
+            if (m_ProgressTextHandler)
+            {
+                m_ProgressTextHandler(std::move(wxString::Format(action + ": %d%%", event.GetPayload<WorkerEventPayload>().percentageComplete)));
+            }
             break;
         }
 
