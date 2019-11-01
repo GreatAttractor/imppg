@@ -91,5 +91,6 @@ void main()
         }
     }
 
+    outputValue = clamp(outputValue, 0.0, 1.0);
     Color = vec4(outputValue, outputValue, outputValue, 1.0);
 }
