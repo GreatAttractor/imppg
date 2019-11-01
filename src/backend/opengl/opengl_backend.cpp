@@ -28,6 +28,7 @@ File description:
 #include <wx/sizer.h>
 #include <wx/stdpaths.h>
 
+#include "appconfig.h"
 #include "common.h"
 #include "gauss.h"
 #include "logging.h"
@@ -83,6 +84,8 @@ static const int IMPPG_GL_ATTRIBUTES[] =
     0
 };
 
+wxDEFINE_EVENT(NEXT_LR_BATCH, NextLRBatchEvent);
+
 static void SpecifyVertexAttribPointers()
 {
     glVertexAttribPointer(
@@ -112,9 +115,12 @@ std::unique_ptr<c_OpenGLBackEnd> c_OpenGLBackEnd::Create(c_ScrolledView& imgView
         return std::unique_ptr<c_OpenGLBackEnd>(new c_OpenGLBackEnd(imgView));
 }
 
-void c_OpenGLBackEnd::OnIdle(wxIdleEvent& /*event*/)
+void c_OpenGLBackEnd::OnNextLrBatch(NextLRBatchEvent& event)
 {
-    //event.RequestMore();
+    if (event.GetId() == m_LRSync.requestId)
+    {
+        IssueLRCommandBatch();
+    }
 }
 
 c_OpenGLBackEnd::c_OpenGLBackEnd(c_ScrolledView& imgView)
@@ -142,6 +148,8 @@ c_OpenGLBackEnd::c_OpenGLBackEnd(c_ScrolledView& imgView)
     m_GLCanvas->Bind(wxEVT_MIDDLE_UP,          &c_OpenGLBackEnd::PropagateEventToParent, this);
     m_GLCanvas->Bind(wxEVT_RIGHT_UP,           &c_OpenGLBackEnd::PropagateEventToParent, this);
     m_GLCanvas->Bind(wxEVT_MOUSEWHEEL,         &c_OpenGLBackEnd::PropagateEventToParent, this);
+
+    m_LRSync.evtHandler.Bind(NEXT_LR_BATCH, &c_OpenGLBackEnd::OnNextLrBatch, this);
 }
 
 static wxString FromDir(const wxFileName& dir, wxString fname)
@@ -309,7 +317,12 @@ bool c_OpenGLBackEnd::MainWindowShown()
 void c_OpenGLBackEnd::OnPaint(wxPaintEvent&)
 {
     wxPaintDC dc(m_GLCanvas.get());
+
+
+
     glClear(GL_COLOR_BUFFER_BIT);
+
+
 
     if (m_Img.has_value())
     {
@@ -330,8 +343,9 @@ void c_OpenGLBackEnd::OnPaint(wxPaintEvent&)
         SpecifyVertexAttribPointers();
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
-        RenderProcessingResults();
 
+
+        RenderProcessingResults();
         MarkSelection();
     }
 
@@ -507,14 +521,14 @@ void c_OpenGLBackEnd::SetImage(c_Image&& img, std::optional<wxRect> newSelection
 
 Histogram c_OpenGLBackEnd::GetHistogram()
 {
-    if (m_ProcessingOutputValid.unshMask)
+    if (m_ProcessingOutputValid.sharpening)
     {
-        const auto& tex = m_TexFBOs.unsharpMask.tex;
-        c_Image unshMaskOutputImg(tex.GetWidth(), tex.GetHeight(), PixelFormat::PIX_MONO32F);
+        const auto& tex = m_TexFBOs.lrSharpened.tex;
+        c_Image lrOutputImg(tex.GetWidth(), tex.GetHeight(), PixelFormat::PIX_MONO32F);
         glBindTexture(GL_TEXTURE_RECTANGLE, tex.Get());
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glGetTexImage(GL_TEXTURE_RECTANGLE, 0, GL_RED, GL_FLOAT, unshMaskOutputImg.GetRow(0));
-        return DetermineHistogram(unshMaskOutputImg, unshMaskOutputImg.GetImageRect());
+        glGetTexImage(GL_TEXTURE_RECTANGLE, 0, GL_RED, GL_FLOAT, lrOutputImg.GetRow(0));
+        return DetermineHistogram(lrOutputImg, lrOutputImg.GetImageRect());
     }
     else if (m_Img)
         return DetermineHistogram(m_Img.value(), m_Selection);
@@ -537,10 +551,14 @@ void c_OpenGLBackEnd::StartProcessing(ProcessingRequest procRequest)
 {
     // if the previous processing step(s) did not complete, we have to execute it (them) first
     if (procRequest == ProcessingRequest::TONE_CURVE && !m_ProcessingOutputValid.unshMask)
+    {
         procRequest = ProcessingRequest::UNSHARP_MASKING;
+    }
 
     if (procRequest == ProcessingRequest::UNSHARP_MASKING && !m_ProcessingOutputValid.sharpening)
+    {
         procRequest = ProcessingRequest::SHARPENING;
+    }
 
     switch (procRequest)
     {
@@ -569,8 +587,53 @@ void c_OpenGLBackEnd::InitTextureAndFBO(c_OpenGLBackEnd::TexFbo& texFbo, const w
     }
 }
 
+void c_OpenGLBackEnd::IssueLRCommandBatch()
+{
+    if (m_LRSync.numIterationsLeft > 0)
+    {
+        if (!m_VBOs.wholeSelectionAtZero.IsBound())
+        {
+            m_VBOs.wholeSelectionAtZero.Bind();
+            SpecifyVertexAttribPointers();
+        }
+
+        const unsigned itersPerCmdBatch = std::max(1U, Configuration::LRCmdBatchSizeMpixIters * 1'000'000 / (m_Selection.width * m_Selection.height));
+        const unsigned itersInThisBatch = std::min(itersPerCmdBatch, m_LRSync.numIterationsLeft);
+
+        for (unsigned i = 0; i < itersInThisBatch; i++)
+        {
+            GaussianConvolution(m_LRSync.prev->tex, m_TexFBOs.LR.estimateConvolved.fbo, m_LRGaussian);
+            DivideTextures(m_TexFBOs.LR.original.tex, m_TexFBOs.LR.estimateConvolved.tex, m_TexFBOs.LR.convolvedDiv.fbo);
+            GaussianConvolution(m_TexFBOs.LR.convolvedDiv.tex, m_TexFBOs.LR.convolved2.fbo, m_LRGaussian);
+            MultiplyTextures(m_LRSync.prev->tex, m_TexFBOs.LR.convolved2.tex, m_LRSync.next->fbo);
+            std::swap(m_LRSync.prev, m_LRSync.next);
+        }
+        glFinish();
+        m_LRSync.numIterationsLeft -= itersInThisBatch;
+
+        if (m_LRSync.numIterationsLeft > 0)
+        {
+            m_LRSync.evtHandler.QueueEvent(new NextLRBatchEvent(NEXT_LR_BATCH, m_LRSync.requestId));
+        }
+    }
+
+    if (m_LRSync.numIterationsLeft == 0 && !m_ProcessingOutputValid.sharpening)
+    {
+        gl::c_FramebufferBinder binder(m_TexFBOs.lrSharpened.fbo);
+        auto& prog = m_GLPrograms.copy;
+        prog.Use();
+        gl::BindProgramTextures(prog, { {&m_LRSync.next->tex, uniforms::Image} });
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+        m_ProcessingOutputValid.sharpening = true;
+        StartProcessing(ProcessingRequest::UNSHARP_MASKING);
+    }
+}
+
 void c_OpenGLBackEnd::StartLRDeconvolution()
 {
+    m_LRSync.requestId += 1;
+
     m_ProcessingOutputValid.sharpening = false;
     m_ProcessingOutputValid.unshMask = false;
     m_ProcessingOutputValid.toneCurve = false;
@@ -593,10 +656,12 @@ void c_OpenGLBackEnd::StartLRDeconvolution()
         gl::BindProgramTextures(prog, { {&m_OriginalImg, uniforms::Image} });
         gl::c_FramebufferBinder binder(m_TexFBOs.lrSharpened.fbo);
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+        m_ProcessingOutputValid.sharpening = true;
+        StartProcessing(ProcessingRequest::UNSHARP_MASKING);
     }
     else
     {
-        //TESTING: all iters at once ################
         {
             m_VBOs.wholeSelection.Bind();
             SpecifyVertexAttribPointers();
@@ -619,34 +684,12 @@ void c_OpenGLBackEnd::StartLRDeconvolution()
         }
 
         // `buf1` and `buf2` are used as ping-pong buffers
-        TexFbo* prev = &m_TexFBOs.LR.buf1;
-        TexFbo* next = &m_TexFBOs.LR.buf2;
+        m_LRSync.prev = &m_TexFBOs.LR.buf1;
+        m_LRSync.next = &m_TexFBOs.LR.buf2;
+        m_LRSync.numIterationsLeft = m_ProcessingSettings.LucyRichardson.iterations;
 
-        m_VBOs.wholeSelectionAtZero.Bind();
-        SpecifyVertexAttribPointers();
-
-        for (int i = 0; i < m_ProcessingSettings.LucyRichardson.iterations; i++)
-        {
-            GaussianConvolution(prev->tex, m_TexFBOs.LR.estimateConvolved.fbo, m_LRGaussian);
-            DivideTextures(m_TexFBOs.LR.original.tex, m_TexFBOs.LR.estimateConvolved.tex, m_TexFBOs.LR.convolvedDiv.fbo);
-            GaussianConvolution(m_TexFBOs.LR.convolvedDiv.tex, m_TexFBOs.LR.convolved2.fbo, m_LRGaussian);
-            MultiplyTextures(prev->tex, m_TexFBOs.LR.convolved2.tex, next->fbo);
-            std::swap(prev, next);
-        }
-
-        {
-            gl::c_FramebufferBinder binder(m_TexFBOs.lrSharpened.fbo);
-            auto& prog = m_GLPrograms.copy;
-            prog.Use();
-            gl::BindProgramTextures(prog, { {&next->tex, uniforms::Image} });
-            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-        }
-        // //END TESTING ############################
+        IssueLRCommandBatch();
     }
-
-    m_ProcessingOutputValid.sharpening = true;
-
-    StartUnsharpMasking();
 }
 
 void c_OpenGLBackEnd::MultiplyTextures(gl::c_Texture& tex1, gl::c_Texture& tex2, gl::c_Framebuffer& dest)
@@ -755,8 +798,7 @@ void c_OpenGLBackEnd::StartToneMapping()
     m_GLCanvas->Refresh(false);
     m_GLCanvas->Update();
 
-    if (m_OnProcessingCompleted)
-        m_OnProcessingCompleted();
+    if (m_OnProcessingCompleted) { m_OnProcessingCompleted(); }
 }
 
 void c_OpenGLBackEnd::SetScalingMethod(ScalingMethod scalingMethod)
@@ -841,7 +883,6 @@ void c_OpenGLBackEnd::NewProcessingSettings(const ProcessingSettings& procSettin
 
 c_OpenGLBackEnd::~c_OpenGLBackEnd()
 {
-    // TODO: flush/discontinue any OpenGL operations
     m_ImgView.GetContentsPanel().SetSizer(nullptr);
 }
 

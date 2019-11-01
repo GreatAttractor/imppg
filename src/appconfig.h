@@ -94,6 +94,15 @@ namespace Configuration
     /** NOTE: drawing 1 segment per pixel may be slow for large widths of the tone curve editor window
         (e.g. on a 3840x2160 display). */
     extern c_Property<unsigned> ToneCurveEditorNumDrawSegments;
+
+    /// Number of megapixel-iterations of L-R deconvolution to perform in a single OpenGL command batch.
+    /// E.g. the value of 4 corresponds to, for instance, a 400x200 pixels selection with 50 L-R iterations
+    /// (400*200*50).
+    ///
+    /// If the value is too large wrt. the GPU's performance, the user will experience worsened
+    /// responsiveness of the L-R controls (i.e. each change of L-R parameters will block the GUI for
+    /// a noticeable moment - a time it takes for the OpenGL command batch to complete).
+    extern c_Property<unsigned>LRCmdBatchSizeMpixIters;
 }
 
 #endif

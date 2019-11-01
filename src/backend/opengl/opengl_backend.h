@@ -36,6 +36,14 @@ File description:
 
 namespace imppg::backend {
 
+class NextLRBatchEvent: public wxEvent
+{
+public:
+    NextLRBatchEvent(wxEventType eventType, int requestId): wxEvent(requestId, eventType) {}
+    wxEvent* Clone() const override { return new NextLRBatchEvent(*this); }
+};
+wxDECLARE_EVENT(NEXT_LR_BATCH, NextLRBatchEvent);
+
 class c_OpenGLBackEnd: public IBackEnd
 {
 public:
@@ -72,7 +80,7 @@ public:
 
     void ToneCurveChanged(const ProcessingSettings& procSettings) override;
 
-    void OnIdle(wxIdleEvent& event) override;
+    void OnNextLrBatch(NextLRBatchEvent& event);
 
     void SetScalingMethod(ScalingMethod scalingMethod) override;
 
@@ -179,7 +187,15 @@ private:
         } LR;
     } m_TexFBOs;
 
-
+    // Lucy-Richardson deconvolution work issuing and synchronization.
+    struct
+    {
+        int32_t requestId = 0; ///< Unique processing request ID.
+        wxEvtHandler evtHandler;
+        unsigned numIterationsLeft = 0;
+        TexFbo* prev = nullptr;
+        TexFbo* next = nullptr;
+    } m_LRSync;
 
     /// Indicates if all OpenGL commands required for the processing step have been submitted for execution;
     /// if `true`, any new commands can rely on `m_Textures` containing valid output.
@@ -234,6 +250,9 @@ private:
 
     /// Reinitializes texture and FBO if their size differs from `size`.
     void InitTextureAndFBO(TexFbo& texFbo, const wxSize& size);
+
+    /// Issues an OpenGL command batch performing L-R iterations.
+    void IssueLRCommandBatch();
 };
 
 } // namespace imppg::backend

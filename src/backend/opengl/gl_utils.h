@@ -26,8 +26,8 @@ File description:
 
 #include <GL/glew.h>
 #include <initializer_list>
-#include <map>
 #include <memory>
+#include <unordered_map>
 #include <utility>
 
 #include "imppg_assert.h"
@@ -80,6 +80,8 @@ class c_Buffer
     c_Wrapper<Deleter> m_Buffer;
     GLenum m_Target;
 
+    static std::unordered_map<GLenum, GLuint> m_LastBoundBuffer;
+
 public:
 
     explicit operator bool() const { return static_cast<bool>(m_Buffer); }
@@ -96,6 +98,7 @@ public:
         m_Target = target;
         glGenBuffers(1, &m_Buffer.Get());
         glBindBuffer(target, m_Buffer.Get());
+        m_LastBoundBuffer[m_Target] = m_Buffer.Get();
         glBufferData(target, size, data, usage);
     }
 
@@ -106,7 +109,24 @@ public:
         glBufferData(m_Target, size, data, usage);
     }
 
-    void Bind() { glBindBuffer(m_Target, m_Buffer.Get()); }
+    void Bind()
+    {
+        glBindBuffer(m_Target, m_Buffer.Get());
+        m_LastBoundBuffer[m_Target] = m_Buffer.Get();
+    }
+
+    bool IsBound() const
+    {
+        const auto loc = m_LastBoundBuffer.find(m_Target);
+        if (loc != m_LastBoundBuffer.end())
+        {
+            return loc->second == m_Buffer.GetConst();
+        }
+        else
+        {
+            return false;
+        }
+    }
 
     GLuint Get() const { return m_Buffer.GetConst(); }
 };
@@ -216,8 +236,8 @@ class c_Program
     static void Deleter(GLuint obj) { if (obj != 0) glDeleteProgram(obj); }
     c_Wrapper<Deleter> m_Program;
 
-    std::map<const char*, GLint> Uniforms;
-    std::map<const char*, GLint> Attributes;
+    std::unordered_map<const char*, GLint> Uniforms;
+    std::unordered_map<const char*, GLint> Attributes;
 
 public:
     explicit operator bool() const { return static_cast<bool>(m_Program); }

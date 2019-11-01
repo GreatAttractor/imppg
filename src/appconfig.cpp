@@ -106,6 +106,10 @@ namespace Keys
     /// Most recently used settings files
     const char* MruSettingsGroup = "/MostRecentSettings";
     const char* MruSettingsItem = "item";
+
+#define OpenGLGroup "/OpenGL"
+
+    const char* LRCmdBatchSizeMpixIters = OpenGLGroup"/LRCommandBatchSizeMpixIters";
 }
 
 void Initialize(wxFileConfig* _appConfig)
@@ -220,36 +224,23 @@ PROPERTY_TCRV_COLOR(ToneCurveEditor_CurvePointColor, CurvePoint)
 PROPERTY_TCRV_COLOR(ToneCurveEditor_SelectedCurvePointColor, SelectedCurvePoint)
 PROPERTY_TCRV_COLOR(ToneCurveEditor_HistogramColor, Histogram)
 
-c_Property<unsigned> ToneCurveEditor_CurveWidth(
-    [](){ return static_cast<unsigned>(appConfig->ReadLong(Keys::ToneCurveEditor_CurveWidth, 1)); },
-    [](const unsigned &u) { appConfig->Write(Keys::ToneCurveEditor_CurveWidth, u); }
-);
+#define PROPERTY_UNSIGNED(Name, DefaultValue)                                                 \
+    c_Property<unsigned> Name(                                                                \
+        [](){ return static_cast<unsigned>(appConfig->ReadLong(Keys::Name, DefaultValue)); }, \
+        [](const unsigned &u) { appConfig->Write(Keys::Name, u); }                            \
+    )
 
-c_Property<unsigned> ToneCurveEditor_CurvePointSize(
-    [](){ return static_cast<unsigned>(appConfig->ReadLong(Keys::ToneCurveEditor_CurvePointSize, 4)); },
-    [](const unsigned &u) { appConfig->Write(Keys::ToneCurveEditor_CurvePointSize, u); }
-);
+#define PROPERTY_INT(Name, DefaultValue)                                                 \
+    c_Property<int> Name(                                                                \
+        [](){ return static_cast<int>(appConfig->ReadLong(Keys::Name, DefaultValue)); }, \
+        [](const int &i) { appConfig->Write(Keys::Name, i); }                            \
+    )
 
-c_Property<int> ProcessingPanelWidth(
-    [](){ return static_cast<int>(appConfig->ReadLong(Keys::ProcessingPanelWidth, -1)); },
-    [](const int &width) { appConfig->Write(Keys::ProcessingPanelWidth, width); }
-);
-
-c_Property<unsigned> ToolIconSize(
-    [](){ return static_cast<unsigned>(appConfig->ReadLong(Keys::ToolIconSize, DEFAULT_TOOL_ICON_SIZE)); },
-    [](const unsigned &ts) { appConfig->Write(Keys::ToolIconSize, ts); }
-);
-
-c_Property<unsigned> ToneCurveEditorNumDrawSegments(
-    []()
-    {
-        unsigned num = static_cast<unsigned>(appConfig->ReadLong(Keys::ToneCurveEditorNumDrawSegments, DEFAULT_TONE_CURVE_EDITOR_NUM_DRAW_SEGMENTS));
-        if (DEFAULT_TONE_CURVE_EDITOR_NUM_DRAW_SEGMENTS == num)
-            appConfig->Write(Keys::ToneCurveEditorNumDrawSegments, num);
-        return num;
-    },
-    [](const unsigned &num) { appConfig->Write(Keys::ToneCurveEditorNumDrawSegments, num); }
-);
+PROPERTY_UNSIGNED(ToneCurveEditor_CurveWidth, 1);
+PROPERTY_UNSIGNED(ToneCurveEditor_CurvePointSize, 4);
+PROPERTY_INT(ProcessingPanelWidth, -1);
+PROPERTY_UNSIGNED(ToolIconSize, DEFAULT_TOOL_ICON_SIZE);
+PROPERTY_UNSIGNED(ToneCurveEditorNumDrawSegments, DEFAULT_TONE_CURVE_EDITOR_NUM_DRAW_SEGMENTS);
 
 /// Returns a list of the most recently used saved/loaded settings files
 wxArrayString GetMruSettings()
@@ -278,4 +269,6 @@ void EmptyMruList()
     appConfig->DeleteGroup(Keys::MruSettingsGroup);
 }
 
-}
+PROPERTY_UNSIGNED(LRCmdBatchSizeMpixIters, 4);
+
+}  // namespace Configuration

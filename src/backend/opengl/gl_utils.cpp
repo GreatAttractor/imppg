@@ -37,6 +37,8 @@ File description:
 namespace imppg::backend::gl
 {
 
+std::unordered_map<GLenum, GLuint> c_Buffer::m_LastBoundBuffer;
+
 /// Returns (file contents, file length).
 static std::tuple<std::unique_ptr<GLchar[]>, GLint> ReadTextFile(const char* filename)
 {
