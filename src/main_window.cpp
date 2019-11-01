@@ -616,6 +616,8 @@ c_MainWindow::c_MainWindow()
 
     Show(true);
     FinalizeBackEndInitialization(std::nullopt);
+
+    Bind(wxEVT_IDLE, [this](wxIdleEvent& event) { m_BackEnd->OnIdle(event); });
 }
 
 void c_MainWindow::FinalizeBackEndInitialization(std::optional<c_Image> img)

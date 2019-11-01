@@ -90,6 +90,9 @@ public:
     /// Provides a function to be called when progress text of back end's operations changes.
     virtual void SetProgressTextHandler(std::function<void(wxString)>) {}
 
+    /// Shall be called by the main window from "on idle" handler; the back-end may call `event.RequestMore()`.
+    virtual void OnIdle(wxIdleEvent&) {}
+
     virtual ~IBackEnd() = default;
 };
 

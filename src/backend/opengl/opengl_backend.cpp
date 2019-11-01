@@ -84,8 +84,6 @@ static const int IMPPG_GL_ATTRIBUTES[] =
     0
 };
 
-wxDEFINE_EVENT(NEXT_LR_BATCH, NextLRBatchEvent);
-
 static void SpecifyVertexAttribPointers()
 {
     glVertexAttribPointer(
@@ -115,14 +113,6 @@ std::unique_ptr<c_OpenGLBackEnd> c_OpenGLBackEnd::Create(c_ScrolledView& imgView
         return std::unique_ptr<c_OpenGLBackEnd>(new c_OpenGLBackEnd(imgView));
 }
 
-void c_OpenGLBackEnd::OnNextLrBatch(NextLRBatchEvent& event)
-{
-    if (event.GetId() == m_LRSync.requestId)
-    {
-        IssueLRCommandBatch();
-    }
-}
-
 c_OpenGLBackEnd::c_OpenGLBackEnd(c_ScrolledView& imgView)
 : m_ImgView(imgView)
 {
@@ -148,8 +138,6 @@ c_OpenGLBackEnd::c_OpenGLBackEnd(c_ScrolledView& imgView)
     m_GLCanvas->Bind(wxEVT_MIDDLE_UP,          &c_OpenGLBackEnd::PropagateEventToParent, this);
     m_GLCanvas->Bind(wxEVT_RIGHT_UP,           &c_OpenGLBackEnd::PropagateEventToParent, this);
     m_GLCanvas->Bind(wxEVT_MOUSEWHEEL,         &c_OpenGLBackEnd::PropagateEventToParent, this);
-
-    m_LRSync.evtHandler.Bind(NEXT_LR_BATCH, &c_OpenGLBackEnd::OnNextLrBatch, this);
 }
 
 static wxString FromDir(const wxFileName& dir, wxString fname)
@@ -608,13 +596,14 @@ void c_OpenGLBackEnd::IssueLRCommandBatch()
             MultiplyTextures(m_LRSync.prev->tex, m_TexFBOs.LR.convolved2.tex, m_LRSync.next->fbo);
             std::swap(m_LRSync.prev, m_LRSync.next);
         }
-        glFinish();
-        m_LRSync.numIterationsLeft -= itersInThisBatch;
 
-        if (m_LRSync.numIterationsLeft > 0)
-        {
-            m_LRSync.evtHandler.QueueEvent(new NextLRBatchEvent(NEXT_LR_BATCH, m_LRSync.requestId));
-        }
+        // We need to force the execution of the GL commands issued so far, so that the user can interrupt L-R processing via GUI
+        // after each command batch.
+        // Otherwise, the GL driver could defer and clump all the above commands for (time-consuming) execution together
+        // (testing on my system showed it happens with the SwapBuffers() call).
+        glFinish();
+
+        m_LRSync.numIterationsLeft -= itersInThisBatch;
     }
 
     if (m_LRSync.numIterationsLeft == 0 && !m_ProcessingOutputValid.sharpening)
@@ -632,8 +621,6 @@ void c_OpenGLBackEnd::IssueLRCommandBatch()
 
 void c_OpenGLBackEnd::StartLRDeconvolution()
 {
-    m_LRSync.requestId += 1;
-
     m_ProcessingOutputValid.sharpening = false;
     m_ProcessingOutputValid.unshMask = false;
     m_ProcessingOutputValid.toneCurve = false;
@@ -884,6 +871,21 @@ void c_OpenGLBackEnd::NewProcessingSettings(const ProcessingSettings& procSettin
 c_OpenGLBackEnd::~c_OpenGLBackEnd()
 {
     m_ImgView.GetContentsPanel().SetSizer(nullptr);
+}
+
+void c_OpenGLBackEnd::OnIdle(wxIdleEvent& event)
+{
+    const bool doWork = (m_Img.has_value() && m_LRSync.numIterationsLeft > 0);
+
+    if (doWork)
+    {
+        IssueLRCommandBatch();
+    }
+
+    if (doWork)
+    {
+        event.RequestMore();
+    }
 }
 
 } // namespace imppg::backend

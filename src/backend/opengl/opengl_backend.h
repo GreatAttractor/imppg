@@ -36,14 +36,6 @@ File description:
 
 namespace imppg::backend {
 
-class NextLRBatchEvent: public wxEvent
-{
-public:
-    NextLRBatchEvent(wxEventType eventType, int requestId): wxEvent(requestId, eventType) {}
-    wxEvent* Clone() const override { return new NextLRBatchEvent(*this); }
-};
-wxDECLARE_EVENT(NEXT_LR_BATCH, NextLRBatchEvent);
-
 class c_OpenGLBackEnd: public IBackEnd
 {
 public:
@@ -80,11 +72,11 @@ public:
 
     void ToneCurveChanged(const ProcessingSettings& procSettings) override;
 
-    void OnNextLrBatch(NextLRBatchEvent& event);
-
     void SetScalingMethod(ScalingMethod scalingMethod) override;
 
     const std::optional<c_Image>& GetImage() const override { return m_Img; }
+
+    void OnIdle(wxIdleEvent& event) override;
 
 
 private:
@@ -190,8 +182,6 @@ private:
     // Lucy-Richardson deconvolution work issuing and synchronization.
     struct
     {
-        int32_t requestId = 0; ///< Unique processing request ID.
-        wxEvtHandler evtHandler;
         unsigned numIterationsLeft = 0;
         TexFbo* prev = nullptr;
         TexFbo* next = nullptr;
