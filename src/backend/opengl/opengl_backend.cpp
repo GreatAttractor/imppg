@@ -621,6 +621,11 @@ void c_OpenGLBackEnd::IssueLRCommandBatch()
 
 void c_OpenGLBackEnd::StartLRDeconvolution()
 {
+    if (m_ProgressTextHandler)
+    {
+        m_ProgressTextHandler(std::move(_(L"L\u2013R deconvolution...")));
+    }
+
     m_ProcessingOutputValid.sharpening = false;
     m_ProcessingOutputValid.unshMask = false;
     m_ProcessingOutputValid.toneCurve = false;
@@ -786,6 +791,11 @@ void c_OpenGLBackEnd::StartToneMapping()
     m_GLCanvas->Update();
 
     if (m_OnProcessingCompleted) { m_OnProcessingCompleted(); }
+    if (m_ProgressTextHandler)
+    {
+        m_ProgressTextHandler(std::move(_("Idle")));
+    }
+
 }
 
 void c_OpenGLBackEnd::SetScalingMethod(ScalingMethod scalingMethod)

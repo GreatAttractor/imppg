@@ -78,6 +78,8 @@ public:
 
     void OnIdle(wxIdleEvent& event) override;
 
+    void SetProgressTextHandler(std::function<void(wxString)> handler) override { m_ProgressTextHandler = handler; }
+
 
 private:
     c_ScrolledView& m_ImgView;
@@ -98,6 +100,8 @@ private:
     std::function<wxRect()> m_PhysSelectionGetter;
 
     std::function<void()> m_OnProcessingCompleted;
+
+    std::function<void(wxString)> m_ProgressTextHandler;
 
     ProcessingSettings m_ProcessingSettings{};
 
