@@ -56,7 +56,7 @@ public:
 
     void SetScaledLogicalSelectionGetter(std::function<wxRect()>) override {}
 
-    void SetProcessingCompletedHandler(std::function<void()> handler) override { m_OnProcessingCompleted = handler; }
+    void SetProcessingCompletedHandler(std::function<void(CompletionStatus)> handler) override { m_OnProcessingCompleted = handler; }
 
     void NewSelection(const wxRect& selection) override;
 
@@ -80,6 +80,12 @@ public:
 
     void SetProgressTextHandler(std::function<void(wxString)> handler) override { m_ProgressTextHandler = handler; }
 
+    c_Image GetProcessedSelection() override;
+
+    bool ProcessingInProgress() override;
+
+    void AbortProcessing() override;
+
 
 private:
     c_ScrolledView& m_ImgView;
@@ -99,7 +105,7 @@ private:
     /// Provides selection in physical image view coords.
     std::function<wxRect()> m_PhysSelectionGetter;
 
-    std::function<void()> m_OnProcessingCompleted;
+    std::function<void(CompletionStatus)> m_OnProcessingCompleted;
 
     std::function<void(wxString)> m_ProgressTextHandler;
 
@@ -186,6 +192,7 @@ private:
     // Lucy-Richardson deconvolution work issuing and synchronization.
     struct
     {
+        bool abortRequested = false;
         unsigned numIterationsLeft = 0;
         TexFbo* prev = nullptr;
         TexFbo* next = nullptr;
@@ -204,6 +211,8 @@ private:
 
     std::vector<float> m_LRGaussian; // element [0] = max value
     std::vector<float> m_UnshMaskGaussian; // element [0] = max value
+
+    bool m_DeferredCompletionHandlerCall = false;
 
     c_OpenGLBackEnd(c_ScrolledView& imgView);
 

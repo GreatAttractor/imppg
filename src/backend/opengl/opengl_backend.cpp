@@ -509,14 +509,14 @@ void c_OpenGLBackEnd::SetImage(c_Image&& img, std::optional<wxRect> newSelection
 
 Histogram c_OpenGLBackEnd::GetHistogram()
 {
-    if (m_ProcessingOutputValid.sharpening)
+    if (m_ProcessingOutputValid.unshMask)
     {
-        const auto& tex = m_TexFBOs.lrSharpened.tex;
-        c_Image lrOutputImg(tex.GetWidth(), tex.GetHeight(), PixelFormat::PIX_MONO32F);
+        const auto& tex = m_TexFBOs.unsharpMask.tex;
+        c_Image img(tex.GetWidth(), tex.GetHeight(), PixelFormat::PIX_MONO32F);
         glBindTexture(GL_TEXTURE_RECTANGLE, tex.Get());
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glGetTexImage(GL_TEXTURE_RECTANGLE, 0, GL_RED, GL_FLOAT, lrOutputImg.GetRow(0));
-        return DetermineHistogram(lrOutputImg, lrOutputImg.GetImageRect());
+        glGetTexImage(GL_TEXTURE_RECTANGLE, 0, GL_RED, GL_FLOAT, img.GetRow(0));
+        return DetermineHistogram(img, img.GetImageRect());
     }
     else if (m_Img)
         return DetermineHistogram(m_Img.value(), m_Selection);
@@ -621,6 +621,8 @@ void c_OpenGLBackEnd::IssueLRCommandBatch()
 
 void c_OpenGLBackEnd::StartLRDeconvolution()
 {
+    m_LRSync.abortRequested = false;
+
     if (m_ProgressTextHandler)
     {
         m_ProgressTextHandler(std::move(_(L"L\u2013R deconvolution...")));
@@ -790,12 +792,18 @@ void c_OpenGLBackEnd::StartToneMapping()
     m_GLCanvas->Refresh(false);
     m_GLCanvas->Update();
 
-    if (m_OnProcessingCompleted) { m_OnProcessingCompleted(); }
+    // Something is broken with OpenGL (Fedora29 + GTK3): if there is a file save scheduled, calling m_OnProcessingCompleted()
+    // will immediately cause a FileSave dialog to show. This somehow prevents proper filling of `m_TexFBOs.toneCurve.tex`
+    // (it will contain garbage). Even glFlush() + glFinish() called here do not help.
+    // Workaround: just set a flag here and act on it a moment later, in OnIdle().
+
+    //if (m_OnProcessingCompleted) { m_OnProcessingCompleted(CompletionStatus::COMPLETED); }
+    m_DeferredCompletionHandlerCall = true;
+
     if (m_ProgressTextHandler)
     {
         m_ProgressTextHandler(std::move(_("Idle")));
     }
-
 }
 
 void c_OpenGLBackEnd::SetScalingMethod(ScalingMethod scalingMethod)
@@ -885,17 +893,82 @@ c_OpenGLBackEnd::~c_OpenGLBackEnd()
 
 void c_OpenGLBackEnd::OnIdle(wxIdleEvent& event)
 {
-    const bool doWork = (m_Img.has_value() && m_LRSync.numIterationsLeft > 0);
+    if (m_LRSync.abortRequested) { return; }
 
-    if (doWork)
+    if (m_Img.has_value() && m_LRSync.numIterationsLeft > 0)
     {
         IssueLRCommandBatch();
     }
 
-    if (doWork)
+    if (m_LRSync.numIterationsLeft > 0)
     {
         event.RequestMore();
     }
+
+    if (m_DeferredCompletionHandlerCall)
+    {
+        m_DeferredCompletionHandlerCall = false;
+        if (m_OnProcessingCompleted)
+        {
+            m_OnProcessingCompleted(CompletionStatus::COMPLETED);
+        }
+    }
 }
+
+c_Image c_OpenGLBackEnd::GetProcessedSelection()
+{
+    IMPPG_ASSERT(m_Img.has_value());
+
+    m_LRSync.abortRequested = true;
+
+    TexFbo temporary;
+    const gl::c_Texture* srcTex{nullptr};
+
+    const wxSize ssize = m_Selection.GetSize();
+    if (!m_ProcessingOutputValid.toneCurve ||
+        m_TexFBOs.toneCurve.tex.GetWidth() != ssize.GetWidth() ||
+        m_TexFBOs.toneCurve.tex.GetHeight() != ssize.GetHeight())
+    {
+        // It is unlikely, but possible, that we enter the function before any processing
+        // has completed. In that case, just copy from the input image.
+
+        InitTextureAndFBO(temporary, ssize);
+        m_VBOs.wholeSelection.Bind();
+        SpecifyVertexAttribPointers();
+        auto& prog = m_GLPrograms.copy;
+        prog.Use();
+        gl::BindProgramTextures(prog, { {&m_OriginalImg, uniforms::Image} });
+        gl::c_FramebufferBinder binder(temporary.fbo);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+        srcTex = &temporary.tex;
+    }
+    else
+    {
+        srcTex = &m_TexFBOs.toneCurve.tex;
+    }
+
+    c_Image img(srcTex->GetWidth(), srcTex->GetHeight(), PixelFormat::PIX_MONO32F);
+    glBindTexture(GL_TEXTURE_RECTANGLE, srcTex->Get());
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glGetTexImage(GL_TEXTURE_RECTANGLE, 0, GL_RED, GL_FLOAT, img.GetRow(0));
+
+    return img;
+}
+
+bool c_OpenGLBackEnd::ProcessingInProgress()
+{
+    return (!m_LRSync.abortRequested && m_LRSync.numIterationsLeft > 0);
+}
+
+void c_OpenGLBackEnd::AbortProcessing()
+{
+    m_LRSync.abortRequested = true;
+    if (m_OnProcessingCompleted)
+    {
+        m_OnProcessingCompleted(CompletionStatus::ABORTED);
+    }
+}
+
 
 } // namespace imppg::backend

@@ -57,7 +57,7 @@ public:
 
     void SetScaledLogicalSelectionGetter(std::function<wxRect()> getter) override { m_ScaledLogicalSelectionGetter = getter; }
 
-    void SetProcessingCompletedHandler(std::function<void()> handler) override { m_OnProcessingCompleted = handler; }
+    void SetProcessingCompletedHandler(std::function<void(CompletionStatus)> handler) override { m_OnProcessingCompleted = handler; }
 
     void NewSelection(const wxRect& selection) override;
 
@@ -76,6 +76,13 @@ public:
     const std::optional<c_Image>& GetImage() const override { return m_Img; }
 
     void SetProgressTextHandler(std::function<void(wxString)> handler) override { m_ProgressTextHandler = handler; }
+
+    c_Image GetProcessedSelection() override;
+
+    bool ProcessingInProgress() override;
+
+    void AbortProcessing() override;
+
 
 private:
     wxEvtHandler m_EvtHandler;
@@ -101,7 +108,7 @@ private:
 
     std::function<wxRect()> m_ScaledLogicalSelectionGetter;
 
-    std::function<void()> m_OnProcessingCompleted;
+    std::function<void(CompletionStatus)> m_OnProcessingCompleted;
 
     std::function<void(wxString)> m_ProgressTextHandler;
 
@@ -139,6 +146,9 @@ private:
         /// in the tone curve editor, only the (updated) tone curve is applied (to the results
         /// of the last performed unsharp masking).
         ProcessingRequest processingRequest{ProcessingRequest::NONE};
+
+        /// Currently running processing request (may be different than `processingRequest`).
+        ProcessingRequest procRequestInProgress{ProcessingRequest::NONE};
 
         /// If `true`, processing has been scheduled to start ASAP (as soon as `m_Processing.worker` is not running)
         bool processingScheduled{false};

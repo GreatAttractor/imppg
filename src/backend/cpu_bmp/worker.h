@@ -29,16 +29,11 @@ File description:
 #include <wx/thread.h>
 #include <wx/gdicmn.h>
 
+#include "backend/backend.h"
 #include "exclusive_access.h"
 #include "image.h"
 
 namespace imppg::backend {
-
-enum class CompletionStatus
-{
-    COMPLETED = 0,
-    ABORTED
-};
 
 // The structure is later encapsulated in wxThreadEvent in a wxAny object,
 // so let us keep its size small (below 16 bytes) for better performance

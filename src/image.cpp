@@ -1277,7 +1277,7 @@ static PixelFormat GetOutputPixelFormat(PixelFormat srcFmt, OutputBitDepth outpB
     return srcFmt; // never happens
 }
 
-bool c_Image::SaveToFile(const std::string& fname, OutputBitDepth outpBitDepth, OutputFileType outpFileType)
+bool c_Image::SaveToFile(const std::string& fname, OutputBitDepth outpBitDepth, OutputFileType outpFileType) const
 {
     IMPPG_ASSERT(m_Buffer->GetPixelFormat() != PixelFormat::PIX_PAL8);
 
@@ -1317,7 +1317,7 @@ static std::tuple<OutputBitDepth, OutputFileType> DecodeOutputFormat(OutputForma
     }
 }
 
-bool c_Image::SaveToFile(const std::string& fname, OutputFormat outpFormat)
+bool c_Image::SaveToFile(const std::string& fname, OutputFormat outpFormat) const
 {
     IMPPG_ASSERT(m_Buffer->GetPixelFormat() != PixelFormat::PIX_PAL8);
 

@@ -343,72 +343,48 @@ void c_MainWindow::SelectLanguage()
 
 void c_MainWindow::OnSaveFile()
 {
-    // if (!m_CurrentSettings.m_Img)
-    //     return;
+    if (!m_ImageLoaded) { return; }
 
-    // m_Processing.usePreciseTCurveVals = false;
+    if (m_BackEnd->ProcessingInProgress())
+    {
+        if (wxYES == wxMessageBox(_("Processing in progress, abort it?"), _("Warning"), wxICON_EXCLAMATION | wxYES_NO, this))
+        {
+            m_BackEnd->AbortProcessing();
+        }
+        else
+        {
+            return;
+        }
+    }
 
-    // bool forcedProcessingAbort = false;
-    // if (IsProcessingInProgress())
-    // {
-    //     if (wxYES == wxMessageBox(_("Processing in progress, abort it?"), _("Warning"), wxICON_EXCLAMATION | wxYES_NO, this))
-    //     {
-    //         // Signal the worker thread to finish ASAP.
-    //         { auto lock = m_Processing.worker.Lock();
-    //             if (lock.Get())
-    //             {
-    //                 Log::Print("Sending abort request to the worker thread\n");
-    //                 lock.Get()->AbortProcessing();
-    //                 forcedProcessingAbort = true;
-    //             }
-    //         }
+    auto& s = m_CurrentSettings;
+    const auto imgW = m_BackEnd->GetImage().value().GetWidth();
+    const auto imgH = m_BackEnd->GetImage().value().GetHeight();
+    if (s.selection.x != 0 ||
+        s.selection.y != 0 ||
+        static_cast<unsigned>(s.selection.width) != imgW ||
+        static_cast<unsigned>(s.selection.height) != imgH)
+    {
+        if (wxYES == wxMessageBox(_("You have not selected and processed the whole image, do it now?"), _("Information"), wxICON_QUESTION | wxYES_NO, this))
+        {
+            s.selection.SetPosition(wxPoint(0, 0));
+            s.selection.SetSize(wxSize(imgW, imgH));
+            s.m_FileSaveScheduled = true; // thanks to this flag, OnSaveFile() will get called once the processing scheduled below completes
+            m_BackEnd->NewSelection(s.selection);
+            return;
+        }
+    }
 
-    //         while (IsProcessingInProgress())
-    //             wxThread::Yield();
-    //     }
-    //     else
-    //         return;
-    // }
-
-    // auto& s = m_CurrentSettings;
-
-    // if (s.selection.x != 0 ||
-    //     s.selection.y != 0 ||
-    //     static_cast<unsigned>(s.selection.width) != s.m_Img.value().GetWidth() ||
-    //     static_cast<unsigned>(s.selection.height) != s.m_Img.value().GetHeight())
-    // {
-    //     if (wxYES == wxMessageBox(_("You have not selected and processed the whole image, do it now?"), _("Information"), wxICON_QUESTION | wxYES_NO, this))
-    //     {
-    //         // Current selection is smaller than the image. Need to select and process all.
-    //         s.selection.SetPosition(wxPoint(0, 0));
-    //         s.selection.SetSize(wxSize(s.m_Img.value().GetWidth(), s.m_Img.value().GetHeight()));
-    //         s.m_FileSaveScheduled = true; // thanks to this flag, OnSaveFile() will get called once the processing scheduled below completes
-    //         m_Processing.usePreciseTCurveVals = true;
-    //         ScheduleProcessing(ProcessingRequest::SHARPENING);
-    //         return;
-    //     }
-    // }
-
-    // if (!forcedProcessingAbort &&
-    //     (!s.output.toneCurve.preciseValuesApplied || !s.output.toneCurve.valid))
-    // {
-    //     IMPPG_ASSERT(s.output.toneCurve.img.has_value() && s.output.unsharpMasking.img.has_value());
-    //     // If precise tone curve has not been applied yet, do it
-    //     for (unsigned y = 0; y < s.output.toneCurve.img->GetHeight(); y++)
-    //         for (unsigned x = 0; x < s.output.toneCurve.img->GetWidth(); x++)
-    //             s.output.toneCurve.img->GetRowAs<float>(y)[x] = s.toneCurve.GetPreciseValue(s.output.unsharpMasking.img->GetRowAs<float>(y)[x]);
-
-    //     s.output.toneCurve.valid = true;
-    //     s.output.toneCurve.preciseValuesApplied = true;
-    // }
-
-    // wxFileDialog dlg(this, _("Save image"), Configuration::FileSavePath, wxEmptyString, GetOutputFilters(), wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
-    // if (wxID_OK == dlg.ShowModal())
-    // {
-    //     Configuration::FileSavePath = wxFileName(dlg.GetPath()).GetPath();
-    //     if (!s.output.toneCurve.img.value().SaveToFile(dlg.GetPath().ToStdString(), static_cast<OutputFormat>(dlg.GetFilterIndex())))
-    //         wxMessageBox(wxString::Format(_("Could not save output file %s."), dlg.GetFilename()), _("Error"), wxICON_ERROR, this);
-    // }
+    wxFileDialog dlg(this, _("Save image"), Configuration::FileSavePath, wxEmptyString, GetOutputFilters(), wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+    if (wxID_OK == dlg.ShowModal())
+    {
+        Configuration::FileSavePath = wxFileName(dlg.GetPath()).GetPath();
+        const c_Image processedImg = m_BackEnd->GetProcessedSelection();
+        if (!processedImg.SaveToFile(dlg.GetPath().ToStdString(), static_cast<OutputFormat>(dlg.GetFilterIndex())))
+        {
+            wxMessageBox(wxString::Format(_("Could not save output file %s."), dlg.GetFilename()), _("Error"), wxICON_ERROR, this);
+        }
+    }
 }
 
 void c_MainWindow::ChangeZoom(
@@ -627,7 +603,22 @@ void c_MainWindow::FinalizeBackEndInitialization(std::optional<c_Image> img)
     m_ImageView->BindScrollCallback([this] { m_BackEnd->ImageViewScrolledOrResized(m_CurrentSettings.view.zoomFactor); });
     m_BackEnd->SetPhysicalSelectionGetter([this] { return GetPhysicalSelection(); });
     m_BackEnd->SetScaledLogicalSelectionGetter([this] { return m_CurrentSettings.scaledSelection; });
-    m_BackEnd->SetProcessingCompletedHandler([this] { m_Ctrls.tcrvEditor->SetHistogram(m_BackEnd->GetHistogram()); });
+    m_BackEnd->SetProcessingCompletedHandler([this] (imppg::backend::CompletionStatus status) {
+        if (status == imppg::backend::CompletionStatus::COMPLETED)
+        {
+            m_Ctrls.tcrvEditor->SetHistogram(m_BackEnd->GetHistogram());
+
+            if (m_CurrentSettings.m_FileSaveScheduled)
+            {
+                m_CurrentSettings.m_FileSaveScheduled = false;
+                OnSaveFile();
+            }
+        }
+        else
+        {
+            m_CurrentSettings.m_FileSaveScheduled = false;
+        }
+    });
 
     m_BackEnd->NewProcessingSettings(m_CurrentSettings.processing);
     m_BackEnd->SetScalingMethod(m_CurrentSettings.scalingMethod);

@@ -429,6 +429,8 @@ void c_CpuAndBitmaps::ScheduleProcessing(ProcessingRequest request)
 
 void c_CpuAndBitmaps::OnProcessingStepCompleted(CompletionStatus status)
 {
+    m_Processing.procRequestInProgress = ProcessingRequest::NONE;
+
     if (m_ProgressTextHandler)
     {
         m_ProgressTextHandler(std::move(_("Idle")));
@@ -469,11 +471,15 @@ void c_CpuAndBitmaps::OnProcessingStepCompleted(CompletionStatus status)
             UpdateSelectionAfterProcessing();
 
             if (m_OnProcessingCompleted)
-                m_OnProcessingCompleted();
+            {
+                m_OnProcessingCompleted(status);
+            }
         }
     }
-    else if (status == CompletionStatus::ABORTED)
-        {};//m_CurrentSettings.m_FileSaveScheduled = false;
+    else if (status == CompletionStatus::ABORTED && m_OnProcessingCompleted)
+    {
+        m_OnProcessingCompleted(status);
+    }
 }
 
 void c_CpuAndBitmaps::UpdateSelectionAfterProcessing()
@@ -547,18 +553,6 @@ void c_CpuAndBitmaps::UpdateSelectionAfterProcessing()
         );
         m_ImgView.GetContentsPanel().RefreshRect(updateRegion, false);
     }
-
-    // Histogram histogram;
-    // // Show histogram of the results of all processing steps up to unsharp masking,
-    // // but NOT including tone curve application.
-    // DetermineHistogram(s.output.unsharpMasking.img.value(), wxRect(0, 0, s.selection.width, s.selection.height), histogram);
-    // m_Ctrls.tcrvEditor->SetHistogram(histogram);
-
-    // if (s.m_FileSaveScheduled)
-    // {
-    //     s.m_FileSaveScheduled = false;
-    //     OnSaveFile();
-    // }
 }
 
 void c_CpuAndBitmaps::StartLRDeconvolution()
@@ -597,6 +591,7 @@ void c_CpuAndBitmaps::StartLRDeconvolution()
                 m_Processing.currentThreadId));
 
         // Sharpening thread takes the currently selected fragment of the original image as input
+        m_Processing.procRequestInProgress = ProcessingRequest::SHARPENING;
         m_Processing.worker = new c_LucyRichardsonThread(
             WorkerParameters{
                 m_EvtHandler,
@@ -658,6 +653,7 @@ void c_CpuAndBitmaps::StartUnsharpMasking()
             m_Processing.currentThreadId));
 
         // unsharp masking thread takes the output of sharpening as input
+        m_Processing.procRequestInProgress = ProcessingRequest::UNSHARP_MASKING;
         m_Processing.worker = new c_UnsharpMaskingThread(
             WorkerParameters{
                 m_EvtHandler,
@@ -725,7 +721,7 @@ void c_CpuAndBitmaps::StartToneCurve()
                 m_Processing.currentThreadId));
 
         // tone curve thread takes the output of unsharp masking as input
-
+        m_Processing.procRequestInProgress = ProcessingRequest::TONE_CURVE;
         m_Processing.worker = new c_ToneCurveThread(
             WorkerParameters{
                 m_EvtHandler,
@@ -875,6 +871,84 @@ c_CpuAndBitmaps::~c_CpuAndBitmaps()
     }
 
     m_ImgView.GetContentsPanel().Unbind(wxEVT_PAINT, &c_CpuAndBitmaps::OnPaint, this);
+}
+
+c_Image c_CpuAndBitmaps::GetProcessedSelection()
+{
+    IMPPG_ASSERT(m_Img.has_value());
+
+    AbortProcessing();
+
+    // It is unlikely, but possible, that we enter here before any processing has completed.
+    // If output images are not initialized, do it now.
+    if (!m_Processing.output.sharpening.img.has_value() ||
+        static_cast<int>(m_Processing.output.sharpening.img->GetWidth()) != m_Selection.width ||
+        static_cast<int>(m_Processing.output.sharpening.img->GetHeight()) != m_Selection.height)
+    {
+        m_Processing.output.sharpening.img = c_Image(m_Selection.width, m_Selection.height, PixelFormat::PIX_MONO32F);
+        c_Image::Copy(
+            m_Img.value(),
+            m_Processing.output.sharpening.img.value(),
+            m_Selection.x,
+            m_Selection.y,
+            m_Selection.width,
+            m_Selection.height,
+            0, 0
+        );
+    }
+
+    if (!m_Processing.output.unsharpMasking.img.has_value() ||
+        static_cast<int>(m_Processing.output.unsharpMasking.img->GetWidth()) != m_Selection.width ||
+        static_cast<int>(m_Processing.output.unsharpMasking.img->GetHeight()) != m_Selection.height)
+    {
+        m_Processing.output.unsharpMasking.img = m_Processing.output.sharpening.img.value();
+    }
+
+    if (!m_Processing.output.toneCurve.img.has_value() ||
+        static_cast<int>(m_Processing.output.toneCurve.img->GetWidth()) != m_Selection.width ||
+        static_cast<int>(m_Processing.output.toneCurve.img->GetHeight()) != m_Selection.height)
+    {
+        m_Processing.output.toneCurve.img = m_Processing.output.unsharpMasking.img.value();
+        m_Processing.output.toneCurve.preciseValuesApplied = false;
+    }
+
+    // Apply precise tone curve values.
+    if (!m_Processing.output.toneCurve.preciseValuesApplied)
+    {
+        for (unsigned y = 0; y < m_Processing.output.toneCurve.img->GetHeight(); y++)
+        {
+            float* tcRow = m_Processing.output.toneCurve.img->GetRowAs<float>(y);
+            const float* unshRow = m_Processing.output.unsharpMasking.img->GetRowAs<float>(y);
+
+            for (unsigned x = 0; x < m_Processing.output.toneCurve.img->GetWidth(); x++)
+                tcRow[x] = m_ProcSettings.toneCurve.GetPreciseValue(unshRow[x]);
+        }
+
+        m_Processing.output.toneCurve.valid = true;
+        m_Processing.output.toneCurve.preciseValuesApplied = true;
+    }
+
+    return m_Processing.output.toneCurve.img.value();
+}
+
+void c_CpuAndBitmaps::AbortProcessing()
+{
+    { auto lock = m_Processing.worker.Lock();
+        if (lock.Get())
+        {
+            Log::Print("Sending abort request to the worker thread\n");
+            lock.Get()->AbortProcessing();
+        }
+    }
+    while (IsProcessingInProgress())
+    {
+        wxThread::Yield();
+    }
+}
+
+bool c_CpuAndBitmaps::ProcessingInProgress()
+{
+    return IsProcessingInProgress();
 }
 
 } // namespace imppg::backend

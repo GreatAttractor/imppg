@@ -214,12 +214,12 @@ public:
         const std::string& fname, ///< Full destination path
         OutputBitDepth outpBitDepth,
         OutputFileType outpFileType
-    );
+    ) const;
 
     bool SaveToFile(
         const std::string& fname, ///< Full destination path
         OutputFormat outpFormat
-    );
+    ) const;
 };
 
 /// Lightweight wrapper of a fragment of an image buffer; does not allocate any pixels memory itself

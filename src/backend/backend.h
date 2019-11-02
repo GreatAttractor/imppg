@@ -34,6 +34,12 @@ File description:
 
 namespace imppg::backend {
 
+enum class CompletionStatus
+{
+    COMPLETED = 0,
+    ABORTED
+};
+
 class IBackEnd
 {
 public:
@@ -48,7 +54,7 @@ public:
         const wxRect& selection ///< New selection for processing, in logical image coords.
     ) = 0;
 
-    virtual void SetProcessingCompletedHandler(std::function<void()>) = 0;
+    virtual void SetProcessingCompletedHandler(std::function<void(CompletionStatus)>) = 0;
 
     /// Provides getter of selection in physical image view coords.
     ///
@@ -67,7 +73,7 @@ public:
 
     /// Invalidates (marks to be repainted) a rectangle in the image view.
     ///
-    /// The back-end may choose to repaint the whole image view instead.
+    /// The back end may choose to repaint the whole image view instead.
     ///
     virtual void RefreshRect(const wxRect& rect) = 0;
 
@@ -79,9 +85,6 @@ public:
 
     virtual void ToneCurveChanged(const ProcessingSettings& procSettings) = 0;
 
-    /// Shall be called by the main window from "on idle" handler; the back-end may call `event.RequestMore()`.
-    //virtual void OnIdle(wxIdleEvent&) {}
-
     virtual void SetScalingMethod(ScalingMethod scalingMethod) = 0;
 
     /// Returns the original image being edited.
@@ -90,8 +93,23 @@ public:
     /// Provides a function to be called when progress text of back end's operations changes.
     virtual void SetProgressTextHandler(std::function<void(wxString)>) {}
 
-    /// Shall be called by the main window from "on idle" handler; the back-end may call `event.RequestMore()`.
+    /// Shall be called by the main window from "on idle" handler; the back end may call `event.RequestMore()`.
     virtual void OnIdle(wxIdleEvent&) {}
+
+    /// Returns processed contents of current selection.
+    ///
+    /// If processing is in progress, aborts it and returns the most recent processing results (if any)
+    /// or just the unprocessed selection of the input image.
+    ///
+    /// NOTE: if current selection has different position than the previously processed selection,
+    /// but has the same dimensions, the existing processing result is used anyway. If needed, the caller
+    /// should prevent it on its own.
+    ///
+    virtual c_Image GetProcessedSelection() = 0;
+
+    virtual bool ProcessingInProgress() = 0;
+
+    virtual void AbortProcessing() = 0;
 
     virtual ~IBackEnd() = default;
 };

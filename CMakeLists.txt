@@ -125,7 +125,7 @@ target_link_libraries(imppg GL)
 # TODO: conditionally
 find_package(GLEW REQUIRED)
 target_include_directories(imppg PUBLIC ${GLEW_INCLUDE_DIRS})
-target_link_libraries(imppg PUBLIC ${GLEW_LIBRARIES})
+target_link_libraries(imppg ${GLEW_LIBRARIES})
 
 if(USE_CFITSIO EQUAL 1)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_CFITSIO")
