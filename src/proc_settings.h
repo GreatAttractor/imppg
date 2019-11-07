@@ -31,33 +31,33 @@ struct ProcessingSettings
     /// Normalization is performed prior to all other processing steps.
     struct
     {
-        bool enabled;
+        bool enabled{false};
         float min, max;
     } normalization;
 
     struct
     {
         float sigma; ///< Lucy-Richardson deconvolution kernel sigma
-        int iterations; ///< Number of Lucy-Richardson deconvolution iterations.
+        int iterations{0}; ///< Number of Lucy-Richardson deconvolution iterations.
         struct
         {
-            bool enabled; ///< Experimantal; enables deringing along edges of overexposed areas (see c_LucyRichardsonThread::DoWork()).
+            bool enabled{false}; ///< Experimantal; enables deringing along edges of overexposed areas (see c_LucyRichardsonThread::DoWork()).
         } deringing;
     } LucyRichardson;
 
     struct
     {
-        bool adaptive; ///If true, adaptive unsharp masking is used.
+        bool adaptive{false}; ///If true, adaptive unsharp masking is used.
         float sigma; ///< Gaussian kernel sigma.
-        float amountMin; ///< Amount (weight) of the unsharped layer; <1.0 blurs, >1.0 sharpens; if adaptive=true, used as the min amount.
-        float amountMax; ///< Max amount.
+        float amountMin{1.0}; ///< Amount (weight) of the unsharped layer; <1.0 blurs, >1.0 sharpens; if adaptive=true, used as the min amount.
+        float amountMax{1.0}; ///< Max amount.
         float threshold; ///< Threshold of input image brightness where the min-max amount transition occurs.
         float width; ///< Width of the transition interval.
 
         bool IsEffective() const
         {
             return !adaptive && amountMax != 1.0f ||
-                adaptive && (amountMin != 1.0f || amountMax != 1.0f);            
+                adaptive && (amountMin != 1.0f || amountMax != 1.0f);
         }
     } unsharpMasking;
 

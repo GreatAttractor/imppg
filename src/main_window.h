@@ -83,7 +83,6 @@ class c_MainWindow: public wxFrame
     wxWindow* CreateProcessingControlsPanel();
     /// Marks the selection's outline (using physical coords) on the specified DC
     void MarkSelection(const wxRect& selection, wxDC& dc);
-    void UpdateSelectionAfterProcessing();
     bool IsProcessingInProgress(); ///< Returns 'true' if the processing thread is running
     void SetActionText(wxString text); ///< Sets text in the first field of the status bar
     bool SharpeningEnabled(); ///< Returns 'true' if sharpening settings have impact on the image

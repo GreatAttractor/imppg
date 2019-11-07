@@ -31,10 +31,9 @@ File description:
 #include <wx/timer.h>
 
 #include "common.h"
-#include "exclusive_access.h"
 #include "scrolled_view.h"
 #include "backend/backend.h"
-#include "backend/cpu_bmp/worker.h"
+#include "backend/cpu_bmp/cpu_bmp_proc.h"
 
 namespace imppg::backend {
 
@@ -75,7 +74,7 @@ public:
 
     const std::optional<c_Image>& GetImage() const override { return m_Img; }
 
-    void SetProgressTextHandler(std::function<void(wxString)> handler) override { m_ProgressTextHandler = handler; }
+    void SetProgressTextHandler(std::function<void(wxString)> handler) override { m_Processor.SetProgressTextHandler(handler); }
 
     c_Image GetProcessedSelection() override;
 
@@ -85,7 +84,8 @@ public:
 
 
 private:
-    wxEvtHandler m_EvtHandler;
+
+    c_CpuAndBitmapsProcessing m_Processor;
 
     c_ScrolledView& m_ImgView;
 
@@ -110,8 +110,6 @@ private:
 
     std::function<void(CompletionStatus)> m_OnProcessingCompleted;
 
-    std::function<void(wxString)> m_ProgressTextHandler;
-
     class c_ScalingTimer: public wxTimer
     {
         std::function<void()> m_Handler;
@@ -120,94 +118,15 @@ private:
         void Notify() override { m_Handler(); }
     } m_ScalingTimer;
 
-    ProcessingSettings m_ProcSettings{};
-
     ScalingMethod m_ScalingMethod{ScalingMethod::LINEAR};
-
-    /// Background processing-related variables
-    struct
-    {
-        ExclusiveAccessObject<IWorkerThread*> worker{nullptr};
-
-        /// Identifier increased by 1 after each creation of a new thread
-        int currentThreadId{0};
-        /// If 'true', tone curve is applied using its precise values. Otherwise, the curve's LUT is used.
-        /** Set to 'false' when user is just editing and adjusting settings. Set to 'true' when an output file is saved. */
-        bool usePreciseTCurveVals{false};
-
-        /// Currently scheduled processing request.
-        ///
-        /// When a request of type `n` (from the enum below) is generated (by user actions in the GUI),
-        /// all processing steps designated by values >=n are performed.
-        ///
-        /// For example, if the user changes sharpening settings (e.g. the L-R kernel sigma),
-        /// the currently selected area is sharpened, then unsharp masking is performed,
-        /// and finally the tone curve applied. If, however, the user changes only a control point
-        /// in the tone curve editor, only the (updated) tone curve is applied (to the results
-        /// of the last performed unsharp masking).
-        ProcessingRequest processingRequest{ProcessingRequest::NONE};
-
-        /// Currently running processing request (may be different than `processingRequest`).
-        ProcessingRequest procRequestInProgress{ProcessingRequest::NONE};
-
-        /// If `true`, processing has been scheduled to start ASAP (as soon as `m_Processing.worker` is not running)
-        bool processingScheduled{false};
-
-        /// Incremental results of processing of the current selection.
-        /** Must not be accessed when the relevant background thread is running. */
-        struct
-        {
-            /// Results of sharpening.
-            struct
-            {
-                std::optional<c_Image> img;
-                bool valid{false}; ///< `true` if the last sharpening request completed.
-            } sharpening;
-
-            /// Results of sharpening and unsharp masking.
-            struct
-            {
-                std::optional<c_Image> img;
-                bool valid{false}; ///< `true` if the last unsharp masking request completed.
-            } unsharpMasking;
-
-            /// Results of sharpening, unsharp masking and applying of tone curve.
-            struct
-            {
-                std::optional<c_Image> img;
-                bool valid{false}; ///< `true` if the last tone curve application request completed.
-                bool preciseValuesApplied{false}; ///< 'true' if precise values of tone curve have been applied; happens only when saving output file.
-            } toneCurve;
-        } output;
-
-    } m_Processing;
 
     void OnPaint(wxPaintEvent& event);
 
     void CreateScaledPreview(float zoomFactor);
 
-    /// Aborts processing and schedules new processing to start ASAP (as soon as `m_Processing.worker` is not running).
-    void ScheduleProcessing(ProcessingRequest request);
-
-    /// Returns `true` if the processing thread is running.
-    bool IsProcessingInProgress();
-
-    /// Creates and starts a background processing thread.
-    void StartProcessing();
-
-    void StartLRDeconvolution();
-
-    void StartUnsharpMasking();
-
-    void StartToneCurve();
-
-    void OnProcessingStepCompleted(CompletionStatus status);
-
-    void OnThreadEvent(wxThreadEvent& event);
-
     void UpdateSelectionAfterProcessing();
 };
 
-#endif // IMPPG_CPU_BMP_HEADER
-
 } // namespace imppg::backend
+
+#endif // IMPPG_CPU_BMP_HEADER

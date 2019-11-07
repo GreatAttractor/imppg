@@ -94,16 +94,12 @@ public:
     virtual void SetProgressTextHandler(std::function<void(wxString)>) {}
 
     /// Shall be called by the main window from "on idle" handler; the back end may call `event.RequestMore()`.
-    virtual void OnIdle(wxIdleEvent&) {}
+    virtual void OnIdle(wxIdleEvent& event) { (void)event; }
 
     /// Returns processed contents of current selection.
     ///
     /// If processing is in progress, aborts it and returns the most recent processing results (if any)
     /// or just the unprocessed selection of the input image.
-    ///
-    /// NOTE: if current selection has different position than the previously processed selection,
-    /// but has the same dimensions, the existing processing result is used anyway. If needed, the caller
-    /// should prevent it on its own.
     ///
     virtual c_Image GetProcessedSelection() = 0;
 
@@ -114,6 +110,24 @@ public:
     virtual ~IBackEnd() = default;
 };
 
-} // namespace imppg
+class IProcessingBackEnd
+{
+public:
+    virtual void StartProcessing(const c_Image& img, const ProcessingSettings& procSettings) = 0;
+
+    virtual void SetProcessingCompletedHandler(std::function<void(CompletionStatus)> handler) = 0;
+
+    /// Provides a function to be called when progress text of back end's operations changes.
+    virtual void SetProgressTextHandler(std::function<void(wxString)>) {}
+
+    /// Shall be called by the main window from "on idle" handler; the back end may call `event.RequestMore()`.
+    virtual void OnIdle(wxIdleEvent& event) { (void)event; }
+
+    virtual void AbortProcessing() = 0;
+
+    virtual ~IProcessingBackEnd() = default;
+};
+
+} // namespace imppg::backend
 
 #endif // IMPPG_BACKEND_HEADER

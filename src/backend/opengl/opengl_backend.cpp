@@ -797,7 +797,6 @@ void c_OpenGLBackEnd::StartToneMapping()
     // (it will contain garbage). Even glFlush() + glFinish() called here do not help.
     // Workaround: just set a flag here and act on it a moment later, in OnIdle().
 
-    //if (m_OnProcessingCompleted) { m_OnProcessingCompleted(CompletionStatus::COMPLETED); }
     m_DeferredCompletionHandlerCall = true;
 
     if (m_ProgressTextHandler)
@@ -924,15 +923,12 @@ c_Image c_OpenGLBackEnd::GetProcessedSelection()
     TexFbo temporary;
     const gl::c_Texture* srcTex{nullptr};
 
-    const wxSize ssize = m_Selection.GetSize();
-    if (!m_ProcessingOutputValid.toneCurve ||
-        m_TexFBOs.toneCurve.tex.GetWidth() != ssize.GetWidth() ||
-        m_TexFBOs.toneCurve.tex.GetHeight() != ssize.GetHeight())
+    if (!m_ProcessingOutputValid.toneCurve)
     {
         // It is unlikely, but possible, that we enter the function before any processing
         // has completed. In that case, just copy from the input image.
 
-        InitTextureAndFBO(temporary, ssize);
+        InitTextureAndFBO(temporary, m_Selection.GetSize());
         m_VBOs.wholeSelection.Bind();
         SpecifyVertexAttribPointers();
         auto& prog = m_GLPrograms.copy;
