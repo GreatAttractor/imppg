@@ -36,7 +36,7 @@ File description:
 
 namespace imppg::backend {
 
-class c_OpenGLBackEnd: public IBackEnd
+class c_OpenGLBackEnd: public IDisplayBackEnd
 {
 public:
     /// Returns `nullptr` if OpenGL cannot be initialized.

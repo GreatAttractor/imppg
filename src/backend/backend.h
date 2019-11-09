@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with ImPPG.  If not, see <http://www.gnu.org/licenses/>.
 
 File description:
-    Back end interface declaration.
+    Back end declarations.
 */
 
 #ifndef IMPPG_BACKEND_HEADER
@@ -40,7 +40,7 @@ enum class CompletionStatus
     ABORTED
 };
 
-class IBackEnd
+class IDisplayBackEnd
 {
 public:
     virtual void ImageViewScrolledOrResized(float zoomFactor) = 0;
@@ -107,7 +107,7 @@ public:
 
     virtual void AbortProcessing() = 0;
 
-    virtual ~IBackEnd() = default;
+    virtual ~IDisplayBackEnd() = default;
 };
 
 class IProcessingBackEnd

@@ -236,7 +236,7 @@ class c_MainWindow: public wxFrame
         } dragScroll;
     } m_MouseOps;
 
-    std::unique_ptr<imppg::backend::IBackEnd> m_BackEnd;
+    std::unique_ptr<imppg::backend::IDisplayBackEnd> m_BackEnd;
 
 public:
     c_MainWindow();

@@ -37,7 +37,7 @@ File description:
 
 namespace imppg::backend {
 
-class c_CpuAndBitmaps: public IBackEnd
+class c_CpuAndBitmaps: public IDisplayBackEnd
 {
 public:
     c_CpuAndBitmaps(c_ScrolledView& imgView);
