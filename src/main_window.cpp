@@ -451,23 +451,6 @@ void c_MainWindow::OnZoomChanged(
     UpdateWindowTitle();
  }
 
-void c_MainWindow::OnTimer(wxTimerEvent& /*event*/)
-{
-    // switch (event.GetId())
-    // {
-    // case ID_ScalingTimer:
-    //     {
-    //         auto& s = m_CurrentSettings;
-    //         if (s.m_ImgBmp && s.view.zoomFactor != ZOOM_NONE)
-    //         {
-    //             CreateScaledPreview(s.view.zoomFactorChanged);
-    //             s.view.zoomFactorChanged = false;
-    //         }
-    //         break;
-    //     }
-    // }
-}
-
 void c_MainWindow::OnAuiPaneClose(wxAuiManagerEvent& event)
 {
     // On wxWidgets 3.0.2 (wxGTK on Fedora 20), at this point the pane still returns IsShown() == true.
@@ -1015,17 +998,6 @@ void c_MainWindow::OnClose(wxCloseEvent& event)
     Configuration::LogHistogram = m_Ctrls.tcrvEditor->IsHistogramLogarithmic();
     Configuration::ProcessingPanelWidth = FindWindowById(ID_ProcessingControlsPanel, this)->GetSize().GetWidth();
 
-    // // Signal the worker thread to finish ASAP.
-    // { auto lock = m_Processing.worker.Lock();
-    //     if (lock.Get())
-    //     {
-    //         Log::Print("Sending abort request to the worker thread\n");
-    //         lock.Get()->AbortProcessing();
-    //     }
-    // }
-    // while (IsProcessingInProgress())
-    //     wxThread::Yield();
-
     event.Skip(); // Continue normal processing of this event
 }
 
@@ -1368,99 +1340,6 @@ wxWindow* c_MainWindow::CreateProcessingControlsPanel()
     return result;
 }
 
-void c_MainWindow::OnPaintImageArea(wxPaintEvent&)
-{
-    // wxPaintDC dc(&m_ImageView);
-    // wxRegionIterator upd(m_ImageView->GetUpdateRegion());
-    // auto& s = m_CurrentSettings;
-
-    // if (s.m_ImgBmp)
-    // {
-    //     wxRect currSel = m_MouseOps.dragging
-    //         ? m_MouseOps.GetSelection(wxRect(0, 0,
-    //                 s.m_Img.value().GetWidth(),
-    //                 s.m_Img.value().GetHeight()))
-    //         : s.selection;
-
-    //     if (s.view.zoomFactor != ZOOM_NONE && s.view.bmpScaled)
-    //     {
-    //     /*
-    //         PAINTING WHEN ZOOM <> 1.0
-
-    //         Values of different variables and c_MainWindow members used in this method are illustrated below:
-
-
-    //         +-----m_ImageView: virtual size (m_ImgBmp * zoomFactor) --------------------+
-    //         |                                                                           |
-    //         |                                                                           |
-    //         |           +======= m_ImageView: visible portion ======================+   |
-    //         |           |                                                           |   |
-    //         |   +-------|---- updateArea (corresponds to s.view.bmpScaled) ------+  |   |
-    //         |   |       |                                                        |  |   |
-    //         |   |       |                                                        |  |   |
-    //         |   |       |  +---- updRect -----+                                  |  |   |
-    //         |   |       |  |                  |                                  |  |   |
-    //         |   |       |  +------------------+                                  |  |   |
-    //         |   |       +===========================================================+   |
-    //         |   |                                                                |      |
-    //         |   |                                                                |      |
-    //         |   +----------------------------------------------------------------+      |
-    //         |                                                                           |
-    //         |                                                                           |
-    //         |                                                                           |
-    //         |                                                                           |
-    //         +---------------------------------------------------------------------------+
-
-    //         When we are asked to paint over 'updRect', we must blit from 's.view.bmpScaled' ('imgDC').
-    //         This bitmap represents a scaled portion of 'm_ImgBmp', which does not necessarily correspond
-    //         to the position of 'm_ImageView's' visible fragment at the moment. To find 'srcPt', which
-    //         is the source point in 's.view.bmpScaled' to start blitting from, we must:
-    //             - convert window (physical) left-top of 'updRect' to logical one within 'm_ImageView'
-    //             - determine 'updateArea' by reverse-scaling 's.view.scaledArea'
-    //             - express 'updRect' in 's.view.bmpScaled' logical coordinates (rather than m_ImageView)
-    //               by subtracting the left-top of 'updateArea' (which is expressed in m_ImageView logical coords)
-    //     */
-
-    //         wxMemoryDC imgDC(s.view.bmpScaled.value());
-    //         wxRect updateArea = s.view.scaledArea;
-    //         updateArea.x *= s.view.zoomFactor;
-    //         updateArea.y *= s.view.zoomFactor;
-    //         updateArea.width *= s.view.zoomFactor;
-    //         updateArea.height *= s.view.zoomFactor;
-
-    //         while (upd)
-    //         {
-    //             wxRect updRect = upd.GetRect();
-    //             wxPoint srcPt = m_ImageView->CalcUnscrolledPosition(updRect.GetTopLeft());
-    //             srcPt.x -= updateArea.x;
-    //             srcPt.y -= updateArea.y;
-    //             dc.Blit(updRect.GetTopLeft(), updRect.GetSize(), &imgDC, srcPt);
-    //             upd++;
-    //         }
-
-    //         // Selection in physical (m_ImageView) coordinates
-    //         wxRect physSelection;
-    //         if (m_MouseOps.dragging)
-    //         {
-    //             physSelection = wxRect(std::min(m_MouseOps.View.start.x, m_MouseOps.View.end.x),
-    //                 std::min(m_MouseOps.View.start.y, m_MouseOps.View.end.y),
-    //                 std::abs(m_MouseOps.View.end.x - m_MouseOps.View.start.x) + 1,
-    //                 std::abs(m_MouseOps.View.end.y - m_MouseOps.View.start.y) + 1);
-    //         }
-    //         else
-    //         {
-    //             physSelection = wxRect(m_ImageView->CalcScrolledPosition(s.scaledSelection.GetTopLeft()),
-    //                                    m_ImageView->CalcScrolledPosition(s.scaledSelection.GetBottomRight()));
-    //         }
-
-    //         MarkSelection(physSelection, dc);
-    //     }
-    //     else
-    //     {
-
-    //     }
-    // }
-}
 
 void c_MainWindow::InitToolbar()
 {

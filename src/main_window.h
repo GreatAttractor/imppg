@@ -51,7 +51,6 @@ class c_MainWindow: public wxFrame
 {
     // Event handlers ----------
     void OnClose(wxCloseEvent& event);
-    void OnPaintImageArea(wxPaintEvent& event);
     void OnCommandEvent(wxCommandEvent& event);
     void OnImageViewMouseDragStart(wxMouseEvent& event);
     void OnImageViewMouseMove(wxMouseEvent& event);
@@ -65,7 +64,6 @@ class c_MainWindow: public wxFrame
     void OnLucyRichardsonIters(wxSpinEvent& event);
     void OnImageViewMouseCaptureLost(wxMouseCaptureLostEvent& event);
     void OnAuiPaneClose(wxAuiManagerEvent& event);
-    void OnTimer(wxTimerEvent& event);
     void OnImageViewMouseWheel(wxMouseEvent& event);
     void OnProcessingPanelScrolled(wxScrollWinEvent& event);
     void OnSettingsFile(wxCommandEvent& event);
