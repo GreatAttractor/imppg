@@ -31,9 +31,15 @@ File description:
 
 namespace imppg::backend {
 
-void c_CpuAndBitmapsProcessing::StartProcessing(const c_Image& img, const ProcessingSettings& procSettings)
+void c_CpuAndBitmapsProcessing::StartProcessing(c_Image img, ProcessingSettings procSettings)
 {
-    throw std::runtime_error("Not implemented!"); (void)img; (void)procSettings;
+    m_OwnedImg = std::move(img);
+    m_Img = &m_OwnedImg.value();
+    m_Selection = m_OwnedImg.value().GetImageRect();
+    m_ProcSettings = procSettings;
+    m_UsePreciseToneCurveValues = true;
+
+    ScheduleProcessing(ProcessingRequest::SHARPENING);
 }
 
 void c_CpuAndBitmapsProcessing::SetProcessingCompletedHandler(std::function<void(CompletionStatus)> handler)
@@ -44,6 +50,16 @@ void c_CpuAndBitmapsProcessing::SetProcessingCompletedHandler(std::function<void
 void c_CpuAndBitmapsProcessing::SetProgressTextHandler(std::function<void(wxString)> handler)
 {
     m_ProgressTextHandler = handler;
+}
+
+const c_Image& c_CpuAndBitmapsProcessing::GetProcessedOutput()
+{
+    while (IsProcessingInProgress())
+    {
+        wxThread::Yield();
+    }
+
+    return m_Output.unsharpMasking.img.value();
 }
 
 c_CpuAndBitmapsProcessing::c_CpuAndBitmapsProcessing()
@@ -372,7 +388,7 @@ void c_CpuAndBitmapsProcessing::StartToneCurve()
                 m_CurrentThreadId
             },
             m_ProcSettings.toneCurve,
-            false
+            m_UsePreciseToneCurveValues
         );
 
         if (m_ProgressTextHandler)

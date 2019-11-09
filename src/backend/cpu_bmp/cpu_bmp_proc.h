@@ -39,11 +39,13 @@ public:
 
     // IProcessingBackEnd functions ---------------------------------------------------------------
 
-    void StartProcessing(const c_Image& img, const ProcessingSettings& procSettings) override;
+    void StartProcessing(c_Image img, ProcessingSettings procSettings) override;
 
     void SetProcessingCompletedHandler(std::function<void(CompletionStatus)> handler) override;
 
     void SetProgressTextHandler(std::function<void(wxString)> handler) override;
+
+    const c_Image& GetProcessedOutput() override;
 
     void AbortProcessing() override;
 
@@ -98,6 +100,8 @@ private:
     void OnProcessingStepCompleted(CompletionStatus status);
 
     void OnThreadEvent(wxThreadEvent& event);
+
+    std::optional<c_Image> m_OwnedImg; ///< Image provided via `StartProcessing` (when in batch processing mode).
 
     c_Image* m_Img{nullptr}; ///< Image being processed.
 
@@ -160,6 +164,8 @@ private:
     } m_Output;
 
     std::function<void(CompletionStatus)> m_OnProcessingCompleted;
+
+    bool m_UsePreciseToneCurveValues{false};
 };
 
 }  // namespace imppg::backend

@@ -50,7 +50,7 @@ class c_BatchParamsDialog : public c_ScrollableDialog
 public:
     c_BatchParamsDialog(wxWindow* parent);
 
-    const wxArrayString GetInputFileNames();
+    wxArrayString GetInputFileNames();
     wxString GetOutputDirectory();
     OutputFormat GetOutputFormat();
     wxString GetSettingsFileName();

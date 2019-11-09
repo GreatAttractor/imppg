@@ -60,7 +60,7 @@ BEGIN_EVENT_TABLE(c_BatchParamsDialog, wxDialog)
     EVT_FILEPICKER_CHANGED(ID_SettingsFilePicker, c_BatchParamsDialog::OnSettingsFileChanged)
 END_EVENT_TABLE()
 
-const wxArrayString c_BatchParamsDialog::GetInputFileNames()
+wxArrayString c_BatchParamsDialog::GetInputFileNames()
 {
     return m_FileList->GetStrings();
 }

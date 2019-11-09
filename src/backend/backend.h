@@ -113,7 +113,10 @@ public:
 class IProcessingBackEnd
 {
 public:
-    virtual void StartProcessing(const c_Image& img, const ProcessingSettings& procSettings) = 0;
+    virtual void StartProcessing(c_Image img, ProcessingSettings procSettings) = 0;
+
+    /// Can only be called after processing completes.
+    virtual const c_Image& GetProcessedOutput() = 0;
 
     virtual void SetProcessingCompletedHandler(std::function<void(CompletionStatus)> handler) = 0;
 
