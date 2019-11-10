@@ -113,7 +113,7 @@ private:
 
     ProcessingSettings m_ProcSettings{};
 
-    ExclusiveAccessObject<IWorkerThread*> m_Worker{nullptr};
+    std::unique_ptr<IWorkerThread> m_Worker;
 
     /// Identifier increased by 1 after each creation of a new thread
     int m_CurrentThreadId{0};

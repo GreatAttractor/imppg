@@ -129,8 +129,7 @@ void c_CpuAndBitmapsProcessing::OnThreadEvent(wxThreadEvent& event)
 
 bool c_CpuAndBitmapsProcessing::IsProcessingInProgress()
 {
-    auto lock = m_Worker.Lock();
-    return lock.Get() != nullptr;
+    return m_Worker && m_Worker->IsAlive();
 }
 
 void c_CpuAndBitmapsProcessing::ScheduleProcessing(ProcessingRequest request)
@@ -158,13 +157,7 @@ void c_CpuAndBitmapsProcessing::ScheduleProcessing(ProcessingRequest request)
     else
     {
         // Signal the worker thread to finish ASAP.
-        { auto lock = m_Worker.Lock();
-            if (lock.Get())
-            {
-                Log::Print("Sending abort request to the worker thread\n");
-                lock.Get()->AbortProcessing();
-            }
-        }
+        if (m_Worker) { m_Worker->Delete(); }
 
         // Set a flag so that we immediately restart the worker thread
         // after receiving the "processing finished" message.
@@ -248,10 +241,9 @@ void c_CpuAndBitmapsProcessing::StartLRDeconvolution()
 
         // Sharpening thread takes the currently selected fragment of the original image as input
         m_ProcRequestInProgress = ProcessingRequest::SHARPENING;
-        m_Worker = new c_LucyRichardsonThread(
+        m_Worker = std::make_unique<c_LucyRichardsonThread>(
             WorkerParameters{
                 m_EvtHandler,
-                m_Worker,
                 0, // in the future we will pass the index of the currently open image
                 c_ImageBufferView(
                     m_Img->GetBuffer(),
@@ -274,9 +266,7 @@ void c_CpuAndBitmapsProcessing::StartLRDeconvolution()
             m_ProgressTextHandler(std::move(wxString::Format(_(L"L\u2013R deconvolution") + ": %d%%", 0)));
         }
 
-        { auto lock = m_Worker.Lock();
-            lock.Get()->Run();
-        }
+        m_Worker->Run();
     }
 }
 
@@ -310,10 +300,9 @@ void c_CpuAndBitmapsProcessing::StartUnsharpMasking()
 
         // unsharp masking thread takes the output of sharpening as input
         m_ProcRequestInProgress = ProcessingRequest::UNSHARP_MASKING;
-        m_Worker = new c_UnsharpMaskingThread(
+        m_Worker = std::make_unique<c_UnsharpMaskingThread>(
             WorkerParameters{
                 m_EvtHandler,
-                m_Worker,
                 0, // in the future we will pass the index of currently open image
                 m_Output.sharpening.img.value().GetBuffer(),
                 m_Output.unsharpMasking.img.value().GetBuffer(),
@@ -333,9 +322,7 @@ void c_CpuAndBitmapsProcessing::StartUnsharpMasking()
             m_ProgressTextHandler(std::move(wxString(_("Unsharp masking..."))));
         }
 
-        { auto lock = m_Worker.Lock();
-            lock.Get()->Run();
-        }
+        m_Worker->Run();
     }
 }
 
@@ -378,10 +365,9 @@ void c_CpuAndBitmapsProcessing::StartToneCurve()
 
         // tone curve thread takes the output of unsharp masking as input
         m_ProcRequestInProgress = ProcessingRequest::TONE_CURVE;
-        m_Worker = new c_ToneCurveThread(
+        m_Worker = std::make_unique<c_ToneCurveThread>(
             WorkerParameters{
                 m_EvtHandler,
-                m_Worker,
                 0, // in the future we will pass the index of currently open image
                 m_Output.unsharpMasking.img.value().GetBuffer(),
                 m_Output.toneCurve.img.value().GetBuffer(),
@@ -396,9 +382,7 @@ void c_CpuAndBitmapsProcessing::StartToneCurve()
             m_ProgressTextHandler(std::move(wxString::Format(_("Applying tone curve: %d%%"), 0)));
         }
 
-        { auto lock = m_Worker.Lock();
-            lock.Get()->Run();
-        }
+        m_Worker->Run();
     }
 }
 
@@ -442,32 +426,20 @@ void c_CpuAndBitmapsProcessing::StartProcessing()
 
 c_CpuAndBitmapsProcessing::~c_CpuAndBitmapsProcessing()
 {
-    // Signal the worker thread to finish ASAP.
-    { auto lock = m_Worker.Lock();
-        if (lock.Get())
-        {
-            Log::Print("Sending abort request to the worker thread.\n");
-            lock.Get()->AbortProcessing();
-        }
-    }
-    while (IsProcessingInProgress())
+    if (m_Worker)
     {
-        wxThread::Yield();
+        m_Worker->Delete();
+        m_Worker->Wait();
     }
 }
 
 void c_CpuAndBitmapsProcessing::AbortProcessing()
 {
-    { auto lock = m_Worker.Lock();
-        if (lock.Get())
-        {
-            Log::Print("Sending abort request to the worker thread\n");
-            lock.Get()->AbortProcessing();
-        }
-    }
-    while (IsProcessingInProgress())
+    if (m_Worker)
     {
-        wxThread::Yield();
+        Log::Print("Sending abort request to the worker thread\n");
+        m_Worker->Delete();
+        m_Worker->Wait();
     }
 }
 

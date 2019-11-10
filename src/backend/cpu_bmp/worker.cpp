@@ -33,6 +33,11 @@ wxThread::ExitCode IWorkerThread::Entry()
     Log::Print(wxString::Format("Worker thread (id = %d): started work\n", m_Params.threadId));
     DoWork();
     Log::Print(wxString::Format("Worker thread (id = %d): work finished\n", m_Params.threadId));
+
+    WorkerEventPayload payload;
+    payload.completionStatus = m_ThreadAborted ? CompletionStatus::ABORTED : CompletionStatus::COMPLETED;
+    SendMessageToParent(ID_FINISHED_PROCESSING, payload);
+
     return 0;
 }
 
@@ -49,36 +54,15 @@ void IWorkerThread::SendMessageToParent(int messageId, WorkerEventPayload& paylo
 
 bool IWorkerThread::IsAbortRequested()
 {
-    if (TestDestroy() ||
-        // Check if the main thread has called Post() on the semaphore
-        (wxSEMA_NO_ERROR == abortRequested.TryWait()))
+    if (TestDestroy())
     {
-        threadAborted = true;
+        m_ThreadAborted = true;
         return true;
     }
     else
     {
         return false;
     }
-
-}
-
-IWorkerThread::~IWorkerThread()
-{
-    WorkerEventPayload payload;
-    payload.completionStatus = threadAborted ? CompletionStatus::ABORTED : CompletionStatus::COMPLETED;
-    SendMessageToParent(ID_FINISHED_PROCESSING, payload);
-    {
-        auto lock = m_Params.instancePtr.Lock();
-        lock.Get() = nullptr;
-    }
-}
-
-/// Signals the thread to finish processing ASAP
-void IWorkerThread::AbortProcessing()
-{
-    abortRequested.Post();
-    threadAborted = true;
 }
 
 } // namespace imppg::backend
