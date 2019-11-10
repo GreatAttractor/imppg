@@ -227,13 +227,20 @@ void c_OpenGLProcessing::IssueLRCommandBatch()
             std::swap(m_LRSync.prev, m_LRSync.next);
         }
 
-        // We need to force the execution of the GL commands issued so far, so that the user can interrupt L-R processing via GUI
-        // after each command batch.
-        // Otherwise, the GL driver could defer and clump all the above commands for (time-consuming) execution together
-        // (testing on my system showed it happens with the SwapBuffers() call).
+        // We need to force the execution of the GL commands issued so far, so that the user
+        // can interrupt L-R processing via GUI after each command batch.
+        // Otherwise, the GL driver could defer and clump all the above commands for (time-consuming)
+        // execution together (testing on my system shows it happens with the SwapBuffers() call).
         glFinish();
 
         m_LRSync.numIterationsLeft -= itersInThisBatch;
+
+        if (m_ProgressTextHandler)
+        {
+            const int iters = m_ProcessingSettings.LucyRichardson.iterations;
+            const int percentage = 100 * (iters - m_LRSync.numIterationsLeft) / iters;
+            m_ProgressTextHandler(std::move(wxString::Format(_(L"L\u2013R deconvolution: %d%%"), percentage)));
+        }
     }
 
     if (m_LRSync.numIterationsLeft == 0 && !m_ProcessingOutputValid.sharpening)
@@ -255,7 +262,7 @@ void c_OpenGLProcessing::StartLRDeconvolution()
 
     if (m_ProgressTextHandler)
     {
-        m_ProgressTextHandler(std::move(_(L"L\u2013R deconvolution...")));
+        m_ProgressTextHandler(std::move(wxString::Format(_(L"L\u2013R deconvolution: %d%%"), 0)));
     }
 
     m_ProcessingOutputValid.sharpening = false;
