@@ -18,8 +18,11 @@ You should have received a copy of the GNU General Public License
 along with ImPPG.  If not, see <http://www.gnu.org/licenses/>.
 
 File description:
-    OpenGL back end declaration.
+    OpenGL display back end declaration.
 */
+
+#ifndef IMPPG_GL_DISPLAY_BACKEND_H
+#define IMPPG_GL_DISPLAY_BACKEND_H
 
 #include <functional>
 #include <optional>
@@ -30,19 +33,20 @@ File description:
 #include "common.h"
 #include "scrolled_view.h"
 #include "backend/backend.h"
+#include "backend/opengl/opengl_proc.h"
 #include "backend/opengl/gl_utils.h"
 
 #include <wx/glcanvas.h> // has to be below other OpenGL-related includes
 
 namespace imppg::backend {
 
-class c_OpenGLBackEnd: public IDisplayBackEnd
+class c_OpenGLDisplay: public IDisplayBackEnd
 {
 public:
     /// Returns `nullptr` if OpenGL cannot be initialized.
-    static std::unique_ptr<c_OpenGLBackEnd> Create(c_ScrolledView& imgView);
+    static std::unique_ptr<c_OpenGLDisplay> Create(c_ScrolledView& imgView);
 
-    ~c_OpenGLBackEnd() override;
+    ~c_OpenGLDisplay() override;
 
     void ImageViewScrolledOrResized(float zoomFactor) override;
 
@@ -88,6 +92,8 @@ public:
 
 
 private:
+    std::unique_ptr<c_OpenGLProcessing> m_Processor;
+
     c_ScrolledView& m_ImgView;
 
     std::unique_ptr<wxGLCanvas> m_GLCanvas;
@@ -109,8 +115,6 @@ private:
 
     std::function<void(wxString)> m_ProgressTextHandler;
 
-    ProcessingSettings m_ProcessingSettings{};
-
     struct
     {
         struct
@@ -118,34 +122,19 @@ private:
             gl::c_Shader monoOutput;
             gl::c_Shader monoOutputCubic;
             gl::c_Shader selectionOutline;
-            gl::c_Shader copy;
-            gl::c_Shader toneCurve;
-            gl::c_Shader gaussianHorz;
-            gl::c_Shader gaussianVert;
-            gl::c_Shader unsharpMask;
-            gl::c_Shader divide;
-            gl::c_Shader multiply;
         } frag;
 
         struct
         {
             gl::c_Shader vertex;
-            gl::c_Shader passthrough;
         } vert;
     } m_GLShaders;
 
     struct
     {
-        gl::c_Program copy;
         gl::c_Program monoOutput;
         gl::c_Program monoOutputCubic;
         gl::c_Program selectionOutline;
-        gl::c_Program toneCurve;
-        gl::c_Program gaussianHorz;
-        gl::c_Program gaussianVert;
-        gl::c_Program unsharpMask;
-        gl::c_Program multiply;
-        gl::c_Program divide;
     } m_GLPrograms;
 
     struct
@@ -153,68 +142,13 @@ private:
         gl::c_Buffer wholeImgScaled; ///< Whole image rectangle (with scaling applied).
         gl::c_Buffer selectionScaled; ///< Selection outline (with scaling applied); changes when new selection is being made.
         gl::c_Buffer lastChosenSelectionScaled; ///< Selection outline (with scaling applied); corresponds to `m_Selection * m_ZoomFactor`.
-        gl::c_Buffer wholeSelection; ///< Vertices specify a full-screen quad, tex. coords correspond to `m_Selection`.
-        gl::c_Buffer wholeSelectionAtZero; ///< Vertices specify a full-screen quad, tex. coords correspond to `m_Selection` positioned at (0, 0).
     } m_VBOs;
-
-    // All textures are GL_TEXTURE_RECTANGLE, GL_RED, GL_FLOAT (single-component 32-bit floating-point).
-
-    gl::c_Texture m_OriginalImg;
-
-    /// Framebuffer object and its associated texture; rendering to the FBO fills the texture.
-    struct TexFbo
-    {
-        gl::c_Texture tex;
-        gl::c_Framebuffer fbo;
-    };
-
-    // Textures & FBOs below have the same size as `m_Selection`.
-    struct
-    {
-        TexFbo gaussianBlur; ///< Result of Gaussian blur of `lrSharpened`.
-        TexFbo aux;
-        TexFbo lrSharpened; ///< Result of L-R deconvolution sharpening of the original image.
-        TexFbo toneCurve; ///< Result of sharpening, unsharp masking and tone mapping.
-        TexFbo unsharpMask; ///< Result of sharpening and unsharp masking.
-
-        /// Lucy-Richardson deconvolution intermediate data.
-        struct
-        {
-            TexFbo original;
-            TexFbo buf1;
-            TexFbo buf2;
-            TexFbo estimateConvolved;
-            TexFbo convolvedDiv;
-            TexFbo convolved2;
-        } LR;
-    } m_TexFBOs;
-
-    // Lucy-Richardson deconvolution work issuing and synchronization.
-    struct
-    {
-        bool abortRequested = false;
-        unsigned numIterationsLeft = 0;
-        TexFbo* prev = nullptr;
-        TexFbo* next = nullptr;
-    } m_LRSync;
-
-    /// Indicates if all OpenGL commands required for the processing step have been submitted for execution;
-    /// if `true`, any new commands can rely on `m_Textures` containing valid output.
-    struct
-    {
-        bool sharpening{false};
-        bool unshMask{false};
-        bool toneCurve{false};
-    } m_ProcessingOutputValid;
 
     ScalingMethod m_ScalingMethod{ScalingMethod::LINEAR};
 
-    std::vector<float> m_LRGaussian; // element [0] = max value
-    std::vector<float> m_UnshMaskGaussian; // element [0] = max value
-
     bool m_DeferredCompletionHandlerCall = false;
 
-    c_OpenGLBackEnd(c_ScrolledView& imgView);
+    c_OpenGLDisplay(c_ScrolledView& imgView);
 
     void OnPaint(wxPaintEvent& event);
 
@@ -227,35 +161,9 @@ private:
 
     void FillLastChosenSelectionScaledVBO();
 
-    void StartProcessing(ProcessingRequest procRequest);
-
-    void StartLRDeconvolution();
-
-    void StartUnsharpMasking();
-
-    void StartToneMapping();
-
-    void FillWholeSelectionVBO();
-
     void RenderProcessingResults();
-
-    /// Convolves `src` with `gaussian` and writes the output to `dest`.
-    ///
-    /// Does not bind VBOs nor activates vertex attribute pointers.
-    ///
-    void GaussianConvolution(gl::c_Texture& src, gl::c_Framebuffer& dest, const std::vector<float>& gaussian);
-
-    /// Does not bind VBOs nor activates vertex attribute pointers.
-    void MultiplyTextures(gl::c_Texture& tex1, gl::c_Texture& tex2, gl::c_Framebuffer& dest);
-
-    /// Does not bind VBOs nor activates vertex attribute pointers.
-    void DivideTextures(gl::c_Texture& tex1, gl::c_Texture& tex2, gl::c_Framebuffer& dest);
-
-    /// Reinitializes texture and FBO if their size differs from `size`.
-    void InitTextureAndFBO(TexFbo& texFbo, const wxSize& size);
-
-    /// Issues an OpenGL command batch performing L-R iterations.
-    void IssueLRCommandBatch();
 };
 
 } // namespace imppg::backend
+
+#endif // IMPPG_GL_DISPLAY_BACKEND_H

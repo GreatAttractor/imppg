@@ -371,7 +371,7 @@ public:
 };
 
 /// For the given `program`, binds textures and assigns them to corresponding uniforms.
-void BindProgramTextures(c_Program& program, std::initializer_list<std::pair<c_Texture*, const char*>> texUniforms);
+void BindProgramTextures(c_Program& program, std::initializer_list<std::pair<const c_Texture*, const char*>> texUniforms);
 
 } // namespace imppg::backend::gl
 

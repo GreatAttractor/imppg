@@ -176,7 +176,7 @@ void c_Texture::SetLinearInterpolation(bool enabled)
     glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, interpolation);
 }
 
-void BindProgramTextures(c_Program& program, std::initializer_list<std::pair<c_Texture*, const char*>> texUniforms)
+void BindProgramTextures(c_Program& program, std::initializer_list<std::pair<const c_Texture*, const char*>> texUniforms)
 {
     int textureUnit = 0;
 

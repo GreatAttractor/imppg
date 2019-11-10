@@ -62,7 +62,7 @@ File description:
 #include "align.h"
 #include "appconfig.h"
 #include "backend/cpu_bmp/cpu_bmp.h"
-#include "backend/opengl/opengl_backend.h"
+#include "backend/opengl/opengl_display.h"
 #include "batch.h"
 #include "bmp.h"
 #include "common.h"
@@ -1459,7 +1459,7 @@ void c_MainWindow::InitMenu()
         [this](wxCommandEvent&)
         {
             std::optional<c_Image> img = m_BackEnd->GetImage();
-            m_BackEnd = imppg::backend::c_OpenGLBackEnd::Create(*m_ImageView); //TODO: react to nullptr
+            m_BackEnd = imppg::backend::c_OpenGLDisplay::Create(*m_ImageView); //TODO: react to nullptr
             FinalizeBackEndInitialization(img);
         },
         ID_OpenGLBackEnd
@@ -1637,7 +1637,7 @@ void c_MainWindow::InitControls()
     m_ImageView->GetContentsPanel().Bind(wxEVT_MOUSEWHEEL,         &c_MainWindow::OnImageViewMouseWheel, this);
 
     //m_BackEnd = std::make_unique<imppg::backend::c_CpuAndBitmaps>(*m_ImageView);
-    m_BackEnd = imppg::backend::c_OpenGLBackEnd::Create(*m_ImageView);
+    m_BackEnd = imppg::backend::c_OpenGLDisplay::Create(*m_ImageView);
     // TODO:
     // if (!m_BackEnd)
     // {

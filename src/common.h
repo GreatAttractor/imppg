@@ -26,6 +26,7 @@ File description:
 
 #include <vector>
 #include <wx/bitmap.h>
+#include <wx/filename.h>
 #include <wx/settings.h>
 #include <wx/window.h>
 
@@ -165,5 +166,10 @@ struct Histogram
 };
 
 Histogram DetermineHistogram(const c_Image& img, const wxRect& selection);
+
+inline wxString FromDir(const wxFileName& dir, wxString fname)
+{
+    return wxFileName(dir.GetFullPath(), fname).GetFullPath();
+}
 
 #endif //  IMPGG_COMMON_HEADER

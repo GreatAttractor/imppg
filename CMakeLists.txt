@@ -36,7 +36,13 @@ add_executable(imppg WIN32
     src/backend/cpu_bmp/worker.cpp
 
     src/backend/opengl/gl_utils.cpp
-    src/backend/opengl/opengl_backend.cpp
+    src/backend/opengl/gl_utils.h
+    src/backend/opengl/opengl_display.cpp
+    src/backend/opengl/opengl_display.h
+    src/backend/opengl/opengl_proc.cpp
+    src/backend/opengl/opengl_proc.h
+    src/backend/opengl/uniforms.cpp
+    src/backend/opengl/uniforms.h
 
     src/batch_params.cpp
     src/batch.cpp
