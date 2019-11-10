@@ -82,7 +82,7 @@ DECLARE_APP(c_MyApp)
 const int BORDER = 5; ///< Border size (in pixels) around controls in sizers
 const int REAL_PREC = 4; ///< Precision of real numbers in text controls
 
-const float ZOOM_STEP = 1.5f; ///< Zoom in/zoom out factor
+const float ZOOM_STEP = 1.25f; ///< Zoom in/zoom out factor
 const float ZOOM_MIN = 0.05f;
 const float ZOOM_MAX = 20.0f;
 
@@ -781,7 +781,7 @@ void c_MainWindow::OnImageViewMouseWheel(wxMouseEvent& event)
     else
         imgViewEvtPos = event.GetPosition();
 
-    if (m_ImageLoaded && event.ControlDown() && m_ImageView->GetContentsPanel().GetClientRect().Contains(imgViewEvtPos))
+    if (m_ImageLoaded  && m_ImageView->GetContentsPanel().GetClientRect().Contains(imgViewEvtPos))
     {
         m_FitImageInWindow = false;
 
