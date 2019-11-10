@@ -269,6 +269,6 @@ void EmptyMruList()
     appConfig->DeleteGroup(Keys::MruSettingsGroup);
 }
 
-PROPERTY_UNSIGNED(LRCmdBatchSizeMpixIters, 4);
+PROPERTY_UNSIGNED(LRCmdBatchSizeMpixIters, 1);
 
 }  // namespace Configuration
