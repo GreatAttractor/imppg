@@ -581,7 +581,7 @@ c_MainWindow::c_MainWindow()
 
 void c_MainWindow::FinalizeBackEndInitialization(std::optional<c_Image> img)
 {
-    m_BackEnd->MainWindowShown();
+    m_BackEnd->MainWindowShown(); //TODO: react on failure
 
     m_ImageView->BindScrollCallback([this] { m_BackEnd->ImageViewScrolledOrResized(m_CurrentSettings.view.zoomFactor); });
     m_BackEnd->SetPhysicalSelectionGetter([this] { return GetPhysicalSelection(); });
@@ -1451,6 +1451,7 @@ void c_MainWindow::InitMenu()
             std::optional<c_Image> img = m_BackEnd->GetImage();
             m_BackEnd = std::make_unique<imppg::backend::c_CpuAndBitmaps>(*m_ImageView);
             FinalizeBackEndInitialization(img);
+            Configuration::ProcessingBackEnd = BackEnd::CPU_AND_BITMAPS;
         },
         ID_CpuBmpBackEnd
     );
@@ -1461,6 +1462,7 @@ void c_MainWindow::InitMenu()
             std::optional<c_Image> img = m_BackEnd->GetImage();
             m_BackEnd = imppg::backend::c_OpenGLDisplay::Create(*m_ImageView); //TODO: react to nullptr
             FinalizeBackEndInitialization(img);
+            Configuration::ProcessingBackEnd = BackEnd::GPU_OPENGL;
         },
         ID_OpenGLBackEnd
     );

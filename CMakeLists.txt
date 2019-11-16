@@ -69,7 +69,7 @@ add_executable(imppg WIN32
     src/wxapp.cpp
 )
 target_include_directories(imppg PRIVATE src)
-target_compile_options(imppg PRIVATE -Werror -Wall -Wextra -Wpedantic -Wold-style-cast -Wno-parentheses -Wfatal-errors) # fatal-errors only temporarily
+target_compile_options(imppg PRIVATE -Werror -Wall -Wextra -Wpedantic -Wold-style-cast -Wno-parentheses)
 
 if (CMAKE_VERSION VERSION_LESS "3.1")
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -110,9 +110,6 @@ if(OPENMP_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
-
-#set(CMAKE_BUILD_TYPE Release)
-set(CMAKE_BUILD_TYPE Debug)
 
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag(-ffast-math GNU_FFAST_MATH_SUPPORTED)

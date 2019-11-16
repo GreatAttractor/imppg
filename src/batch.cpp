@@ -36,6 +36,7 @@ File description:
 
 #include "appconfig.h"
 #include "backend/cpu_bmp/cpu_bmp_proc.h"
+#include "backend/opengl/opengl_proc.h"
 #include "batch_params.h"
 #include "batch.h"
 #include "bmp.h"
@@ -130,11 +131,14 @@ void c_BatchDialog::OnIdle(wxIdleEvent& event)
 /// Updates the progress string in the files grid
 void c_BatchDialog::SetProgressInfo(wxString info)
 {
-    m_Grid.SetCellValue(m_CurrentFileIdx.value(), 1, info);
+    if (m_CurrentFileIdx.has_value())
+    {
+        m_Grid.SetCellValue(m_CurrentFileIdx.value(), 1, info);
 
-    int newProgressColWidth = m_Grid.GetTextExtent(info).GetWidth() + 10;
-    if (m_Grid.GetColSize(1) < newProgressColWidth)
-        m_Grid.SetColSize(1, newProgressColWidth);
+        int newProgressColWidth = m_Grid.GetTextExtent(info).GetWidth() + 10;
+        if (m_Grid.GetColSize(1) < newProgressColWidth)
+            m_Grid.SetColSize(1, newProgressColWidth);
+    }
 }
 
 /// Returns 'false' on error
@@ -241,7 +245,7 @@ void c_BatchDialog::ProcessNextFile()
         NormalizeFpImage(img.value(), proc.normalization.min, proc.normalization.max);
     }
 
-    m_Processor->StartProcessing(img.value(), proc);
+    m_Processor->StartProcessing(std::move(img.value()), proc);
 
 }
 
@@ -263,7 +267,12 @@ c_BatchDialog::c_BatchDialog(wxWindow* parent, wxArrayString fileNames,
 : wxDialog(parent, wxID_ANY, _("Batch processing"), wxDefaultPosition, wxDefaultSize,
         wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
 {
-    m_Processor = std::make_unique<imppg::backend::c_CpuAndBitmapsProcessing>();
+    switch (Configuration::ProcessingBackEnd)
+    {
+    case BackEnd::CPU_AND_BITMAPS: m_Processor = std::make_unique<imppg::backend::c_CpuAndBitmapsProcessing>(); break;
+    case BackEnd::GPU_OPENGL: m_Processor = std::make_unique<imppg::backend::c_OpenGLProcessing>(); break;
+    default: IMPPG_ABORT();
+    }
 
     m_Processor->SetProgressTextHandler([this](wxString info) { SetProgressInfo(info); });
     m_Processor->SetProcessingCompletedHandler([this](CompletionStatus status) { OnProcessingCompleted(status); });

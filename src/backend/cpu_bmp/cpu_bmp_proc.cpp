@@ -54,12 +54,13 @@ void c_CpuAndBitmapsProcessing::SetProgressTextHandler(std::function<void(wxStri
 
 const c_Image& c_CpuAndBitmapsProcessing::GetProcessedOutput()
 {
-    while (IsProcessingInProgress())
+    if (m_Worker)
     {
-        wxThread::Yield();
+        m_Worker->Wait();
     }
+    IMPPG_ASSERT(m_Output.toneCurve.valid);
 
-    return m_Output.unsharpMasking.img.value();
+    return m_Output.toneCurve.img.value();
 }
 
 c_CpuAndBitmapsProcessing::c_CpuAndBitmapsProcessing()

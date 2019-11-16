@@ -95,7 +95,8 @@ public:
     bool IsProcessingInProgress() const { return (!m_LRSync.abortRequested && m_LRSync.numIterationsLeft > 0); }
 
 private:
-    std::optional<c_Image> m_OwnedImg; ///< Set with `StartProcessing`.
+    std::optional<c_Image> m_OwnedImg; ///< Set with `IProcessingBackEnd::StartProcessing`.
+    std::optional<c_Image> m_ProcessedOutput;
 
     const c_Image* m_Img{nullptr}; /// < Image being processed (may point to `m_OwnedImg`).
 

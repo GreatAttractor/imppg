@@ -89,6 +89,7 @@ namespace Configuration
     extern c_Property<unsigned> ToneCurveEditor_CurveWidth;
     extern c_Property<unsigned> ToneCurveEditor_CurvePointSize;
     extern c_Property<wxRect>   ToneCurveSettingsDialogPosSize;
+    extern c_Property<BackEnd>  ProcessingBackEnd;
 
     /// If zero, draw 1 segment per pixel
     /** NOTE: drawing 1 segment per pixel may be slow for large widths of the tone curve editor window

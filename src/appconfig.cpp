@@ -107,6 +107,8 @@ namespace Keys
     const char* MruSettingsGroup = "/MostRecentSettings";
     const char* MruSettingsItem = "item";
 
+    const char* ProcessingBackEnd = "/BackEnd";
+
 #define OpenGLGroup "/OpenGL"
 
     const char* LRCmdBatchSizeMpixIters = OpenGLGroup"/LRCommandBatchSizeMpixIters";
@@ -197,6 +199,19 @@ c_Property<ToneCurveEditorColors> ToneCurveColors(
         return static_cast<ToneCurveEditorColors>(result);
     },
     [](const ToneCurveEditorColors &val) { appConfig->Write(Keys::ToneCurveEditorColors, static_cast<long>(val)); }
+);
+
+c_Property<BackEnd> ProcessingBackEnd(
+    []()
+    {
+        long result = appConfig->ReadLong(Keys::ProcessingBackEnd, static_cast<long>(BackEnd::CPU_AND_BITMAPS));
+        if (result < 0 || result >= static_cast<long>(BackEnd::LAST))
+        {
+            return BackEnd::CPU_AND_BITMAPS;
+        }
+        return static_cast<BackEnd>(result);
+    },
+    [](const BackEnd& val) { appConfig->Write(Keys::ProcessingBackEnd, static_cast<long>(val)); }
 );
 
 #define PROPERTY_TCRV_COLOR(Name, DefaultValue)                                                           \

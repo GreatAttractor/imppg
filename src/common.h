@@ -62,6 +62,14 @@ enum class ProcessingRequest
     TONE_CURVE
 };
 
+enum class BackEnd
+{
+    CPU_AND_BITMAPS = 0,
+    GPU_OPENGL,
+
+    LAST // this has to be the last entry
+};
+
 namespace DefaultColors
 {
 namespace ImPPG

@@ -35,8 +35,12 @@ namespace imppg::backend {
 
 void c_OpenGLProcessing::StartProcessing(c_Image img, ProcessingSettings procSettings)
 {
-    (void)img; (void)procSettings;
-    throw std::runtime_error("Not implemented yet!");
+    m_OwnedImg = std::move(img);
+    SetImage(m_OwnedImg.value(), false);
+    m_Selection = m_OwnedImg.value().GetImageRect();
+    FillWholeSelectionVBO();
+    SetProcessingSettings(procSettings);
+    StartProcessing(ProcessingRequest::SHARPENING);
 }
 
 void c_OpenGLProcessing::SetProcessingCompletedHandler(std::function<void(CompletionStatus)> handler)
@@ -51,7 +55,18 @@ void c_OpenGLProcessing::SetProgressTextHandler(std::function<void(wxString)> ha
 
 const c_Image& c_OpenGLProcessing::GetProcessedOutput()
 {
-    throw std::runtime_error("Not implemented yet!");
+    if (!m_ProcessedOutput.has_value())
+    {
+        IMPPG_ASSERT(m_ProcessingOutputValid.toneCurve);
+
+        const gl::c_Texture& srcTex = m_TexFBOs.toneCurve.tex;
+        m_ProcessedOutput = c_Image(srcTex.GetWidth(), srcTex.GetHeight(), PixelFormat::PIX_MONO32F);
+        glBindTexture(GL_TEXTURE_RECTANGLE, srcTex.Get());
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glGetTexImage(GL_TEXTURE_RECTANGLE, 0, GL_RED, GL_FLOAT, m_ProcessedOutput.value().GetRow(0));
+    }
+
+    return m_ProcessedOutput.value();
 }
 
 void c_OpenGLProcessing::OnIdle(wxIdleEvent& event)
