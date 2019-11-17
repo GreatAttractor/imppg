@@ -28,6 +28,8 @@ File description:
 #include "backend/opengl/gl_utils.h"
 #include "image.h"
 
+#include <array>
+
 namespace imppg::backend {
 
 class c_OpenGLProcessing: public IProcessingBackEnd
@@ -155,6 +157,8 @@ private:
     // Textures & FBOs below have the same size as `m_Selection`.
     struct
     {
+        /// Gaussian-blurred input image to provide "steering brightness" during adaptive unsharp masking.
+        TexFbo inputBlurred;
         TexFbo gaussianBlur; ///< Result of Gaussian blur of `lrSharpened`.
         TexFbo aux;
         TexFbo lrSharpened; ///< Result of L-R deconvolution sharpening of the original image.
@@ -200,6 +204,10 @@ private:
     std::vector<float> m_LRGaussian; // element [0] = max value
     std::vector<float> m_UnshMaskGaussian; // element [0] = max value
 
+    /// Coefficients of cubic transition curve for adaptive unsharp masking
+    /// (see `GetAdaptiveUnshMaskTransitionCurve` in `common.h` for details).
+    std::array<float, 4> m_TransitionCurve;
+
     /// Convolves `src` with `gaussian` and writes the output to `dest`.
     ///
     /// Does not bind VBOs nor activates vertex attribute pointers.
@@ -224,7 +232,7 @@ private:
 
     void StartToneMapping();
 
-    void FillWholeSelectionVBO();
+    void FillSelectionVBOs();
 };
 
 } // namespace imppg::backend

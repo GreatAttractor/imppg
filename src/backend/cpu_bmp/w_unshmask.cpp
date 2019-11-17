@@ -21,14 +21,13 @@ File description:
     Unsharp masking worker thread implementation.
 */
 
+#include "common.h"
 #include "gauss.h"
 #include "imppg_assert.h"
 #include "lrdeconv.h"
 #include "backend/cpu_bmp/w_unshmask.h"
 
 namespace imppg::backend {
-
-const float RAW_IMAGE_BLUR_SIGMA = 1.0f;
 
 c_UnsharpMaskingThread::c_UnsharpMaskingThread(
     WorkerParameters&& params,
@@ -83,36 +82,20 @@ void c_UnsharpMaskingThread::DoWork()
         // (henceforth "brightness").
         //
         // Local brightness is taken from the raw, unprocessed image (`m_RawInput`)
-        // smoothed by Gaussian with sigma = RAW_IMAGE_BLUR_SIGMA to alleviate noise.
-        // The unsharp masking amount is a function of local brightness as follows:
+        // smoothed by Gaussian with sigma = RAW_IMAGE_BLUR_SIGMA_FOR_ADAPTIVE_UNSHARP_MASK
+        // to alleviate noise.
         //
-        //   - if brightness < threshold-width, amount is m_AmountMin
-        //   - if brightness > threshold+width, amount is m_AmountMax
-        //   - if threshold-width <= brightness <= threshold-width (transition region),
-        //     amount changes smoothly from m_AmounMin to m_AmountMax following a cubic function:
-        //
-        //     amount = a*brightness^3 + b*brightness^2 + c*brightness + d
-        //
-        //  such that its derivatives are zero at (threshold-width) and (threshold+width) and there is
-        //  an inflection point at the threshold.
-
+        // See the declaration of `GetAdaptiveUnshMaskTransitionCurve` for further details.
 
         // gaussian-smoothed raw image to provide the local "steering" brightness
         std::unique_ptr<float[]> imgL(new float[width * height]);
         ConvolveSeparable(
             c_PaddedArrayPtr(m_RawInput.GetRowAs<float>(0), width, height, m_RawInput.GetBytesPerRow()),
             c_PaddedArrayPtr(imgL.get(), width, height),
-            RAW_IMAGE_BLUR_SIGMA
+            RAW_IMAGE_BLUR_SIGMA_FOR_ADAPTIVE_UNSHARP_MASK
         );
 
-        // Coefficients of the cubic curve
-        float divisor = 4*m_Width*m_Width*m_Width;
-        float a = (m_AmountMin - m_AmountMax) / divisor;
-        float b = 3 * (m_AmountMax - m_AmountMin) * m_Threshold / divisor;
-        float c = 3 * (m_AmountMax - m_AmountMin) * (m_Width - m_Threshold) * (m_Width + m_Threshold) / divisor;
-        float d = (2 * m_Width * m_Width * m_Width * (m_AmountMin + m_AmountMax) +
-            3 * m_Threshold * m_Width * m_Width * (m_AmountMin - m_AmountMax) +
-            m_Threshold * m_Threshold * m_Threshold * (m_AmountMax - m_AmountMin)) / divisor;
+        const auto& [a, b, c, d] = GetAdaptiveUnshMaskTransitionCurve(m_AmountMin, m_AmountMax, m_Threshold, m_Width);
 
         for (int row = 0; row < height; row++)
             for (int col = 0; col < width; col++)

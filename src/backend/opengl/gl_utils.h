@@ -239,6 +239,8 @@ class c_Program
     std::unordered_map<const char*, GLint> Uniforms;
     std::unordered_map<const char*, GLint> Attributes;
 
+    std::string m_Name;
+
 public:
     explicit operator bool() const { return static_cast<bool>(m_Program); }
 
@@ -251,7 +253,8 @@ public:
 
     c_Program(std::initializer_list<const c_Shader*> shaders,
               std::initializer_list<const char*> uniforms,
-              std::initializer_list<const char*> attributes);
+              std::initializer_list<const char*> attributes,
+              std::string name);
 
     void SetUniform1i(const char* uniform, GLint value)
     {
@@ -305,6 +308,8 @@ public:
     }
 
     void Unbind() { glUseProgram(0); }
+
+    const std::string& GetName() const { return m_Name; }
 };
 
 class c_Framebuffer

@@ -24,6 +24,7 @@ File description:
 #ifndef IMPGG_COMMON_HEADER
 #define IMPGG_COMMON_HEADER
 
+#include <array>
 #include <vector>
 #include <wx/bitmap.h>
 #include <wx/filename.h>
@@ -35,6 +36,8 @@ File description:
 constexpr float ZOOM_NONE = 1.0f;
 
 constexpr double MAX_GAUSSIAN_SIGMA = 10.0; // shaders/unsh_mask.frag uses the same value
+
+constexpr float RAW_IMAGE_BLUR_SIGMA_FOR_ADAPTIVE_UNSHARP_MASK = 1.0f;
 
 enum class ToneCurveEditorColors
 {
@@ -179,5 +182,27 @@ inline wxString FromDir(const wxFileName& dir, wxString fname)
 {
     return wxFileName(dir.GetFullPath(), fname).GetFullPath();
 }
+
+/// Returns the coefficients a, b, c, d of the cubic curve defining the "amount" value
+/// for adaptive unsharp masking. The amount is a function of local brightness
+/// (of the raw input image) as follows:
+///
+///   - if brightness < threshold - width, amount is amountMin
+///   - if brightness > threshold + width, amount is amountMax
+///   - transition region: if threshold - width <= brightness <= threshold - width,
+///     amount changes smoothly from amounMin to amountMax following a cubic function:
+///
+///     amount = a*brightness^3 + b*brightness^2 + c*brightness + d
+///
+///  such that its derivatives are zero at (threshold - width) and (threshold + width)
+///  and there is an inflection point at the threshold.
+///
+std::array<float, 4> GetAdaptiveUnshMaskTransitionCurve(
+    float amountMin,
+    float amountMax,
+    float threshold,
+    float width
+);
+
 
 #endif //  IMPGG_COMMON_HEADER

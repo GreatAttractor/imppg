@@ -126,7 +126,8 @@ bool c_OpenGLDisplay::MainWindowShown()
         { uniforms::Image,
           uniforms::ViewportSize,
           uniforms::ScrollPos },
-        {}
+        {},
+        "monoOutput"
     );
 
     m_GLPrograms.monoOutputCubic = gl::c_Program(
@@ -135,7 +136,8 @@ bool c_OpenGLDisplay::MainWindowShown()
         { uniforms::Image,
           uniforms::ViewportSize,
           uniforms::ScrollPos },
-        {}
+        {},
+        "monoOutputCubic"
     );
 
     m_GLPrograms.selectionOutline = gl::c_Program(
@@ -143,7 +145,8 @@ bool c_OpenGLDisplay::MainWindowShown()
           &m_GLShaders.vert.vertex },
         { uniforms::ViewportSize,
           uniforms::ScrollPos },
-        {}
+        {},
+        "selectionOutline"
     );
 
     const auto clearColor = m_ImgView.GetBackgroundColour();

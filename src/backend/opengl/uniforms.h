@@ -45,6 +45,11 @@ namespace imppg::backend::uniforms
     extern const char* AmountMax;
     extern const char* InputArray1;
     extern const char* InputArray2;
+    extern const char* InputImageBlurred;
+    extern const char* TransitionCurve;
+    extern const char* Adaptive;
+    extern const char* Threshold;
+    extern const char* Width;
 }
 
 #endif // IMPPG_GL_UNIFORMS_H

@@ -21,6 +21,7 @@ File description:
     OpenGL utility classes implementation
 */
 
+#include <boost/format.hpp>
 #include <exception>
 #include <fstream>
 #include <iostream>
@@ -81,7 +82,7 @@ c_Shader::c_Shader(GLenum type, const char* srcFileName)
             glGetShaderInfoLog(m_Shader.Get(), logLength, nullptr, infoLog.get());
             Log::Print(wxString::Format("Could not create shader from source file %s", srcFileName));
             std::cerr << "Shader compilation failed:\n\n" << infoLog.get() << std::endl;
-            throw std::runtime_error("Could not create shader");
+            throw std::runtime_error("Could not create shader.");
         }
     }
 }
@@ -89,9 +90,12 @@ c_Shader::c_Shader(GLenum type, const char* srcFileName)
 c_Program::c_Program(
     std::initializer_list<const c_Shader*> shaders,
     std::initializer_list<const char*> uniforms,
-    std::initializer_list<const char*> attributes
+    std::initializer_list<const char*> attributes,
+    std::string name
 )
 {
+    m_Name = name;
+
     m_Program.Get() = glCreateProgram();
     for (const auto* shader: shaders)
         glAttachShader(m_Program.Get(), shader->Get());
@@ -108,15 +112,27 @@ c_Program::c_Program(
         auto infoLog = std::make_unique<GLchar[]>(logLength);
         glGetProgramInfoLog(m_Program.Get(), logLength, nullptr, infoLog.get());
         std::cerr << "Program linking failed:\n\n" << infoLog.get() << std::endl;
-        throw std::runtime_error("Failed to create GL shader program");
+        throw std::runtime_error("Failed to create GL shader program.");
     }
     else
     {
         // Make sure the program contains all required uniforms and attributes.
         for (auto uniform: uniforms)
-            IMPPG_ASSERT(-1 != (Uniforms[uniform] = glGetUniformLocation(m_Program.Get(), uniform)));
+        {
+            IMPPG_ASSERT_MSG(
+                -1 != (Uniforms[uniform] = glGetUniformLocation(m_Program.Get(), uniform)),
+                boost::str(boost::format("Uniform \"%s\" not found in compiled program \"%s\" - perhaps it is not used?")
+                    % uniform % m_Name.c_str())
+            );
+        }
         for (auto attribute: attributes)
-            IMPPG_ASSERT(-1 != (Attributes[attribute] = glGetAttribLocation(m_Program.Get(), attribute)));
+        {
+            IMPPG_ASSERT_MSG(
+                -1 != (Attributes[attribute] = glGetAttribLocation(m_Program.Get(), attribute)),
+                boost::str(boost::format("Attribute \"%s\" not found in compiled program \"%s\" - perhaps it is not used?")
+                    % attribute % m_Name.c_str())
+            );
+        }
     }
 }
 
@@ -154,7 +170,7 @@ c_Framebuffer::c_Framebuffer(std::initializer_list<c_Texture*> attachedTextures)
     if (fbStatus != GL_FRAMEBUFFER_COMPLETE)
     {
         Log::Print("Could not create FBO, status: %d\n", static_cast<int>(fbStatus));
-        throw std::runtime_error("Could not create FBO");
+        throw std::runtime_error("Could not create FBO.");
     }
 
     m_NumAttachedTextures = attachedTextures.size();

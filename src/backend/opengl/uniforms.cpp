@@ -41,4 +41,9 @@ namespace imppg::backend::uniforms
     const char* AmountMax = "AmountMax";
     const char* InputArray1 = "InputArray1";
     const char* InputArray2 = "InputArray2";
+    const char* InputImageBlurred = "InputImageBlurred";
+    const char* TransitionCurve = "TransitionCurve";
+    const char* Adaptive = "Adaptive";
+    const char* Threshold = "Threshold";
+    const char* Width = "Width";
 }

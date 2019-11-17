@@ -28,16 +28,49 @@ out vec4 Color;
 
 uniform sampler2DRect Image;
 uniform sampler2DRect BlurredImage;
+
+// whole input image, blurred; the fragment corresponding to `Image` and
+// `BlurredImage` is at `SelectionPos`
+uniform sampler2DRect InputImageBlurred;
+
+uniform ivec2 SelectionPos;
 uniform float AmountMin;
 uniform float AmountMax;
 uniform bool Adaptive;
+uniform float Threshold;
+uniform float Width;
+
+// coefficients of a cubic curve; see `GetAdaptiveUnshMaskTransitionCurve`
+// in `common.h` for details
+uniform vec4 TransitionCurve;
 
 void main()
 {
-    float outputValue = AmountMax * texture(Image, TexCoord).r +
-        (1.0 - AmountMax) * texture(BlurredImage, TexCoord).r;
+    float amount = 1.0;
+
+    if (!Adaptive)
+    {
+        amount = AmountMax;
+    }
+    else
+    {
+        float l = texture(InputImageBlurred, TexCoord + vec2(SelectionPos)).r;
+        float a = TransitionCurve.x;
+        float b = TransitionCurve.y;
+        float c = TransitionCurve.z;
+        float d = TransitionCurve.w;
+
+        if (l < Threshold - Width)
+            amount = AmountMin;
+        else if (l > Threshold + Width)
+            amount = AmountMax;
+        else
+            amount = l * (l * (a * l + b) + c) + d;
+    }
+
+    float outputValue = amount * texture(Image, TexCoord).r +
+        (1.0 - amount) * texture(BlurredImage, TexCoord).r;
 
     outputValue = clamp(outputValue, 0.0, 1.0);
-
     Color = vec4(outputValue, outputValue, outputValue, 1.0);
 }
