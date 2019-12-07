@@ -29,6 +29,7 @@ File description:
 #include "image.h"
 
 #include <array>
+#include <vector>
 
 namespace imppg::backend {
 
@@ -146,6 +147,15 @@ private:
     // All textures are GL_TEXTURE_RECTANGLE, GL_RED, GL_FLOAT (single-component 32-bit floating-point).
 
     gl::c_Texture m_OriginalImg;
+
+
+    // Original image with pixels above `DERINGING_BRIGHTNESS_THRESHOLD` (and their vicinity) blurred to avoid ringing.
+    struct
+    {
+        std::optional<c_Image> image;
+        gl::c_Texture texture;
+        std::vector<uint8_t> workBuf;
+    } m_BlurredForDeringing;
 
     /// Framebuffer object and its associated texture; rendering to the FBO fills the texture.
     struct TexFbo

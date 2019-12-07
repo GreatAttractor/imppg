@@ -28,6 +28,7 @@ File description:
 #include <memory>
 #include <optional>
 #include <string>
+#include <type_traits>
 #include <wx/gdicmn.h>
 
 #if USE_FREEIMAGE
@@ -222,43 +223,47 @@ public:
     ) const;
 };
 
-/// Lightweight wrapper of a fragment of an image buffer; does not allocate any pixels memory itself
-class c_ImageBufferView
+/// Lightweight wrapper of a fragment of an image buffer; does not allocate any pixels memory itself.
+///
+/// Buf: `IImageBuffer` or `const IImageBuffer`.
+///
+template<typename Buf>
+class c_View
 {
-    IImageBuffer* m_Buf; // must be a pointer rather than a reference to enable move assignment
+    Buf* m_Buf; // must be a pointer rather than a reference to enable move assignment
     int m_X0, m_Y0, m_Width, m_Height;
 
 public:
-    c_ImageBufferView(IImageBuffer& buf)
+    c_View(Buf& buf)
         : m_Buf(&buf), m_X0(0), m_Y0(0), m_Width(buf.GetWidth()), m_Height(buf.GetHeight())
     { }
 
-    c_ImageBufferView(IImageBuffer& buf, int x0, int y0, int width, int height)
+    c_View(Buf& buf, int x0, int y0, int width, int height)
         : m_Buf(&buf), m_X0(x0), m_Y0(y0), m_Width(width), m_Height(height)
     { }
 
-    c_ImageBufferView(IImageBuffer& buf, const wxRect& rect)
+    c_View(Buf& buf, const wxRect& rect)
         : m_Buf(&buf), m_X0(rect.x), m_Y0(rect.y), m_Width(rect.width), m_Height(rect.height)
     { }
 
-    unsigned GetWidth() const { return m_Width; }
+    unsigned GetWidth() { return m_Width; }
 
-    unsigned GetHeight() const { return m_Height; }
+    unsigned GetHeight() { return m_Height; }
 
     /// Returns number of bytes per row (including padding, if any).
-    size_t GetBytesPerRow() const { return m_Buf->GetBytesPerRow(); }
+    size_t GetBytesPerRow() { return m_Buf->GetBytesPerRow(); }
 
-    size_t GetBytesPerPixel() const { return m_Buf->GetBytesPerPixel(); }
+    size_t GetBytesPerPixel() { return m_Buf->GetBytesPerPixel(); }
 
-    void* GetRow(size_t row) { return static_cast<uint8_t*>(m_Buf->GetRow(m_Y0 + row)) + m_X0 * m_Buf->GetBytesPerPixel(); }
+    typename std::conditional<std::is_const<Buf>::value, const void*, void*>::type GetRow(size_t row)
+    {
+        return static_cast<typename std::conditional<std::is_const<Buf>::value, const uint8_t*, uint8_t*>::type>(
+            m_Buf->GetRow(m_Y0 + row)) + m_X0 * m_Buf->GetBytesPerPixel();
+    }
 
+    /// Returns specified row as a pointer-to-`T`. Constness of `T` has to match constness of `Buf`.
     template <typename T>
     T* GetRowAs(size_t row) { return static_cast<T*>(GetRow(row)); }
-
-    template <typename T>
-    const T* GetRowAs(size_t row) const { return static_cast<const T*>(GetRow(row)); }
-
-    const void* GetRow(size_t row) const { return static_cast<const uint8_t*>(m_Buf->GetRow(m_Y0 + row)) + m_X0 * m_Buf->GetBytesPerPixel(); }
 
     PixelFormat GetPixelFormat() const { return m_Buf->GetPixelFormat(); }
 };

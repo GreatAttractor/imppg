@@ -38,8 +38,8 @@ class c_LucyRichardsonThread : public IWorkerThread
     {
         bool enabled;
         float threshold;
-        bool greaterThan;
         float sigma;
+        std::vector<uint8_t>& workBuf; ///< Must have as many elements as there are input pixels.
     } m_Deringing;
 
     void IterationNotification(int iter, int totalIters);
@@ -47,12 +47,12 @@ class c_LucyRichardsonThread : public IWorkerThread
 public:
     c_LucyRichardsonThread(
         WorkerParameters&& params,
-        float lrSigma,                  ///< Lucy-Richardson deconvolution Gaussian kernel's sigma
-        int numIterations,              ///< Number of L-R deconvolution iterations
-        bool deringing,                 ///< If 'true', ringing around a specified threshold of brightness will be reduced
+        float lrSigma,             ///< Lucy-Richardson deconvolution Gaussian kernel's sigma.
+        int numIterations,         ///< Number of L-R deconvolution iterations.
+        bool deringing,            ///< If 'true', ringing around a specified threshold of brightness will be reduced.
         float deringingThreshold,
-        bool deringingGreaterThan,
-        float deringingSigma
+        float deringingSigma,
+        std::vector<uint8_t>& deringingWorkBuf ///< Must have as many elements as there are input pixels.
     );
 };
 

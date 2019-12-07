@@ -73,6 +73,8 @@ enum class BackEnd
     LAST // this has to be the last entry
 };
 
+constexpr float DERINGING_BRIGHTNESS_THRESHOLD = 254.0f / 255;
+
 namespace DefaultColors
 {
 namespace ImPPG

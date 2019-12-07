@@ -342,14 +342,14 @@ void c_OpenGLDisplay::FillWholeImgVBO()
 
 void c_OpenGLDisplay::SetImage(c_Image&& img, std::optional<wxRect> newSelection)
 {
-    m_Img = std::move(img);
-    m_Processor->SetImage(m_Img.value(), ScalingMethod::LINEAR == m_ScalingMethod);
-
     if (newSelection.has_value())
     {
         m_Selection = newSelection.value();
         m_Processor->SetSelection(m_Selection);
     }
+
+    m_Img = std::move(img);
+    m_Processor->SetImage(m_Img.value(), ScalingMethod::LINEAR == m_ScalingMethod);
 
     FillWholeImgVBO();
     FillLastChosenSelectionScaledVBO();

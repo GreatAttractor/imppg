@@ -28,6 +28,7 @@ File description:
 #include "common.h"
 #include "gauss.h"
 #include "imppg_assert.h"
+#include "lrdeconv.h"
 
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
@@ -329,13 +330,42 @@ void c_OpenGLProcessing::StartLRDeconvolution()
     }
     else
     {
+        if (m_ProcessingSettings.LucyRichardson.deringing.enabled)
         {
-            m_VBOs.wholeSelection.Bind();
+            BlurThresholdVicinity(
+                c_View(m_Img->GetBuffer(), m_Selection),
+                c_View(m_BlurredForDeringing.image.value().GetBuffer()),
+                m_BlurredForDeringing.workBuf,
+                DERINGING_BRIGHTNESS_THRESHOLD,
+                m_ProcessingSettings.LucyRichardson.sigma
+            );
+            m_BlurredForDeringing.texture = gl::c_Texture::CreateMono(
+                m_BlurredForDeringing.image.value().GetWidth(),
+                m_BlurredForDeringing.image.value().GetHeight(),
+                m_BlurredForDeringing.image.value().GetBuffer().GetRow(0),
+                false
+            );
+        }
+
+        const gl::c_Texture& inputImg =
+            (m_ProcessingSettings.LucyRichardson.deringing.enabled ?
+            m_BlurredForDeringing.texture : m_OriginalImg);
+
+        {
+            if (m_ProcessingSettings.LucyRichardson.deringing.enabled)
+            {
+                m_VBOs.wholeSelectionAtZero.Bind();
+            }
+            else
+            {
+                m_VBOs.wholeSelection.Bind();
+            }
             gl::SpecifyVertexAttribPointers();
+
             auto& prog = m_GLPrograms.copy;
             prog.Use();
 
-            gl::BindProgramTextures(prog, { {&m_OriginalImg, uniforms::Image} });
+            gl::BindProgramTextures(prog, { {&inputImg, uniforms::Image} });
 
             // Under "AMD PITCAIRN (DRM 2.50.0, 5.1.16-200.fc29.x86_64, LLVM 7.0.1)" renderer (Radeon R370, Fedora 29) cannot attach
             // the textures `LR.original` and `LR.buf1` to a single FBO and just render once - only the first attachment gets filled.
@@ -517,6 +547,22 @@ void c_OpenGLProcessing::SetSelection(wxRect selection)
 {
     m_Selection = selection;
     FillSelectionVBOs();
+
+    m_BlurredForDeringing.workBuf.resize(m_Selection.width * m_Selection.height);
+    m_BlurredForDeringing.image = c_Image(m_Selection.width, m_Selection.height, PixelFormat::PIX_MONO32F);
+    if (m_Img)
+    {
+        c_Image::Copy(
+            *m_Img,
+            m_BlurredForDeringing.image.value(),
+            m_Selection.x,
+            m_Selection.y,
+            m_Selection.width,
+            m_Selection.height,
+            0,
+            0
+        );
+    }
 }
 
 void c_OpenGLProcessing::SetImage(const c_Image& img, bool linearInterpolation)
@@ -552,6 +598,17 @@ void c_OpenGLProcessing::SetImage(const c_Image& img, bool linearInterpolation)
     wholeImageVBO.Bind();
     gl::SpecifyVertexAttribPointers();
     GaussianConvolution(m_OriginalImg, m_TexFBOs.inputBlurred.fbo, gaussian);
+
+    c_Image::Copy(
+        *m_Img,
+        m_BlurredForDeringing.image.value(),
+        m_Selection.x,
+        m_Selection.y,
+        m_Selection.width,
+        m_Selection.height,
+        0,
+        0
+    );
 }
 
 void c_OpenGLProcessing::SetTexturesLinearInterpolation(bool enable)

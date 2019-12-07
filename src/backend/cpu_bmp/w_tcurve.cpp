@@ -47,9 +47,9 @@ void c_ToneCurveThread::DoWork()
     for (unsigned y = 0; y < m_Params.output.GetHeight(); y++)
     {
         if (m_UsePreciseValues)
-            toneCurve.ApplyPreciseToneCurve(m_Params.input.GetRowAs<float>(y), m_Params.output.GetRowAs<float>(y), m_Params.output.GetWidth());
+            toneCurve.ApplyPreciseToneCurve(m_Params.input.GetRowAs<const float>(y), m_Params.output.GetRowAs<float>(y), m_Params.output.GetWidth());
         else
-            toneCurve.ApplyApproximatedToneCurve(m_Params.input.GetRowAs<float>(y), m_Params.output.GetRowAs<float>(y), m_Params.output.GetWidth());
+            toneCurve.ApplyApproximatedToneCurve(m_Params.input.GetRowAs<const float>(y), m_Params.output.GetRowAs<float>(y), m_Params.output.GetWidth());
 
         // Notify the main thread after every 5% of progress
         int percentage = 100 * y / m_Params.output.GetHeight();

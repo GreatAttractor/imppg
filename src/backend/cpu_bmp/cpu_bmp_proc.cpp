@@ -25,6 +25,7 @@ File description:
 #include "backend/cpu_bmp/w_lrdeconv.h"
 #include "backend/cpu_bmp/w_tcurve.h"
 #include "backend/cpu_bmp/w_unshmask.h"
+#include "common.h"
 #include "ctrl_ids.h"
 #include "imppg_assert.h"
 #include "logging.h"
@@ -246,7 +247,7 @@ void c_CpuAndBitmapsProcessing::StartLRDeconvolution()
             WorkerParameters{
                 m_EvtHandler,
                 0, // in the future we will pass the index of the currently open image
-                c_ImageBufferView(
+                c_View<const IImageBuffer>(
                     m_Img->GetBuffer(),
                     m_Selection.x,
                     m_Selection.y,
@@ -259,7 +260,8 @@ void c_CpuAndBitmapsProcessing::StartLRDeconvolution()
             m_ProcSettings.LucyRichardson.sigma,
             m_ProcSettings.LucyRichardson.iterations,
             m_ProcSettings.LucyRichardson.deringing.enabled,
-            254.0f/255, true, m_ProcSettings.LucyRichardson.sigma
+            DERINGING_BRIGHTNESS_THRESHOLD, m_ProcSettings.LucyRichardson.sigma,
+            m_DeringingWorkBuf
         );
 
         if (m_ProgressTextHandler)
@@ -309,7 +311,7 @@ void c_CpuAndBitmapsProcessing::StartUnsharpMasking()
                 m_Output.unsharpMasking.img.value().GetBuffer(),
                 m_CurrentThreadId
             },
-            c_ImageBufferView(m_Img->GetBuffer(), m_Selection),
+            c_View<const IImageBuffer>(m_Img->GetBuffer(), m_Selection),
             m_ProcSettings.unsharpMasking.adaptive,
             m_ProcSettings.unsharpMasking.sigma,
             m_ProcSettings.unsharpMasking.amountMin,
@@ -497,6 +499,12 @@ void c_CpuAndBitmapsProcessing::ApplyPreciseToneCurveValues()
     }
 
     m_Output.toneCurve.preciseValuesApplied = true;
+}
+
+void c_CpuAndBitmapsProcessing::SetSelection(wxRect selection)
+{
+    m_Selection = selection;
+    m_DeringingWorkBuf.resize(selection.width * selection.height);
 }
 
 } // namespace imppg::backend

@@ -31,20 +31,17 @@ namespace imppg::backend {
 
 c_LucyRichardsonThread::c_LucyRichardsonThread(
     WorkerParameters&& params,
-    float lrSigma,     ///< Lucy-Richardson deconvolution Gaussian kernel's sigma
-    int numIterations, ///< Number of L-R deconvolution iterations
-    bool deringing,    ///< If 'true', ringing around a specified threshold of brightness will be reduced
+    float lrSigma,
+    int numIterations,
+    bool deringing,
     float deringingThreshold,
-    bool deringingGreaterThan,
-    float deringingSigma
+    float deringingSigma,
+    std::vector<uint8_t>& deringingWorkBuf
 ): IWorkerThread(std::move(params)),
    lrSigma(lrSigma),
-   numIterations(numIterations)
+   numIterations(numIterations),
+   m_Deringing{deringing, deringingThreshold, deringingSigma, deringingWorkBuf}
 {
-    m_Deringing.enabled = deringing;
-    m_Deringing.threshold = deringingThreshold;
-    m_Deringing.greaterThan = deringingGreaterThan;
-    m_Deringing.sigma = deringingSigma;
 }
 
 void c_LucyRichardsonThread::IterationNotification(int iter, int totalIters)
@@ -58,15 +55,15 @@ void c_LucyRichardsonThread::DoWork()
 {
     wxDateTime tstart = wxDateTime::UNow();
 
-    c_ImageBufferView preprocessedInput = m_Params.input;
+    c_View preprocessedInput = m_Params.input;
 
     std::unique_ptr<c_Image> preprocessedInputImg;
     if (m_Deringing.enabled)
     {
         preprocessedInputImg = std::make_unique<c_Image>(m_Params.input.GetWidth(), m_Params.input.GetHeight(), PixelFormat::PIX_MONO32F);
-        auto preprocView = c_ImageBufferView(preprocessedInputImg->GetBuffer());
-        BlurThresholdVicinity(m_Params.input, preprocView, m_Deringing.threshold, m_Deringing.greaterThan, m_Deringing.sigma);
-        preprocessedInput = c_ImageBufferView(preprocessedInputImg->GetBuffer());
+        auto preprocView = c_View(preprocessedInputImg->GetBuffer());
+        BlurThresholdVicinity(m_Params.input, preprocView, m_Deringing.workBuf, m_Deringing.threshold, m_Deringing.sigma);
+        preprocessedInput = c_View<const IImageBuffer>(preprocessedInputImg->GetBuffer());
     }
 
     LucyRichardsonGaussian(preprocessedInput, m_Params.output, numIterations, lrSigma, ConvolutionMethod::AUTO,

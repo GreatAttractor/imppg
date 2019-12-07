@@ -57,7 +57,7 @@ public:
 
     void SetImage(c_Image& img) { m_Img = &img; }
 
-    void SetSelection(wxRect selection) { m_Selection = selection; }
+    void SetSelection(wxRect selection);
 
     void SetProcessingSettings(ProcessingSettings procSettings) { m_ProcSettings = procSettings; }
 
@@ -112,6 +112,8 @@ private:
     std::function<void(wxString)> m_ProgressTextHandler;
 
     ProcessingSettings m_ProcSettings{};
+
+    std::vector<uint8_t> m_DeringingWorkBuf;
 
     std::unique_ptr<IWorkerThread> m_Worker;
 

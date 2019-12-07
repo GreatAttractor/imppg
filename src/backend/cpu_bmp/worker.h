@@ -53,8 +53,8 @@ struct WorkerParameters
 {
     wxEvtHandler& parent; ///< Object to receive notification messages from this worker thread.
     int taskId; ///< Id of task (will be included in every message).
-    const c_ImageBufferView input; ///< Image fragment to process.
-    c_ImageBufferView output; ///< Output image.
+    c_View<const IImageBuffer> input; ///< Image fragment to process.
+    c_View<IImageBuffer> output; ///< Output image.
     int threadId; ///< Unique thread id (not reused by new threads).
 };
 
