@@ -125,12 +125,18 @@ if(USE_FREEIMAGE EQUAL 1)
 endif()
 
 # TODO: conditionally
-target_link_libraries(imppg GL)
+if(WIN32)
+    target_link_libraries(imppg opengl32)
+else()
+    target_link_libraries(imppg GL)
+endif()
 
 # TODO: conditionally
 find_package(GLEW REQUIRED)
 target_include_directories(imppg PUBLIC ${GLEW_INCLUDE_DIRS})
-target_link_libraries(imppg ${GLEW_LIBRARIES})
+target_link_libraries(imppg GLEW::GLEW)
+
+message("GLEW libs: ${GLEW_LIBRARIES}")
 
 if(USE_CFITSIO EQUAL 1)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_CFITSIO")
