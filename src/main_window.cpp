@@ -370,7 +370,7 @@ void c_MainWindow::OnSaveFile()
             s.selection.SetPosition(wxPoint(0, 0));
             s.selection.SetSize(wxSize(imgW, imgH));
             s.m_FileSaveScheduled = true; // thanks to this flag, OnSaveFile() will get called once the processing scheduled below completes
-            m_BackEnd->NewSelection(s.selection);
+            m_BackEnd->NewSelection(s.selection, m_CurrentSettings.scaledSelection);
             return;
         }
     }
@@ -812,12 +812,13 @@ void c_MainWindow::OnNewSelection(
         newSelection.x, newSelection.y, newSelection.width, newSelection.height));
 
     s.selection = newSelection;
-    m_BackEnd->NewSelection(s.selection);
+    const auto prevScaledLogicalSelection = s.scaledSelection;
     if (s.view.zoomFactor != ZOOM_NONE)
     {
         s.scaledSelection = wxRect(m_ImageView->CalcUnscrolledPosition(m_MouseOps.View.start),
                                    m_ImageView->CalcUnscrolledPosition(m_MouseOps.View.end));
     }
+    m_BackEnd->NewSelection(s.selection, prevScaledLogicalSelection);
 }
 
 void c_MainWindow::OnImageViewMouseDragEnd(wxMouseEvent&)

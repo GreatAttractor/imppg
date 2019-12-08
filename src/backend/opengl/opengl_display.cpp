@@ -373,7 +373,7 @@ Histogram c_OpenGLDisplay::GetHistogram()
         return Histogram{};
 }
 
-void c_OpenGLDisplay::NewSelection(const wxRect& selection)
+void c_OpenGLDisplay::NewSelection(const wxRect& selection, const wxRect&)
 {
     m_Selection = selection;
     m_Processor->SetSelection(selection);

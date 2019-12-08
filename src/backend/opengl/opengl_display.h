@@ -62,7 +62,7 @@ public:
 
     void SetProcessingCompletedHandler(std::function<void(CompletionStatus)> handler) override { m_OnProcessingCompleted = handler; }
 
-    void NewSelection(const wxRect& selection) override;
+    void NewSelection(const wxRect& selection, const wxRect& prevScaledLogicalSelection) override;
 
     bool MainWindowShown() override;
 

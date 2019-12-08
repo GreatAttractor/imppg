@@ -51,7 +51,8 @@ public:
 
     /// Shall start processing of the selected image fragment immediately.
     virtual void NewSelection(
-        const wxRect& selection ///< New selection for processing, in logical image coords.
+        const wxRect& selection, ///< New selection for processing, in logical image coords.
+        const wxRect& prevScaledLogicalSelection
     ) = 0;
 
     virtual void SetProcessingCompletedHandler(std::function<void(CompletionStatus)>) = 0;

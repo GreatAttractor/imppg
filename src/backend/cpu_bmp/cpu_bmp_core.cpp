@@ -283,7 +283,10 @@ Histogram c_CpuAndBitmaps::GetHistogram()
     }
 }
 
-void c_CpuAndBitmaps::NewSelection(const wxRect& selection)
+void c_CpuAndBitmaps::NewSelection(
+    const wxRect& selection,
+    const wxRect& prevScaledLogicalSelection
+)
 {
     // restore unprocessed image contents in the previous selection
     wxBitmap restored = ImageToRgbBitmap(m_Img.value(), m_Selection.x, m_Selection.y, m_Selection.width, m_Selection.height);
@@ -306,7 +309,7 @@ void c_CpuAndBitmaps::NewSelection(const wxRect& selection)
         // Area in `m_ImgBmp` to restore; based on `scaledSelection`, but limited to what is currently visible.
         wxRect selectionRst;
         // First, take the scaled selection and limit it to visible area.
-        selectionRst = m_ScaledLogicalSelectionGetter();
+        selectionRst = prevScaledLogicalSelection;
         const wxPoint scrollPos = m_ImgView.GetScrollPos();
         const wxSize viewSize = m_ImgView.GetContentsPanel().GetSize();
 
