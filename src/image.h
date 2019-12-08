@@ -31,9 +31,6 @@ File description:
 #include <type_traits>
 #include <wx/gdicmn.h>
 
-#if USE_FREEIMAGE
-#include "FreeImage.h"
-#endif
 #include "formats.h"
 #include "imppg_assert.h"
 
@@ -270,34 +267,35 @@ public:
 
 #if USE_FREEIMAGE
 
+struct FIBITMAP; // provided by FreeImage.h
+
 class c_FreeImageHandleWrapper
 {
-    struct FreeImageDeleter { void operator()(FIBITMAP* ptr) const { FreeImage_Unload(ptr); } };
-    std::unique_ptr<FIBITMAP, FreeImageDeleter> m_FiBmp;
+    FIBITMAP* m_FiBmp{nullptr};
 
 public:
     c_FreeImageHandleWrapper() = default;
 
     c_FreeImageHandleWrapper(FIBITMAP* ptr)
     {
-        m_FiBmp.reset(ptr);
+        m_FiBmp = ptr;
     }
 
     c_FreeImageHandleWrapper(const c_FreeImageHandleWrapper& rhs) = delete;
 
     c_FreeImageHandleWrapper& operator=(const c_FreeImageHandleWrapper& rhs) = delete;
 
-    c_FreeImageHandleWrapper(c_FreeImageHandleWrapper&& rhs) = default;
+    c_FreeImageHandleWrapper(c_FreeImageHandleWrapper&& rhs);
 
-    c_FreeImageHandleWrapper& operator=(c_FreeImageHandleWrapper&& rhs) = default;
+    c_FreeImageHandleWrapper& operator=(c_FreeImageHandleWrapper&& rhs);
 
-    ~c_FreeImageHandleWrapper() = default;
+    ~c_FreeImageHandleWrapper();
 
-    FIBITMAP* get() const { return m_FiBmp.get(); }
+    FIBITMAP* get() const { return m_FiBmp; }
 
-    void reset(FIBITMAP* ptr) { m_FiBmp.reset(ptr); }
+    void reset(FIBITMAP* ptr);
 
-    operator bool() const { return m_FiBmp.get() != nullptr; }
+    operator bool() const { return m_FiBmp != nullptr; }
 };
 
 /// A wrapper around a FreeImage bitmap object.
@@ -329,59 +327,15 @@ public:
     c_FreeImageBuffer(c_FreeImageBuffer&& rhs) = default;
     c_FreeImageBuffer& operator=(c_FreeImageBuffer&& rhs) = default;
 
-    static std::optional<std::unique_ptr<IImageBuffer>> Create(c_FreeImageHandleWrapper&& fiBmp)
-    {
-        PixelFormat pixFmt;
-        switch (FreeImage_GetImageType(fiBmp.get()))
-        {
-        case FIT_BITMAP:
-            switch (FreeImage_GetBPP(fiBmp.get()) / 8)
-            {
-            case 3: pixFmt = PixelFormat::PIX_RGB8; break;
-            case 4: pixFmt = PixelFormat::PIX_RGBA8; break;
-            default: return std::nullopt;
-            }
-            break;
+    static std::optional<std::unique_ptr<IImageBuffer>> Create(c_FreeImageHandleWrapper&& fiBmp);
 
-        case FIT_UINT16: pixFmt = PixelFormat::PIX_MONO16; break;
-        case FIT_FLOAT:  pixFmt = PixelFormat::PIX_MONO32F; break;
-        case FIT_RGB16:  pixFmt = PixelFormat::PIX_RGB16; break;
-        case FIT_RGBA16: pixFmt = PixelFormat::PIX_RGBA16; break;
-        case FIT_RGBF:   pixFmt = PixelFormat::PIX_RGB32F; break;
-        case FIT_RGBAF:  pixFmt = PixelFormat::PIX_RGBA32F; break;
-        default: return std::nullopt;
-        }
+    unsigned GetWidth() const override;
 
-        std::unique_ptr<IImageBuffer> result(
-            new c_FreeImageBuffer(
-                std::move(fiBmp),
-                FreeImage_GetBits(fiBmp.get()),
-                pixFmt,
-                FreeImage_GetPitch(fiBmp.get())
-            )
-        );
+    unsigned GetHeight() const override;
 
-        if (RGBQUAD* fiPal = FreeImage_GetPalette(fiBmp.get()))
-        {
-            Palette& palette = result->GetPalette();
-            for (int i = 0; i < 256; i++)
-            {
-                palette[i*3]   = fiPal[i].rgbRed;
-                palette[i*3+1] = fiPal[i].rgbGreen;
-                palette[i*3+2] = fiPal[i].rgbBlue;
-            }
-        }
+    size_t GetBytesPerRow() const override;
 
-        return result;
-    }
-
-    unsigned GetWidth() const override { return FreeImage_GetWidth(m_FiBmp.get()); }
-
-    unsigned GetHeight() const override { return FreeImage_GetHeight(m_FiBmp.get()); }
-
-    size_t GetBytesPerRow() const override { return FreeImage_GetLine(m_FiBmp.get()); }
-
-    size_t GetBytesPerPixel() const override { return FreeImage_GetBPP(m_FiBmp.get()) / 8; }
+    size_t GetBytesPerPixel() const override;
 
     void* GetRow(size_t row) override { return m_Pixels + (GetHeight() - 1 - row) * m_Stride; /* freeImage stores rows in reverse order */ }
 

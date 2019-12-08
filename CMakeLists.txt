@@ -69,7 +69,7 @@ add_executable(imppg WIN32
     src/wxapp.cpp
 )
 target_include_directories(imppg PRIVATE src)
-target_compile_options(imppg PRIVATE -Werror -Wall -Wextra -Wpedantic -Wold-style-cast -Wno-parentheses)
+target_compile_options(imppg PRIVATE -Werror -Wall -Wextra -Wpedantic -Wold-style-cast -Wno-parentheses -Wfatal-errors)
 
 if (CMAKE_VERSION VERSION_LESS "3.1")
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
