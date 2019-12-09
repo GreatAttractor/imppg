@@ -64,8 +64,6 @@ public:
 
     void NewSelection(const wxRect& selection, const wxRect& prevScaledLogicalSelection) override;
 
-    bool MainWindowShown() override;
-
     void RefreshRect(const wxRect&) override { m_ImgView.GetContentsPanel().Refresh(false); }
 
     void NewProcessingSettings(const ProcessingSettings& procSettings) override;

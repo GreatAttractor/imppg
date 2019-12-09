@@ -89,21 +89,18 @@ c_OpenGLDisplay::c_OpenGLDisplay(c_ScrolledView& imgView)
     m_GLCanvas->Bind(wxEVT_MIDDLE_UP,          &c_OpenGLDisplay::PropagateEventToParent, this);
     m_GLCanvas->Bind(wxEVT_RIGHT_UP,           &c_OpenGLDisplay::PropagateEventToParent, this);
     m_GLCanvas->Bind(wxEVT_MOUSEWHEEL,         &c_OpenGLDisplay::PropagateEventToParent, this);
-}
 
-bool c_OpenGLDisplay::MainWindowShown()
-{
     if (!m_GLCanvas->SetCurrent(*m_GLContext))
     {
         Log::Print("Failed to make GL context current.");
-        return false;
+        return; // TODO: make it recoverable error
     }
 
     const GLenum err = glewInit();
     if (GLEW_OK != err)
     {
         Log::Print("Failed to initialize GLEW.");
-        return false;
+        return; // TODO: make it recoverable error
     }
 
     auto shaderDir = wxFileName(wxStandardPaths::Get().GetExecutablePath());
@@ -189,8 +186,6 @@ bool c_OpenGLDisplay::MainWindowShown()
     });
 
     m_Processor->SetProgressTextHandler([this](wxString info) { if (m_ProgressTextHandler) { m_ProgressTextHandler(info); } });
-
-    return true;
 }
 
 void c_OpenGLDisplay::OnPaint(wxPaintEvent&)
@@ -436,14 +431,17 @@ c_OpenGLDisplay::~c_OpenGLDisplay()
 
 void c_OpenGLDisplay::OnIdle(wxIdleEvent& event)
 {
-    m_Processor->OnIdle(event);
-
-    if (m_DeferredCompletionHandlerCall)
+    if (m_Processor)
     {
-        m_DeferredCompletionHandlerCall = false;
-        if (m_OnProcessingCompleted)
+        m_Processor->OnIdle(event);
+
+        if (m_DeferredCompletionHandlerCall)
         {
-            m_OnProcessingCompleted(CompletionStatus::COMPLETED);
+            m_DeferredCompletionHandlerCall = false;
+            if (m_OnProcessingCompleted)
+            {
+                m_OnProcessingCompleted(CompletionStatus::COMPLETED);
+            }
         }
     }
 }

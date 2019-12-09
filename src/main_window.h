@@ -115,7 +115,9 @@ class c_MainWindow: public wxFrame
     void LoadSettingsFromFile(wxString settingsFile, bool moveToMruListStart);
     void IndicateSettingsModified();
     wxRect GetPhysicalSelection() const; ///< Returns current selection in physical `m_ImageView` coords.
-    void FinalizeBackEndInitialization(std::optional<c_Image> img);
+
+    template<typename T>
+    void InitializeBackEnd(std::unique_ptr<T> backEnd, std::optional<c_Image> img);
 
     wxAuiManager* m_AuiMgr{nullptr};
     c_ScrolledView* m_ImageView{nullptr}; ///< Displays 'm_ImgBmp' or 'm_ImgBmpScaled' (i.e. the current image)

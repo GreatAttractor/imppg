@@ -100,7 +100,7 @@ bool c_MyApp::OnInit()
     wxIcon appIcon;
     appIcon.CopyFromBitmap(LoadBitmap("imppg-app"));
     mainWnd->SetIcon(appIcon);
-
+    mainWnd->Show();
     SetTopWindow(mainWnd);
 
     return true;

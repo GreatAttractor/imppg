@@ -573,15 +573,22 @@ c_MainWindow::c_MainWindow()
 
     FixWindowPosition(*this);
 
-    Show(true);
-    FinalizeBackEndInitialization(std::nullopt);
+    Bind(wxEVT_SHOW, [this](wxShowEvent&) {
+        static bool firstCall = true;
+        if (firstCall)
+        {
+            InitializeBackEnd(imppg::backend::c_OpenGLDisplay::Create(*m_ImageView), std::nullopt);
+            firstCall = false;
+        }
+    });
 
     Bind(wxEVT_IDLE, [this](wxIdleEvent& event) { m_BackEnd->OnIdle(event); });
 }
 
-void c_MainWindow::FinalizeBackEndInitialization(std::optional<c_Image> img)
+template<typename T>
+void c_MainWindow::InitializeBackEnd(std::unique_ptr<T> backEnd, std::optional<c_Image> img)
 {
-    m_BackEnd->MainWindowShown(); //TODO: react on failure
+    m_BackEnd = std::move(backEnd);
 
     m_ImageView->BindScrollCallback([this] { m_BackEnd->ImageViewScrolledOrResized(m_CurrentSettings.view.zoomFactor); });
     m_BackEnd->SetPhysicalSelectionGetter([this] { return GetPhysicalSelection(); });
@@ -1450,8 +1457,7 @@ void c_MainWindow::InitMenu()
         [this](wxCommandEvent&)
         {
             std::optional<c_Image> img = m_BackEnd->GetImage();
-            m_BackEnd = std::make_unique<imppg::backend::c_CpuAndBitmaps>(*m_ImageView);
-            FinalizeBackEndInitialization(img);
+            InitializeBackEnd(std::make_unique<imppg::backend::c_CpuAndBitmaps>(*m_ImageView), img);
             Configuration::ProcessingBackEnd = BackEnd::CPU_AND_BITMAPS;
         },
         ID_CpuBmpBackEnd
@@ -1461,8 +1467,7 @@ void c_MainWindow::InitMenu()
         [this](wxCommandEvent&)
         {
             std::optional<c_Image> img = m_BackEnd->GetImage();
-            m_BackEnd = imppg::backend::c_OpenGLDisplay::Create(*m_ImageView); //TODO: react to nullptr
-            FinalizeBackEndInitialization(img);
+            InitializeBackEnd(imppg::backend::c_OpenGLDisplay::Create(*m_ImageView), img);
             Configuration::ProcessingBackEnd = BackEnd::GPU_OPENGL;
         },
         ID_OpenGLBackEnd
@@ -1640,7 +1645,7 @@ void c_MainWindow::InitControls()
     m_ImageView->GetContentsPanel().Bind(wxEVT_MOUSEWHEEL,         &c_MainWindow::OnImageViewMouseWheel, this);
 
     //m_BackEnd = std::make_unique<imppg::backend::c_CpuAndBitmaps>(*m_ImageView);
-    m_BackEnd = imppg::backend::c_OpenGLDisplay::Create(*m_ImageView);
+    //m_BackEnd = imppg::backend::c_OpenGLDisplay::Create(*m_ImageView);
     // TODO:
     // if (!m_BackEnd)
     // {
