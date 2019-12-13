@@ -1,7 +1,7 @@
 #
 # ImPPG build file
 #
-# Prerequisite libraries: wxWidgets 3.0, Boost 1.57.0, FreeImage (optional) 3.14.0 or newer, CFITSIO (optional).
+# Prerequisite libraries: wxWidgets 3.0 (3.1 under MS Windows), Boost 1.57.0, FreeImage (optional) 3.14.0 or newer, CFITSIO (optional).
 # Before building, edit config.in to configure optional libs.
 #
 # NOTE: CMake relies on the presence of the "wx-config" tool to detect and configure wxWidgets-related build options.
@@ -85,25 +85,47 @@ if(MINGW)
 endif()
 
 if(WIN32)
-    # The imppg(64).rc files include the manifest that enables MS Windows Common Controls 6.0.0.0
-    # (for Windows XP and above), i.e. the nicer-looking, themed ones. It also defines the application icon.
+    # The RC file includes the application manifest and defines the application icon.
     if(CMAKE_SIZEOF_VOID_P EQUAL 4)
         # 32-bit build
-        target_sources(imppg PUBLIC src/imppg.rc)
+        target_sources(imppg PRIVATE src/imppg.rc src/app32.manifest)
     else()
         # 64-bit build
-        target_sources(imppg PUBLIC src/imppg64.rc)
+        target_sources(imppg PRIVATE src/imppg64.rc src/app64.manifest)
     endif()
 endif()
 
 find_package(Boost REQUIRED)
-target_include_directories(imppg PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories(imppg PRIVATE ${Boost_INCLUDE_DIRS})
 
 set(wxWidgets_USE_UNICODE TRUE)
 set(wxWidgets_USE_DEBUG FALSE)
-find_package(wxWidgets REQUIRED COMPONENTS adv aui xml core base gl) # TODO add `gl` conditionally
-include(${wxWidgets_USE_FILE})
-target_link_libraries(imppg ${wxWidgets_LIBRARIES})
+
+if(NOT WIN32)
+	find_package(wxWidgets REQUIRED COMPONENTS adv aui xml core base gl) # TODO add `gl` conditionally
+	include(${wxWidgets_USE_FILE})
+	target_link_libraries(imppg ${wxWidgets_LIBRARIES})
+else()
+	# Not trying to configure "find_package(wxWidgets...)" to use custom paths,
+	# because as of CMake 3.15.5 under MSYS2 it does not work.
+    #
+	# Instead, specify everything explicitly.
+
+	target_include_directories(imppg SYSTEM PRIVATE
+		${WXWIDGETS_ROOT_DIR}/include
+		${WXWIDGETS_BUILD_DIR}/lib/gcc_x64_dll/mswu
+	)
+
+	target_link_directories(imppg PRIVATE ${WXWIDGETS_BUILD_DIR}/lib/gcc_x64_dll)
+
+	target_link_libraries(imppg
+		wxbase31u
+		wxmsw31u_aui
+		wxmsw31u_core
+		wxmsw31u_gl
+		wxbase31u_xml
+	)
+endif()
 
 find_package(OpenMP)
 if(OPENMP_FOUND)
@@ -133,14 +155,12 @@ endif()
 
 # TODO: conditionally
 find_package(GLEW REQUIRED)
-target_include_directories(imppg PUBLIC ${GLEW_INCLUDE_DIRS})
+target_include_directories(imppg PRIVATE ${GLEW_INCLUDE_DIRS})
 target_link_libraries(imppg GLEW::GLEW)
-
-message("GLEW libs: ${GLEW_LIBRARIES}")
 
 if(USE_CFITSIO EQUAL 1)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_CFITSIO")
     pkg_check_modules(CFITSIO cfitsio REQUIRED)
-    target_include_directories(imppg PUBLIC ${CFITSIO_INCLUDE_DIRS})
+    target_include_directories(imppg PRIVATE ${CFITSIO_INCLUDE_DIRS})
     target_link_libraries(imppg ${CFITSIO_LIBRARIES})
 endif()
