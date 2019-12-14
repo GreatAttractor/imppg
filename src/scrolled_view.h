@@ -60,6 +60,9 @@ public:
 
     wxPoint GetScrollPos() const { return m_ScrollPos; }
 
+    /// Enables the internal calls to wxWindow::ScrollWindow() on scroll.
+    void EnableContentsScrolling(bool enable = true) { m_WindowScrollingEnabled = enable; }
+
     bool Create(
         wxWindow* parent,
         wxWindowID winid = wxID_ANY,
@@ -77,6 +80,12 @@ private:
     wxScrollBar* m_HorzSBar{nullptr};
     wxPanel* m_Contents{nullptr};
     std::function<void()> m_ScrollCallback;
+    
+    /// If true, scrolling calls m_Contents.ScrollWindow().
+    ///
+    /// See the comment in c_ScrolledView::c_ScrolledView() for details.
+    ///
+    bool m_WindowScrollingEnabled{false};
 
     void UpdateScrollBars();
 };

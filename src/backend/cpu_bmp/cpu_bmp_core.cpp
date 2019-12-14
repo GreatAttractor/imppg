@@ -91,6 +91,8 @@ void c_CpuAndBitmaps::RefreshRect(const wxRect& rect)
 c_CpuAndBitmaps::c_CpuAndBitmaps(c_ScrolledView& imgView)
 : m_ImgView(imgView)
 {
+    imgView.EnableContentsScrolling();
+
     imgView.GetContentsPanel().Bind(wxEVT_PAINT, &c_CpuAndBitmaps::OnPaint, this);
     m_ScalingTimer.SetHandler([this]
     {
@@ -161,11 +163,11 @@ void c_CpuAndBitmaps::OnPaint(wxPaintEvent&)
     if (!m_ImgBmp)
         return;
 
-    wxRegionIterator upd(m_ImgView.GetContentsPanel().GetUpdateRegion());
-    wxMemoryDC imgDC(m_ImgBmp.value());
-
     if (m_ZoomFactor == ZOOM_NONE)
     {
+        wxRegionIterator upd(m_ImgView.GetContentsPanel().GetUpdateRegion());
+        wxMemoryDC imgDC(m_ImgBmp.value());
+        
         while (upd)
         {
             dc.Blit(wxPoint(upd.GetX(), upd.GetY()),
@@ -213,6 +215,7 @@ void c_CpuAndBitmaps::OnPaint(wxPaintEvent&)
                   by subtracting the left-top of `updateArea` (which is expressed in `m_ImgView` logical coords)
         */
 
+
         wxMemoryDC imgDC(m_BmpScaled.value());
         wxRect updateArea = m_ScaledArea;
         updateArea.x *= m_ZoomFactor;
@@ -220,6 +223,7 @@ void c_CpuAndBitmaps::OnPaint(wxPaintEvent&)
         updateArea.width *= m_ZoomFactor;
         updateArea.height *= m_ZoomFactor;
 
+        wxRegionIterator upd(m_ImgView.GetContentsPanel().GetUpdateRegion());
         while (upd)
         {
             wxRect updRect = upd.GetRect();

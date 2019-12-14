@@ -201,7 +201,7 @@ void c_AboutDialog::OnLibrariesClick(wxCommandEvent&)
 
 void c_AboutDialog::OnTimer(wxTimerEvent&)
 {
-    this->Refresh();
+    this->Refresh(false);
     Animation.frameIdx = (Animation.frameIdx + 1) % NUM_FRAMES;
     if (Animation.frameIdx == NUM_FRAMES-1)
         timer.Start(ANIM_REPLAY_DELAY_MS, wxTIMER_ONE_SHOT);
@@ -211,9 +211,11 @@ void c_AboutDialog::OnTimer(wxTimerEvent&)
 }
 
 c_AboutDialog::c_AboutDialog(wxWindow* parent)
-: wxDialog(parent, wxID_ANY, _("About ImPPG"))
 {
     SetBackgroundColour(*wxBLACK);
+    SetBackgroundStyle(wxBG_STYLE_PAINT);
+
+    Create(parent, wxID_ANY, _("About ImPPG"));
 
     if (Animation.valid = Animation.LoadFrames())
     {
@@ -231,8 +233,6 @@ c_AboutDialog::c_AboutDialog(wxWindow* parent)
 
     wxSizer* szContents = new wxBoxSizer(wxVERTICAL);
     szContents->AddStretchSpacer(1);
-
-    SetBackgroundStyle(wxBG_STYLE_PAINT);
 
     Bind(wxEVT_PAINT,
         [this](wxPaintEvent&)

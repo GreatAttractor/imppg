@@ -36,8 +36,25 @@ c_ScrolledView::c_ScrolledView(wxWindow* parent): wxPanel(parent, wxID_ANY)
 
     auto OnScroll = [this](wxScrollEvent&)
     {
+        const wxPoint oldScrollPos = m_ScrollPos;
         m_ScrollPos = { m_HorzSBar->GetThumbPosition(), m_VertSBar->GetThumbPosition() };
-        m_Contents->Refresh();
+
+        if (m_WindowScrollingEnabled)
+        {
+            // IMPORTANT: when using CPU & bitmaps, cannot just call Refresh() here, because under wxMSW
+            // repainting the whole window is relatively slow for large sizes (e.g., 4K screen).
+            // Instead, call wxWindow::ScrollWindow(), which calls WinAPI's ScrollWindow(), which performs
+            // a fast (apparently hardware-accelerated) scroll of the existing window contents without
+            // destroying them, and only invalidates+repaints the newly revealed areas.
+            // (The same applies to the call in c_ScrolledView::ScrollTo().)
+
+            m_Contents->ScrollWindow(oldScrollPos.x - m_ScrollPos.x, oldScrollPos.y - m_ScrollPos.y);
+        }
+        else
+        {
+            m_Contents->Refresh();
+        }
+        
         if (m_ScrollCallback)
             m_ScrollCallback();
     };
@@ -98,7 +115,9 @@ void c_ScrolledView::SetActualSize(unsigned width, unsigned height)
 
 void c_ScrolledView::ScrollTo(wxPoint position)
 {
+    const wxPoint oldScrollPos = m_ScrollPos;
     const auto displaySize = m_Contents->GetClientSize();
+
     if (m_ActualWidth > static_cast<unsigned>(displaySize.GetWidth()))
     {
         m_ScrollPos.x = std::min(std::max(0, position.x), static_cast<int>(m_ActualWidth) - displaySize.x);
@@ -109,5 +128,13 @@ void c_ScrolledView::ScrollTo(wxPoint position)
         m_ScrollPos.y = std::min(std::max(0, position.y), static_cast<int>(m_ActualHeight) - displaySize.y);
         m_VertSBar->SetThumbPosition(position.y);
     }
-    m_Contents->Refresh();
+
+    if (m_WindowScrollingEnabled)
+    {
+        m_Contents->ScrollWindow(oldScrollPos.x - m_ScrollPos.x, oldScrollPos.y - m_ScrollPos.y);
+    }
+    else
+    {
+        m_Contents->Refresh();
+    }
 }
