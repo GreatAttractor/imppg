@@ -108,6 +108,7 @@ const wxString processing = "processing";
 namespace StatusBarField
 {
 constexpr int ACTION = 0;
+constexpr int BACK_END = 1;
 }
 
 BEGIN_EVENT_TABLE(c_MainWindow, wxFrame)
@@ -593,6 +594,8 @@ c_MainWindow::c_MainWindow()
 
             default: IMPPG_ABORT();
             }
+
+            SetStatusText(GetBackEndText(Configuration::ProcessingBackEnd), StatusBarField::BACK_END);
 
             firstCall = false;
         }
@@ -1484,6 +1487,7 @@ void c_MainWindow::InitMenu()
             std::optional<c_Image> img = m_BackEnd->GetImage();
             InitializeBackEnd(std::make_unique<imppg::backend::c_CpuAndBitmaps>(*m_ImageView), img);
             Configuration::ProcessingBackEnd = BackEnd::CPU_AND_BITMAPS;
+            SetStatusText(GetBackEndText(Configuration::ProcessingBackEnd), StatusBarField::BACK_END);
         },
         ID_CpuBmpBackEnd
     );
@@ -1495,6 +1499,7 @@ void c_MainWindow::InitMenu()
             std::optional<c_Image> img = m_BackEnd->GetImage();
             InitializeBackEnd(imppg::backend::c_OpenGLDisplay::Create(*m_ImageView), img);
             Configuration::ProcessingBackEnd = BackEnd::GPU_OPENGL;
+            SetStatusText(GetBackEndText(Configuration::ProcessingBackEnd), StatusBarField::BACK_END);
         },
         ID_OpenGLBackEnd
     );
@@ -1574,7 +1579,7 @@ void c_MainWindow::InitMenu()
 void c_MainWindow::InitStatusBar()
 {
     CreateStatusBar(2);
-    int fieldWidths[2] = { -1, -2 };
+    int fieldWidths[2] = { -2, -1 };
     GetStatusBar()->SetStatusWidths(2, fieldWidths);
 }
 
@@ -1670,12 +1675,6 @@ void c_MainWindow::InitControls()
     m_ImageView->GetContentsPanel().Bind(wxEVT_MIDDLE_UP,          &c_MainWindow::OnImageViewDragScrollEnd, this);
     m_ImageView->GetContentsPanel().Bind(wxEVT_RIGHT_UP,           &c_MainWindow::OnImageViewDragScrollEnd, this);
     m_ImageView->GetContentsPanel().Bind(wxEVT_MOUSEWHEEL,         &c_MainWindow::OnImageViewMouseWheel, this);
-
-    //m_BackEnd = std::make_unique<imppg::backend::c_CpuAndBitmaps>(*m_ImageView);
-    //m_BackEnd = imppg::backend::c_OpenGLDisplay::Create(*m_ImageView);
-    // TODO:
-    // if (!m_BackEnd)
-    // {
 
     m_AuiMgr->AddPane(m_ImageView,
         wxAuiPaneInfo()

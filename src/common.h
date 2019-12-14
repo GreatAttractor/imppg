@@ -206,5 +206,7 @@ std::array<float, 4> GetAdaptiveUnshMaskTransitionCurve(
     float width
 );
 
+wxString GetBackEndText(BackEnd backEnd);
+
 
 #endif //  IMPGG_COMMON_HEADER

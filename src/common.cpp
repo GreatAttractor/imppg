@@ -97,3 +97,14 @@ std::array<float, 4> GetAdaptiveUnshMaskTransitionCurve(
 
     return {a, b, c, d};
 }
+
+wxString GetBackEndText(BackEnd backEnd)
+{
+    switch (backEnd)
+    {
+    case BackEnd::CPU_AND_BITMAPS: return _("Mode: CPU & bitmaps");
+    case BackEnd::GPU_OPENGL: return _("Mode: GPU (OpenGL)");
+
+    default: IMPPG_ABORT();
+    }
+}
