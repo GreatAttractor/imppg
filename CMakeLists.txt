@@ -35,15 +35,6 @@ add_executable(imppg WIN32
     src/backend/cpu_bmp/w_unshmask.cpp
     src/backend/cpu_bmp/worker.cpp
 
-    src/backend/opengl/gl_utils.cpp
-    src/backend/opengl/gl_utils.h
-    src/backend/opengl/opengl_display.cpp
-    src/backend/opengl/opengl_display.h
-    src/backend/opengl/opengl_proc.cpp
-    src/backend/opengl/opengl_proc.h
-    src/backend/opengl/uniforms.cpp
-    src/backend/opengl/uniforms.h
-
     src/batch_params.cpp
     src/batch.cpp
     src/bmp.cpp
@@ -68,6 +59,20 @@ add_executable(imppg WIN32
     src/tiff.cpp
     src/wxapp.cpp
 )
+
+if(USE_OPENGL_BACKEND)
+    target_sources(imppg PRIVATE
+        src/backend/opengl/gl_utils.cpp
+        src/backend/opengl/gl_utils.h
+        src/backend/opengl/opengl_display.cpp
+        src/backend/opengl/opengl_display.h
+        src/backend/opengl/opengl_proc.cpp
+        src/backend/opengl/opengl_proc.h
+        src/backend/opengl/uniforms.cpp
+        src/backend/opengl/uniforms.h
+    )
+endif()
+
 target_include_directories(imppg PRIVATE src)
 target_compile_options(imppg PRIVATE -Wall -Wextra -Wpedantic -Wold-style-cast -Wno-parentheses)
 
@@ -102,7 +107,12 @@ set(wxWidgets_USE_UNICODE TRUE)
 set(wxWidgets_USE_DEBUG FALSE)
 
 if(NOT WIN32)
-	find_package(wxWidgets REQUIRED COMPONENTS adv aui xml core base gl) # TODO add `gl` conditionally
+    set(WX_COMPONENTS "adv aui xml core base")
+    if(USE_OPENGL_BACKEND)
+        string(APPEND WX_COMPONENTS " gl")
+    endif()
+
+	find_package(wxWidgets REQUIRED COMPONENTS ${WX_COMPONENTS}) # TODO add `gl` conditionally
 	include(${wxWidgets_USE_FILE})
 	target_link_libraries(imppg ${wxWidgets_LIBRARIES})
 else()
@@ -116,15 +126,23 @@ else()
 		${WXWIDGETS_BUILD_DIR}/lib/gcc_x64_dll/mswu
 	)
 
+    # The library path suffix and library names used here are valid for a MSYS2/MinGW build
+    # of wxWidgets. Change appropriately in case of a different toolchain.
+
 	target_link_directories(imppg PRIVATE ${WXWIDGETS_BUILD_DIR}/lib/gcc_x64_dll)
 
 	target_link_libraries(imppg
 		wxbase31u
 		wxmsw31u_aui
 		wxmsw31u_core
-		wxmsw31u_gl
 		wxbase31u_xml
-	)
+    )
+
+    if(USE_OPENGL_BACKEND)
+        target_link_libraries(imppg
+		    wxmsw31u_gl
+        )
+    endif()
 endif()
 
 find_package(OpenMP)
@@ -146,17 +164,21 @@ if(USE_FREEIMAGE EQUAL 1)
     target_link_libraries(imppg freeimage)
 endif()
 
-# TODO: conditionally
-if(WIN32)
-    target_link_libraries(imppg opengl32)
-else()
-    target_link_libraries(imppg GL)
-endif()
+if(USE_OPENGL_BACKEND)
+    if(WIN32)
+        target_link_libraries(imppg opengl32)
+    else()
+        target_link_libraries(imppg GL)
+    endif()
 
-# TODO: conditionally
-find_package(GLEW REQUIRED)
-target_include_directories(imppg PRIVATE ${GLEW_INCLUDE_DIRS})
-target_link_libraries(imppg GLEW::GLEW)
+    find_package(GLEW REQUIRED)
+    target_include_directories(imppg PRIVATE ${GLEW_INCLUDE_DIRS})
+    target_link_libraries(imppg GLEW::GLEW)
+
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENGL_BACKEND")
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENGL_BACKEND=0")
+endif()
 
 if(USE_CFITSIO EQUAL 1)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_CFITSIO")

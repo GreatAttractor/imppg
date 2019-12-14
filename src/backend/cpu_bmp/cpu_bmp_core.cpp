@@ -167,7 +167,7 @@ void c_CpuAndBitmaps::OnPaint(wxPaintEvent&)
     {
         wxRegionIterator upd(m_ImgView.GetContentsPanel().GetUpdateRegion());
         wxMemoryDC imgDC(m_ImgBmp.value());
-        
+
         while (upd)
         {
             dc.Blit(wxPoint(upd.GetX(), upd.GetY()),
@@ -492,6 +492,7 @@ void c_CpuAndBitmaps::SetScalingMethod(ScalingMethod scalingMethod)
 c_CpuAndBitmaps::~c_CpuAndBitmaps()
 {
     m_ImgView.GetContentsPanel().Unbind(wxEVT_PAINT, &c_CpuAndBitmaps::OnPaint, this);
+    m_ImgView.EnableContentsScrolling(false);
 }
 
 c_Image c_CpuAndBitmaps::GetProcessedSelection()

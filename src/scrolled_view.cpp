@@ -54,7 +54,7 @@ c_ScrolledView::c_ScrolledView(wxWindow* parent): wxPanel(parent, wxID_ANY)
         {
             m_Contents->Refresh();
         }
-        
+
         if (m_ScrollCallback)
             m_ScrollCallback();
     };

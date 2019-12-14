@@ -62,7 +62,9 @@ File description:
 #include "align.h"
 #include "appconfig.h"
 #include "backend/cpu_bmp/cpu_bmp.h"
+#if USE_OPENGL_BACKEND
 #include "backend/opengl/opengl_display.h"
+#endif
 #include "batch.h"
 #include "bmp.h"
 #include "common.h"
@@ -577,7 +579,21 @@ c_MainWindow::c_MainWindow()
         static bool firstCall = true;
         if (firstCall)
         {
-            InitializeBackEnd(imppg::backend::c_OpenGLDisplay::Create(*m_ImageView), std::nullopt);
+            switch (Configuration::ProcessingBackEnd)
+            {
+            case BackEnd::CPU_AND_BITMAPS:
+                InitializeBackEnd(std::make_unique<imppg::backend::c_CpuAndBitmaps>(*m_ImageView), std::nullopt);
+                break;
+
+#if USE_OPENGL_BACKEND
+            case BackEnd::GPU_OPENGL:
+                InitializeBackEnd(imppg::backend::c_OpenGLDisplay::Create(*m_ImageView), std::nullopt);
+                break;
+#endif
+
+            default: IMPPG_ABORT();
+            }
+
             firstCall = false;
         }
     });
@@ -1450,8 +1466,17 @@ void c_MainWindow::InitMenu()
 
     auto* menuBackEnd = new wxMenu();
     menuBackEnd->AppendRadioItem(ID_CpuBmpBackEnd, _("CPU && bitmaps"));
+#if USE_OPENGL_BACKEND
     menuBackEnd->AppendRadioItem(ID_OpenGLBackEnd, _("GPU (OpenGL)"));
-    menuBackEnd->Check(ID_OpenGLBackEnd, true); //TODO: do it properly
+#endif
+
+    switch (Configuration::ProcessingBackEnd)
+    {
+    case BackEnd::CPU_AND_BITMAPS: menuBackEnd->Check(ID_CpuBmpBackEnd, true); break;
+    case BackEnd::GPU_OPENGL: menuBackEnd->Check(ID_OpenGLBackEnd, true); break;
+
+    default: IMPPG_ABORT();
+    }
 
     menuBackEnd->Bind(wxEVT_MENU,
         [this](wxCommandEvent&)
@@ -1463,6 +1488,7 @@ void c_MainWindow::InitMenu()
         ID_CpuBmpBackEnd
     );
 
+#if USE_OPENGL_BACKEND
     menuBackEnd->Bind(wxEVT_MENU,
         [this](wxCommandEvent&)
         {
@@ -1472,6 +1498,7 @@ void c_MainWindow::InitMenu()
         },
         ID_OpenGLBackEnd
     );
+#endif
 
     menuSettings->AppendSubMenu(menuBackEnd, _("Processing back end"));
     menuSettings->Append(ID_NormalizeImage, _("Normalize brightness levels..."), wxEmptyString, false);

@@ -205,7 +205,9 @@ c_Property<BackEnd> ProcessingBackEnd(
     []()
     {
         long result = appConfig->ReadLong(Keys::ProcessingBackEnd, static_cast<long>(BackEnd::CPU_AND_BITMAPS));
-        if (result < 0 || result >= static_cast<long>(BackEnd::LAST))
+        if (result < 0 ||
+           result >= static_cast<long>(BackEnd::LAST) ||
+           result == static_cast<long>(BackEnd::GPU_OPENGL) && !USE_OPENGL_BACKEND)
         {
             return BackEnd::CPU_AND_BITMAPS;
         }

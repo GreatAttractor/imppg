@@ -36,7 +36,9 @@ File description:
 
 #include "appconfig.h"
 #include "backend/cpu_bmp/cpu_bmp_proc.h"
+#if USE_OPENGL_BACKEND
 #include "backend/opengl/opengl_proc.h"
+#endif
 #include "batch_params.h"
 #include "batch.h"
 #include "bmp.h"
@@ -270,7 +272,9 @@ c_BatchDialog::c_BatchDialog(wxWindow* parent, wxArrayString fileNames,
     switch (Configuration::ProcessingBackEnd)
     {
     case BackEnd::CPU_AND_BITMAPS: m_Processor = std::make_unique<imppg::backend::c_CpuAndBitmapsProcessing>(); break;
+#if USE_OPENGL_BACKEND
     case BackEnd::GPU_OPENGL: m_Processor = std::make_unique<imppg::backend::c_OpenGLProcessing>(); break;
+#endif
     default: IMPPG_ABORT();
     }
 
