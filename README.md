@@ -255,9 +255,10 @@ You will find `imppg` executable in the sources folder.
 
 The provided `CMakeLists.txt` supports the [MSYS2](http://www.msys2.org/) build environment. With manual configuration, other toolchains can also be used (e.g. MS Visual Studio).
 
-In order to build ImPPG (64-bit) under MSYS2, follow its installation instructions at http://www.msys2.org/. Then open the MSYS2 shell and install the ImPPG's dependencies by running:
+In order to build ImPPG (64-bit) under MSYS2, follow its installation instructions at http://www.msys2.org/. Then open the MSYS2/MinGW64 shell and install the ImPPG's dependencies by running:
 ```
-    pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-wxWidgets mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage
+    pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage mingw64/mingw-w64-x86_64-glew
+    
 ```
 
 Download the source code manually or clone it with Git:
@@ -286,6 +287,21 @@ To compile ImPPG, run:
 ```
 You will find `imppg` executable in the sources folder.
 
+****To run, set PATH to include DLLs from the local wx3.1 build.
+
+//TODO: installation; creating stand-alone binpack
+
+
+BUILDING wxWidgets 3.1:
+
+    cmake -G "MSYS Makefiles" -DCMAKE_MAKE_PROGRAM=mingw32-make -DCMAKE_BUILD_TYPE=Release ..
+    mingw32-make -j 8
+    
+//Install them:
+
+//    cmake -DCMAKE_INSTALL_PREFIX=$MSYSTEM_PREFIX -P cmake_install.cmake
+    
+//(Uninstall: cmake -DCMAKE_INSTALL_PREFIX=$MSYSTEM_PREFIX -P uninstall.cmake)
 
 ----------------------------------------
 ### 11.3. UI language

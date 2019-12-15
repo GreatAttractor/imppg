@@ -108,7 +108,7 @@ if(NOT WIN32)
         string(APPEND WX_COMPONENTS " gl")
     endif()
 
-	find_package(wxWidgets REQUIRED COMPONENTS ${WX_COMPONENTS}) # TODO add `gl` conditionally
+	find_package(wxWidgets REQUIRED COMPONENTS ${WX_COMPONENTS})
 	include(${wxWidgets_USE_FILE})
 	target_link_libraries(imppg ${wxWidgets_LIBRARIES})
 else()
