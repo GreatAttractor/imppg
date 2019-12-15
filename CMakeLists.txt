@@ -85,10 +85,6 @@ else()
     set_property(TARGET imppg PROPERTY CXX_STANDARD_REQUIRED ON)
 endif()
 
-if(MINGW)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINK_FLAGS} -Wl,--strip-all")
-endif()
-
 if(WIN32)
     # The RC file includes the application manifest and defines the application icon.
     if(CMAKE_SIZEOF_VOID_P EQUAL 4)

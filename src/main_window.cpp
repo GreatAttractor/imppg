@@ -702,8 +702,7 @@ void c_MainWindow::OnImageViewMouseDragStart(wxMouseEvent& event)
 }
 
 void c_MainWindow::OnImageViewMouseMove(wxMouseEvent& event)
-{
-    //TODO: needed?  m_ImageView->StopAutoScrolling();
+{   
     auto& s = m_CurrentSettings;
 
     if (m_MouseOps.dragging)
