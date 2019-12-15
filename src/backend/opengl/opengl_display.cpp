@@ -192,6 +192,7 @@ void c_OpenGLDisplay::OnPaint(wxPaintEvent&)
 {
     wxPaintDC dc(m_GLCanvas.get());
 
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     glClear(GL_COLOR_BUFFER_BIT);
 
     if (m_Img.has_value())
