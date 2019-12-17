@@ -124,11 +124,7 @@ BEGIN_EVENT_TABLE(c_MainWindow, wxFrame)
     EVT_TOOL(ID_ToggleProcessingPanel, c_MainWindow::OnCommandEvent)
     EVT_COMMAND(ID_ToneCurveEditor, EVT_TONE_CURVE, c_MainWindow::OnToneCurveChanged)
     EVT_SPINCTRL(ID_LucyRichardsonIters, c_MainWindow::OnLucyRichardsonIters)
-#ifdef __WXMSW__
-    // On Windows an explicit Enter key handler is needed. Not using it on wxGTK,
-    // because it sometimes causes a GTK crash (invalid GTK control cast).
     EVT_TEXT_ENTER(ID_LucyRichardsonIters, c_MainWindow::OnCommandEvent)
-#endif
     EVT_BUTTON(ID_LucyRichardsonReset, c_MainWindow::OnCommandEvent)
     EVT_BUTTON(ID_LucyRichardsonOff, c_MainWindow::OnCommandEvent)
     EVT_COMMAND(ID_LucyRichardsonSigma, EVT_NUMERICAL_CTRL, c_MainWindow::OnCommandEvent)
@@ -143,7 +139,6 @@ BEGIN_EVENT_TABLE(c_MainWindow, wxFrame)
     EVT_TOOL(ID_FitInWindow, c_MainWindow::OnCommandEvent)
     EVT_MENU(ID_FitInWindow, c_MainWindow::OnCommandEvent)
     EVT_AUI_PANE_CLOSE(c_MainWindow::OnAuiPaneClose)
-    //EVT_TIMER(ID_ScalingTimer, c_MainWindow::OnTimer)
 
     EVT_TOOL(ID_LoadSettings, c_MainWindow::OnSettingsFile)
     EVT_TOOL(ID_SaveSettings, c_MainWindow::OnSettingsFile)
@@ -486,6 +481,7 @@ void c_MainWindow::UpdateToggleControlsState()
 void c_MainWindow::OnLucyRichardsonIters(wxSpinEvent&)
 {
     OnUpdateLucyRichardsonSettings();
+    IndicateSettingsModified();
 }
 
 void c_MainWindow::OnCloseToneCurveEditorWindow(wxCloseEvent& event)
@@ -502,9 +498,6 @@ void c_MainWindow::OnCloseToneCurveEditorWindow(wxCloseEvent& event)
 
 void c_MainWindow::OnToneCurveChanged(wxCommandEvent&)
 {
-    // if (m_CurrentSettings.m_Img)
-    //     ScheduleProcessing(ProcessingRequest::TONE_CURVE);
-
     m_BackEnd->ToneCurveChanged(m_CurrentSettings.processing);
     IndicateSettingsModified();
 }
