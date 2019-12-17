@@ -171,6 +171,9 @@ public:
 
 void c_AboutDialog::OnLibrariesClick(wxCommandEvent&)
 {
+    const wxString glRenderer{glGetString(GL_RENDERER)};
+    const wxString glVersion{glGetString(GL_VERSION)};
+
     wxString formatStr = "%s\n\n"    // "Libraries" - a localized string
                          "%s\n"      // version of wxWidgets
                          "Boost %s"  // version of Boost
@@ -181,13 +184,16 @@ void c_AboutDialog::OnLibrariesClick(wxCommandEvent&)
 #if USE_CFITSIO
                          "\nCFITSIO %s" // version of CFITSIO
 #endif
+    ;
 
 #if USE_OPENGL_BACKEND
-                         "\n\nOpenGL:\n%s\nversion: %s"
+    if (!glRenderer.IsEmpty() && !glVersion.IsEmpty())
+    {
+        formatStr += "\n\nOpenGL:\n%s\nversion: %s";
+    }
 #endif
 
-                        "\n\nOS: " + wxGetOsDescription()
-    ;
+    formatStr += "\n\nOS: " + wxGetOsDescription();
 
 #if USE_CFITSIO
     float cfitsioVer;
