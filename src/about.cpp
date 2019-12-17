@@ -26,6 +26,9 @@ File description:
 #endif
 #include <array>
 #include <boost/version.hpp>
+#if USE_OPENGL_BACKEND
+#include <GL/glew.h>
+#endif
 #include <wx/bitmap.h>
 #include <wx/button.h>
 #include <wx/dcbuffer.h>
@@ -178,6 +181,11 @@ void c_AboutDialog::OnLibrariesClick(wxCommandEvent&)
 #if USE_CFITSIO
                          "\nCFITSIO %s" // version of CFITSIO
 #endif
+
+#if USE_OPENGL_BACKEND
+                         "\n\nOpenGL:\n%s\nversion: %s"
+#endif
+
                         "\n\nOS: " + wxGetOsDescription()
     ;
 
@@ -194,6 +202,10 @@ void c_AboutDialog::OnLibrariesClick(wxCommandEvent&)
 #endif
 #if USE_CFITSIO
         , wxString::FromCDouble(cfitsioVer, 2)
+#endif
+#if USE_OPENGL_BACKEND
+        , wxString(glGetString(GL_RENDERER))
+        , wxString(glGetString(GL_VERSION))
 #endif
         ),
         _("Libraries"), wxOK, this);

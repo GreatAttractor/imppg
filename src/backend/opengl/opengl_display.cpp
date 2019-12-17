@@ -154,8 +154,9 @@ c_OpenGLDisplay::c_OpenGLDisplay(c_ScrolledView& imgView)
         1.0f
     );
 
-    std::cout << glGetString(GL_VERSION) << std::endl;
-    std::cout << glGetString(GL_RENDERER) << std::endl;
+    std::cout << "OpenGL back end initialized.\n";
+    std::cout << "renderer: " << glGetString(GL_RENDERER) << "\n" <<
+        "GL version: " << glGetString(GL_VERSION) << std::endl;
 
     m_GLCanvas->Bind(wxEVT_PAINT, &c_OpenGLDisplay::OnPaint, this);
 
