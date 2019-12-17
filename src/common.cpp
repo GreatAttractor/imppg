@@ -102,8 +102,8 @@ wxString GetBackEndText(BackEnd backEnd)
 {
     switch (backEnd)
     {
-    case BackEnd::CPU_AND_BITMAPS: return _("Mode: CPU & bitmaps");
-    case BackEnd::GPU_OPENGL: return _("Mode: GPU (OpenGL)");
+    case BackEnd::CPU_AND_BITMAPS: return _("CPU + bitmaps");
+    case BackEnd::GPU_OPENGL: return _("GPU (OpenGL)");
 
     default: IMPPG_ABORT();
     }

@@ -164,6 +164,11 @@ END_EVENT_TABLE()
 
 void ShowAboutDialog(wxWindow* parent);
 
+static wxString GetBackEndStatusText(BackEnd backEnd)
+{
+    return wxString::Format(_("Mode: %s"), GetBackEndText(backEnd));
+}
+
 /// Adds or moves 'settingsFile' to the beginning of the most recently used list
 /** Also updates m_MruSettingsIdx. */
 void c_MainWindow::SetAsMRU(wxString settingsFile)
@@ -595,7 +600,7 @@ c_MainWindow::c_MainWindow()
             default: IMPPG_ABORT();
             }
 
-            SetStatusText(GetBackEndText(Configuration::ProcessingBackEnd), StatusBarField::BACK_END);
+            SetStatusText(GetBackEndStatusText(Configuration::ProcessingBackEnd), StatusBarField::BACK_END);
 
             firstCall = false;
         }
@@ -1470,9 +1475,9 @@ void c_MainWindow::InitMenu()
     wxMenu* menuSettings = new wxMenu();
 
     auto* menuBackEnd = new wxMenu();
-    menuBackEnd->AppendRadioItem(ID_CpuBmpBackEnd, _("CPU && bitmaps"));
+    menuBackEnd->AppendRadioItem(ID_CpuBmpBackEnd, GetBackEndText(BackEnd::CPU_AND_BITMAPS));
 #if USE_OPENGL_BACKEND
-    menuBackEnd->AppendRadioItem(ID_OpenGLBackEnd, _("GPU (OpenGL)"));
+    menuBackEnd->AppendRadioItem(ID_OpenGLBackEnd, GetBackEndText(BackEnd::GPU_OPENGL));
 #endif
 
     switch (Configuration::ProcessingBackEnd)
@@ -1489,7 +1494,7 @@ void c_MainWindow::InitMenu()
             std::optional<c_Image> img = m_BackEnd->GetImage();
             InitializeBackEnd(std::make_unique<imppg::backend::c_CpuAndBitmaps>(*m_ImageView), img);
             Configuration::ProcessingBackEnd = BackEnd::CPU_AND_BITMAPS;
-            SetStatusText(GetBackEndText(Configuration::ProcessingBackEnd), StatusBarField::BACK_END);
+            SetStatusText(GetBackEndStatusText(Configuration::ProcessingBackEnd), StatusBarField::BACK_END);
         },
         ID_CpuBmpBackEnd
     );
@@ -1501,7 +1506,7 @@ void c_MainWindow::InitMenu()
             std::optional<c_Image> img = m_BackEnd->GetImage();
             InitializeBackEnd(imppg::backend::c_OpenGLDisplay::Create(*m_ImageView), img);
             Configuration::ProcessingBackEnd = BackEnd::GPU_OPENGL;
-            SetStatusText(GetBackEndText(Configuration::ProcessingBackEnd), StatusBarField::BACK_END);
+            SetStatusText(GetBackEndStatusText(Configuration::ProcessingBackEnd), StatusBarField::BACK_END);
         },
         ID_OpenGLBackEnd
     );
