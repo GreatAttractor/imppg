@@ -120,8 +120,7 @@ static struct
 
         if (!fName.Exists())
         {
-            fName.AssignCwd();
-            fName.AppendDir("images");
+            fName.AssignDir(IMPPG_IMAGES_DIR);
             fName.SetName("anim");
             fName.SetExt("bin");
         }

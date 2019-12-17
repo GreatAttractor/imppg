@@ -11,12 +11,13 @@
 #         sudo ln -s /usr/bin/wx-config-3.0 /usr/bin/wx-config
 #
 
-project("ImPPG")
+project("imppg")
 
 cmake_minimum_required(VERSION 2.8)
 
-include(FindPkgConfig)
 include(config.in)
+include(FindPkgConfig)
+include(GNUInstallDirs)
 
 add_executable(imppg WIN32
     src/about.cpp
@@ -75,6 +76,13 @@ endif()
 
 target_include_directories(imppg PRIVATE src)
 target_compile_options(imppg PRIVATE -Wall -Wextra -Wpedantic -Wold-style-cast -Wno-parentheses)
+
+set(IMPPG_SHADERS_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/imppg/shaders)
+set(IMPPG_IMAGES_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/imppg/images)
+target_compile_definitions(imppg PRIVATE
+    IMPPG_SHADERS_DIR="${IMPPG_SHADERS_DIR}"
+    IMPPG_IMAGES_DIR="${IMPPG_IMAGES_DIR}"
+)
 
 if (CMAKE_VERSION VERSION_LESS "3.1")
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -155,7 +163,8 @@ if(GNU_FFAST_MATH_SUPPORTED)
 endif()
 
 if(USE_FREEIMAGE EQUAL 1)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_FREEIMAGE")
+    target_compile_definitions(imppg PRIVATE USE_FREEIMAGE=1)
+
     # Cannot do `pkg_check_modules` on `freeimage`; as of FreeImage 3.18.0, there is no `.pc` file provided (checked in MSYS2 and Fedora 29)
     target_link_libraries(imppg freeimage)
 endif()
@@ -171,14 +180,64 @@ if(USE_OPENGL_BACKEND)
     target_include_directories(imppg PRIVATE ${GLEW_INCLUDE_DIRS})
     target_link_libraries(imppg GLEW::GLEW)
 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENGL_BACKEND")
+    target_compile_definitions(imppg PRIVATE USE_OPENGL_BACKEND=1)
 else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENGL_BACKEND=0")
+    target_compile_definitions(imppg PRIVATE USE_OPENGL_BACKEND=0)
 endif()
 
 if(USE_CFITSIO EQUAL 1)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_CFITSIO")
+    target_compile_definitions(imppg PRIVATE USE_CFITSIO=1)
     pkg_check_modules(CFITSIO cfitsio REQUIRED)
     target_include_directories(imppg PRIVATE ${CFITSIO_INCLUDE_DIRS})
     target_link_libraries(imppg ${CFITSIO_LIBRARIES})
 endif()
+
+
+# Installation -------------------------------------
+
+install(TARGETS imppg DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
+
+install(FILES
+    README.md
+    README_pl.md
+    main_wnd.png
+    LICENSE
+    DESTINATION ${CMAKE_INSTALL_FULL_DOCDIR}
+)
+
+install(FILES
+    shaders/copy.frag
+    shaders/divide.frag
+    shaders/gaussian_horz.frag
+    shaders/gaussian_vert.frag
+    shaders/mono_output_cubic.frag
+    shaders/mono_output.frag
+    shaders/multiply.frag
+    shaders/pass-through.vert
+    shaders/selection_outline.frag
+    shaders/tone_curve.frag
+    shaders/unsharp_mask.frag
+    shaders/vertex.vert
+    DESTINATION ${IMPPG_SHADERS_DIR}
+)
+
+install(FILES
+    images/fit_wnd.png
+    images/anim.bin
+    images/imppg-app.png
+    images/load_settings.png
+    images/mru_settings.png
+    images/open_file.png
+    images/save_file.png
+    images/save_settings.png
+    images/select_all.png
+    images/toggle_proc.png
+    images/toggle_tcrv.png
+    images/zoom_custom.png
+    images/zoom_in.png
+    images/zoom_none.png
+    images/zoom_out.png
+    DESTINATION ${IMPPG_IMAGES_DIR}
+)
+
+# Packaging -------------------------------------

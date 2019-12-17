@@ -105,10 +105,10 @@ c_OpenGLProcessing::c_OpenGLProcessing()
 {
     auto shaderDir = wxFileName(wxStandardPaths::Get().GetExecutablePath());
     shaderDir.AppendDir("shaders");
+
     if (!shaderDir.Exists())
     {
-        shaderDir.AssignCwd();
-        shaderDir.AppendDir("shaders");
+        shaderDir.AssignDir(IMPPG_SHADERS_DIR); // defined in CMakeLists.txt
     }
 
     m_GLShaders.frag.copy             = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "copy.frag"));

@@ -29,8 +29,7 @@ wxBitmap LoadBitmap(wxString name, bool scale, wxSize scaledSize)
 
     if (!fName.Exists())
     {
-        fName.AssignCwd();
-        fName.AppendDir("images");
+        fName.AssignDir(IMPPG_IMAGES_DIR); // defined in CMakeLists.txt
         fName.SetName(name);
         fName.SetExt("png");
     }

@@ -107,8 +107,7 @@ c_OpenGLDisplay::c_OpenGLDisplay(c_ScrolledView& imgView)
     shaderDir.AppendDir("shaders");
     if (!shaderDir.Exists())
     {
-        shaderDir.AssignCwd();
-        shaderDir.AppendDir("shaders");
+        shaderDir.AssignDir(IMPPG_SHADERS_DIR); // defined in CMakeLists.txt
     }
 
     m_GLShaders.frag.monoOutput       = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "mono_output.frag"));

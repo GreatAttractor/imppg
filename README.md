@@ -196,6 +196,8 @@ ImPPG stores certain settings (e.g. the main window’s size and position) in an
 ----------------------------------------
 ## 9. Known problems
 
+  - (OpenGL mode, MS Windows 8.1, Intel HD Graphics 5500, driver 10.18.14.5074) Cubic interpolation mode is broken (a shader compiler bug, or perhaps a texture read count limitation); use "View/Scaling method/Linear" instead. Note that the same hardware works fine under Linux (Fedora 29 5.3.11-100, Mesa 18.3.6).
+
   - (wxGTK 3.0.2, Fedora 20) All the toolbar buttons react correctly, but their displayed state may be incorrect after using the `View` menu items/close boxes of tone curve editor and processing controls panel. Cause: sometimes check tool’s Toggle() method does not work.
 
   - (wxGTK) As of 2/2015, some of GTK themes function incorrectly (e.g. “QtCurve”, but not “Raleigh”). In ImPPG this may manifest as follows:
@@ -258,7 +260,7 @@ The provided `CMakeLists.txt` supports the [MSYS2](http://www.msys2.org/) build 
 In order to build ImPPG (64-bit) under MSYS2, follow its installation instructions at http://www.msys2.org/. Then open the MSYS2/MinGW64 shell and install the ImPPG's dependencies by running:
 ```
     pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage mingw64/mingw-w64-x86_64-glew
-    
+
 ```
 
 Download the source code manually or clone it with Git:
@@ -290,17 +292,22 @@ You will find `imppg` executable in the sources folder.
 ****To run, set PATH to include DLLs from the local wx3.1 build.
 
 //TODO: installation; creating stand-alone binpack
+// sudo cmake -P cmake_install.cmake
+
+
+
+// uninstall: xargs rm < install_manifest.txt
 
 
 BUILDING wxWidgets 3.1:
 
     cmake -G "MSYS Makefiles" -DCMAKE_MAKE_PROGRAM=mingw32-make -DCMAKE_BUILD_TYPE=Release ..
     mingw32-make -j 8
-    
+
 //Install them:
 
 //    cmake -DCMAKE_INSTALL_PREFIX=$MSYSTEM_PREFIX -P cmake_install.cmake
-    
+
 //(Uninstall: cmake -DCMAKE_INSTALL_PREFIX=$MSYSTEM_PREFIX -P uninstall.cmake)
 
 ----------------------------------------
