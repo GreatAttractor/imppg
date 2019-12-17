@@ -251,6 +251,9 @@ To compile ImPPG, run:
 ```
 You will find `imppg` executable in the sources folder.
 
+//ubuntu 18.04 deps: git cmake build-essential libboost-dev libwxgtk3.0-gtk3-dev libglew-dev pkg-config libccfits-dev libfreeimage-dev
+Compiler: choose install g++-8, so that the binary can be used on a Ubuntu 18.04 installation having the default g++-7 and its libstdc++.
+
 
 ----------------------------------------
 ### 11.2. Building under MS Windows

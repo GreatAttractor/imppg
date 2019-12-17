@@ -206,7 +206,13 @@ c_Property<ToneCurveEditorColors> ToneCurveColors(
 c_Property<BackEnd> ProcessingBackEnd(
     []()
     {
-        long result = appConfig->ReadLong(Keys::ProcessingBackEnd, static_cast<long>(BackEnd::CPU_AND_BITMAPS));
+        long result = appConfig->ReadLong(Keys::ProcessingBackEnd,
+#if USE_OPENGL_BACKEND
+            static_cast<long>(BackEnd::GPU_OPENGL)
+#else
+            static_cast<long>(BackEnd::CPU_AND_BITMAPS)
+#endif
+        );
         if (result < 0 ||
            result >= static_cast<long>(BackEnd::LAST) ||
            result == static_cast<long>(BackEnd::GPU_OPENGL) && !USE_OPENGL_BACKEND)
