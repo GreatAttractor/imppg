@@ -586,8 +586,21 @@ c_MainWindow::c_MainWindow()
 
 #if USE_OPENGL_BACKEND
             case BackEnd::GPU_OPENGL:
-                InitializeBackEnd(imppg::backend::c_OpenGLDisplay::Create(*m_ImageView), std::nullopt);
+            {
+                std::unique_ptr<imppg::backend::c_OpenGLDisplay> gl_instance = imppg::backend::c_OpenGLDisplay::Create(*m_ImageView);
+                if (nullptr == gl_instance)
+                {
+                    wxMessageBox(_("Failed to initialize OpenGL!\nReverting to CPU mode."), _("Error"), wxICON_ERROR);
+                    InitializeBackEnd(std::make_unique<imppg::backend::c_CpuAndBitmaps>(*m_ImageView), std::nullopt);
+                    Configuration::ProcessingBackEnd = BackEnd::CPU_AND_BITMAPS;
+                    GetMenuBar()->FindItem(ID_CpuBmpBackEnd)->Check();
+                }
+                else
+                {
+                    InitializeBackEnd(std::move(gl_instance), std::nullopt);
+                }
                 break;
+            }
 #endif
 
             default: IMPPG_ABORT();
@@ -599,7 +612,7 @@ c_MainWindow::c_MainWindow()
         }
     });
 
-    Bind(wxEVT_IDLE, [this](wxIdleEvent& event) { m_BackEnd->OnIdle(event); });
+    Bind(wxEVT_IDLE, [this](wxIdleEvent& event) { if (m_BackEnd) { m_BackEnd->OnIdle(event); } });
 }
 
 template<typename T>
@@ -951,15 +964,6 @@ void c_MainWindow::OnOpenFile(wxCommandEvent&)
         wxFileName path = dlg.GetPath();
         OpenFile(path, true);
     }
-}
-
-/// Returns 'true' if the processing thread is running
-bool c_MainWindow::IsProcessingInProgress()
-{
-    // auto lock = m_Processing.worker.Lock();
-    // return lock.Get() != nullptr;
-
-    return false; //TODO: remove this
 }
 
 void c_MainWindow::OnUpdateLucyRichardsonSettings()
@@ -1497,8 +1501,19 @@ void c_MainWindow::InitMenu()
         [this](wxCommandEvent&)
         {
             std::optional<c_Image> img = m_BackEnd->GetImage();
-            InitializeBackEnd(imppg::backend::c_OpenGLDisplay::Create(*m_ImageView), img);
-            Configuration::ProcessingBackEnd = BackEnd::GPU_OPENGL;
+
+            std::unique_ptr<imppg::backend::c_OpenGLDisplay> gl_instance = imppg::backend::c_OpenGLDisplay::Create(*m_ImageView);
+            if (nullptr == gl_instance)
+            {
+                wxMessageBox(_("Failed to initialize OpenGL!"), _("Error"), wxICON_ERROR);
+                Configuration::ProcessingBackEnd = BackEnd::CPU_AND_BITMAPS;
+                GetMenuBar()->FindItem(ID_CpuBmpBackEnd)->Check();
+            }
+            else
+            {
+                InitializeBackEnd(std::move(gl_instance), img);
+                Configuration::ProcessingBackEnd = BackEnd::GPU_OPENGL;
+            }
             SetStatusText(GetBackEndStatusText(Configuration::ProcessingBackEnd), StatusBarField::BACK_END);
         },
         ID_OpenGLBackEnd
