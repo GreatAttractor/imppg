@@ -282,15 +282,12 @@ void c_OpenGLDisplay::MarkSelection()
 
 void c_OpenGLDisplay::ImageViewScrolledOrResized(float zoomFactor)
 {
-//    m_GLCanvas->Refresh(false);
-
     m_ZoomFactor = zoomFactor;
     if (m_Img.has_value())
     {
         FillWholeImgVBO();
         FillLastChosenSelectionScaledVBO();
     }
-
 }
 
 void c_OpenGLDisplay::ImageViewZoomChanged(float zoomFactor)
