@@ -79,9 +79,16 @@ target_compile_options(imppg PRIVATE -Wall -Wextra -Wpedantic -Wold-style-cast -
 
 set(IMPPG_SHADERS_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/imppg/shaders)
 set(IMPPG_IMAGES_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/imppg/images)
+set(IMPPG_VERSION_MAJOR 0)
+set(IMPPG_VERSION_MINOR 5)
+set(IMPPG_VERSION_SUBMINOR 4)
+
 target_compile_definitions(imppg PRIVATE
     IMPPG_SHADERS_DIR="${IMPPG_SHADERS_DIR}"
     IMPPG_IMAGES_DIR="${IMPPG_IMAGES_DIR}"
+    IMPPG_VERSION_MAJOR=${IMPPG_VERSION_MAJOR}
+    IMPPG_VERSION_MINOR=${IMPPG_VERSION_MINOR}
+    IMPPG_VERSION_SUBMINOR=${IMPPG_VERSION_SUBMINOR}
 )
 
 if (CMAKE_VERSION VERSION_LESS "3.1")
@@ -109,6 +116,9 @@ target_include_directories(imppg PRIVATE ${Boost_INCLUDE_DIRS})
 
 set(wxWidgets_USE_UNICODE TRUE)
 set(wxWidgets_USE_DEBUG FALSE)
+if(UNIX AND NOT APPLE)
+    set(wxWidgets_CONFIG_OPTIONS --toolkit=gtk3)
+endif()
 
 if(NOT WIN32)
     set(WX_COMPONENTS "adv aui xml core base")
@@ -116,35 +126,35 @@ if(NOT WIN32)
         string(APPEND WX_COMPONENTS " gl")
     endif()
 
-	find_package(wxWidgets REQUIRED COMPONENTS ${WX_COMPONENTS})
-	include(${wxWidgets_USE_FILE})
-	target_link_libraries(imppg ${wxWidgets_LIBRARIES})
+    find_package(wxWidgets REQUIRED COMPONENTS ${WX_COMPONENTS})
+    include(${wxWidgets_USE_FILE})
+    target_link_libraries(imppg ${wxWidgets_LIBRARIES})
 else()
-	# Not trying to configure "find_package(wxWidgets...)" to use custom paths,
-	# because as of CMake 3.15.5 under MSYS2 it does not work.
+    # Not trying to configure "find_package(wxWidgets...)" to use custom paths,
+    # because as of CMake 3.15.5 under MSYS2 it does not work.
     #
-	# Instead, specify everything explicitly.
+    # Instead, specify everything explicitly.
 
-	target_include_directories(imppg SYSTEM PRIVATE
-		${WXWIDGETS_ROOT_DIR}/include
-		${WXWIDGETS_BUILD_DIR}/lib/gcc_x64_dll/mswu
-	)
+    target_include_directories(imppg SYSTEM PRIVATE
+        ${WXWIDGETS_ROOT_DIR}/include
+        ${WXWIDGETS_BUILD_DIR}/lib/gcc_x64_dll/mswu
+    )
 
     # The library path suffix and library names used here are valid for a MSYS2/MinGW build
     # of wxWidgets. Change appropriately in case of a different toolchain.
 
-	target_link_directories(imppg PRIVATE ${WXWIDGETS_BUILD_DIR}/lib/gcc_x64_dll)
+    target_link_directories(imppg PRIVATE ${WXWIDGETS_BUILD_DIR}/lib/gcc_x64_dll)
 
-	target_link_libraries(imppg
-		wxbase31u
-		wxmsw31u_aui
-		wxmsw31u_core
-		wxbase31u_xml
+    target_link_libraries(imppg
+        wxbase31u
+        wxmsw31u_aui
+        wxmsw31u_core
+        wxbase31u_xml
     )
 
     if(USE_OPENGL_BACKEND)
         target_link_libraries(imppg
-		    wxmsw31u_gl
+            wxmsw31u_gl
         )
     endif()
 endif()
@@ -241,3 +251,17 @@ install(FILES
 )
 
 # Packaging -------------------------------------
+
+# Package generator for Ubuntu 18.04 LTS
+set(CPACK_GENERATOR "DEB")
+set(CPACK_PACKAGE_VERSION_MAJOR ${IMPPG_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${IMPPG_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${IMPPG_VERSION_SUBMINOR})
+set(CPACK_PACKAGE_FILE_NAME "imppg-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}-Ubuntu_18.04")
+set(CPACK_PACKAGE_CONTACT "Filip Szczerek <ga.software@yahoo.com>")
+set(CPACK_PACKAGE_VENDOR "Filip Szczerek <ga.software@yahoo.com>")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Filip Szczerek <ga.software@yahoo.com>")
+set(CPACK_PACKAGE_DESCRIPTION "Image Post-Processor")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Image Post-Processor")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libglew2.0, libstdc++6(>=9.2.1), libwxgtk3.0-gtk3-0v5")
+include(CPack)
