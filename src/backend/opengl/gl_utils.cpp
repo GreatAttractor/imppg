@@ -30,6 +30,8 @@ File description:
 #include <string.h>
 #include <tuple>
 #include <vector>
+#include <wx/filename.h>
+#include <wx/stdpaths.h>
 
 #include "imppg_assert.h"
 #include "logging.h"
@@ -203,6 +205,23 @@ void BindProgramTextures(c_Program& program, std::initializer_list<std::pair<con
         program.SetUniform1i(texUniform.second, textureUnit);
         ++textureUnit;
     }
+}
+
+wxFileName GetShadersDirectory()
+{
+    auto shaderDir = wxFileName(wxStandardPaths::Get().GetExecutablePath());
+    shaderDir.AppendDir("shaders");
+    if (!shaderDir.Exists())
+    {
+        shaderDir.AssignCwd();
+        shaderDir.AppendDir("shaders");
+        if (!shaderDir.Exists())
+        {
+            shaderDir.AssignDir(IMPPG_SHADERS_DIR); // defined in CMakeLists.txt
+        }
+    }
+
+    return shaderDir;
 }
 
 } // namespace imppg::backend::gl

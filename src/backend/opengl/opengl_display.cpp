@@ -24,9 +24,7 @@ File description:
 #include <GL/glew.h>
 #include <utility>
 #include <wx/dcclient.h>
-#include <wx/filename.h>
 #include <wx/sizer.h>
-#include <wx/stdpaths.h>
 
 #include "appconfig.h"
 #include "backend/opengl/gl_common.h"
@@ -103,12 +101,7 @@ c_OpenGLDisplay::c_OpenGLDisplay(c_ScrolledView& imgView)
         return; // TODO: make it recoverable error
     }
 
-    auto shaderDir = wxFileName(wxStandardPaths::Get().GetExecutablePath());
-    shaderDir.AppendDir("shaders");
-    if (!shaderDir.Exists())
-    {
-        shaderDir.AssignDir(IMPPG_SHADERS_DIR); // defined in CMakeLists.txt
-    }
+    wxFileName shaderDir = gl::GetShadersDirectory();
 
     m_GLShaders.frag.monoOutput       = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "mono_output.frag"));
     m_GLShaders.frag.monoOutputCubic  = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "mono_output_cubic.frag"));

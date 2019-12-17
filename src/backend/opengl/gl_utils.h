@@ -29,10 +29,13 @@ File description:
 #include <memory>
 #include <unordered_map>
 #include <utility>
+#include <wx/filename.h>
 
 #include "imppg_assert.h"
 
 namespace imppg::backend::gl {
+
+wxFileName GetShadersDirectory();
 
 /// Wrapper of an OpenGL object; movable, non-copyable.
 template<void Deleter(GLuint)>

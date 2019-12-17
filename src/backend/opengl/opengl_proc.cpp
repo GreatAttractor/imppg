@@ -30,10 +30,6 @@ File description:
 #include "imppg_assert.h"
 #include "lrdeconv.h"
 
-#include <wx/filename.h>
-#include <wx/stdpaths.h>
-
-
 namespace imppg::backend {
 
 /// Returns half of 1D Gaussian kernel (element [0] = peak value) with given sigma (std. deviation).
@@ -103,13 +99,7 @@ void c_OpenGLProcessing::AbortProcessing()
 
 c_OpenGLProcessing::c_OpenGLProcessing()
 {
-    auto shaderDir = wxFileName(wxStandardPaths::Get().GetExecutablePath());
-    shaderDir.AppendDir("shaders");
-
-    if (!shaderDir.Exists())
-    {
-        shaderDir.AssignDir(IMPPG_SHADERS_DIR); // defined in CMakeLists.txt
-    }
+    auto shaderDir = gl::GetShadersDirectory();
 
     m_GLShaders.frag.copy             = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "copy.frag"));
     m_GLShaders.frag.toneCurve        = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "tone_curve.frag"));

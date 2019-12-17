@@ -208,5 +208,6 @@ std::array<float, 4> GetAdaptiveUnshMaskTransitionCurve(
 
 wxString GetBackEndText(BackEnd backEnd);
 
+wxFileName GetImagesDirectory();
 
 #endif //  IMPGG_COMMON_HEADER

@@ -113,17 +113,8 @@ static struct
 
         // `images/anim.bin` contains concatenated frames, each is a PNG image
 
-        wxFileName fName = wxFileName(wxStandardPaths::Get().GetExecutablePath());
-        fName.AppendDir("images");
-        fName.SetName("anim");
-        fName.SetExt("bin");
-
-        if (!fName.Exists())
-        {
-            fName.AssignDir(IMPPG_IMAGES_DIR);
-            fName.SetName("anim");
-            fName.SetExt("bin");
-        }
+        wxFileName fName = GetImagesDirectory();
+        fName.SetFullName("anim.bin");
 
         wxFileInputStream fstream(fName.GetFullPath());
         if (!fstream.IsOk())

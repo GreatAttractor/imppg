@@ -19,20 +19,30 @@ void FixWindowPosition(wxWindow& wnd)
     }
 }
 
+wxFileName GetImagesDirectory()
+{
+    auto imgDir = wxFileName(wxStandardPaths::Get().GetExecutablePath());
+    imgDir.AppendDir("images");
+
+    if (!imgDir.Exists())
+    {
+        imgDir.AssignCwd();
+        imgDir.AppendDir("images");
+        if (!imgDir.Exists())
+        {
+            imgDir.AssignDir(IMPPG_IMAGES_DIR); // defined in CMakeLists.txt
+        }
+    }
+
+    return imgDir;
+}
+
 /// Loads a bitmap from the "images" subdirectory, optionally scaling it
 wxBitmap LoadBitmap(wxString name, bool scale, wxSize scaledSize)
 {
-    wxFileName fName = wxFileName(wxStandardPaths::Get().GetExecutablePath());
-    fName.AppendDir("images");
+    wxFileName fName = GetImagesDirectory();
     fName.SetName(name);
     fName.SetExt("png");
-
-    if (!fName.Exists())
-    {
-        fName.AssignDir(IMPPG_IMAGES_DIR); // defined in CMakeLists.txt
-        fName.SetName(name);
-        fName.SetExt("png");
-    }
 
     wxBitmap result(fName.GetFullPath(), wxBITMAP_TYPE_ANY);
     if (!result.IsOk())
