@@ -109,6 +109,8 @@ namespace Keys
 
     const char* ProcessingBackEnd = "/BackEnd";
 
+    const char* DisplayScalingMethod = UserInterfaceGroup"/DisplayScalingMethod";
+
 #define OpenGLGroup "/OpenGL"
 
     const char* LRCmdBatchSizeMpixIters = OpenGLGroup"/LRCommandBatchSizeMpixIters";
@@ -287,5 +289,19 @@ void EmptyMruList()
 }
 
 PROPERTY_UNSIGNED(LRCmdBatchSizeMpixIters, 1);
+
+c_Property<ScalingMethod> DisplayScalingMethod(
+    []()
+    {
+        long result = appConfig->ReadLong(Keys::DisplayScalingMethod, static_cast<long>(ScalingMethod::CUBIC));
+        if (result < 0 ||
+           result >= static_cast<long>(ScalingMethod::NUM_METHODS))
+        {
+            return ScalingMethod::CUBIC;
+        }
+        return static_cast<ScalingMethod>(result);
+    },
+    [](const ScalingMethod& val) { appConfig->Write(Keys::DisplayScalingMethod, static_cast<long>(val)); }
+);
 
 }  // namespace Configuration

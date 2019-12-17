@@ -557,7 +557,7 @@ c_MainWindow::c_MainWindow()
 
     s.m_FileSaveScheduled = false;
 
-    s.scalingMethod = ScalingMethod::CUBIC;
+    s.scalingMethod = Configuration::DisplayScalingMethod;
 
     s.view.zoomFactor = ZOOM_NONE;
     s.view.zoomFactorChanged = false;
@@ -702,7 +702,7 @@ void c_MainWindow::OnImageViewMouseDragStart(wxMouseEvent& event)
 }
 
 void c_MainWindow::OnImageViewMouseMove(wxMouseEvent& event)
-{   
+{
     auto& s = m_CurrentSettings;
 
     if (m_MouseOps.dragging)
@@ -1251,16 +1251,19 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent& event)
     case ID_ScalingNearest:
         s.scalingMethod = ScalingMethod::NEAREST;
         m_BackEnd->SetScalingMethod(s.scalingMethod);
+        Configuration::DisplayScalingMethod = s.scalingMethod;
         break;
 
     case ID_ScalingLinear:
         s.scalingMethod = ScalingMethod::LINEAR;
         m_BackEnd->SetScalingMethod(s.scalingMethod);
+        Configuration::DisplayScalingMethod = s.scalingMethod;
         break;
 
     case ID_ScalingCubic:
         s.scalingMethod = ScalingMethod::CUBIC;
         m_BackEnd->SetScalingMethod(s.scalingMethod);
+        Configuration::DisplayScalingMethod = s.scalingMethod;
         break;
     }
 }
@@ -1543,9 +1546,16 @@ void c_MainWindow::InitMenu()
     menuView->Append(ID_ZoomCustom, _("Custom zoom factor..."));
 
         wxMenu* menuScaling = new wxMenu();
-        menuScaling->AppendRadioItem(ID_ScalingNearest, _("Nearest neighbor (fastest)"));
+        menuScaling->AppendRadioItem(ID_ScalingNearest, _("Nearest neighbor"));
         menuScaling->AppendRadioItem(ID_ScalingLinear, _("Linear"));
-        menuScaling->AppendRadioItem(ID_ScalingCubic, _("Cubic (best quality)"));
+        menuScaling->AppendRadioItem(ID_ScalingCubic, _("Cubic"));
+        switch (Configuration::DisplayScalingMethod)
+        {
+        case ScalingMethod::NEAREST: menuScaling->Check(ID_ScalingNearest, true); break;
+        case ScalingMethod::LINEAR: menuScaling->Check(ID_ScalingLinear, true); break;
+        case ScalingMethod::CUBIC: menuScaling->Check(ID_ScalingCubic, true); break;
+        default: IMPPG_ABORT();
+        }
     menuView->AppendSubMenu(menuScaling, _("Scaling method"));
 
     wxMenu* menuTools = new wxMenu();
@@ -1572,7 +1582,6 @@ void c_MainWindow::InitMenu()
 
     GetMenuBar()->FindItem(ID_ToggleProcessingPanel)->Check();
     GetMenuBar()->FindItem(ID_ToggleToneCurveEditor)->Check();
-    GetMenuBar()->FindItem(ID_ScalingCubic)->Check();
 }
 
 void c_MainWindow::InitStatusBar()
