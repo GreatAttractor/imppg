@@ -446,10 +446,10 @@ void c_MainWindow::OnZoomChanged(
         s.scaledSelection.y *= s.view.zoomFactor;
         s.scaledSelection.width *= s.view.zoomFactor;
         s.scaledSelection.height *= s.view.zoomFactor;
-
-        if (!m_FitImageInWindow)
-            m_ImageView->ScrollTo(zoomingCenter);
     }
+
+    if (!m_FitImageInWindow)
+        m_ImageView->ScrollTo(zoomingCenter);
 
     UpdateWindowTitle();
  }
