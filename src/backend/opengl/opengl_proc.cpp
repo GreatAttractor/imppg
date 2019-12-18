@@ -41,8 +41,8 @@ static std::vector<float> GetGaussianKernel(float sigma)
 void c_OpenGLProcessing::StartProcessing(c_Image img, ProcessingSettings procSettings)
 {
     m_OwnedImg = std::move(img);
-    SetImage(m_OwnedImg.value(), false);
     SetSelection(m_OwnedImg.value().GetImageRect());
+    SetImage(m_OwnedImg.value(), false);
     SetProcessingSettings(procSettings);
     StartProcessing(ProcessingRequest::SHARPENING);
 }
