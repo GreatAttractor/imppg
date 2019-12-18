@@ -297,6 +297,8 @@ You will find `imppg` executable in the sources folder.
 //TODO: installation; creating stand-alone binpack
 // sudo cmake -P cmake_install.cmake
 
+// uninstall: cat install_manifest.txt | sudo xargs rm
+
 
 
 // uninstall: xargs rm < install_manifest.txt

@@ -250,6 +250,11 @@ install(FILES
     DESTINATION ${IMPPG_IMAGES_DIR}
 )
 
+install(FILES
+    pl/imppg.mo
+    DESTINATION ${CMAKE_INSTALL_FULL_LOCALEDIR}/pl/LC_MESSAGES
+)
+
 # Packaging -------------------------------------
 
 # Package generator for Ubuntu 18.04 LTS
