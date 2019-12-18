@@ -148,9 +148,6 @@ c_Framebuffer::c_Framebuffer(std::initializer_list<c_Texture*> attachedTextures)
     m_Width = (*attachedTextures.begin())->GetWidth();
     m_Height = (*attachedTextures.begin())->GetHeight();
 
-    GLint prevBuf;
-    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &prevBuf);
-
     glGenFramebuffers(1, &m_Framebuffer.Get());
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_Framebuffer.Get());
 
@@ -176,14 +173,12 @@ c_Framebuffer::c_Framebuffer(std::initializer_list<c_Texture*> attachedTextures)
     }
 
     m_NumAttachedTextures = attachedTextures.size();
-
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, prevBuf);
 }
 
 void c_Framebuffer::Bind()
 {
-    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &m_PrevBuf);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_Framebuffer.Get());
+    glViewport(0, 0, m_Width, m_Height);
 }
 
 void c_Texture::SetLinearInterpolation(bool enabled)

@@ -272,7 +272,7 @@ void c_OpenGLProcessing::IssueLRCommandBatch()
 
     if (m_LRSync.numIterationsLeft == 0 && !m_ProcessingOutputValid.sharpening)
     {
-        gl::c_FramebufferBinder binder(m_TexFBOs.lrSharpened.fbo);
+        m_TexFBOs.lrSharpened.fbo.Bind();
         auto& prog = m_GLPrograms.copy;
         prog.Use();
         gl::BindProgramTextures(prog, { {&m_LRSync.next->tex, uniforms::Image} });
@@ -312,7 +312,7 @@ void c_OpenGLProcessing::StartLRDeconvolution()
         auto& prog = m_GLPrograms.copy;
         prog.Use();
         gl::BindProgramTextures(prog, { {&m_OriginalImg, uniforms::Image} });
-        gl::c_FramebufferBinder binder(m_TexFBOs.lrSharpened.fbo);
+        m_TexFBOs.lrSharpened.fbo.Bind();
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
         m_ProcessingOutputValid.sharpening = true;
@@ -361,11 +361,11 @@ void c_OpenGLProcessing::StartLRDeconvolution()
             // the textures `LR.original` and `LR.buf1` to a single FBO and just render once - only the first attachment gets filled.
             // So we have to render to each separately.
             {
-                gl::c_FramebufferBinder binder(m_TexFBOs.LR.original.fbo);
+                m_TexFBOs.LR.original.fbo.Bind();
                 glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
             }
             {
-                gl::c_FramebufferBinder binder(m_TexFBOs.LR.buf1.fbo);
+                m_TexFBOs.LR.buf1.fbo.Bind();
                 glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
             }
         }
@@ -381,7 +381,7 @@ void c_OpenGLProcessing::StartLRDeconvolution()
 
 void c_OpenGLProcessing::MultiplyTextures(gl::c_Texture& tex1, gl::c_Texture& tex2, gl::c_Framebuffer& dest)
 {
-    gl::c_FramebufferBinder binder(dest);
+    dest.Bind();
     auto& prog = m_GLPrograms.multiply;
     prog.Use();
     gl::BindProgramTextures(prog, { {&tex1, uniforms::InputArray1}, {&tex2, uniforms::InputArray2} });
@@ -390,7 +390,7 @@ void c_OpenGLProcessing::MultiplyTextures(gl::c_Texture& tex1, gl::c_Texture& te
 
 void c_OpenGLProcessing::DivideTextures(gl::c_Texture& tex1, gl::c_Texture& tex2, gl::c_Framebuffer& dest)
 {
-    gl::c_FramebufferBinder binder(dest);
+    dest.Bind();
     auto& prog = m_GLPrograms.divide;
     prog.Use();
     gl::BindProgramTextures(prog, { {&tex1, uniforms::InputArray1}, {&tex2, uniforms::InputArray2} });
@@ -403,7 +403,7 @@ void c_OpenGLProcessing::GaussianConvolution(gl::c_Texture& src, gl::c_Framebuff
 
     // horizontal convolution: src -> aux
     {
-        gl::c_FramebufferBinder binder(m_TexFBOs.aux.fbo);
+        m_TexFBOs.aux.fbo.Bind();
         auto& prog = m_GLPrograms.gaussianHorz;
         prog.Use();
         gl::BindProgramTextures(prog, { {&src, uniforms::Image} });
@@ -411,9 +411,10 @@ void c_OpenGLProcessing::GaussianConvolution(gl::c_Texture& src, gl::c_Framebuff
         glUniform1fv(prog.GetUniform(uniforms::GaussianKernel), gaussian.size(), gaussian.data());
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     }
+
     // vertical convolution: aux -> dest
     {
-        gl::c_FramebufferBinder binder(dest);
+        dest.Bind();
         auto& prog = m_GLPrograms.gaussianVert;
         prog.Use();
         gl::BindProgramTextures(prog, { {&m_TexFBOs.aux.tex, uniforms::Image} });
@@ -437,32 +438,30 @@ void c_OpenGLProcessing::StartUnsharpMasking()
     GaussianConvolution(m_TexFBOs.lrSharpened.tex, m_TexFBOs.gaussianBlur.fbo, m_UnshMaskGaussian);
 
     // apply the unsharp mask
-    {
-        gl::c_FramebufferBinder binder(m_TexFBOs.unsharpMask.fbo);
+    m_TexFBOs.unsharpMask.fbo.Bind();
 
-        auto& prog = m_GLPrograms.unsharpMask;
-        prog.Use();
-        gl::BindProgramTextures(prog, {
-            {&m_TexFBOs.lrSharpened.tex, uniforms::Image},
-            {&m_TexFBOs.gaussianBlur.tex, uniforms::BlurredImage},
-            {&m_TexFBOs.inputBlurred.tex, uniforms::InputImageBlurred}
-        });
-        prog.SetUniform1i(uniforms::Adaptive, m_ProcessingSettings.unsharpMasking.adaptive);
-        prog.SetUniform1f(uniforms::AmountMin, m_ProcessingSettings.unsharpMasking.amountMin);
-        prog.SetUniform1f(uniforms::AmountMax, m_ProcessingSettings.unsharpMasking.amountMax);
-        prog.SetUniform1f(uniforms::Threshold, m_ProcessingSettings.unsharpMasking.threshold);
-        prog.SetUniform1f(uniforms::Width, m_ProcessingSettings.unsharpMasking.width);
-        prog.SetUniform2i(uniforms::SelectionPos, m_Selection.GetLeft(), m_Selection.GetTop());
-        prog.SetUniform4f(
-            uniforms::TransitionCurve,
-            m_TransitionCurve[0],
-            m_TransitionCurve[1],
-            m_TransitionCurve[2],
-            m_TransitionCurve[3]
-        );
+    auto& prog = m_GLPrograms.unsharpMask;
+    prog.Use();
+    gl::BindProgramTextures(prog, {
+        {&m_TexFBOs.lrSharpened.tex, uniforms::Image},
+        {&m_TexFBOs.gaussianBlur.tex, uniforms::BlurredImage},
+        {&m_TexFBOs.inputBlurred.tex, uniforms::InputImageBlurred}
+    });
+    prog.SetUniform1i(uniforms::Adaptive, m_ProcessingSettings.unsharpMasking.adaptive);
+    prog.SetUniform1f(uniforms::AmountMin, m_ProcessingSettings.unsharpMasking.amountMin);
+    prog.SetUniform1f(uniforms::AmountMax, m_ProcessingSettings.unsharpMasking.amountMax);
+    prog.SetUniform1f(uniforms::Threshold, m_ProcessingSettings.unsharpMasking.threshold);
+    prog.SetUniform1f(uniforms::Width, m_ProcessingSettings.unsharpMasking.width);
+    prog.SetUniform2i(uniforms::SelectionPos, m_Selection.GetLeft(), m_Selection.GetTop());
+    prog.SetUniform4f(
+        uniforms::TransitionCurve,
+        m_TransitionCurve[0],
+        m_TransitionCurve[1],
+        m_TransitionCurve[2],
+        m_TransitionCurve[3]
+    );
 
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-    }
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
     m_ProcessingOutputValid.unshMask = true;
 
@@ -476,7 +475,7 @@ void c_OpenGLProcessing::StartToneMapping()
     InitTextureAndFBO(m_TexFBOs.toneCurve, m_Selection.GetSize());
     m_TexFBOs.toneCurve.tex.SetLinearInterpolation(m_LinearInterpolationForDisplay);
 
-    gl::c_FramebufferBinder binder(m_TexFBOs.toneCurve.fbo);
+    m_TexFBOs.toneCurve.fbo.Bind();
 
     auto& prog = m_GLPrograms.toneCurve;
     prog.Use();
@@ -655,7 +654,7 @@ c_Image c_OpenGLProcessing::GetProcessedSelection()
         auto& prog = m_GLPrograms.copy;
         prog.Use();
         gl::BindProgramTextures(prog, { {&m_OriginalImg, uniforms::Image} });
-        gl::c_FramebufferBinder binder(temporary.fbo);
+        temporary.fbo.Bind();
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
         srcTex = &temporary.tex;
