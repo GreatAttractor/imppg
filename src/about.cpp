@@ -179,7 +179,7 @@ void c_AboutDialog::OnLibrariesClick(wxCommandEvent&)
 #if USE_OPENGL_BACKEND
     if (!glRenderer.IsEmpty() && !glVersion.IsEmpty())
     {
-        formatStr += "\n\nOpenGL:\n%s\nversion: %s";
+        formatStr += "\n\nOpenGL: %s\n%s";
     }
 #endif
 
@@ -200,8 +200,8 @@ void c_AboutDialog::OnLibrariesClick(wxCommandEvent&)
         , wxString::FromCDouble(cfitsioVer, 2)
 #endif
 #if USE_OPENGL_BACKEND
-        , wxString(glGetString(GL_RENDERER))
         , wxString(glGetString(GL_VERSION))
+        , wxString(glGetString(GL_RENDERER))
 #endif
         ),
         _("Libraries"), wxOK, this);
