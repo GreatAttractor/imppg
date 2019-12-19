@@ -31,9 +31,10 @@ File description:
 #include <wx/filepicker.h>
 #include <wx/choice.h>
 #include <wx/statline.h>
+
 #include "appconfig.h"
-#include "common.h"
 #include "batch_params.h"
+#include "common.h"
 #include "image.h"
 
 enum
@@ -59,7 +60,7 @@ BEGIN_EVENT_TABLE(c_BatchParamsDialog, wxDialog)
     EVT_FILEPICKER_CHANGED(ID_SettingsFilePicker, c_BatchParamsDialog::OnSettingsFileChanged)
 END_EVENT_TABLE()
 
-const wxArrayString c_BatchParamsDialog::GetInputFileNames()
+wxArrayString c_BatchParamsDialog::GetInputFileNames()
 {
     return m_FileList->GetStrings();
 }

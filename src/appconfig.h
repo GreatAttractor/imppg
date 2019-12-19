@@ -27,6 +27,7 @@ File description:
 #include <wx/arrstr.h>
 #include <wx/fileconf.h>
 #include <wx/gdicmn.h>
+
 #include "common.h"
 #include "formats.h"
 
@@ -47,6 +48,7 @@ namespace Configuration
     const unsigned DEFAULT_TONE_CURVE_EDITOR_NUM_DRAW_SEGMENTS = 512;
 
     void Initialize(wxFileConfig* appConfig);
+    void Flush();
 
     /// Returns maximum frequency (in Hz) of issuing new processing requests by the tone curve editor and numerical control sliders (0 means: no limit)
     int GetMaxProcessingRequestsPerSec();
@@ -88,11 +90,23 @@ namespace Configuration
     extern c_Property<unsigned> ToneCurveEditor_CurveWidth;
     extern c_Property<unsigned> ToneCurveEditor_CurvePointSize;
     extern c_Property<wxRect>   ToneCurveSettingsDialogPosSize;
+    extern c_Property<BackEnd>  ProcessingBackEnd;
+    extern c_Property<ScalingMethod> DisplayScalingMethod;
+    extern c_Property<bool> OpenGLInitIncomplete;
 
     /// If zero, draw 1 segment per pixel
     /** NOTE: drawing 1 segment per pixel may be slow for large widths of the tone curve editor window
         (e.g. on a 3840x2160 display). */
     extern c_Property<unsigned> ToneCurveEditorNumDrawSegments;
+
+    /// Number of megapixel-iterations of L-R deconvolution to perform in a single OpenGL command batch.
+    /// E.g. the value of 4 corresponds to, for instance, a 400x200 pixels selection with 50 L-R iterations
+    /// (400*200*50).
+    ///
+    /// If the value is too large wrt. the GPU's performance, the user will experience worsened
+    /// responsiveness of the L-R controls (i.e. each change of L-R parameters will block the GUI for
+    /// a noticeable moment - a time it takes for the OpenGL command batch to complete).
+    extern c_Property<unsigned>LRCmdBatchSizeMpixIters;
 }
 
 #endif

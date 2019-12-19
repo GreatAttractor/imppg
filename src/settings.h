@@ -24,18 +24,20 @@ File description:
 #ifndef IMPGG_PRESET_H
 #define IMPGG_PRESET_H
 
+#include "proc_settings.h"
 #include "tcrv.h"
 
-/// Saves the settings of Lucy-Richardson deconvolution, unsharp masking, tone curve and deringing; returns 'false' on error
-bool SaveSettings(wxString filePath, float lrSigma, int lrIters, bool lrDeringing,
-        bool unshAdaptive, float unshSigma, float unshAmountMin, float unshAmountMax, float unshThreshold, float unshWidth,
-        c_ToneCurve& toneCurve, bool normalizationEnabled, float normMin, float normMax);
+/// Saves the settings of Lucy-Richardson deconvolution, unsharp masking, tone curve and deringing; returns 'false' on error.
+bool SaveSettings(wxString filePath, const ProcessingSettings& settings);
 
-/// Loads the settings of Lucy-Richardson deconvolution, unsharp masking, tone curve and deringing; returns 'false' on error
+/// Loads the settings of Lucy-Richardson deconvolution, unsharp masking, tone curve and deringing; returns 'false' on error.
 /** If the specified file does not contain some of the settings, the corresponding parameters' values will not be updated.*/
-bool LoadSettings(wxString filePath, float& lrSigma, int& lrIters, bool& lrDeringing,
-    bool& unshAdaptive, float& unshSigma, float& unshAmountMin, float& unshAmountMax, float& unshThreshold, float& unshWidth,
-    c_ToneCurve& toneCurve, bool& normalizationEnabled, float& normMin, float& normMax,
-    bool* loadedLR = nullptr, bool* loadedUnsh = nullptr, bool* loadedTCurve = nullptr);
+bool LoadSettings(
+    wxString filePath,
+    ProcessingSettings& settings,
+    bool* loadedLR = nullptr,
+    bool* loadedUnsh = nullptr,
+    bool* loadedTCurve = nullptr
+);
 
 #endif

@@ -28,8 +28,9 @@ File description:
 #include <wx/valnum.h>
 #include <wx/valgen.h>
 #include <wx/checkbox.h>
-#include "normalize.h"
+
 #include "ctrl_ids.h"
+#include "normalize.h"
 
 const int BORDER = 5; ///< Border size (in pixels between) controls
 

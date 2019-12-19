@@ -18,29 +18,20 @@ You should have received a copy of the GNU General Public License
 along with ImPPG.  If not, see <http://www.gnu.org/licenses/>.
 
 File description:
-    Tone curve worker thread class header.
+    Fragment shader: draw a dashed selection outline.
 */
 
-#ifndef IMPPG_TONE_CURVE_WORKER_THREAD_H
-#define IMPPG_TONE_CURVE_WORKER_THREAD_H
+#version 330 core
 
-#include "worker.h"
-#include "tcrv.h"
+out vec4 Color;
 
-class c_ToneCurveThread: public IWorkerThread
+const int DASH_LEN = 3;
+
+void main()
 {
-    void DoWork() override;
+    int xdiv = (int(gl_FragCoord.x) / DASH_LEN) % 2;
+    int ydiv = (int(gl_FragCoord.y) / DASH_LEN) % 2;
+    float outlineColor = (xdiv != ydiv) ? 1.0 : 0.0;
 
-    c_ToneCurve toneCurve;
-    bool m_UsePreciseValues;
-
-public:
-    c_ToneCurveThread(
-        WorkerParameters&& params,
-        const c_ToneCurve &toneCurve,   ///< Tone curve to apply to 'output'; an internal copy will be created
-        bool usePreciseValues           ///< If 'false', the approximated curve's values will be used
-    );
-
-};
-
-#endif
+    Color = vec4(outlineColor, outlineColor, outlineColor, 1.0);
+}

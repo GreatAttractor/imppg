@@ -24,14 +24,16 @@ File description:
 #include <wx/log.h>
 #include <wx/tooltip.h>
 #include <wx/filename.h>
+#include <wx/msgdlg.h>
 #ifdef __WXMSW__
 #include <wx/sysopt.h>
 #endif
+
 #include "wxapp.h"
-#include "main_window.h"
+#include "appconfig.h"
 #include "cursors.h"
 #include "logging.h"
-#include "appconfig.h"
+#include "main_window.h"
 #if USE_FREEIMAGE
 #include "FreeImage.h" // on MSW it has to be the last include (to make sure no wxW header follows it)
 #endif
@@ -67,6 +69,14 @@ bool c_MyApp::OnInit()
     m_AppConfig = new wxFileConfig("imppg", wxEmptyString, wxEmptyString, wxEmptyString, wxCONFIG_USE_LOCAL_FILE);
     Configuration::Initialize(m_AppConfig);
 
+    if (Configuration::OpenGLInitIncomplete)
+    {
+        wxMessageBox(_("OpenGL back end failed to initialize when ImPPG was last started. Reverting to CPU + bitmaps mode."), _("Warning"), wxICON_WARNING | wxOK);
+        Configuration::ProcessingBackEnd = BackEnd::CPU_AND_BITMAPS;
+        Configuration::OpenGLInitIncomplete = false;
+        m_AppConfig->Flush();
+    }
+
     // Setup the UI language to use
     m_Language = wxLANGUAGE_DEFAULT;
     wxString requestedLangCode = Configuration::UiLanguage;
@@ -98,7 +108,7 @@ bool c_MyApp::OnInit()
     wxIcon appIcon;
     appIcon.CopyFromBitmap(LoadBitmap("imppg-app"));
     mainWnd->SetIcon(appIcon);
-
+    mainWnd->Show();
     SetTopWindow(mainWnd);
 
     return true;
@@ -120,4 +130,15 @@ int c_MyApp::OnExit()
 #endif
 
     return 0;
+}
+
+void c_MyApp::OnUnhandledException()
+{
+    try { throw; }
+    catch(std::runtime_error& exc)
+    {
+        std::cerr << "Runtime error: " << exc.what() << std::endl;
+        wxMessageBox(wxString("Fatal exception:\n\n") + exc.what(), "Error", wxICON_ERROR | wxCLOSE);
+        throw;
+    }
 }

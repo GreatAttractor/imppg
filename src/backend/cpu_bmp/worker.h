@@ -29,23 +29,11 @@ File description:
 #include <wx/thread.h>
 #include <wx/gdicmn.h>
 
-#include "ctrl_ids.h"
+#include "backend/backend.h"
 #include "exclusive_access.h"
 #include "image.h"
 
-enum class CompletionStatus
-{
-    COMPLETED = 0,
-    ABORTED
-};
-
-enum class ProcessingRequest
-{
-    NONE = 0,
-    SHARPENING,
-    UNSHARP_MASKING,
-    TONE_CURVE
-};
+namespace imppg::backend {
 
 // The structure is later encapsulated in wxThreadEvent in a wxAny object,
 // so let us keep its size small (below 16 bytes) for better performance
@@ -63,11 +51,10 @@ class IWorkerThread;
 
 struct WorkerParameters
 {
-    wxWindow& parent; ///< Object to receive notification messages from this worker thread.
-    ExclusiveAccessObject<IWorkerThread*>& instancePtr; ///< Pointer to this thread, set to null when execution finishes.
+    wxEvtHandler& parent; ///< Object to receive notification messages from this worker thread.
     int taskId; ///< Id of task (will be included in every message).
-    const c_ImageBufferView input; ///< Image fragment to process.
-    c_ImageBufferView output; ///< Output image.
+    c_View<const IImageBuffer> input; ///< Image fragment to process.
+    c_View<IImageBuffer> output; ///< Output image.
     int threadId; ///< Unique thread id (not reused by new threads).
 };
 
@@ -76,10 +63,7 @@ struct WorkerParameters
     (not of IWorkerThread class) internally (e.g. via OpenMP) for faster processing. */
 class IWorkerThread: public wxThread
 {
-    std::atomic<bool> threadAborted; ///< 'true' if IsAbortRequested() has been called.
-
-    /// The main thread can perform Post() on this semaphore (via AbortProcessing())
-    wxSemaphore abortRequested;
+    bool m_ThreadAborted{false};
 
 protected:
     WorkerParameters m_Params;
@@ -92,19 +76,17 @@ protected:
     void SendMessageToParent(int messageId, WorkerEventPayload &payload);
 
 public:
-    IWorkerThread(WorkerParameters&& params)
-    : wxThread(wxTHREAD_DETACHED),
-      threadAborted(false),
-      abortRequested(0, 1),
-      m_Params(std::move(params))
-    {}
+    IWorkerThread(WorkerParameters&& params): wxThread(wxTHREAD_JOINABLE), m_Params(std::move(params))
+    {
+        IMPPG_ASSERT(
+            m_Params.input.GetWidth() == m_Params.output.GetWidth() &&
+            m_Params.input.GetHeight() == m_Params.output.GetHeight()
+        );
+    }
 
     ExitCode Entry() override;
-
-    /// Signals the thread to finish processing ASAP
-    void AbortProcessing();
-
-    virtual ~IWorkerThread();
 };
+
+} // namespace imppg::backend
 
 #endif

@@ -124,6 +124,84 @@ static bool SaveAsFits(const IImageBuffer& buf, const std::string& fname)
 #endif // if USE_CFITSIO
 
 #if USE_FREEIMAGE
+
+c_FreeImageHandleWrapper::c_FreeImageHandleWrapper(c_FreeImageHandleWrapper&& rhs)
+{
+    *this = std::move(rhs);
+}
+
+c_FreeImageHandleWrapper& c_FreeImageHandleWrapper::operator=(c_FreeImageHandleWrapper&& rhs)
+{
+    m_FiBmp = rhs.m_FiBmp;
+    rhs.m_FiBmp = nullptr;
+    return *this;
+}
+
+void c_FreeImageHandleWrapper::reset(FIBITMAP* ptr)
+{
+    FreeImage_Unload(m_FiBmp);
+    m_FiBmp = ptr;
+}
+
+c_FreeImageHandleWrapper::~c_FreeImageHandleWrapper()
+{
+    FreeImage_Unload(m_FiBmp);
+}
+
+std::optional<std::unique_ptr<IImageBuffer>> c_FreeImageBuffer::Create(c_FreeImageHandleWrapper&& fiBmp)
+{
+    PixelFormat pixFmt;
+    switch (FreeImage_GetImageType(fiBmp.get()))
+    {
+    case FIT_BITMAP:
+        switch (FreeImage_GetBPP(fiBmp.get()) / 8)
+        {
+        case 3: pixFmt = PixelFormat::PIX_RGB8; break;
+        case 4: pixFmt = PixelFormat::PIX_RGBA8; break;
+        default: return std::nullopt;
+        }
+        break;
+
+    case FIT_UINT16: pixFmt = PixelFormat::PIX_MONO16; break;
+    case FIT_FLOAT:  pixFmt = PixelFormat::PIX_MONO32F; break;
+    case FIT_RGB16:  pixFmt = PixelFormat::PIX_RGB16; break;
+    case FIT_RGBA16: pixFmt = PixelFormat::PIX_RGBA16; break;
+    case FIT_RGBF:   pixFmt = PixelFormat::PIX_RGB32F; break;
+    case FIT_RGBAF:  pixFmt = PixelFormat::PIX_RGBA32F; break;
+    default: return std::nullopt;
+    }
+
+    std::unique_ptr<IImageBuffer> result(
+        new c_FreeImageBuffer(
+            std::move(fiBmp),
+            FreeImage_GetBits(fiBmp.get()),
+            pixFmt,
+            FreeImage_GetPitch(fiBmp.get())
+        )
+    );
+
+    if (RGBQUAD* fiPal = FreeImage_GetPalette(fiBmp.get()))
+    {
+        Palette& palette = result->GetPalette();
+        for (int i = 0; i < 256; i++)
+        {
+            palette[i*3]   = fiPal[i].rgbRed;
+            palette[i*3+1] = fiPal[i].rgbGreen;
+            palette[i*3+2] = fiPal[i].rgbBlue;
+        }
+    }
+
+    return result;
+}
+
+unsigned c_FreeImageBuffer::GetWidth() const { return FreeImage_GetWidth(m_FiBmp.get()); }
+
+unsigned c_FreeImageBuffer::GetHeight() const { return FreeImage_GetHeight(m_FiBmp.get()); }
+
+size_t c_FreeImageBuffer::GetBytesPerRow() const { return FreeImage_GetLine(m_FiBmp.get()); }
+
+size_t c_FreeImageBuffer::GetBytesPerPixel() const { return FreeImage_GetBPP(m_FiBmp.get()) / 8; }
+
 static std::tuple<FREE_IMAGE_FORMAT, int> GetFiFormatAndFlags(OutputFileType outpFileType)
 {
 #if USE_CFITSIO
@@ -1277,7 +1355,7 @@ static PixelFormat GetOutputPixelFormat(PixelFormat srcFmt, OutputBitDepth outpB
     return srcFmt; // never happens
 }
 
-bool c_Image::SaveToFile(const std::string& fname, OutputBitDepth outpBitDepth, OutputFileType outpFileType)
+bool c_Image::SaveToFile(const std::string& fname, OutputBitDepth outpBitDepth, OutputFileType outpFileType) const
 {
     IMPPG_ASSERT(m_Buffer->GetPixelFormat() != PixelFormat::PIX_PAL8);
 
@@ -1317,7 +1395,7 @@ static std::tuple<OutputBitDepth, OutputFileType> DecodeOutputFormat(OutputForma
     }
 }
 
-bool c_Image::SaveToFile(const std::string& fname, OutputFormat outpFormat)
+bool c_Image::SaveToFile(const std::string& fname, OutputFormat outpFormat) const
 {
     IMPPG_ASSERT(m_Buffer->GetPixelFormat() != PixelFormat::PIX_PAL8);
 

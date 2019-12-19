@@ -29,6 +29,7 @@ File description:
 #include <wx/slider.h>
 #include <wx/stattext.h>
 #include <wx/event.h>
+
 #include "daction.h"
 
 // Event sent to parent every time the control's value changes

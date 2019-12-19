@@ -22,9 +22,12 @@ File description:
 */
 
 #include <wx/datetime.h>
-#include "w_tcurve.h"
-#include "logging.h"
 
+#include "backend/cpu_bmp/w_tcurve.h"
+#include "logging.h"
+#include "ctrl_ids.h"
+
+namespace imppg::backend {
 
 c_ToneCurveThread::c_ToneCurveThread(
     WorkerParameters&& params,
@@ -40,17 +43,13 @@ void c_ToneCurveThread::DoWork()
     wxDateTime tstart = wxDateTime::UNow();
     toneCurve.RefreshLut();
 
-    float (c_ToneCurve::* valueGetter)(float) const;
-    if (m_UsePreciseValues)
-        valueGetter = &c_ToneCurve::GetPreciseValue;
-    else
-        valueGetter = &c_ToneCurve::GetApproximatedValue;
-
     int lastPercentageReported = 0;
     for (unsigned y = 0; y < m_Params.output.GetHeight(); y++)
     {
-        for (unsigned x = 0; x < m_Params.output.GetWidth(); x++)
-            m_Params.output.GetRowAs<float>(y)[x] = (toneCurve.*valueGetter)(m_Params.input.GetRowAs<float>(y)[x]);
+        if (m_UsePreciseValues)
+            toneCurve.ApplyPreciseToneCurve(m_Params.input.GetRowAs<const float>(y), m_Params.output.GetRowAs<float>(y), m_Params.output.GetWidth());
+        else
+            toneCurve.ApplyApproximatedToneCurve(m_Params.input.GetRowAs<const float>(y), m_Params.output.GetRowAs<float>(y), m_Params.output.GetWidth());
 
         // Notify the main thread after every 5% of progress
         int percentage = 100 * y / m_Params.output.GetHeight();
@@ -67,3 +66,5 @@ void c_ToneCurveThread::DoWork()
     }
     Log::Print(wxString::Format("Applying of tone curve finished in %s s\n", (wxDateTime::UNow() - tstart).Format("%S.%l")));
 }
+
+} // namespace imppg::backend

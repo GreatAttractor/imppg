@@ -22,14 +22,22 @@ File description:
 */
 
 #include <wx/event.h>
-#include "worker.h"
+#include "backend/cpu_bmp/worker.h"
+#include "ctrl_ids.h"
 #include "logging.h"
+
+namespace imppg::backend {
 
 wxThread::ExitCode IWorkerThread::Entry()
 {
     Log::Print(wxString::Format("Worker thread (id = %d): started work\n", m_Params.threadId));
     DoWork();
     Log::Print(wxString::Format("Worker thread (id = %d): work finished\n", m_Params.threadId));
+
+    WorkerEventPayload payload;
+    payload.completionStatus = m_ThreadAborted ? CompletionStatus::ABORTED : CompletionStatus::COMPLETED;
+    SendMessageToParent(ID_FINISHED_PROCESSING, payload);
+
     return 0;
 }
 
@@ -41,39 +49,20 @@ void IWorkerThread::SendMessageToParent(int messageId, WorkerEventPayload& paylo
     event->SetInt(m_Params.threadId);
 
     // Send the event to the main window (i.e. the main thread)
-    m_Params.parent.GetEventHandler()->QueueEvent(event);
+    m_Params.parent.QueueEvent(event);
 }
 
 bool IWorkerThread::IsAbortRequested()
 {
-    if (TestDestroy() ||
-        // Check if the main thread has called Post() on the semaphore
-        (wxSEMA_NO_ERROR == abortRequested.TryWait()))
+    if (TestDestroy())
     {
-        threadAborted = true;
+        m_ThreadAborted = true;
         return true;
     }
     else
     {
         return false;
     }
-
 }
 
-IWorkerThread::~IWorkerThread()
-{
-    WorkerEventPayload payload;
-    payload.completionStatus = threadAborted ? CompletionStatus::ABORTED : CompletionStatus::COMPLETED;
-    SendMessageToParent(ID_FINISHED_PROCESSING, payload);
-    {
-        auto lock = m_Params.instancePtr.Lock();
-        lock.Get() = nullptr;
-    }
-}
-
-/// Signals the thread to finish processing ASAP
-void IWorkerThread::AbortProcessing()
-{
-    abortRequested.Post();
-    threadAborted = true;
-}
+} // namespace imppg::backend

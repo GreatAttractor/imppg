@@ -38,6 +38,7 @@ File description:
 #include <wx/textctrl.h>
 #include <wx/valgen.h>
 #include <wx/window.h>
+
 #include "align.h"
 #include "appconfig.h"
 #include "common.h"

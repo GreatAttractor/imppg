@@ -67,7 +67,7 @@ public:
 };
 
 /// Clamps the values of the specified PIX_MONO32F buffer to [0.0, 1.0]
-void Clamp(c_ImageBufferView& buf);
+void Clamp(c_View<IImageBuffer>& buf);
 
 /// Calculates convolution of 'input' with a Gaussian kernel
 void ConvolveSeparable(
@@ -78,8 +78,8 @@ void ConvolveSeparable(
 
 /// Reproduces original image from image in 'input' convolved with Gaussian kernel and writes it to 'output'.
 void LucyRichardsonGaussian(
-        const c_ImageBufferView& input, ///< Contains a single 'float' value per pixel; size the same as 'output'
-        c_ImageBufferView& output, ///< Contains a single 'float' value per pixel; size the same as 'input'
+        c_View<const IImageBuffer>& input, ///< Contains a single 'float' value per pixel; size the same as 'output'
+        c_View<IImageBuffer>& output, ///< Contains a single 'float' value per pixel; size the same as 'input'
         int numIters,  ///< Number of iterations
         float sigma,   ///< sigma of the Gaussian kernel
         ConvolutionMethod convMethod,
@@ -93,12 +93,19 @@ void LucyRichardsonGaussian(
         std::function<bool ()> checkAbort
 );
 
+// c_Image GetTresholdVicinityMask(
+//     c_View<const IImageBuffer> input,
+//     float threshold, ///< Threshold to qualify pixels as "border pixels".
+//     bool greaterThan ///< If true, returns mask with pixels > threshold.
+// );
+
+
 /// Blurs pixels around borders of brightness areas defined by 'threshold'
 void BlurThresholdVicinity(
-    const c_ImageBufferView& input,
-    c_ImageBufferView& output,
-    float threshold, ///< Threshold to qualify pixels as "border pixels"
-    bool greaterThan,
+    c_View<const IImageBuffer> input,
+    c_View<IImageBuffer> output,
+    std::vector<uint8_t>& workBuf,
+    float threshold, ///< Threshold to qualify pixels as "border pixels".
     float sigma
 );
 

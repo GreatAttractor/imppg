@@ -1,7 +1,7 @@
 #
 # ImPPG build file
 #
-# Prerequisite libraries: wxWidgets 3.0, Boost 1.57.0, FreeImage (optional) 3.14.0 or newer, CFITSIO (optional).
+# Prerequisite libraries: wxWidgets 3.0 (3.1 under MS Windows), Boost 1.57.0, FreeImage (optional) 3.14.0 or newer, CFITSIO (optional).
 # Before building, edit config.in to configure optional libs.
 #
 # NOTE: CMake relies on the presence of the "wx-config" tool to detect and configure wxWidgets-related build options.
@@ -11,12 +11,13 @@
 #         sudo ln -s /usr/bin/wx-config-3.0 /usr/bin/wx-config
 #
 
-project("ImPPG")
+project("imppg")
 
 cmake_minimum_required(VERSION 2.8)
 
-include(FindPkgConfig)
 include(config.in)
+include(FindPkgConfig)
+include(GNUInstallDirs)
 
 add_executable(imppg WIN32
     src/about.cpp
@@ -26,35 +27,69 @@ add_executable(imppg WIN32
     src/align_proc.cpp
     src/align_progress.cpp
     src/appconfig.cpp
-    src/batch.cpp
+
+    src/backend/cpu_bmp/cpu_bmp_core.cpp
+    src/backend/cpu_bmp/cpu_bmp_proc.cpp
+    src/backend/cpu_bmp/cpu_bmp_proc.h
+    src/backend/cpu_bmp/w_lrdeconv.cpp
+    src/backend/cpu_bmp/w_tcurve.cpp
+    src/backend/cpu_bmp/w_unshmask.cpp
+    src/backend/cpu_bmp/worker.cpp
+
     src/batch_params.cpp
+    src/batch.cpp
     src/bmp.cpp
     src/common.cpp
     src/cursors.cpp
-    src/formats.cpp
     src/fft.cpp
+    src/formats.cpp
     src/gauss.cpp
     src/image.cpp
     src/logging.cpp
     src/lrdeconv.cpp
-    src/main.cpp
     src/main_window.cpp
+    src/main.cpp
     src/normalize.cpp
     src/num_ctrl.cpp
     src/scrollable_dlg.cpp
+    src/scrolled_view.cpp
     src/settings.cpp
-    src/tcrv.cpp
     src/tcrv_edit.cpp
     src/tcrv_wnd_settings.cpp
+    src/tcrv.cpp
     src/tiff.cpp
-    src/w_lrdeconv.cpp
-    src/w_tcurve.cpp
-    src/w_unshmask.cpp
-    src/worker.cpp
     src/wxapp.cpp
 )
 
-target_compile_options(imppg PRIVATE -Werror -Wall -Wextra -Wpedantic -Wold-style-cast -Wno-parentheses)
+if(USE_OPENGL_BACKEND)
+    target_sources(imppg PRIVATE
+        src/backend/opengl/gl_utils.cpp
+        src/backend/opengl/gl_utils.h
+        src/backend/opengl/opengl_display.cpp
+        src/backend/opengl/opengl_display.h
+        src/backend/opengl/opengl_proc.cpp
+        src/backend/opengl/opengl_proc.h
+        src/backend/opengl/uniforms.cpp
+        src/backend/opengl/uniforms.h
+    )
+endif()
+
+target_include_directories(imppg PRIVATE src)
+target_compile_options(imppg PRIVATE -Wall -Wextra -Wpedantic -Wold-style-cast -Wno-parentheses)
+
+set(IMPPG_SHADERS_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/imppg/shaders)
+set(IMPPG_IMAGES_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/imppg/images)
+set(IMPPG_VERSION_MAJOR 0)
+set(IMPPG_VERSION_MINOR 6)
+set(IMPPG_VERSION_SUBMINOR 0)
+
+target_compile_definitions(imppg PRIVATE
+    IMPPG_SHADERS_DIR="${IMPPG_SHADERS_DIR}"
+    IMPPG_IMAGES_DIR="${IMPPG_IMAGES_DIR}"
+    IMPPG_VERSION_MAJOR=${IMPPG_VERSION_MAJOR}
+    IMPPG_VERSION_MINOR=${IMPPG_VERSION_MINOR}
+    IMPPG_VERSION_SUBMINOR=${IMPPG_VERSION_SUBMINOR}
+)
 
 if (CMAKE_VERSION VERSION_LESS "3.1")
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -65,38 +100,70 @@ else()
     set_property(TARGET imppg PROPERTY CXX_STANDARD_REQUIRED ON)
 endif()
 
-if(MINGW)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINK_FLAGS} -Wl,--strip-all")
-endif()
-
 if(WIN32)
-    # The imppg(64).rc files include the manifest that enables MS Windows Common Controls 6.0.0.0
-    # (for Windows XP and above), i.e. the nicer-looking, themed ones. It also defines the application icon.
+    # The RC file includes the application manifest and defines the application icon.
     if(CMAKE_SIZEOF_VOID_P EQUAL 4)
         # 32-bit build
-        target_sources(imppg PUBLIC src/imppg.rc)
+        target_sources(imppg PRIVATE src/imppg.rc src/app32.manifest)
     else()
         # 64-bit build
-        target_sources(imppg PUBLIC src/imppg64.rc)
+        target_sources(imppg PRIVATE src/imppg64.rc src/app64.manifest)
     endif()
 endif()
 
 find_package(Boost REQUIRED)
-target_include_directories(imppg PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories(imppg PRIVATE ${Boost_INCLUDE_DIRS})
 
 set(wxWidgets_USE_UNICODE TRUE)
 set(wxWidgets_USE_DEBUG FALSE)
-find_package(wxWidgets REQUIRED COMPONENTS adv aui xml core base)
-include(${wxWidgets_USE_FILE})
-target_link_libraries(imppg ${wxWidgets_LIBRARIES})
+if(UNIX AND NOT APPLE)
+    set(wxWidgets_CONFIG_OPTIONS --toolkit=gtk3)
+endif()
+
+if(NOT WIN32)
+    set(WX_COMPONENTS "adv aui xml core base")
+    if(USE_OPENGL_BACKEND)
+        string(APPEND WX_COMPONENTS " gl")
+    endif()
+
+    find_package(wxWidgets REQUIRED COMPONENTS ${WX_COMPONENTS})
+    include(${wxWidgets_USE_FILE})
+    target_link_libraries(imppg ${wxWidgets_LIBRARIES})
+else()
+    # Not trying to configure "find_package(wxWidgets...)" to use custom paths,
+    # because as of CMake 3.15.5 under MSYS2 it does not work.
+    #
+    # Instead, specify everything explicitly.
+
+    target_include_directories(imppg SYSTEM PRIVATE
+        ${WXWIDGETS_ROOT_DIR}/include
+        ${WXWIDGETS_BUILD_DIR}/lib/gcc_x64_dll/mswu
+    )
+
+    # The library path suffix and library names used here are valid for a MSYS2/MinGW build
+    # of wxWidgets. Change appropriately in case of a different toolchain.
+
+    target_link_directories(imppg PRIVATE ${WXWIDGETS_BUILD_DIR}/lib/gcc_x64_dll)
+
+    target_link_libraries(imppg
+        wxbase31u
+        wxmsw31u_aui
+        wxmsw31u_core
+        wxbase31u_xml
+    )
+
+    if(USE_OPENGL_BACKEND)
+        target_link_libraries(imppg
+            wxmsw31u_gl
+        )
+    endif()
+endif()
 
 find_package(OpenMP)
 if(OPENMP_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
-
-set(CMAKE_BUILD_TYPE Release)
 
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag(-ffast-math GNU_FFAST_MATH_SUPPORTED)
@@ -106,14 +173,100 @@ if(GNU_FFAST_MATH_SUPPORTED)
 endif()
 
 if(USE_FREEIMAGE EQUAL 1)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_FREEIMAGE")
+    target_compile_definitions(imppg PRIVATE USE_FREEIMAGE=1)
+
     # Cannot do `pkg_check_modules` on `freeimage`; as of FreeImage 3.18.0, there is no `.pc` file provided (checked in MSYS2 and Fedora 29)
     target_link_libraries(imppg freeimage)
 endif()
 
+if(USE_OPENGL_BACKEND)
+    if(WIN32)
+        target_link_libraries(imppg opengl32)
+    else()
+        target_link_libraries(imppg GL)
+    endif()
+
+    find_package(GLEW REQUIRED)
+    target_include_directories(imppg PRIVATE ${GLEW_INCLUDE_DIRS})
+    target_link_libraries(imppg GLEW::GLEW)
+
+    target_compile_definitions(imppg PRIVATE USE_OPENGL_BACKEND=1)
+else()
+    target_compile_definitions(imppg PRIVATE USE_OPENGL_BACKEND=0)
+endif()
+
 if(USE_CFITSIO EQUAL 1)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_CFITSIO")
+    target_compile_definitions(imppg PRIVATE USE_CFITSIO=1)
     pkg_check_modules(CFITSIO cfitsio REQUIRED)
-    target_include_directories(imppg PUBLIC ${CFITSIO_INCLUDE_DIRS})
+    target_include_directories(imppg PRIVATE ${CFITSIO_INCLUDE_DIRS})
     target_link_libraries(imppg ${CFITSIO_LIBRARIES})
 endif()
+
+
+# Installation -------------------------------------
+
+install(TARGETS imppg DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
+
+install(FILES
+    README.md
+    README_pl.md
+    main_wnd.png
+    LICENSE
+    DESTINATION ${CMAKE_INSTALL_FULL_DOCDIR}
+)
+
+install(FILES
+    shaders/copy.frag
+    shaders/divide.frag
+    shaders/gaussian_horz.frag
+    shaders/gaussian_vert.frag
+    shaders/mono_output_cubic.frag
+    shaders/mono_output.frag
+    shaders/multiply.frag
+    shaders/pass-through.vert
+    shaders/selection_outline.frag
+    shaders/tone_curve.frag
+    shaders/unsharp_mask.frag
+    shaders/vertex.vert
+    DESTINATION ${IMPPG_SHADERS_DIR}
+)
+
+install(FILES
+    images/fit_wnd.png
+    images/anim.bin
+    images/imppg-app.png
+    images/load_settings.png
+    images/mru_settings.png
+    images/open_file.png
+    images/save_file.png
+    images/save_settings.png
+    images/select_all.png
+    images/toggle_proc.png
+    images/toggle_tcrv.png
+    images/zoom_custom.png
+    images/zoom_in.png
+    images/zoom_none.png
+    images/zoom_out.png
+    DESTINATION ${IMPPG_IMAGES_DIR}
+)
+
+install(FILES
+    pl/imppg.mo
+    DESTINATION ${CMAKE_INSTALL_FULL_LOCALEDIR}/pl/LC_MESSAGES
+)
+
+# Packaging -------------------------------------
+
+# Package generator for Ubuntu 18.04 LTS
+set(CPACK_GENERATOR "DEB")
+set(CPACK_PACKAGE_VERSION_MAJOR ${IMPPG_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${IMPPG_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${IMPPG_VERSION_SUBMINOR})
+set(CPACK_PACKAGE_FILE_NAME "imppg-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}-Ubuntu_18.04")
+set(CPACK_PACKAGE_CONTACT "Filip Szczerek <ga.software@yahoo.com>")
+set(CPACK_PACKAGE_VENDOR "Filip Szczerek <ga.software@yahoo.com>")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Filip Szczerek <ga.software@yahoo.com>")
+set(CPACK_PACKAGE_DESCRIPTION "Image Post-Processor")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Image Post-Processor")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libglew2.0, libfreeimage3, libcfitsio5, libwxgtk3.0-gtk3-0v5")
+include(CPack)

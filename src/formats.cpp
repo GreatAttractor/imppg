@@ -22,6 +22,7 @@ File description:
 */
 
 #include <wx/string.h>
+
 #include "formats.h"
 
 // Filter string used by the File Open (image) dialog

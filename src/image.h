@@ -28,10 +28,8 @@ File description:
 #include <memory>
 #include <optional>
 #include <string>
+#include <type_traits>
 #include <wx/gdicmn.h>
-#if USE_FREEIMAGE
-#include "FreeImage.h"
-#endif
 
 #include "formats.h"
 #include "imppg_assert.h"
@@ -150,6 +148,8 @@ public:
 
     void ClearToZero(); ///< Clears all pixels to zero value.
 
+    wxRect GetImageRect() const { return wxRect{ 0, 0, static_cast<int>(GetWidth()), static_cast<int>(GetHeight()) }; };
+
     unsigned GetWidth() const { return m_Buffer->GetWidth(); }
     unsigned GetHeight() const { return m_Buffer->GetHeight(); }
     unsigned GetNumPixels() const { return GetWidth() * GetHeight(); }
@@ -212,85 +212,90 @@ public:
         const std::string& fname, ///< Full destination path
         OutputBitDepth outpBitDepth,
         OutputFileType outpFileType
-    );
+    ) const;
 
     bool SaveToFile(
         const std::string& fname, ///< Full destination path
         OutputFormat outpFormat
-    );
+    ) const;
 };
 
-/// Lightweight wrapper of a fragment of an image buffer; does not allocate any pixels memory itself
-class c_ImageBufferView
+/// Lightweight wrapper of a fragment of an image buffer; does not allocate any pixels memory itself.
+///
+/// Buf: `IImageBuffer` or `const IImageBuffer`.
+///
+template<typename Buf>
+class c_View
 {
-    IImageBuffer* m_Buf; // must be a pointer rather than a reference to enable move assignment
+    Buf* m_Buf; // must be a pointer rather than a reference to enable move assignment
     int m_X0, m_Y0, m_Width, m_Height;
 
 public:
-    c_ImageBufferView(IImageBuffer& buf)
+    c_View(Buf& buf)
         : m_Buf(&buf), m_X0(0), m_Y0(0), m_Width(buf.GetWidth()), m_Height(buf.GetHeight())
     { }
 
-    c_ImageBufferView(IImageBuffer& buf, int x0, int y0, int width, int height)
+    c_View(Buf& buf, int x0, int y0, int width, int height)
         : m_Buf(&buf), m_X0(x0), m_Y0(y0), m_Width(width), m_Height(height)
     { }
 
-    c_ImageBufferView(IImageBuffer& buf, const wxRect& rect)
+    c_View(Buf& buf, const wxRect& rect)
         : m_Buf(&buf), m_X0(rect.x), m_Y0(rect.y), m_Width(rect.width), m_Height(rect.height)
     { }
 
-    unsigned GetWidth() const { return m_Width; }
+    unsigned GetWidth() { return m_Width; }
 
-    unsigned GetHeight() const { return m_Height; }
+    unsigned GetHeight() { return m_Height; }
 
     /// Returns number of bytes per row (including padding, if any).
-    size_t GetBytesPerRow() const { return m_Buf->GetBytesPerRow(); }
+    size_t GetBytesPerRow() { return m_Buf->GetBytesPerRow(); }
 
-    size_t GetBytesPerPixel() const { return m_Buf->GetBytesPerPixel(); }
+    size_t GetBytesPerPixel() { return m_Buf->GetBytesPerPixel(); }
 
-    void* GetRow(size_t row) { return static_cast<uint8_t*>(m_Buf->GetRow(m_Y0 + row)) + m_X0 * m_Buf->GetBytesPerPixel(); }
+    typename std::conditional<std::is_const<Buf>::value, const void*, void*>::type GetRow(size_t row)
+    {
+        return static_cast<typename std::conditional<std::is_const<Buf>::value, const uint8_t*, uint8_t*>::type>(
+            m_Buf->GetRow(m_Y0 + row)) + m_X0 * m_Buf->GetBytesPerPixel();
+    }
 
+    /// Returns specified row as a pointer-to-`T`. Constness of `T` has to match constness of `Buf`.
     template <typename T>
     T* GetRowAs(size_t row) { return static_cast<T*>(GetRow(row)); }
-
-    template <typename T>
-    const T* GetRowAs(size_t row) const { return static_cast<const T*>(GetRow(row)); }
-
-    const void* GetRow(size_t row) const { return static_cast<const uint8_t*>(m_Buf->GetRow(m_Y0 + row)) + m_X0 * m_Buf->GetBytesPerPixel(); }
 
     PixelFormat GetPixelFormat() const { return m_Buf->GetPixelFormat(); }
 };
 
 #if USE_FREEIMAGE
 
+struct FIBITMAP; // provided by FreeImage.h
+
 class c_FreeImageHandleWrapper
 {
-    struct FreeImageDeleter { void operator()(FIBITMAP* ptr) const { FreeImage_Unload(ptr); } };
-    std::unique_ptr<FIBITMAP, FreeImageDeleter> m_FiBmp;
+    FIBITMAP* m_FiBmp{nullptr};
 
 public:
     c_FreeImageHandleWrapper() = default;
 
     c_FreeImageHandleWrapper(FIBITMAP* ptr)
     {
-        m_FiBmp.reset(ptr);
+        m_FiBmp = ptr;
     }
 
     c_FreeImageHandleWrapper(const c_FreeImageHandleWrapper& rhs) = delete;
 
     c_FreeImageHandleWrapper& operator=(const c_FreeImageHandleWrapper& rhs) = delete;
 
-    c_FreeImageHandleWrapper(c_FreeImageHandleWrapper&& rhs) = default;
+    c_FreeImageHandleWrapper(c_FreeImageHandleWrapper&& rhs);
 
-    c_FreeImageHandleWrapper& operator=(c_FreeImageHandleWrapper&& rhs) = default;
+    c_FreeImageHandleWrapper& operator=(c_FreeImageHandleWrapper&& rhs);
 
-    ~c_FreeImageHandleWrapper() = default;
+    ~c_FreeImageHandleWrapper();
 
-    FIBITMAP* get() const { return m_FiBmp.get(); }
+    FIBITMAP* get() const { return m_FiBmp; }
 
-    void reset(FIBITMAP* ptr) { m_FiBmp.reset(ptr); }
+    void reset(FIBITMAP* ptr);
 
-    operator bool() const { return m_FiBmp.get() != nullptr; }
+    operator bool() const { return m_FiBmp != nullptr; }
 };
 
 /// A wrapper around a FreeImage bitmap object.
@@ -322,59 +327,15 @@ public:
     c_FreeImageBuffer(c_FreeImageBuffer&& rhs) = default;
     c_FreeImageBuffer& operator=(c_FreeImageBuffer&& rhs) = default;
 
-    static std::optional<std::unique_ptr<IImageBuffer>> Create(c_FreeImageHandleWrapper&& fiBmp)
-    {
-        PixelFormat pixFmt;
-        switch (FreeImage_GetImageType(fiBmp.get()))
-        {
-        case FIT_BITMAP:
-            switch (FreeImage_GetBPP(fiBmp.get()) / 8)
-            {
-            case 3: pixFmt = PixelFormat::PIX_RGB8; break;
-            case 4: pixFmt = PixelFormat::PIX_RGBA8; break;
-            default: return std::nullopt;
-            }
-            break;
+    static std::optional<std::unique_ptr<IImageBuffer>> Create(c_FreeImageHandleWrapper&& fiBmp);
 
-        case FIT_UINT16: pixFmt = PixelFormat::PIX_MONO16; break;
-        case FIT_FLOAT:  pixFmt = PixelFormat::PIX_MONO32F; break;
-        case FIT_RGB16:  pixFmt = PixelFormat::PIX_RGB16; break;
-        case FIT_RGBA16: pixFmt = PixelFormat::PIX_RGBA16; break;
-        case FIT_RGBF:   pixFmt = PixelFormat::PIX_RGB32F; break;
-        case FIT_RGBAF:  pixFmt = PixelFormat::PIX_RGBA32F; break;
-        default: return std::nullopt;
-        }
+    unsigned GetWidth() const override;
 
-        std::unique_ptr<IImageBuffer> result(
-            new c_FreeImageBuffer(
-                std::move(fiBmp),
-                FreeImage_GetBits(fiBmp.get()),
-                pixFmt,
-                FreeImage_GetPitch(fiBmp.get())
-            )
-        );
+    unsigned GetHeight() const override;
 
-        if (RGBQUAD* fiPal = FreeImage_GetPalette(fiBmp.get()))
-        {
-            Palette& palette = result->GetPalette();
-            for (int i = 0; i < 256; i++)
-            {
-                palette[i*3]   = fiPal[i].rgbRed;
-                palette[i*3+1] = fiPal[i].rgbGreen;
-                palette[i*3+2] = fiPal[i].rgbBlue;
-            }
-        }
+    size_t GetBytesPerRow() const override;
 
-        return result;
-    }
-
-    unsigned GetWidth() const override { return FreeImage_GetWidth(m_FiBmp.get()); }
-
-    unsigned GetHeight() const override { return FreeImage_GetHeight(m_FiBmp.get()); }
-
-    size_t GetBytesPerRow() const override { return FreeImage_GetLine(m_FiBmp.get()); }
-
-    size_t GetBytesPerPixel() const override { return FreeImage_GetBPP(m_FiBmp.get()) / 8; }
+    size_t GetBytesPerPixel() const override;
 
     void* GetRow(size_t row) override { return m_Pixels + (GetHeight() - 1 - row) * m_Stride; /* freeImage stores rows in reverse order */ }
 

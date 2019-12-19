@@ -31,6 +31,8 @@ File description:
 #include <wx/textctrl.h>
 #include <wx/gauge.h>
 #include <wx/settings.h>
+#include <wx/version.h>
+
 #include "align.h"
 #include "align_proc.h"
 #include "appconfig.h"
@@ -87,8 +89,14 @@ void c_ImageAlignmentProgress::InitControls()
         m_InfoText.SetLabel(_("Determining translation vectors..."));
     szTop->Add(&m_InfoText, 0, wxALIGN_LEFT | wxGROW | wxALL, BORDER);
 
-    //TODO: use wxGA_PROGRESS style if wxWidgets >=3.1
-    m_ProgressGauge.Create(this, wxID_ANY, 100);
+    const long style =
+        wxGA_HORIZONTAL
+#if wxCHECK_VERSION(3, 1, 0)
+        | wxGA_PROGRESS
+#endif
+        ;
+
+    m_ProgressGauge.Create(this, wxID_ANY, 100, wxDefaultPosition, wxDefaultSize, style);
     // Initially set the range to 1 less than image count, because first we show
     // the completed translations (starting with the second image).
     m_ProgressGauge.SetRange(m_Parameters.inputFiles.Count() - 1);

@@ -24,39 +24,32 @@ File description:
 #ifndef IMPPG_TONE_CURVE_H
 #define IMPPG_TONE_CURVE_H
 
+#include <optional>
 #include <vector>
-#include "common.h"
 
-typedef struct
-{
-    float minValue; ///< Exact minimum value present in image
-    float maxValue; ///< Exact maximum value present in image
-    std::vector<int> values; ///< Histogram values for uniform intervals (bins)
-    int maxCount; ///< Highest count among the histogram bins
-} Histogram_t;
+#include "common.h"
+#include "imppg_assert.h"
 
 /// Represents a tone curve and associated data. NOTE: LUT contents are not copied by copy constructor and assignment operator.
 class c_ToneCurve
 {
-    /// Look-up table with pre-calculated values of the curve
-    float* m_LUT{nullptr};
-    /// Number of elements in 'm_LUT'
-    int m_LutSize;
-
-    typedef std::vector<FloatPoint_t> FloatPointsVector_t;
-
-    /// Collection of curve points(X = curve argument, Y = curve value), sorted by X
-    FloatPointsVector_t m_Points;
-
-    /// Coefficients of a spline. Spline value = a*t^3+b*t^2+c*t+d, where 0<=t<=1
-    typedef struct
+public:
+    /// Coefficients of a spline. Spline value = a*t^3+b*t^2+c*t+d, where 0<=t<=1.
+    struct SplineParams
     {
         float a, b, c, d;
-    } SplineParams_t;
+    };
+
+private:
+    /// Look-up table with pre-calculated values of the curve.
+    std::optional<std::vector<float>> m_LUT;
+
+    /// Collection of curve points(X = curve argument, Y = curve value), sorted by X
+    std::vector<FloatPoint_t> m_Points;
 
     /// Spline coefficients (Catmull-Rom); i-th element corresponds to the interval [m_Points[i]; m_Points[i+1]]
     /** Number of elements = m_Points.size()-1. */
-    std::vector<SplineParams_t> m_Spline;
+    std::vector<SplineParams> m_Spline;
 
     /// If 'true', control points are interpolated by a Catmull-Rom spline
     bool m_Smooth;
@@ -95,15 +88,20 @@ public:
     bool GetSmooth() const { return m_Smooth; }
     void SetSmooth(bool smooth);
 
-    /// Applies an approximated curve value (one of the pre-calculated values) to 'input'
-    /** LUT is not calculated automatically. Caller must call RefreshLut()
-        after any update to the curve before using this method. */
-    float GetApproximatedValue(
-        float input ///< Value from [0.0f; 1.0f]
-    ) const
+    /// Tone-maps `input` to `output` using approximated tone curve values.
+    /** LUT is not calculated automatically. Caller must call RefreshLut() after any update to the curve before using this method. */
+    void ApplyApproximatedToneCurve(const float input[], float output[], size_t length)
     {
-        //TODO: perform a quicker shift when LUT size is a power of 2
-        return m_LUT[static_cast<int>(input * (m_LutSize - 1))];
+        IMPPG_ASSERT(m_LUT.has_value());
+        for (size_t i = 0; i < length; i++)
+            output[i] = (*m_LUT)[static_cast<int>(input[i] * (m_LUT->size() - 1))];
+    }
+
+    /// Tone-maps `input` to `output` using precise tone curve values.
+    void ApplyPreciseToneCurve(const float input[], float output[], size_t length)
+    {
+        for (size_t i = 0; i < length; i++)
+            output[i] = GetPreciseValue(input[i]);
     }
 
     /// Applies the tone curve to 'input' using a precise curve value
@@ -129,6 +127,10 @@ public:
         return m_Points.size();
     }
 
+    const std::vector<FloatPoint_t>& GetPoints() const { return m_Points; }
+
+    const std::vector<SplineParams>& GetSplines() const { return m_Spline; }
+
     /// Returns 'true' if the curve is defined as output = input^(1/m_Gamma)
     bool IsGammaMode() const { return m_IsGamma; }
 
@@ -148,7 +150,8 @@ public:
     /// Stretches the points to fill the interval [min; max]
     void Stretch(float min, float max);
 
-    ~c_ToneCurve();
+    /// Returns `true` if the tone curve is an identity map (no impact on the image).
+    bool IsIdentity() const;
 };
 
 #endif

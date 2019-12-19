@@ -38,7 +38,6 @@ File description:
 #include "align_phasecorr.h"
 #include "align_proc.h"
 #include "common.h"
-#include "gauss.h"
 #include "image.h"
 #include "imppg_assert.h"
 #include "logging.h"

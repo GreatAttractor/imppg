@@ -2,5 +2,5 @@
 //
 // This file is needed only for MinGW (32-bit) build (MSVC generates and embeds a manifest automatically).
 //
-1 24 "wx/msw/wx.manifest"
+1 24 "app32.manifest"
 2 ICON "../images/imppg-app.ico"

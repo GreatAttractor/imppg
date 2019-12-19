@@ -24,9 +24,20 @@ File description:
 #ifndef IMPGG_COMMON_HEADER
 #define IMPGG_COMMON_HEADER
 
+#include <array>
+#include <vector>
 #include <wx/bitmap.h>
+#include <wx/filename.h>
 #include <wx/settings.h>
 #include <wx/window.h>
+
+#include "image.h"
+
+constexpr float ZOOM_NONE = 1.0f;
+
+constexpr double MAX_GAUSSIAN_SIGMA = 10.0; // shaders/unsh_mask.frag uses the same value
+
+constexpr float RAW_IMAGE_BLUR_SIGMA_FOR_ADAPTIVE_UNSHARP_MASK = 1.0f;
 
 enum class ToneCurveEditorColors
 {
@@ -36,6 +47,33 @@ enum class ToneCurveEditorColors
 
     Last
 };
+
+enum class ScalingMethod
+{
+    NEAREST = 0,
+    LINEAR,
+    CUBIC,
+
+    NUM_METHODS // This has to be the last entry
+};
+
+enum class ProcessingRequest
+{
+    NONE = 0,
+    SHARPENING,
+    UNSHARP_MASKING,
+    TONE_CURVE
+};
+
+enum class BackEnd
+{
+    CPU_AND_BITMAPS = 0,
+    GPU_OPENGL,
+
+    LAST // this has to be the last entry
+};
+
+constexpr float DERINGING_BRIGHTNESS_THRESHOLD = 254.0f / 255;
 
 namespace DefaultColors
 {
@@ -116,14 +154,14 @@ wxBitmap LoadBitmap(wxString name, bool scale = false, wxSize scaledSize = wxDef
 template<class T>
 void BindAllScrollEvents(wxEvtHandler& evtHandler, void(T::* evtFunc)(wxScrollWinEvent&), T* parent)
 {
-    for (auto tag: { wxEVT_SCROLLWIN_BOTTOM,
-                     wxEVT_SCROLLWIN_LINEDOWN,
-                     wxEVT_SCROLLWIN_LINEUP,
-                     wxEVT_SCROLLWIN_PAGEDOWN,
-                     wxEVT_SCROLLWIN_PAGEUP,
-                     wxEVT_SCROLLWIN_THUMBRELEASE,
-                     wxEVT_SCROLLWIN_THUMBTRACK,
-                     wxEVT_SCROLLWIN_TOP })
+    for (const auto tag: { wxEVT_SCROLLWIN_BOTTOM,
+                           wxEVT_SCROLLWIN_LINEDOWN,
+                           wxEVT_SCROLLWIN_LINEUP,
+                           wxEVT_SCROLLWIN_PAGEDOWN,
+                           wxEVT_SCROLLWIN_PAGEUP,
+                           wxEVT_SCROLLWIN_THUMBRELEASE,
+                           wxEVT_SCROLLWIN_THUMBTRACK,
+                           wxEVT_SCROLLWIN_TOP })
      {
          evtHandler.Bind(tag, evtFunc, parent);
      }
@@ -131,5 +169,45 @@ void BindAllScrollEvents(wxEvtHandler& evtHandler, void(T::* evtFunc)(wxScrollWi
 
 /// Deleter for blocks allocated with `operator new[]`.
 struct BlockDeleter { void operator()(void* ptr) { operator delete[](ptr); } };
+
+struct Histogram
+{
+    float minValue; ///< Exact minimum value present in image
+    float maxValue; ///< Exact maximum value present in image
+    std::vector<int> values; ///< Histogram values for uniform intervals (bins)
+    int maxCount; ///< Highest count among the histogram bins
+};
+
+Histogram DetermineHistogram(const c_Image& img, const wxRect& selection);
+
+inline wxString FromDir(const wxFileName& dir, wxString fname)
+{
+    return wxFileName(dir.GetFullPath(), fname).GetFullPath();
+}
+
+/// Returns the coefficients a, b, c, d of the cubic curve defining the "amount" value
+/// for adaptive unsharp masking. The amount is a function of local brightness
+/// (of the raw input image) as follows:
+///
+///   - if brightness < threshold - width, amount is amountMin
+///   - if brightness > threshold + width, amount is amountMax
+///   - transition region: if threshold - width <= brightness <= threshold - width,
+///     amount changes smoothly from amounMin to amountMax following a cubic function:
+///
+///     amount = a*brightness^3 + b*brightness^2 + c*brightness + d
+///
+///  such that its derivatives are zero at (threshold - width) and (threshold + width)
+///  and there is an inflection point at the threshold.
+///
+std::array<float, 4> GetAdaptiveUnshMaskTransitionCurve(
+    float amountMin,
+    float amountMax,
+    float threshold,
+    float width
+);
+
+wxString GetBackEndText(BackEnd backEnd);
+
+wxFileName GetImagesDirectory();
 
 #endif //  IMPGG_COMMON_HEADER

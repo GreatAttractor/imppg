@@ -25,6 +25,7 @@ File description:
 #define ImPPG_BMP_H
 
 #include <optional>
+
 #include "image.h"
 
 std::optional<c_Image> ReadBmp(const std::string& fileName);

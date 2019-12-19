@@ -23,6 +23,7 @@ File description:
 
 #include <wx/thread.h>
 #include <wx/datetime.h>
+
 #include "logging.h"
 
 std::ostream* logStream = nullptr;

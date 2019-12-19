@@ -27,6 +27,7 @@ File description:
 
 #include "appconfig.h"
 #include "common.h"
+#include "imppg_assert.h"
 
 static bool wxFromString(const wxString& string, wxRect* rect)
 {
@@ -106,11 +107,27 @@ namespace Keys
     /// Most recently used settings files
     const char* MruSettingsGroup = "/MostRecentSettings";
     const char* MruSettingsItem = "item";
+
+    const char* ProcessingBackEnd = "/BackEnd";
+
+    const char* DisplayScalingMethod = UserInterfaceGroup"/DisplayScalingMethod";
+
+#define OpenGLGroup "/OpenGL"
+
+    const char* LRCmdBatchSizeMpixIters = OpenGLGroup"/LRCommandBatchSizeMpixIters";
+
+    const char* OpenGLInitIncomplete = OpenGLGroup"/OpenGLInitIncomplete";
 }
 
 void Initialize(wxFileConfig* _appConfig)
 {
     appConfig = _appConfig;
+}
+
+void Flush()
+{
+    IMPPG_ASSERT(nullptr != appConfig);
+    appConfig->Flush();
 }
 
 /// Returns maximum frequency (in Hz) of issuing new processing requests by the tone curve editor and numerical control sliders (0 means: no limit)
@@ -141,15 +158,17 @@ PROPERTY_STRING(AlignInputPath);
 PROPERTY_STRING(AlignOutputPath);
 PROPERTY_STRING(UiLanguage);
 
-#define PROPERTY_BOOL(Name)                                        \
-    c_Property<bool> Name(                                         \
-        []() { return appConfig->ReadBool(Keys::Name, ""); },      \
-        [](const bool &val) { appConfig->Write(Keys::Name, val); } \
+#define PROPERTY_BOOL(Name, DefaultValue)                               \
+    c_Property<bool> Name(                                              \
+        []() { return appConfig->ReadBool(Keys::Name, DefaultValue); }, \
+        [](const bool &val) { appConfig->Write(Keys::Name, val); }      \
     )
 
-PROPERTY_BOOL(MainWindowMaximized);
-PROPERTY_BOOL(ToneCurveEditorVisible);
-PROPERTY_BOOL(LogHistogram);
+PROPERTY_BOOL(MainWindowMaximized, true);
+PROPERTY_BOOL(ToneCurveEditorVisible, true);
+PROPERTY_BOOL(LogHistogram, true);
+
+PROPERTY_BOOL(OpenGLInitIncomplete, false);
 
 // Finds and uses wxFromString() and wxToString() defined above
 #define PROPERTY_RECT(Name)                                               \
@@ -195,6 +214,27 @@ c_Property<ToneCurveEditorColors> ToneCurveColors(
     [](const ToneCurveEditorColors &val) { appConfig->Write(Keys::ToneCurveEditorColors, static_cast<long>(val)); }
 );
 
+c_Property<BackEnd> ProcessingBackEnd(
+    []()
+    {
+        long result = appConfig->ReadLong(Keys::ProcessingBackEnd,
+#if USE_OPENGL_BACKEND
+            static_cast<long>(BackEnd::GPU_OPENGL)
+#else
+            static_cast<long>(BackEnd::CPU_AND_BITMAPS)
+#endif
+        );
+        if (result < 0 ||
+           result >= static_cast<long>(BackEnd::LAST) ||
+           result == static_cast<long>(BackEnd::GPU_OPENGL) && !USE_OPENGL_BACKEND)
+        {
+            return BackEnd::CPU_AND_BITMAPS;
+        }
+        return static_cast<BackEnd>(result);
+    },
+    [](const BackEnd& val) { appConfig->Write(Keys::ProcessingBackEnd, static_cast<long>(val)); }
+);
+
 #define PROPERTY_TCRV_COLOR(Name, DefaultValue)                                                           \
     c_Property<wxColour> Name(                                                                            \
         [](){                                                                                             \
@@ -220,36 +260,23 @@ PROPERTY_TCRV_COLOR(ToneCurveEditor_CurvePointColor, CurvePoint)
 PROPERTY_TCRV_COLOR(ToneCurveEditor_SelectedCurvePointColor, SelectedCurvePoint)
 PROPERTY_TCRV_COLOR(ToneCurveEditor_HistogramColor, Histogram)
 
-c_Property<unsigned> ToneCurveEditor_CurveWidth(
-    [](){ return static_cast<unsigned>(appConfig->ReadLong(Keys::ToneCurveEditor_CurveWidth, 1)); },
-    [](const unsigned &u) { appConfig->Write(Keys::ToneCurveEditor_CurveWidth, u); }
-);
+#define PROPERTY_UNSIGNED(Name, DefaultValue)                                                 \
+    c_Property<unsigned> Name(                                                                \
+        [](){ return static_cast<unsigned>(appConfig->ReadLong(Keys::Name, DefaultValue)); }, \
+        [](const unsigned &u) { appConfig->Write(Keys::Name, u); }                            \
+    )
 
-c_Property<unsigned> ToneCurveEditor_CurvePointSize(
-    [](){ return static_cast<unsigned>(appConfig->ReadLong(Keys::ToneCurveEditor_CurvePointSize, 4)); },
-    [](const unsigned &u) { appConfig->Write(Keys::ToneCurveEditor_CurvePointSize, u); }
-);
+#define PROPERTY_INT(Name, DefaultValue)                                                 \
+    c_Property<int> Name(                                                                \
+        [](){ return static_cast<int>(appConfig->ReadLong(Keys::Name, DefaultValue)); }, \
+        [](const int &i) { appConfig->Write(Keys::Name, i); }                            \
+    )
 
-c_Property<int> ProcessingPanelWidth(
-    [](){ return static_cast<int>(appConfig->ReadLong(Keys::ProcessingPanelWidth, -1)); },
-    [](const int &width) { appConfig->Write(Keys::ProcessingPanelWidth, width); }
-);
-
-c_Property<unsigned> ToolIconSize(
-    [](){ return static_cast<unsigned>(appConfig->ReadLong(Keys::ToolIconSize, DEFAULT_TOOL_ICON_SIZE)); },
-    [](const unsigned &ts) { appConfig->Write(Keys::ToolIconSize, ts); }
-);
-
-c_Property<unsigned> ToneCurveEditorNumDrawSegments(
-    []()
-    {
-        unsigned num = static_cast<unsigned>(appConfig->ReadLong(Keys::ToneCurveEditorNumDrawSegments, DEFAULT_TONE_CURVE_EDITOR_NUM_DRAW_SEGMENTS));
-        if (DEFAULT_TONE_CURVE_EDITOR_NUM_DRAW_SEGMENTS == num)
-            appConfig->Write(Keys::ToneCurveEditorNumDrawSegments, num);
-        return num;
-    },
-    [](const unsigned &num) { appConfig->Write(Keys::ToneCurveEditorNumDrawSegments, num); }
-);
+PROPERTY_UNSIGNED(ToneCurveEditor_CurveWidth, 1);
+PROPERTY_UNSIGNED(ToneCurveEditor_CurvePointSize, 4);
+PROPERTY_INT(ProcessingPanelWidth, -1);
+PROPERTY_UNSIGNED(ToolIconSize, DEFAULT_TOOL_ICON_SIZE);
+PROPERTY_UNSIGNED(ToneCurveEditorNumDrawSegments, DEFAULT_TONE_CURVE_EDITOR_NUM_DRAW_SEGMENTS);
 
 /// Returns a list of the most recently used saved/loaded settings files
 wxArrayString GetMruSettings()
@@ -278,4 +305,20 @@ void EmptyMruList()
     appConfig->DeleteGroup(Keys::MruSettingsGroup);
 }
 
-}
+PROPERTY_UNSIGNED(LRCmdBatchSizeMpixIters, 1);
+
+c_Property<ScalingMethod> DisplayScalingMethod(
+    []()
+    {
+        long result = appConfig->ReadLong(Keys::DisplayScalingMethod, static_cast<long>(ScalingMethod::CUBIC));
+        if (result < 0 ||
+           result >= static_cast<long>(ScalingMethod::NUM_METHODS))
+        {
+            return ScalingMethod::CUBIC;
+        }
+        return static_cast<ScalingMethod>(result);
+    },
+    [](const ScalingMethod& val) { appConfig->Write(Keys::DisplayScalingMethod, static_cast<long>(val)); }
+);
+
+}  // namespace Configuration

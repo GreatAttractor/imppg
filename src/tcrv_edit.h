@@ -33,8 +33,9 @@ File description:
 #include <wx/timer.h>
 #include <wx/checkbox.h>
 #include <wx/spinctrl.h>
-#include "tcrv.h"
+
 #include "daction.h"
+#include "tcrv.h"
 
 // Event sent to parent every time the curve is changed
 wxDECLARE_EVENT(EVT_TONE_CURVE, wxCommandEvent);
@@ -97,7 +98,7 @@ private:
         int draggedPointIdx;
     } m_MouseOps;
 
-    Histogram_t m_Histogram;
+    Histogram m_Histogram{};
 
     /// 'True' if histogram is displayed using logarithmic scale (values only)
     bool m_LogarithmicHistogram;
@@ -125,7 +126,7 @@ public:
     void SetToneCurve(c_ToneCurve* curve);
 
     /// Updates the histogram (creates an internal copy)
-    void SetHistogram(const Histogram_t& histogram);
+    void SetHistogram(const Histogram& histogram);
 
     bool IsHistogramLogarithmic() { return m_LogarithmicHistogram; }
     void SetHistogramLogarithmic(bool value);

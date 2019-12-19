@@ -24,9 +24,11 @@ File description:
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <cstdint>
 #include <cstring>
 #include <memory>
-#include <set>
+#include <tuple>
+#include <vector>
 
 #include "imppg_assert.h"
 #include "lrdeconv.h"
@@ -99,7 +101,7 @@ void Transpose(const T* input, T* output,
 }
 
 /// Clamps the values of the specified PIX_MONO32F buffer to [0.0, 1.0]
-void Clamp(c_ImageBufferView& buf)
+void Clamp(c_View<IImageBuffer>& buf)
 {
     IMPPG_ASSERT(buf.GetPixelFormat() == PixelFormat::PIX_MONO32F);
     for (unsigned j = 0; j < buf.GetHeight(); j++)
@@ -408,8 +410,8 @@ void ConvolveSeparable(
 
 /// Reproduces original image from image in 'input' convolved with Gaussian kernel and writes it to 'output'.
 void LucyRichardsonGaussian(
-    const c_ImageBufferView& input, ///< Contains a single 'float' value per pixel; size the same as 'output'
-    c_ImageBufferView& output, ///< Contains a single 'float' value per pixel; size the same as 'input'
+    c_View<const IImageBuffer>& input, ///< Contains a single 'float' value per pixel; size the same as 'output'
+    c_View<IImageBuffer>& output, ///< Contains a single 'float' value per pixel; size the same as 'input'
     int numIters,  ///< Number of iterations
     float sigma,   ///< sigma of the Gaussian kernel
     ConvolutionMethod convMethod,
@@ -432,7 +434,7 @@ void LucyRichardsonGaussian(
 
     auto inputT = std::unique_ptr<float[]>(new float[input.GetHeight() * input.GetWidth()]); // a transposed array
 
-    Transpose(input.GetRowAs<float>(0), inputT.get(), input.GetWidth(), input.GetHeight(),
+    Transpose(input.GetRowAs<const float>(0), inputT.get(), input.GetWidth(), input.GetHeight(),
         input.GetBytesPerRow(), input.GetHeight() * sizeof(float), TRANSPOSITION_BLOCK_SIZE);
 
     auto tempBuf1 = std::unique_ptr<float[]>(new float[input.GetWidth() * input.GetHeight()]);
@@ -495,116 +497,107 @@ void LucyRichardsonGaussian(
         memcpy(output.GetRow(i), next.get() + i*input.GetWidth(), input.GetWidth() * sizeof(float));
 }
 
-// Functions to encode/decode (x,y) pairs into an unsigned integer; x, y need to be < 2^16
-inline unsigned encodeXY(unsigned x, unsigned y) { return x + (y<<16); }
-inline void decodeXY(unsigned encoded, unsigned& x, unsigned& y) { x = encoded & 0xFFFF; y = encoded >> 16; }
+// Functions to encode/decode (x,y) pairs into a 64-bit integer.
+inline uint64_t encodeXY(uint32_t x, uint32_t y) { return x + (static_cast<uint64_t>(y) << 32); }
+inline std::tuple<uint32_t, uint32_t> decodeXY(uint64_t encoded) { return { encoded & 0xFFFF'FFFF, encoded >> 32 }; }
 
-void BlurThresholdVicinity(
-    const c_ImageBufferView& input,
-    c_ImageBufferView& output,
-    float threshold, ///< Threshold to qualify pixels as "border pixels"
-    bool greaterThan,
+void FillTresholdVicinityMask(
+    c_View<const IImageBuffer> input,
+    std::vector<uint8_t>& mask,
+    float threshold,
     float sigma
 )
 {
-    auto result = std::unique_ptr<float[]>(new float[input.GetWidth() * input.GetHeight()]);
-    for (unsigned row = 0; row < input.GetHeight(); row++)
-        memcpy(result.get() + row*input.GetWidth(), input.GetRow(row), input.GetWidth() * sizeof(float));
+    IMPPG_ASSERT(input.GetPixelFormat() == PixelFormat::PIX_MONO32F);
+    IMPPG_ASSERT(mask.size() == input.GetWidth() * input.GetHeight());
 
-    // Allow maximum of 2^16 = 65536 for width and height, because border pixels's coordinates will be each encoded on 16 bits
-    if (input.GetWidth() >= (1<<16) || input.GetHeight() >= (1<<16))
-    {
-        // Just copy the input to the output
-        for (unsigned row = 0; row < input.GetHeight(); row++)
-            memcpy(output.GetRow(row), result.get() + row*input.GetWidth(), input.GetWidth() * sizeof(float));
-        return;
-    }
+    std::fill(mask.begin(), mask.end(), 0);
 
-    std::set<unsigned> borderPixels;
+    std::vector<uint64_t> borderPixels;
 
-    // 1) Identify all pixels above threshold and create a list of border pixels
-    //    that are their neighbors, but themselves are below threshold.
+    // Identify all pixels above threshold and create a list of border pixels
+    // that are their neighbors, but themselves are below threshold.
+
     for (int y = 0; y < static_cast<int>(input.GetHeight()); y++)
+    {
         for (int x = 0; x < static_cast<int>(input.GetWidth()); x++)
         {
-            float valXY = input.GetRowAs<float>(y)[x];
-            bool valXYbelowThreshold =
-                greaterThan
-                ? valXY < threshold
-                : valXY > threshold;
-
-            if (valXYbelowThreshold)
+            float valXY = input.GetRowAs<const float>(y)[x];
+            if (valXY < threshold)
+            {
                 for (int j = -1; j <= 1; j++)
+                {
                     for (int i = -1; i <= 1; i++)
+                    {
                         if (i != 0 && j != 0 &&
                             x + i >= 0 && x + i < static_cast<int>(input.GetWidth()) &&
                             y + j >= 0 && y + j < static_cast<int>(input.GetHeight()))
                         {
-                            float neighborIJ = input.GetRowAs<float>(y + j)[x + i];
-
-                            bool neighborIJaboveThreshold =
-                                greaterThan
-                                ? neighborIJ >= threshold
-                                : neighborIJ <= threshold;
-
-                            if (neighborIJaboveThreshold)
+                            if (input.GetRowAs<const float>(y + j)[x + i] >= threshold)
                             {
-                                borderPixels.insert(encodeXY(x, y));
+                                borderPixels.push_back(encodeXY(x + i, y + j));
                             }
                         }
+                    }
+                }
+            }
         }
+    }
 
-    // 2) Iterate over border pixels and identify all their neighbors to a specified distance
+    // Iterate over border pixels, identify all their neighbors to the specified distance
+    // and mark both sets in the mask.
 
-    int influenceDist = static_cast<int>(ceilf(sigma * 2.0f));
-    std::set<unsigned> influencedPixels;
+    const int influenceDist = static_cast<int>(ceilf(sigma * 2.0f));
 
-    for (std::set<unsigned>::const_iterator it = borderPixels.begin(); it != borderPixels.end(); ++it)
+    for (const auto bpix: borderPixels)
     {
-        unsigned x, y;
-        decodeXY(*it, x, y);
+        const auto [x, y] = decodeXY(bpix);
+
         for (int i = -(influenceDist - 1); i <= influenceDist - 1; i++)
+        {
             for (int j = -(influenceDist - 1); j <= influenceDist - 1; j++)
+            {
                 if (static_cast<int>(x) + i >= 0 && static_cast<int>(x) + i < static_cast<int>(input.GetWidth()) &&
                     static_cast<int>(y) + j >= 0 && static_cast<int>(y) + j < static_cast<int>(input.GetHeight()))
                 {
-                    unsigned enc = encodeXY(x + i, y + j);
-                    if (influencedPixels.find(enc) == influencedPixels.end())
-                        influencedPixels.insert(enc);
+                    mask[(y + j) * input.GetWidth() + (x + i)] = 1;
                 }
-    }
-
-    // 3) Apply Gaussian blur to all influenced pixels
-    int blurRadius = static_cast<int>(ceilf(sigma * 4.0f));
-    auto kernel = std::unique_ptr<float[]>(new float[blurRadius * blurRadius]);
-    CalculateGaussianKernel(kernel.get(), blurRadius, sigma, true);
-
-    for (std::set<unsigned>::iterator it = influencedPixels.begin(); it != influencedPixels.end(); it++)
-    {
-        unsigned x, y;
-        decodeXY(*it, x, y);
-        result[x + y*input.GetWidth()] = 0.0f;
-
-        for (int i = -(blurRadius - 1); i <= blurRadius - 1; i++)
-            for (int j = -(blurRadius - 1); j <= blurRadius - 1; j++)
-            {
-                int srcX = x + i;
-                int srcY = y + j;
-
-                if (srcX < 0)
-                    srcX = 0;
-                else if (srcX >= static_cast<int>(input.GetWidth()))
-                    srcX = input.GetWidth() - 1;
-
-                if (srcY < 0)
-                    srcY = 0;
-                else if (srcY >= static_cast<int>(input.GetHeight()))
-                    srcY = input.GetHeight() - 1;
-
-                result[x + y*input.GetWidth()] += kernel[abs(i) + abs(j)*blurRadius] * input.GetRowAs<float>(srcY)[srcX];
             }
+        }
     }
-
-    for (unsigned row = 0; row < input.GetHeight(); row++)
-        memcpy(output.GetRow(row), result.get() + row*input.GetWidth(), input.GetWidth() * sizeof(float));
 }
+
+
+void BlurThresholdVicinity(
+    c_View<const IImageBuffer> input,
+    c_View<IImageBuffer> output,
+    std::vector<uint8_t>& workBuf,
+    float threshold, ///< Threshold to qualify pixels as "border pixels".
+    float sigma
+)
+{
+    IMPPG_ASSERT(input.GetWidth() == output.GetWidth() &&
+                 input.GetHeight() == output.GetHeight() &&
+                 workBuf.size() == input.GetWidth() * input.GetHeight());
+
+    FillTresholdVicinityMask(input, workBuf, threshold, sigma);
+
+    ConvolveSeparable(
+        c_PaddedArrayPtr(input.GetRowAs<const float>(0), input.GetWidth(), input.GetHeight(), input.GetBytesPerRow()),
+        c_PaddedArrayPtr(output.GetRowAs<float>(0), output.GetWidth(), output.GetHeight(), output.GetBytesPerRow()),
+        sigma
+    );
+
+    for (unsigned y = 0; y < input.GetHeight(); ++y)
+    {
+        const float* srcRow = input.GetRowAs<const float>(y);
+        const uint8_t* maskRow = &workBuf[y * input.GetWidth()];
+        float* destRow = output.GetRowAs<float>(y);
+
+        for (unsigned x = 0; x < input.GetWidth(); ++x)
+        {
+            destRow[x] = (maskRow[x] == 0) ? srcRow[x] : destRow[x];
+        }
+    }
+}
+

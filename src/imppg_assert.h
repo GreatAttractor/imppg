@@ -38,6 +38,16 @@ File description:
     }                                                                       \
 }
 
+#define IMPPG_ASSERT_MSG(condition, msg)                  \
+{                                                         \
+    if (!(condition))                                     \
+    {                                                     \
+        std::cerr << "Assertion failed: " << msg << "\n"; \
+        std::abort();                                     \
+    }                                                     \
+}
+
+
 #define IMPPG_ABORT()                                                               \
 {                                                                                   \
     std::cerr << "Abnormal program state detected: " << __FILE__ << ":" << __LINE__ \

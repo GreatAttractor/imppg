@@ -35,6 +35,10 @@ File description:
 #include <wx/statline.h>
 
 #include "appconfig.h"
+#include "backend/cpu_bmp/cpu_bmp_proc.h"
+#if USE_OPENGL_BACKEND
+#include "backend/opengl/opengl_proc.h"
+#endif
 #include "batch_params.h"
 #include "batch.h"
 #include "bmp.h"
@@ -42,22 +46,17 @@ File description:
 #include "image.h"
 #include "imppg_assert.h"
 #include "logging.h"
+#include "proc_settings.h"
 #include "settings.h"
 #include "tiff.h"
-#include "w_lrdeconv.h"
-#include "w_tcurve.h"
-#include "w_unshmask.h"
-#include "worker.h"
 
-const size_t FILE_IDX_NONE = UINT_MAX;
+using namespace imppg::backend;
 
 class c_BatchDialog: public wxDialog
 {
     void OnCommandEvent(wxCommandEvent& event);
-    void OnThreadEvent(wxThreadEvent& event);
     void OnInit(wxInitDialogEvent& event);
     void OnIdle(wxIdleEvent& event);
-    void OnClose(wxCloseEvent& event);
 
     void InitControls();
 
@@ -72,123 +71,82 @@ class c_BatchDialog: public wxDialog
     {
         bool loadedSuccessfully;
 
-        bool hasLR;       ///< 'True' if Lucy-Richardson settings are specified
-        bool hasUnshMask; ///< 'True' if unsharp masking settings are specified
-        bool hasTCurve;   ///< 'True' if tone curve is specified
-
-        float lrSigma;
-        int lrIters;
-
-        // See comments in c_UnsharpMaskingThread::DoWork() for details
-        bool unshAdaptive;
-        float unshSigma, unshAmountMin, unshAmountMax, unshThreshold, unshWidth;
-
-        bool deringing;
-
-        struct
-        {
-            bool enabled;
-            float min, max;
-        } normalization;
-
-        c_ToneCurve tcurve;
+        ProcessingSettings procSettings;
 
         wxString outputDir;
         OutputFormat outputFmt;
     } m_Settings;
 
-    size_t m_CurrentFile; ///< Index of the currently processed file
-    std::optional<c_Image> m_RawImg; ///< Raw (unprocessed, but possibly normalized) current image
-    std::optional<c_Image> m_Img; ///< Currently processed image (first the original, later a result of one of the processing steps)
-    ProcessingRequest m_ProcessingRequest;
-    int m_ThreadId; ///< Unique worker thread id (not reused by new threads)
+    std::optional<size_t> m_CurrentFileIdx; ///< Index of the currently processed file.
 
-    ExclusiveAccessObject<IWorkerThread*> m_Worker{nullptr};
+    std::unique_ptr<imppg::backend::IProcessingBackEnd> m_Processor;
 
     /// Starts processing of the next file
     void ProcessNextFile();
-    void ScheduleProcessing(ProcessingRequest request);
+
     /// Updates the progress string in the files grid
     void SetProgressInfo(wxString info);
-    bool IsProcessingInProgress()
-    {
-        auto lock = m_Worker.Lock();
-        return lock.Get() != nullptr;
-    }
+
     /// Returns 'false' on error
     bool SaveOutputFile();
-    void OnProcessingStepCompleted(CompletionStatus status);
+
+    void OnProcessingCompleted(CompletionStatus status);
 
 public:
-    c_BatchDialog(wxWindow* parent, const wxArrayString& fileNames,
+    c_BatchDialog(
+        wxWindow* parent,
+        wxArrayString fileNames,
         wxString settingsFileName,
         wxString outputDirectory,
         OutputFormat outputFormat
-        );
+    );
 
     DECLARE_EVENT_TABLE()
 };
 
 BEGIN_EVENT_TABLE(c_BatchDialog, wxDialog)
     EVT_BUTTON(ID_Close, c_BatchDialog::OnCommandEvent)
-    EVT_THREAD(ID_FINISHED_PROCESSING, c_BatchDialog::OnThreadEvent)
-    EVT_THREAD(ID_PROCESSING_PROGRESS, c_BatchDialog::OnThreadEvent)
     EVT_INIT_DIALOG(c_BatchDialog::OnInit)
     EVT_IDLE(c_BatchDialog::OnIdle)
-    EVT_CLOSE(c_BatchDialog::OnClose)
 END_EVENT_TABLE()
 
 /// Distance (in pixels) between controls
 const int BORDER = 5;
 
-void c_BatchDialog::OnClose(wxCloseEvent& event)
-{
-    { auto lock = m_Worker.Lock();
-        if (lock.Get())
-        {
-            Log::Print("Closing of the batch processing dialog requested. Waiting for the worker thread to finish...\n");
-            lock.Get()->AbortProcessing();
-        }
-    }
-
-    // If it was running, the worker thread will destroy itself any moment; keep polling
-    while (IsProcessingInProgress())
-        wxThread::Yield();
-    Log::Print("Closing the batch processing dialog.\n");
-    event.Skip();
-}
-
 void c_BatchDialog::OnInit(wxInitDialogEvent&)
 {
     if (m_Settings.loadedSuccessfully)
+    {
         ProcessNextFile();
+    }
 }
 
 void c_BatchDialog::OnIdle(wxIdleEvent& event)
 {
     if (!m_Settings.loadedSuccessfully || m_FileOperationFailure)
-        Close();
-
-    if (event.GetId() == ID_ProcessingStepSkipped)
     {
-        OnProcessingStepCompleted(CompletionStatus::COMPLETED);
+        Close();
     }
+    m_Processor->OnIdle(event);
 }
 
 /// Updates the progress string in the files grid
 void c_BatchDialog::SetProgressInfo(wxString info)
 {
-    m_Grid.SetCellValue(m_CurrentFile, 1, info);
+    if (m_CurrentFileIdx.has_value())
+    {
+        m_Grid.SetCellValue(m_CurrentFileIdx.value(), 1, info);
 
-    int newProgressColWidth = m_Grid.GetTextExtent(info).GetWidth() + 10;
-    if (m_Grid.GetColSize(1) < newProgressColWidth)
-        m_Grid.SetColSize(1, newProgressColWidth);
+        int newProgressColWidth = m_Grid.GetTextExtent(info).GetWidth() + 10;
+        if (m_Grid.GetColSize(1) < newProgressColWidth)
+            m_Grid.SetColSize(1, newProgressColWidth);
+    }
 }
 
 /// Returns 'false' on error
 bool c_BatchDialog::SaveOutputFile()
 {
-    wxFileName fn(m_FileNames[m_CurrentFile]);
+    wxFileName fn(m_FileNames[m_CurrentFileIdx.value()]);
     switch (m_Settings.outputFmt)
     {
     case OutputFormat::BMP_8: fn.SetExt("bmp"); break;
@@ -218,7 +176,7 @@ bool c_BatchDialog::SaveOutputFile()
     }
 
     wxString destPath = wxFileName(m_Settings.outputDir, fn.GetName() + "_out", fn.GetExt()).GetFullPath();
-    if (!m_Img.value().SaveToFile(destPath.ToStdString(), m_Settings.outputFmt))
+    if (!m_Processor->GetProcessedOutput().SaveToFile(destPath.ToStdString(), m_Settings.outputFmt))
     {
         wxMessageBox(wxString::Format(_("Could not save output file: %s"), destPath), _("Error"), wxICON_ERROR, this);
         m_FileOperationFailure = true;
@@ -228,276 +186,69 @@ bool c_BatchDialog::SaveOutputFile()
     return true;
 }
 
-void c_BatchDialog::OnProcessingStepCompleted(CompletionStatus status)
+void c_BatchDialog::OnProcessingCompleted(CompletionStatus status)
 {
     if (status == CompletionStatus::COMPLETED)
     {
-        bool fileProcessingCompleted = false;
-
-        if (m_ProcessingRequest == ProcessingRequest::TONE_CURVE)
+        if (SaveOutputFile())
         {
-            fileProcessingCompleted = true;
+            SetProgressInfo(_("Done"));
         }
-        else if (m_ProcessingRequest == ProcessingRequest::UNSHARP_MASKING)
+        else
         {
-            if (m_Settings.hasTCurve)
-            {
-                ScheduleProcessing(ProcessingRequest::TONE_CURVE);
-            }
-            else
-                fileProcessingCompleted = true;
-        }
-        else if (m_ProcessingRequest == ProcessingRequest::SHARPENING)
-        {
-            if (m_Settings.hasUnshMask)
-            {
-                ScheduleProcessing(ProcessingRequest::UNSHARP_MASKING);
-            }
-            else if (m_Settings.hasTCurve)
-            {
-                ScheduleProcessing(ProcessingRequest::TONE_CURVE);
-            }
-            else
-                fileProcessingCompleted = true;
+            SetProgressInfo(_("Error"));
         }
 
-        if (fileProcessingCompleted)
+
+        if (m_CurrentFileIdx.value() == m_FileNames.Count() - 1) // was it the last file?
         {
-            if (SaveOutputFile())
-                SetProgressInfo(_("Done"));
-            else
-                SetProgressInfo(_("Error"));
-
-            m_Img = std::nullopt;
-            m_RawImg = std::nullopt;
-
-            if (m_CurrentFile == m_FileNames.Count() - 1) // Was it the last file?
-            {
-                m_ProgressCtrl->SetValue(m_FileNames.Count());
-                m_CurrentFile = FILE_IDX_NONE;
-                wxMessageBox(_("Processing completed."), _("Information"), wxICON_INFORMATION, this);
-            }
-            else
-            {
-                m_CurrentFile += 1;
-                ProcessNextFile();
-            }
+            m_ProgressCtrl->SetValue(m_FileNames.Count());
+            m_CurrentFileIdx = std::nullopt;
+            wxMessageBox(_("Processing completed."), _("Information"), wxICON_INFORMATION, this);
+        }
+        else
+        {
+            m_CurrentFileIdx.value() += 1;
+            ProcessNextFile();
         }
     }
     else
     {
         SetProgressInfo("");
-        m_CurrentFile = FILE_IDX_NONE;
-    }
-}
-
-void c_BatchDialog::OnThreadEvent(wxThreadEvent& event)
-{
-    if (event.GetInt() != m_ThreadId)
-        return; // An outdated event from an older thread, ignore it
-
-    switch (event.GetId())
-    {
-    case ID_PROCESSING_PROGRESS:
-        {
-            Log::Print(wxString::Format("Received a processing progress (%d%%) event from threadId = %d\n",
-                event.GetPayload<WorkerEventPayload>().percentageComplete, event.GetInt()));
-
-            wxString action;
-            if (m_ProcessingRequest == ProcessingRequest::SHARPENING)
-                action = _(L"L\u2013R deconvolution");
-            else if (m_ProcessingRequest == ProcessingRequest::UNSHARP_MASKING)
-                action = _("Unsharp masking");
-            else if (m_ProcessingRequest == ProcessingRequest::TONE_CURVE)
-                action = _("Applying tone curve");
-
-            SetProgressInfo(wxString::Format(action + ": %d%%", event.GetPayload<WorkerEventPayload>().percentageComplete));
-            break;
-        }
-
-    case ID_FINISHED_PROCESSING:
-        const WorkerEventPayload& p = event.GetPayload<WorkerEventPayload>();
-
-        Log::Print(wxString::Format("Received a processing completion event from threadId = %d, status = %s\n",
-            event.GetInt(), p.completionStatus == CompletionStatus::COMPLETED ? "COMPLETED" : "ABORTED"));
-
-        Log::Print("Waiting for the worker thread to finish... ");
-        // Since we have just received the "finished processing" event, the worker thread will destroy itself any moment; keep polling
-        while (IsProcessingInProgress())
-            wxThread::Yield();
-        Log::Print("done\n");
-
-        m_ThreadId += 1;
-
-        OnProcessingStepCompleted(p.completionStatus);
-        break;
+        m_CurrentFileIdx = std::nullopt;
     }
 }
 
 void c_BatchDialog::ProcessNextFile()
 {
-    if (m_Settings.hasLR)
-        m_ProcessingRequest = ProcessingRequest::SHARPENING;
-    else if (m_Settings.hasUnshMask)
-        m_ProcessingRequest = ProcessingRequest::UNSHARP_MASKING;
-    else if (m_Settings.hasTCurve)
-        m_ProcessingRequest = ProcessingRequest::TONE_CURVE;
-    else
+    if (!m_CurrentFileIdx.has_value())
     {
-        //TODO: move this check to before we open this dialog
-        wxMessageBox(_("According to the settings file, no processing is needed."), _("Warning"), wxICON_EXCLAMATION);
+        m_CurrentFileIdx = 0;
+    }
+
+    m_ProgressCtrl->SetValue(m_CurrentFileIdx.value());
+
+    wxFileName path = wxFileName(m_FileNames[m_CurrentFileIdx.value()]);
+    wxString ext = path.GetExt().Lower();
+    std::string errorMsg;
+
+    auto img = LoadImageFileAsMono32f(path.GetFullPath().ToStdString(), path.GetExt().ToStdString(), &errorMsg);
+    if (!img.has_value())
+    {
+        wxMessageBox(wxString::Format(_("Could not open file: %s."), path.GetFullPath()) + (errorMsg != "" ? "\n" + errorMsg : ""),
+            _("Error"), wxICON_ERROR, this);
+        m_FileOperationFailure = true;
         return;
     }
 
-    if (m_CurrentFile == FILE_IDX_NONE)
+    const auto& proc = m_Settings.procSettings;
+    if (proc.normalization.enabled)
     {
-        m_CurrentFile = 0;
+        NormalizeFpImage(img.value(), proc.normalization.min, proc.normalization.max);
     }
 
-    m_ProgressCtrl->SetValue(m_CurrentFile);
+    m_Processor->StartProcessing(std::move(img.value()), proc);
 
-    ScheduleProcessing(m_ProcessingRequest);
-}
-
-void c_BatchDialog::ScheduleProcessing(ProcessingRequest request)
-{
-    IMPPG_ASSERT(request != ProcessingRequest::NONE);
-
-    if (!m_Img.has_value()) // image is not yet created, i.e. `request` is the first processing step specified in the settings file
-    {
-        wxFileName path = wxFileName(m_FileNames[m_CurrentFile]);
-        wxString ext = path.GetExt().Lower();
-        std::string errorMsg;
-
-        m_Img = LoadImageFileAsMono32f(path.GetFullPath().ToStdString(), path.GetExt().ToStdString(), &errorMsg);
-        if (!m_Img)
-        {
-            wxMessageBox(wxString::Format(_("Could not open file: %s."), path.GetFullPath()) + (errorMsg != "" ? "\n" + errorMsg : ""),
-                _("Error"), wxICON_ERROR, this);
-            m_FileOperationFailure = true;
-            return;
-        }
-        else
-        {
-            m_RawImg = m_Img;
-        }
-    }
-
-    switch (request)
-    {
-    case ProcessingRequest::SHARPENING:
-
-        if (m_Settings.normalization.enabled)
-        {
-            NormalizeFpImage(m_Img.value(), m_Settings.normalization.min, m_Settings.normalization.max);
-            m_RawImg = m_Img;
-        }
-
-        if (m_Settings.lrIters > 0)
-        {
-            m_Worker = new c_LucyRichardsonThread(
-                WorkerParameters{
-                    *this,
-                    m_Worker,
-                    0,
-                    m_Img.value().GetBuffer(),
-                    m_Img.value().GetBuffer(),
-                    m_ThreadId
-                },
-                m_Settings.lrSigma, m_Settings.lrIters, m_Settings.deringing, 254.0f/255, true, m_Settings.lrSigma
-            );
-
-            { auto lock = m_Worker.Lock();
-                lock.Get()->Run();
-            }
-
-            SetProgressInfo(_(L"L\u2013R deconvolution") + ": 0%");
-        }
-        else
-        {
-            // Post an event instead of calling OnProcessingStepCompleted() directly,
-            // because the latter would recursively enter ScheduleProcessing().
-            // In the worst case (nothing to do for any of the worker threads) it would result
-            // in a recursion as many levels deep as there are files to process.
-            wxIdleEvent* evt = new wxIdleEvent();
-            evt->SetId(ID_ProcessingStepSkipped);
-            GetEventHandler()->QueueEvent(evt); // NOTE: using SendIdleEvents() would also result in a deep recursion
-        }
-        break;
-
-    case ProcessingRequest::UNSHARP_MASKING:
-        if (!m_Settings.unshAdaptive && m_Settings.unshAmountMax != 1.0f ||
-             m_Settings.unshAdaptive && (m_Settings.unshAmountMin != 1.0f || m_Settings.unshAmountMax != 1.0f))
-        {
-            m_Worker = new c_UnsharpMaskingThread(
-                WorkerParameters{
-                    *this,
-                    m_Worker,
-                    0,
-                    m_Img.value().GetBuffer(),
-                    m_Img.value().GetBuffer(),
-                    m_ThreadId
-                },
-                c_ImageBufferView(m_RawImg.value().GetBuffer()),
-                m_Settings.unshAdaptive,
-                m_Settings.unshSigma,
-                m_Settings.unshAmountMin,
-                m_Settings.unshAmountMax,
-                m_Settings.unshThreshold,
-                m_Settings.unshWidth
-            );
-
-            { auto lock = m_Worker.Lock();
-                lock.Get()->Run();
-            }
-            SetProgressInfo(_("Unsharp masking...")); // For now unsharp masking thread doesn't send progress messages
-        }
-        else
-        {
-            wxIdleEvent* evt = new wxIdleEvent();
-            evt->SetId(ID_ProcessingStepSkipped);
-            GetEventHandler()->QueueEvent(evt);
-        }
-        break;
-
-    case ProcessingRequest::TONE_CURVE:
-        if (m_Settings.tcurve.GetNumPoints() != 2 ||
-            m_Settings.tcurve.GetPoint(0).x != 0.0f ||
-            m_Settings.tcurve.GetPoint(0).y != 0.0f ||
-            m_Settings.tcurve.GetPoint(1).x != 1.0f ||
-            m_Settings.tcurve.GetPoint(1).y != 1.0f ||
-            m_Settings.tcurve.IsGammaMode() && m_Settings.tcurve.GetGamma() != 1.0f)
-        {
-            m_Worker = new c_ToneCurveThread(
-                WorkerParameters{
-                    *this,
-                    m_Worker,
-                    0,
-                    m_Img.value().GetBuffer(),
-                    m_Img.value().GetBuffer(),
-                    m_ThreadId
-                },
-                m_Settings.tcurve,
-                true
-            );
-
-            { auto lock = m_Worker.Lock();
-                lock.Get()->Run();
-            }
-            SetProgressInfo(_("Applying tone curve") + ": 0%");
-        }
-        else
-        {
-            wxIdleEvent* evt = new wxIdleEvent();
-            evt->SetId(ID_ProcessingStepSkipped);
-            GetEventHandler()->QueueEvent(evt);
-        }
-        break;
-
-    default: IMPPG_ABORT();
-    }
-
-    m_ProcessingRequest = request;
 }
 
 void c_BatchDialog::OnCommandEvent(wxCommandEvent& event)
@@ -510,7 +261,7 @@ void c_BatchDialog::OnCommandEvent(wxCommandEvent& event)
     }
 }
 
-c_BatchDialog::c_BatchDialog(wxWindow* parent, const wxArrayString& fileNames,
+c_BatchDialog::c_BatchDialog(wxWindow* parent, wxArrayString fileNames,
     wxString settingsFileName,
     wxString outputDirectory,
     OutputFormat outputFormat
@@ -518,18 +269,23 @@ c_BatchDialog::c_BatchDialog(wxWindow* parent, const wxArrayString& fileNames,
 : wxDialog(parent, wxID_ANY, _("Batch processing"), wxDefaultPosition, wxDefaultSize,
         wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
 {
-    m_CurrentFile = FILE_IDX_NONE;
-    m_ProcessingRequest = ProcessingRequest::NONE;
-    m_ThreadId = 0;
+    switch (Configuration::ProcessingBackEnd)
+    {
+    case BackEnd::CPU_AND_BITMAPS: m_Processor = std::make_unique<imppg::backend::c_CpuAndBitmapsProcessing>(); break;
+#if USE_OPENGL_BACKEND
+    case BackEnd::GPU_OPENGL: m_Processor = std::make_unique<imppg::backend::c_OpenGLProcessing>(); break;
+#endif
+    default: IMPPG_ABORT();
+    }
+
+    m_Processor->SetProgressTextHandler([this](wxString info) { SetProgressInfo(info); });
+    m_Processor->SetProcessingCompletedHandler([this](CompletionStatus status) { OnProcessingCompleted(status); });
+
     m_FileOperationFailure = false;
 
-    m_FileNames = fileNames;
+    m_FileNames = std::move(fileNames);
 
-    if (!LoadSettings(settingsFileName,
-            m_Settings.lrSigma, m_Settings.lrIters, m_Settings.deringing,
-            m_Settings.unshAdaptive, m_Settings.unshSigma, m_Settings.unshAmountMin, m_Settings.unshAmountMax, m_Settings.unshThreshold, m_Settings.unshWidth,
-        m_Settings.tcurve, m_Settings.normalization.enabled, m_Settings.normalization.min, m_Settings.normalization.max,
-        &m_Settings.hasLR, &m_Settings.hasUnshMask, &m_Settings.hasTCurve))
+    if (!LoadSettings(settingsFileName, m_Settings.procSettings))
     {
         wxMessageBox(_("Could not load processing settings."), _("Error"), wxICON_ERROR, parent);
         m_Settings.loadedSuccessfully = false;
@@ -581,8 +337,9 @@ void BatchProcessing(
     c_BatchParamsDialog batchParamsDlg(parent);
     if (batchParamsDlg.ShowModal() == wxID_OK)
     {
-        c_BatchDialog batchDlg(parent,
-            batchParamsDlg.GetInputFileNames(),
+        c_BatchDialog batchDlg(
+            parent,
+            std::move(batchParamsDlg.GetInputFileNames()),
             batchParamsDlg.GetSettingsFileName(),
             batchParamsDlg.GetOutputDirectory(),
             batchParamsDlg.GetOutputFormat());

@@ -37,10 +37,10 @@ File description:
 #include <wx/settings.h>
 
 #include "appconfig.h"
-#include "tcrv_edit.h"
-#include "cursors.h"
-#include "ctrl_ids.h"
 #include "common.h"
+#include "ctrl_ids.h"
+#include "cursors.h"
+#include "tcrv_edit.h"
 #include "tcrv_wnd_settings.h"
 
 // Event sent to parent every time the curve is changed
@@ -103,7 +103,7 @@ void c_ToneCurveEditor::OnToggleLogHist(wxCommandEvent&)
 }
 
 /// Updates the histogram (creates an internal copy)
-void c_ToneCurveEditor::SetHistogram(const Histogram_t& histogram)
+void c_ToneCurveEditor::SetHistogram(const Histogram& histogram)
 {
     m_Histogram = histogram;
     m_CurveArea->Refresh(false);

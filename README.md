@@ -1,7 +1,7 @@
 # ImPPG (Image Post-Processor)
 Copyright (C) 2015-2019 Filip Szczerek (ga.software@yahoo.com)
 
-version 0.5.4 (2019-02-02)
+version 0.6.0 (2019-12-19)
 
 *This program comes with ABSOLUTELY NO WARRANTY. This is free software, licensed under GNU General Public License v3 or any later version and you are welcome to redistribute it under certain conditions. See the LICENSE file for details.*
 
@@ -196,6 +196,8 @@ ImPPG stores certain settings (e.g. the main window’s size and position) in an
 ----------------------------------------
 ## 9. Known problems
 
+  - (OpenGL mode, MS Windows 8.1, Intel HD Graphics 5500, driver 10.18.14.5074) Cubic interpolation mode is broken (a shader compiler bug, or perhaps a texture read count limitation); use "View/Scaling method/Linear" instead. Note that the same hardware works fine under Linux (Fedora 29 5.3.11-100, Mesa 18.3.6).
+
   - (wxGTK 3.0.2, Fedora 20) All the toolbar buttons react correctly, but their displayed state may be incorrect after using the `View` menu items/close boxes of tone curve editor and processing controls panel. Cause: sometimes check tool’s Toggle() method does not work.
 
   - (wxGTK) As of 2/2015, some of GTK themes function incorrectly (e.g. “QtCurve”, but not “Raleigh”). In ImPPG this may manifest as follows:
@@ -209,82 +211,118 @@ Solution: change the GTK theme to "Raleigh" (e.g. in Fedora use the "GTK+ Appear
 ----------------------------------------
 ## 10. Downloading
 
-ImPPG source code and MS Windows executables can be downloaded from:
+ImPPG source code and binaries for MS Windows and Ubuntu 18.04 can be downloaded from:
     https://github.com/GreatAttractor/imppg/releases
 
 
 ----------------------------------------
 ## 11. Building from source code
 
-Building from source code requires a C++ compiler toolchain (with C++17 support), CMake, Boost libraries v. 1.57.0 or later (though earlier versions may work) and wxWidgets 3.0. Support for more image formats requires the FreeImage library, version 3.14.0 or newer. Without FreeImage the only supported formats are: BMP 8-, 24- and 32-bit, TIFF mono and RGB, 8 or 16 bits per channel (no compression). FITS support (optional) requires the CFITSIO library. Multithreaded processing requires a compiler supporting OpenMP.
+Building from source code requires a C++ compiler toolchain (with C++17 support), CMake, Boost libraries v. 1.57.0 or later (though earlier versions may work) and wxWidgets 3.0 (3.1 under MS Windows). Support for more image formats requires the FreeImage library, version 3.14.0 or newer. Without FreeImage the only supported formats are: BMP 8-, 24- and 32-bit, TIFF mono and RGB, 8 or 16 bits per channel (no compression). FITS support (optional) requires the CFITSIO library. Multithreaded processing requires a compiler supporting OpenMP.
 
-To enable/disable usage of CFITSIO/FreeImage (they are enabled by default), edit the `config.in` file.
+To enable/disable usage of CFITSIO, FreeImage and GPU/OpenGL back end (they are enabled by default), edit the `config.in` file.
 
 To remove any created CMake configuration, delete `CMakeCache.txt` and the `CMakeFiles` folder.
-
-The ImPPG executable has to be placed in the same location as the `images` and language subdirectories.
 
 
 ### 11.1. Building under Linux and similar systems using GNU (or compatible) toolchain
 
 *Note: CMake relies on the presence of the `wx-config` tool to detect and configure wxWidgets-related build options. Sometimes this tool can be named differently, e.g. in Fedora 23 with wxGTK3 packages from repository it is `wx-config-3.0`. Older versions of CMake may not accept it. This can be remedied e.g. by creating a symlink:*
 ```
-    sudo ln -s /usr/bin/wx-config-3.0 /usr/bin/wx-config
+sudo ln -s /usr/bin/wx-config-3.0 /usr/bin/wx-config
 ```
 
 Download the source code manually or clone with Git:
 ```
-    git clone https://github.com/GreatAttractor/imppg.git
+git clone https://github.com/GreatAttractor/imppg.git
 ```
 
 In the source folder, run:
 ```
-    cmake -G "Unix Makefiles"
+mkdir build
+cd build
+cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
 ```
 This creates a native `Makefile`. Unless you edit `config.in` again, from now on there is no need to run CMake.
 
 To compile ImPPG, run:
 ```
-    make
+make
 ```
-You will find `imppg` executable in the sources folder.
+You will find `imppg` executable in the `build` folder.
 
+To install ImPPG system-wide, run from the `build` folder:
+```
+sudo cmake -P cmake_install.cmake
+```
+
+To uninstall, run:
+```
+cat install_manifest.txt | sudo xargs rm
+```
+
+#### 11.1.1 Building under Ubuntu 18.04
+
+The following packages are needed to build under Ubuntu 18.04:
+```
+git cmake build-essential libboost-dev libwxgtk3.0-gtk3-dev libglew-dev pkg-config libccfits-dev libfreeimage-dev
+```
+
+The default GCC version (7.x) is too old. Install and enable GCC 8 (example instructions: `https://linuxize.com/post/how-to-install-gcc-compiler-on-ubuntu-18-04/`). (Do not choose GCC 9, otherwise the built binary will not run on a clean Ubuntu 18.04 due to too old a version of `libstdc++`.)
+
+After building `imppg`, it can be either installed as in section `11.1`, or a Debian package can be created by running:
+```
+cpack
+```
+and installed with `apt`.
 
 ----------------------------------------
 ### 11.2. Building under MS Windows
 
 The provided `CMakeLists.txt` supports the [MSYS2](http://www.msys2.org/) build environment. With manual configuration, other toolchains can also be used (e.g. MS Visual Studio).
 
-In order to build ImPPG (64-bit) under MSYS2, follow its installation instructions at http://www.msys2.org/. Then open the MSYS2 shell and install the ImPPG's dependencies by running:
+In order to build ImPPG (64-bit) under MSYS2, follow its installation instructions at http://www.msys2.org/. Then open the MSYS2/MinGW64 shell (after default installation: `c:\msys64\mingw64.exe`) and install the ImPPG's dependencies by running:
 ```
-    pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-wxWidgets mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage
-```
-
-Download the source code manually or clone it with Git:
-```
-    git clone https://github.com/GreatAttractor/imppg.git
+pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage mingw64/mingw-w64-x86_64-glew
 ```
 
-*Note*: MSYS2 mounts the drives as `/<drive_letter>`, so if ImPPG sources have been placed in:
+As of 2019-12, MSYS2 has only wxWidgets 3.0 in its repositories. However, under MS Windows ImPPG requires wxWidgets 3.1. Download its source code from wxwidgets.org, and inside the source folder run:
 ```
-    C:\Users\MyUsername\Documents\imppg
-```
-in order to go there in the MSYS2 shell:
-```
-    cd /c/Users/MyUsername/Documents/imppg
+mkdir build_mingw
+cd build_mingw
+cmake -G "MSYS Makefiles" -DCMAKE_MAKE_PROGRAM=mingw32-make -DCMAKE_BUILD_TYPE=Release ..
+mingw32-make
 ```
 
-In the source folder, run:
+Download the ImPPG's source code manually or clone it with Git:
 ```
-    cmake -G "MSYS Makefiles"
+git clone https://github.com/GreatAttractor/imppg.git
+```
+
+then update the wxWidgets paths in `config.in`, matching the location of wxWidgets 3.1.
+
+*Note*: Under MSYS2, use forward slashes as path separators, e.g. `C:/Users/MyUsername/Documents`.
+
+In the ImPPG source folder, run:
+```
+mkdir build
+cd build
+cmake -G "MSYS Makefiles" -DCMAKE_MAKE_PROGRAM=mingw32-make -DCMAKE_BUILD_TYPE=Release ..
 ```
 This creates a native `Makefile`. Unless you edit `config.in` again, from now on there is no need to run CMake.
 
 To compile ImPPG, run:
 ```
-    make
+mingw32-make
 ```
-You will find `imppg` executable in the sources folder.
+
+You will find `imppg.exe` executable in the `build` folder. It can be run from MSYS2 shell, from the ImPPG source folder, after putting the wxWidgets 3.1 DLLs on the search path, e.g.:
+```
+export PATH=/c/Users/MyUsername/Downloads/wxWidgets-3.1.3/build_mingw/lib/gcc_x64_dll:$PATH
+build/imppg.exe
+```
+
+To run ImPPG from Windows Explorer, the subfolders `images`, `pl`, `shaders` and all the necessary DLLs must be placed at the same location as `imppg.exe`. See the MS Windows binary distribution (`imppg-win64.zip`) for an example.
 
 
 ----------------------------------------
@@ -295,14 +333,14 @@ ImPPG supports multiple user interface languages using the wxWidgets built-in in
 
 - extraction of translatable strings from sources into a PO file by running:
 ```
-    xgettext -k_ src/*.cpp src/*.h -o imppg.po
+xgettext -k_ src/*.cpp src/*.h -o imppg.po
 ```
 
 - translation of UI strings by editing the `msgstr` entries in `imppg.po`
 
 - converting `imppg.po` to binary form by running:
 ```
-    msgfmt imppg.po -o imppg.mo
+msgfmt imppg.po -o imppg.mo
 ```
 
 - placing `imppg.mo` in a subdirectory with name equal to the language code (e.g. `pl`, `fr-ca`)
@@ -314,6 +352,11 @@ Binary distribution of ImPPG needs only the MO (binary) language files. Beside t
 
 ----------------------------------------
 ## 12. Change log
+
+**0.6.0** (2019-12-19)
+
+  - **New features**
+    - GPU (OpenGL) back end for much faster processing
 
 **0.5.4** (2019-02-02)
 

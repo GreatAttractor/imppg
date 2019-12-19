@@ -67,6 +67,8 @@ enum
     ID_FileMenuEnd,
 
     // Settings menu items
+    ID_CpuBmpBackEnd,
+    ID_OpenGLBackEnd,
     ID_NormalizeImage,
     ID_ChooseLanguage,
     ID_ToolIconSize,
@@ -95,7 +97,7 @@ enum
     ID_SelectAndProcessAll,
     ID_FitInWindow,
     ID_AlignImages,
-    ID_ScalingTimer,
+
 //----------------------------------------------------------------------
 // Normalization dialog
 

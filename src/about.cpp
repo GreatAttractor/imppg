@@ -26,6 +26,9 @@ File description:
 #endif
 #include <array>
 #include <boost/version.hpp>
+#if USE_OPENGL_BACKEND
+#include <GL/glew.h>
+#endif
 #include <wx/bitmap.h>
 #include <wx/button.h>
 #include <wx/dcbuffer.h>
@@ -110,10 +113,8 @@ static struct
 
         // `images/anim.bin` contains concatenated frames, each is a PNG image
 
-        wxFileName fName = wxFileName(wxStandardPaths::Get().GetExecutablePath());
-        fName.AppendDir("images");
-        fName.SetName("anim");
-        fName.SetExt("bin");
+        wxFileName fName = GetImagesDirectory();
+        fName.SetFullName("anim.bin");
 
         wxFileInputStream fstream(fName.GetFullPath());
         if (!fstream.IsOk())
@@ -160,6 +161,9 @@ public:
 
 void c_AboutDialog::OnLibrariesClick(wxCommandEvent&)
 {
+    const wxString glRenderer{glGetString(GL_RENDERER)};
+    const wxString glVersion{glGetString(GL_VERSION)};
+
     wxString formatStr = "%s\n\n"    // "Libraries" - a localized string
                          "%s\n"      // version of wxWidgets
                          "Boost %s"  // version of Boost
@@ -170,8 +174,16 @@ void c_AboutDialog::OnLibrariesClick(wxCommandEvent&)
 #if USE_CFITSIO
                          "\nCFITSIO %s" // version of CFITSIO
 #endif
-                        "\n\nOS: " + wxGetOsDescription()
     ;
+
+#if USE_OPENGL_BACKEND
+    if (!glRenderer.IsEmpty() && !glVersion.IsEmpty())
+    {
+        formatStr += "\n\nOpenGL: %s\n%s";
+    }
+#endif
+
+    formatStr += "\n\nOS: " + wxGetOsDescription();
 
 #if USE_CFITSIO
     float cfitsioVer;
@@ -187,13 +199,17 @@ void c_AboutDialog::OnLibrariesClick(wxCommandEvent&)
 #if USE_CFITSIO
         , wxString::FromCDouble(cfitsioVer, 2)
 #endif
+#if USE_OPENGL_BACKEND
+        , wxString(glGetString(GL_VERSION))
+        , wxString(glGetString(GL_RENDERER))
+#endif
         ),
         _("Libraries"), wxOK, this);
 }
 
 void c_AboutDialog::OnTimer(wxTimerEvent&)
 {
-    this->Refresh();
+    this->Refresh(false);
     Animation.frameIdx = (Animation.frameIdx + 1) % NUM_FRAMES;
     if (Animation.frameIdx == NUM_FRAMES-1)
         timer.Start(ANIM_REPLAY_DELAY_MS, wxTIMER_ONE_SHOT);
@@ -203,9 +219,11 @@ void c_AboutDialog::OnTimer(wxTimerEvent&)
 }
 
 c_AboutDialog::c_AboutDialog(wxWindow* parent)
-: wxDialog(parent, wxID_ANY, _("About ImPPG"))
 {
     SetBackgroundColour(*wxBLACK);
+    SetBackgroundStyle(wxBG_STYLE_PAINT);
+
+    Create(parent, wxID_ANY, _("About ImPPG"));
 
     if (Animation.valid = Animation.LoadFrames())
     {
@@ -223,8 +241,6 @@ c_AboutDialog::c_AboutDialog(wxWindow* parent)
 
     wxSizer* szContents = new wxBoxSizer(wxVERTICAL);
     szContents->AddStretchSpacer(1);
-
-    SetBackgroundStyle(wxBG_STYLE_PAINT);
 
     Bind(wxEVT_PAINT,
         [this](wxPaintEvent&)
