@@ -90,15 +90,13 @@ c_OpenGLDisplay::c_OpenGLDisplay(c_ScrolledView& imgView)
 
     if (!m_GLCanvas->SetCurrent(*m_GLContext))
     {
-        Log::Print("Failed to make GL context current.");
-        return; // TODO: make it recoverable error
+        throw std::runtime_error("Failed to make GL context current.");
     }
 
     const GLenum err = glewInit();
     if (GLEW_OK != err)
     {
-        Log::Print("Failed to initialize GLEW.");
-        return; // TODO: make it recoverable error
+        throw std::runtime_error("Failed to initialize GLEW.");
     }
 
     wxFileName shaderDir = gl::GetShadersDirectory();
