@@ -48,6 +48,7 @@ namespace Configuration
     const unsigned DEFAULT_TONE_CURVE_EDITOR_NUM_DRAW_SEGMENTS = 512;
 
     void Initialize(wxFileConfig* appConfig);
+    void Flush();
 
     /// Returns maximum frequency (in Hz) of issuing new processing requests by the tone curve editor and numerical control sliders (0 means: no limit)
     int GetMaxProcessingRequestsPerSec();
@@ -91,6 +92,7 @@ namespace Configuration
     extern c_Property<wxRect>   ToneCurveSettingsDialogPosSize;
     extern c_Property<BackEnd>  ProcessingBackEnd;
     extern c_Property<ScalingMethod> DisplayScalingMethod;
+    extern c_Property<bool> OpenGLInitIncomplete;
 
     /// If zero, draw 1 segment per pixel
     /** NOTE: drawing 1 segment per pixel may be slow for large widths of the tone curve editor window

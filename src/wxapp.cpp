@@ -69,6 +69,14 @@ bool c_MyApp::OnInit()
     m_AppConfig = new wxFileConfig("imppg", wxEmptyString, wxEmptyString, wxEmptyString, wxCONFIG_USE_LOCAL_FILE);
     Configuration::Initialize(m_AppConfig);
 
+    if (Configuration::OpenGLInitIncomplete)
+    {
+        wxMessageBox(_("OpenGL back end failed to initialize when ImPPG was last started. Reverting to CPU + bitmaps mode."), "Warning", wxICON_WARNING | wxOK);
+        Configuration::ProcessingBackEnd = BackEnd::CPU_AND_BITMAPS;
+        Configuration::OpenGLInitIncomplete = false;
+        m_AppConfig->Flush();
+    }
+
     // Setup the UI language to use
     m_Language = wxLANGUAGE_DEFAULT;
     wxString requestedLangCode = Configuration::UiLanguage;

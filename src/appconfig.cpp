@@ -27,6 +27,7 @@ File description:
 
 #include "appconfig.h"
 #include "common.h"
+#include "imppg_assert.h"
 
 static bool wxFromString(const wxString& string, wxRect* rect)
 {
@@ -114,11 +115,19 @@ namespace Keys
 #define OpenGLGroup "/OpenGL"
 
     const char* LRCmdBatchSizeMpixIters = OpenGLGroup"/LRCommandBatchSizeMpixIters";
+
+    const char* OpenGLInitIncomplete = OpenGLGroup"/OpenGLInitIncomplete";
 }
 
 void Initialize(wxFileConfig* _appConfig)
 {
     appConfig = _appConfig;
+}
+
+void Flush()
+{
+    IMPPG_ASSERT(nullptr != appConfig);
+    appConfig->Flush();
 }
 
 /// Returns maximum frequency (in Hz) of issuing new processing requests by the tone curve editor and numerical control sliders (0 means: no limit)
@@ -149,15 +158,17 @@ PROPERTY_STRING(AlignInputPath);
 PROPERTY_STRING(AlignOutputPath);
 PROPERTY_STRING(UiLanguage);
 
-#define PROPERTY_BOOL(Name)                                        \
-    c_Property<bool> Name(                                         \
-        []() { return appConfig->ReadBool(Keys::Name, ""); },      \
-        [](const bool &val) { appConfig->Write(Keys::Name, val); } \
+#define PROPERTY_BOOL(Name, DefaultValue)                               \
+    c_Property<bool> Name(                                              \
+        []() { return appConfig->ReadBool(Keys::Name, DefaultValue); }, \
+        [](const bool &val) { appConfig->Write(Keys::Name, val); }      \
     )
 
-PROPERTY_BOOL(MainWindowMaximized);
-PROPERTY_BOOL(ToneCurveEditorVisible);
-PROPERTY_BOOL(LogHistogram);
+PROPERTY_BOOL(MainWindowMaximized, true);
+PROPERTY_BOOL(ToneCurveEditorVisible, true);
+PROPERTY_BOOL(LogHistogram, true);
+
+PROPERTY_BOOL(OpenGLInitIncomplete, false);
 
 // Finds and uses wxFromString() and wxToString() defined above
 #define PROPERTY_RECT(Name)                                               \

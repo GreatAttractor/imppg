@@ -587,6 +587,9 @@ c_MainWindow::c_MainWindow()
 #if USE_OPENGL_BACKEND
             case BackEnd::GPU_OPENGL:
             {
+                Configuration::OpenGLInitIncomplete = true;
+                Configuration::Flush();
+
                 std::unique_ptr<imppg::backend::c_OpenGLDisplay> gl_instance = imppg::backend::c_OpenGLDisplay::Create(*m_ImageView);
                 if (nullptr == gl_instance)
                 {
@@ -599,6 +602,9 @@ c_MainWindow::c_MainWindow()
                 {
                     InitializeBackEnd(std::move(gl_instance), std::nullopt);
                 }
+
+                Configuration::OpenGLInitIncomplete = false;
+                Configuration::Flush();
                 break;
             }
 #endif
@@ -1500,6 +1506,9 @@ void c_MainWindow::InitMenu()
     menuBackEnd->Bind(wxEVT_MENU,
         [this](wxCommandEvent&)
         {
+            Configuration::OpenGLInitIncomplete = true;
+            Configuration::Flush();
+
             std::optional<c_Image> img = m_BackEnd->GetImage();
 
             std::unique_ptr<imppg::backend::c_OpenGLDisplay> gl_instance = imppg::backend::c_OpenGLDisplay::Create(*m_ImageView);
@@ -1515,6 +1524,9 @@ void c_MainWindow::InitMenu()
                 Configuration::ProcessingBackEnd = BackEnd::GPU_OPENGL;
             }
             SetStatusText(GetBackEndStatusText(Configuration::ProcessingBackEnd), StatusBarField::BACK_END);
+
+            Configuration::OpenGLInitIncomplete = false;
+            Configuration::Flush();
         },
         ID_OpenGLBackEnd
     );
