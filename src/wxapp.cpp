@@ -71,7 +71,7 @@ bool c_MyApp::OnInit()
 
     if (Configuration::OpenGLInitIncomplete)
     {
-        wxMessageBox(_("OpenGL back end failed to initialize when ImPPG was last started. Reverting to CPU + bitmaps mode."), "Warning", wxICON_WARNING | wxOK);
+        wxMessageBox(_("OpenGL back end failed to initialize when ImPPG was last started. Reverting to CPU + bitmaps mode."), _("Warning"), wxICON_WARNING | wxOK);
         Configuration::ProcessingBackEnd = BackEnd::CPU_AND_BITMAPS;
         Configuration::OpenGLInitIncomplete = false;
         m_AppConfig->Flush();

@@ -529,7 +529,7 @@ bool c_MainWindow::ToneCurveEnabled()
 c_MainWindow::c_MainWindow()
 {
     wxRect wndPos = Configuration::MainWindowPosSize;
-    Create(NULL, wxID_ANY, _("ImPPG"), wndPos.GetTopLeft(), wndPos.GetSize());
+    Create(NULL, wxID_ANY, "ImPPG", wndPos.GetTopLeft(), wndPos.GetSize());
 
     SetExtraStyle(GetExtraStyle() | wxWS_EX_VALIDATE_RECURSIVELY); // Make sure all validators are run
 
