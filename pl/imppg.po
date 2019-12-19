@@ -31,8 +31,8 @@ msgstr "O ImPPG"
 
 #: src/about.cpp:269
 #, c-format
-msgid "version %s "
-msgstr "wersja %s "
+msgid "version %d.%d.%d "
+msgstr "wersja %d.%d.%d "
 
 #: src/about.cpp:271
 msgid ""

@@ -57,9 +57,7 @@ File description:
 #include "common.h"
 #include "ctrl_ids.h"
 
-
-const char* VERSION_STR = "0.5.4";   ///< Current version
-const char* DATE_STR = "2019-02-02"; ///< Release date of the current version
+const char* DATE_STR = "2019-12-19"; ///< Release date of the current version
 
 #if !defined(_OPENMP)
 int omp_get_num_procs() { return 1; }
@@ -266,11 +264,15 @@ c_AboutDialog::c_AboutDialog(wxWindow* parent)
 
     wxStaticText* info = new wxStaticText(this, wxID_ANY,
         wxString::Format(wxString(L"Copyright \u00A9 2015-2019 Filip Szczerek (ga.software@yahoo.com)\n") +
-                         _("version %s ") + " (%s)\n\n" +
+            _("version %d.%d.%d ") + " (%s)\n\n" +
 
-                         _("This program comes with ABSOLUTELY NO WARRANTY. This is free software,\n"
-                           "licensed under GNU General Public License v3 or any later version.\n"
-                           "See the LICENSE file for details."), VERSION_STR, DATE_STR));
+            _("This program comes with ABSOLUTELY NO WARRANTY. This is free software,\n"
+            "licensed under GNU General Public License v3 or any later version.\n"
+            "See the LICENSE file for details."),
+            IMPPG_VERSION_MAJOR, IMPPG_VERSION_MINOR, IMPPG_VERSION_SUBMINOR,
+            DATE_STR
+        )
+    );
     info->SetForegroundColour(*wxWHITE);
     szContents->Add(info, 0, wxALIGN_LEFT | wxALL, 5);
 
