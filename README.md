@@ -66,9 +66,9 @@ The alignment is performed (with sub-pixel accuracy) either via phase correlatio
 
   - The smaller the selection, the faster the processing. For fine-tuning of L–R deconvolution’s *sigma*, it is recommended to use moderately small areas; this way moving the *sigma* slider will show the results almost instanteneously. The refreshing is slightly slower when the current zoom factor is not 100%.
 
-  - The view can be zoomed in/out by using toolbar buttons, `View` menu items or `Ctrl+mouse wheel`.
+  - The view can be zoomed in/out by using toolbar buttons, `View` menu items or mouse wheel.
 
-  - The view can be scrolled by dragging with the middle mouse button.
+  - The view can be scrolled by dragging with the middle or right mouse button.
 
   - Size of toolbar icons can be changed via the `Settings` menu.
 
@@ -286,7 +286,7 @@ In order to build ImPPG (64-bit) under MSYS2, follow its installation instructio
 pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage mingw64/mingw-w64-x86_64-glew
 ```
 
-As of 2019-12, MSYS2 has only wxWidgets 3.0 in its repositories. However, under MS Windows ImPPG requires wxWidgets 3.1. Download its source code from wxwidgets.org, and inside the source folder run:
+As of 2019-12, MSYS2 has only wxWidgets 3.0 in its repositories. However, under MS Windows ImPPG requires wxWidgets 3.1. Download its source code (3.1.3) from wxwidgets.org, and inside the source folder run:
 ```
 mkdir build_mingw
 cd build_mingw
