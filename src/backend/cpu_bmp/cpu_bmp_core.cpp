@@ -235,7 +235,18 @@ void c_CpuAndBitmaps::OnPaint(wxPaintEvent&)
         }
     }
 
-    MarkSelection(m_PhysSelectionGetter(), dc);
+    const wxRect currentPhysSel = m_PhysSelectionGetter();
+    const bool resizingWithWindowFit =
+        m_ScalingTimer.IsRunning() &&
+        m_PreviouslyMarkedSelection.has_value() &&
+        (m_PreviouslyMarkedSelection->width != currentPhysSel.width ||
+        m_PreviouslyMarkedSelection->height != currentPhysSel.height);
+
+    if (!resizingWithWindowFit)
+    {
+        m_PreviouslyMarkedSelection = currentPhysSel;
+        MarkSelection(currentPhysSel, dc);
+    }
 }
 
 void c_CpuAndBitmaps::CreateScaledPreview(float zoomFactor)

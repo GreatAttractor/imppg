@@ -120,6 +120,8 @@ private:
 
     ScalingMethod m_ScalingMethod{ScalingMethod::LINEAR};
 
+    std::optional<wxRect> m_PreviouslyMarkedSelection;
+
     void OnPaint(wxPaintEvent& event);
 
     void CreateScaledPreview(float zoomFactor);
