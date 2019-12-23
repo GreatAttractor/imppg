@@ -13,6 +13,6 @@ set(USE_FREEIMAGE 1)
 # To disable OpenGL back end (processing on the GPU), change 1 to 0 below:
 set(USE_OPENGL_BACKEND 1)
 
-# When building under MS Windows, the following paths have be set appropriately:
+# When building under MS Windows, the following paths have to be set appropriately:
 set(WXWIDGETS_ROOT_DIR C:/Users/Filip/Downloads/temp/wxWidgets-3.1.3)
 set(WXWIDGETS_BUILD_DIR C:/Users/Filip/Downloads/temp/wxWidgets-3.1.3/build_msys2_rel)

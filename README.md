@@ -1,7 +1,7 @@
 # ImPPG (Image Post-Processor)
 Copyright (C) 2015-2019 Filip Szczerek (ga.software@yahoo.com)
 
-version 0.6.0 (2019-12-19)
+version 0.6.0 (2019-12-23)
 
 *This program comes with ABSOLUTELY NO WARRANTY. This is free software, licensed under GNU General Public License v3 or any later version and you are welcome to redistribute it under certain conditions. See the LICENSE file for details.*
 
@@ -26,6 +26,7 @@ version 0.6.0 (2019-12-19)
 - 10\. Downloading
 - 11\. Building from source code
   - 11\.1\. Building under Linux and similar systems using GNU (or compatible) toolchain
+    - 11\.1\.1. Building under Ubuntu 18.04
   - 11\.2\. Building under MS Windows
   - 11\.3\. UI language
 - 12\. Change log
@@ -105,7 +106,7 @@ ImPPG performs image sharpening via non-blind Lucy–Richardson deconvolution us
 
 Recommended number of deconvolution iterations: 30 to 70. Specify 0 to disable L–R deconvolution.
 
-The `Prevent ringing` checkbox enables an experimental function which reduces ringing (halo) around over-exposed areas (e.g. a solar disc in a prominence image) caused by sharpening.
+The `Prevent ringing` checkbox enables an experimental function which reduces ringing (halo) around over-exposed (solid white) areas (e.g. a solar disc in a prominence image) caused by sharpening.
 
 Access by:
     `Lucy–Richardson deconvolution` tab in the processing controls panel (on the left of the main window)
@@ -211,7 +212,7 @@ Solution: change the GTK theme to "Raleigh" (e.g. in Fedora use the "GTK+ Appear
 ----------------------------------------
 ## 10. Downloading
 
-ImPPG source code and binaries for MS Windows and Ubuntu 18.04 can be downloaded from:
+ImPPG source code and binaries for MS Windows and Ubuntu 18.04 (x86-64) can be downloaded from:
     https://github.com/GreatAttractor/imppg/releases
 
 
@@ -261,20 +262,22 @@ To uninstall, run:
 cat install_manifest.txt | sudo xargs rm
 ```
 
-#### 11.1.1 Building under Ubuntu 18.04
 
-The following packages are needed to build under Ubuntu 18.04:
+#### 11.1.1. Building under Ubuntu 18.04
+
+The following packages are needed for building under Ubuntu 18.04:
 ```
 git cmake build-essential libboost-dev libwxgtk3.0-gtk3-dev libglew-dev pkg-config libccfits-dev libfreeimage-dev
 ```
 
 The default GCC version (7.x) is too old. Install and enable GCC 8 (example instructions: `https://linuxize.com/post/how-to-install-gcc-compiler-on-ubuntu-18-04/`). (Do not choose GCC 9, otherwise the built binary will not run on a clean Ubuntu 18.04 due to too old a version of `libstdc++`.)
 
-After building `imppg`, it can be either installed as in section `11.1`, or a Debian package can be created by running:
+After building `imppg`, it can be either installed as in section 11.1, or a Debian package can be created by running:
 ```
 cpack
 ```
 and installed with `apt`.
+
 
 ----------------------------------------
 ### 11.2. Building under MS Windows
@@ -286,7 +289,7 @@ In order to build ImPPG (64-bit) under MSYS2, follow its installation instructio
 pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage mingw64/mingw-w64-x86_64-glew
 ```
 
-As of 2019-12, MSYS2 has only wxWidgets 3.0 in its repositories. However, under MS Windows ImPPG requires wxWidgets 3.1. Download its source code (3.1.3) from wxwidgets.org, and inside the source folder run:
+As of 2019-12, MSYS2 has only wxWidgets 3.0 in its repositories. However, under MS Windows ImPPG requires wxWidgets 3.1. Download its source code (3.1.3) from wxwidgets.org, and inside the unpacked source folder run:
 ```
 mkdir build_mingw
 cd build_mingw
@@ -298,7 +301,6 @@ Download the ImPPG's source code manually or clone it with Git:
 ```
 git clone https://github.com/GreatAttractor/imppg.git
 ```
-
 then update the wxWidgets paths in `config.in`, matching the location of wxWidgets 3.1.
 
 *Note*: Under MSYS2, use forward slashes as path separators, e.g. `C:/Users/MyUsername/Documents`.
@@ -357,6 +359,10 @@ Binary distribution of ImPPG needs only the MO (binary) language files. Beside t
 
   - **New features**
     - GPU (OpenGL) back end for much faster processing
+    
+  - **Enhancements**
+    - View scrolling by dragging with the right mouse button (previously: with the middle button)
+    - Zooming in/out with the mouse wheel (previously: Ctrl + mouse wheel)    
 
 **0.5.4** (2019-02-02)
 

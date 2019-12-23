@@ -1,7 +1,7 @@
 # ImPPG (Image Post-Processor)
 Copyright (C) 2015-2019 Filip Szczerek (ga.software@yahoo.com)
 
-wersja 0.5.4 (2019-02-02)
+wersja 0.6.0 (2019-12-23)
 
 *Niniejszy program ABSOLUTNIE nie jest objęty JAKĄKOLWIEK GWARANCJĄ. Jest to wolne oprogramowanie na licencji GNU GPL w wersji 3 (lub dowolnej późniejszej) i można je swobodnie rozpowszechniać pod pewnymi warunkami: zob. pełny tekst licencji w pliku LICENSE.*
 
@@ -27,6 +27,7 @@ wersja 0.5.4 (2019-02-02)
 - 10\. Pobieranie
 - 11\. Budowanie ze źródeł
   - 11\.1\. Budowanie w systemie Linux i podobnych z użyciem narzędzi GNU (lub kompatybilnych)
+    - 11\.1\.1. Budowanie pod Ubuntu 18.04
   - 11\.2\. Budowanie pod MS Windows
   - 11\.3\. Język UI
 - 12\. Historia zmian
@@ -68,9 +69,9 @@ Wyrównywanie (z subpikselową dokładnością) odbywa się metodą korelacji fa
 
   - Im mniejszy zaznaczony obszar, tym szybciej przebiega obróbka. Do precyzyjnej regulacji *sigmy* dekonwolucji L-R zaleca się zaznaczenie w miarę małego obszaru; dzięki temu efekty poruszania suwakiem *sigmy* będą widoczne prawie natychmiastowo. Odświeżanie jest nieco wolniejsze, gdy bieżące powiększenie jest różne od 100%.
 
-  - Powiększenie widoku można zmieniać przyciskami paska narzędziowego, pozycjami w menu `Widok` bądź kombinacją `Ctrl+rolka myszy`.
+  - Powiększenie widoku można zmieniać przyciskami paska narzędziowego, pozycjami w menu `Widok` bądź kółkiem myszy.
 
-  - Widok można przewijać przeciągając go z wciśniętym środkowym przyciskiem myszy.
+  - Widok można przewijać przeciągając go z wciśniętym środkowym lub prawym przyciskiem myszy.
 
   - Wielkość ikon narzędziowych można zmienić w menu `Ustawienia`.
 
@@ -108,7 +109,7 @@ ImPPG wyostrza obrazy stosując dekonwolucję Lucy-Richardson z ustalonym kernel
 
 Zalecana liczba iteracji dekonwolucji: 30 do 70. Wartość 0 wyłącza dekonwolucję L-R.
 
-Przełącznik `Ogranicz ringing` aktywuje eksperymentalną funkcję redukcji *ringingu* (halo) wokół prześwietlonych obszarów (np. tarczy słonecznej na obrazie protuberancji), powodowanego przez wyostrzanie.
+Przełącznik `Ogranicz ringing` aktywuje eksperymentalną funkcję redukcji *ringingu* (halo) wokół prześwietlonych (jednolicie białych) obszarów (np. tarczy słonecznej na obrazie protuberancji), powodowanego przez wyostrzanie.
 
 Dostęp:
     zakładka `Dekonwolucja Lucy-Richardson` na panelu kontrolnym (po lewej stronie okna głównego)
@@ -200,6 +201,8 @@ ImPPG przechowuje pewne ustawienia (np. pozycję i rozmiar okna głównego) w pl
 ----------------------------------------
 ## 9. Znane problemy
 
+  - (tryb OpenGL, MS Windows 8.1, Intel HD Graphics 5500, sterownik 10.18.14.5074) Tryb interpolacji sześciennej działa niepoprawnie (błąd w kompilatorze shaderów albo przekroczenie limitu liczby odczytów tekstury); zamiast niego zalecane jest wybranie "Widok/Metoda skalowania/Liniowe" instead. Pod Linuksem (Fedora 29 5.3.11-100, Mesa 18.3.6) ten sam sprzęt działa poprawnie.
+
   - wxGTK 3.0.2, Fedora 20: Wszystkie przyciski narzędziowe reagują poprawnie, ale czasami wyświetlony stan (wciśnięty lub nie) jest niewłaściwy po użyciu opcji z menu `View` lub przycisków zamykania panelu kontrolnego bądź edytora krzywej tonalnej.
 
   - (wxGTK) W lutym 2015 niektóre motywy GTK nie funkcjonują poprawnie (np. „QtCurve”, ale już nie „Raleigh”). W ImPPG może się to objawiać następująco:
@@ -213,45 +216,71 @@ Rozwiązanie: zmienić motyw GTK na „Raleigh” (np. w Fedorze użyć narzędz
 ----------------------------------------
 ## 10. Pobieranie
 
-Kod źródłowy ImPPG i pliki wykonywalne dla MS Windows można pobrać pod adresem:
+Kod źródłowy ImPPG oraz pliki wykonywalne dla MS Windows i Ubuntu 18.04 (x86-64) można pobrać pod adresem:
     https://github.com/GreatAttractor/imppg/releases
 
 
 ----------------------------------------
 ## 11. Budowanie ze źródeł
 
-Budowanie ze źródeł wymaga narzędzi do kompilacji C++ (z obsługą C++17), CMake, bibliotek Boost w wersji 1.57.0 lub późniejszej (choć wcześniejsze też mogą działać) oraz wxWidgets 3.0. Do obsługi większej liczby formatów graficznych potrzebna jest biblioteka FreeImage w wersji co najmniej 3.14.0. Bez niej obsługiwane są jedynie: BMP 8-, 24- i 32-bitowe, TIFF mono lub RGB, 8 lub 16 bitów na kanał (bez kompresji). Obsługę plików FITS (opcjonalną) zapewnia biblioteka CFITSIO. Przetwarzanie wielowątkowe wymaga kompilatora obsługującego OpenMP.
+Budowanie ze źródeł wymaga narzędzi do kompilacji C++ (z obsługą C++17), CMake, bibliotek Boost w wersji 1.57.0 lub późniejszej (choć wcześniejsze też mogą działać) oraz wxWidgets 3.0 (3.1 pod MS Windows). Do obsługi większej liczby formatów graficznych potrzebna jest biblioteka FreeImage w wersji co najmniej 3.14.0. Bez niej obsługiwane są jedynie: BMP 8-, 24- i 32-bitowe, TIFF mono lub RGB, 8 lub 16 bitów na kanał (bez kompresji). Obsługę plików FITS (opcjonalną) zapewnia biblioteka CFITSIO. Przetwarzanie wielowątkowe wymaga kompilatora obsługującego OpenMP.
 
-Obsługę CFITSIO i FreeImage można wyłączyć edytując plik `config.in` (domyślnie są włączone).
+Obsługę CFITSIO, FreeImage i trybu GPU/OpenGL można wyłączyć edytując plik `config.in` (domyślnie są włączone).
 
 By wyczyścić stworzoną przez CMake konfigurację budowania, należy usunąć `CMakeCache.txt` i katalog `CMakeFiles`.
-
-Plik wykonywalny musi znajdować się w tym samym miejscu, co podkatalog `images` i podkatalogi z plikami językowymi.
 
 
 ### 11.1. Budowanie w systemie Linux i podobnych z użyciem narzędzi GNU (lub kompatybilnych)
 
 *Uwaga: CMake wymaga dostępności narzędzia `wx-config`, by wykryć wxWidgets i skonfigurować związane z nimi ustawienia. Czasami nazwa może być inna, np. w Fedorze 23 z pakietami wxGTK3 z repozytorium jest to `wx-config-3.0`. Można temu zaradzić np. tworząc dowiązanie symboliczne:*
 ```
-    sudo ln -s /usr/bin/wx-config-3.0 /usr/bin/wx-config
+sudo ln -s /usr/bin/wx-config-3.0 /usr/bin/wx-config
 ```
 
 Kod źródłowy można pobrać ręcznie lub sklonować Gitem:
 ```
-    git clone https://github.com/GreatAttractor/imppg.git
+git clone https://github.com/GreatAttractor/imppg.git
 ```
 
 W katalogu ze źródłami wykonać:
 ```
-    cmake -G "Unix Makefiles"
+mkdir build
+cd build
+cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
 ```
 Zostanie utworzony natywny plik `Makefile`. Dopóki `config.in` nie zostanie zmieniony, nie trzeba więcej uruchamiać CMake.
 
 By zbudować ImPPG, wykonać:
 ```
-    make
+make
 ```
-W katalogu ze źródłami pojawi się plik wykonywalny `imppg`.
+W podkatalogu `build` pojawi się plik wykonywalny `imppg`.
+
+By zainstalować ImPPG dla wszystkich użytkowników, wykonać w podkatalogu `build`:
+```
+sudo cmake -P cmake_install.cmake
+```
+
+By odinstalować:
+```
+cat install_manifest.txt | sudo xargs rm
+```
+
+
+#### 11.1.1. Budowanie pod Ubuntu 18.04
+
+Następujące pakiety są konieczne, by zbudować ImPPG pod Ubuntu 18.04:
+```
+git cmake build-essential libboost-dev libwxgtk3.0-gtk3-dev libglew-dev pkg-config libccfits-dev libfreeimage-dev
+```
+
+Domyślna wersja GCC (7.x) jest zbyt stara. Należy zainstalować i uaktywnić GCC 8 (przykładowa instrukcja: `https://linuxize.com/post/how-to-install-gcc-compiler-on-ubuntu-18-04/`). (Nie należy wybierać GCC 9, w przeciwnym razie zbudowany plik wykonywalny nie będzie działał na czystej instalacji Ubuntu 18.04 z powodu przestarzałej wersji `libstdc++`).
+
+Po zbudowaniu można zainstalować ImPPG jak w p. 11.1; można też stworzyć pakiet debianowski poleceniem:
+```
+cpack
+```
+który można następnie zainstalować narzędziem `apt`.
 
 
 ----------------------------------------
@@ -259,36 +288,48 @@ W katalogu ze źródłami pojawi się plik wykonywalny `imppg`.
 
 Dostarczony plik `CMakeLists.txt` umożliwia budowanie w środowisku [MSYS2](http://www.msys2.org/). W przypadku ręcznej konfiguracji można użyć również innych środowisk (np. MS Visual Studio).
 
-By zbudować z użyciem MSYS2, należy zainstalować środowisko zgodnie z instrukcją na http://www.msys2.org/. Następnie otworzyć konsolę MSYS2 i zainstalować narzędzia i biblioteki wymagane przez ImPPG:
+By zbudować z użyciem MSYS2, należy zainstalować środowisko zgodnie z instrukcją na http://www.msys2.org/. Następnie otworzyć konsolę MSYS2/MinGW64 (przy domyślnej instalacji: `c:\msys64\mingw64.exe`) i zainstalować narzędzia i biblioteki wymagane przez ImPPG:
 ```
-    pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-wxWidgets mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage
-```
-
-Kod źródłowy można pobrać ręcznie lub sklonować Gitem:
-```
-    git clone https://github.com/GreatAttractor/imppg.git
+pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage mingw64/mingw-w64-x86_64-glew
 ```
 
-*Uwaga*: MSYS2 montuje dyski jako `/<litera_dysku>`, więc jeśli źródła ImPPG umieszczono w:
+Obecnie (grudzień 2019) w repozytoriach MSYS2 najnowszą wersją wxWidgets jest 3.0, ale ImPPG pod MS Windows wymaga wxWidgets 3.1. Należy pobrać ich kod źródłowy (3.1.3) z wxwidgets.org, a następnie w rozpakowanym katalogu ze źródłami wykonać:
 ```
-    C:\Users\NazwaUżytkownika\Documents\imppg
+mkdir build_mingw
+cd build_mingw
+cmake -G "MSYS Makefiles" -DCMAKE_MAKE_PROGRAM=mingw32-make -DCMAKE_BUILD_TYPE=Release ..
+mingw32-make
 ```
-by przejść do tej lokacji w konsoli MSYS2, należy wykonać:
+
+Kod źródłowy ImPPG można pobrać ręcznie lub sklonować Gitem:
 ```
-    cd /c/Users/NazwaUżytkownika/Documents/imppg
+git clone https://github.com/GreatAttractor/imppg.git
 ```
+następnie trzeba ustawić ścieżki w `config.in`, by odpowiadały położeniu wxWidgets 3.1.
+
+*Uwaga*: Pod MSYS2 należy użyć prawego slasha jako separatora katalogów, np. `C:/Users/MyUsername/Documents`.
+
 
 W katalogu ze źródłami wykonać:
 ```
-    cmake -G "MSYS Makefiles"
+mkdir build
+cd build
+cmake -G "MSYS Makefiles" -DCMAKE_MAKE_PROGRAM=mingw32-make -DCMAKE_BUILD_TYPE=Release ..
 ```
 Zostanie utworzony natywny plik `Makefile`. Dopóki `config.in` nie zostanie zmieniony, nie trzeba więcej uruchamiać CMake.
 
 By zbudować ImPPG, wykonać:
 ```
-    make
+mingw32-make
 ```
-W katalogu ze źródłami pojawi się plik wykonywalny `imppg.exe`.
+W podkatalogu `build` pojawi się plik wykonywalny `imppg.exe`. Można go uruchomić z konsoli MSYS2 z katalogu ze źródłami ImPPG, dodając uprzednio katalog z plikami DLL wxWidgets 3.1 do zmiennej `PATH`, np.:
+```
+export PATH=/c/Users/MyUsername/Downloads/wxWidgets-3.1.3/build_mingw/lib/gcc_x64_dll:$PATH
+build/imppg.exe
+```
+
+By uruchomić ImPPG z Eksploratora Windowa, podkatalogi `images`, `pl`, `shaders` i wszystkie niezbędne pliki DLL muszą znajdować się w tym samym miejscu, co `imppg.exe`. Przykład: dystrybucja binarna dla MS Windows (`imppg-win64.zip`).
+
 
 
 ----------------------------------------
@@ -317,6 +358,15 @@ Dystrybucja binarna ImPPG potrzebuje jedynie plików MO (binarnych). Oprócz pli
 
 ----------------------------------------
 ## 12. Historia zmian
+
+**0.6.0** (2019-12-23)
+
+  - **Nowe funkcje**
+    - Back end GPU (OpenGL) zapewniający znacznie szybsze przetwarzanie
+
+  - **Ulepszenia**
+    - Przewijanie widoku przez przeciągnięcie z prawym klawiszem myszy (dotychczas: ze środkowym)
+    - Zmiana powiększenia widoku kółkiem myszy (dotychczas: Ctrl + kółko myszy)
 
 **0.5.4** (2019-02-02)
 
