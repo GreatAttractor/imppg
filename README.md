@@ -9,6 +9,7 @@ version 0.6.0 (2019-12-23)
 ----------------------------------------
 
 - 1\. Introduction
+  - 1\.1. Processing and display back ends
 - 2\. User interface features
 - 3\. Supported image file formats
 - 4\. Image processing
@@ -55,6 +56,14 @@ The alignment is performed (with sub-pixel accuracy) either via phase correlatio
 
 
 ----------------------------------------
+### 1.1. Processing and display back ends
+
+Starting with version 0.6.0, ImPPG contains two processing & display back ends: "CPU + bitmaps" and "GPU (OpenGL)". The latter is enabled by default and offloads all processing (except image alignment), as well as view scrolling and scaling, onto the GPU. On most systems it is faster than CPU processing by a factor of several or more.
+
+Processing back ends can be switched via menu `Settings/Back end`.
+
+
+----------------------------------------
 ## 2. User interface features
 
   - The processing controls panel, initially docked on the left of the main window, can be undocked or docked on the right.
@@ -85,6 +94,7 @@ Output images produces by the sequence alignment function are saved as uncompres
 ## 4. Image processing
 
 An illustrated processing tutorial can be found at http://greatattractor.github.io/imppg/tutorial/tutorial_en.html
+
 
 ----------------------------------------
 ### 4.1. Brightness normalization

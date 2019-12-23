@@ -10,6 +10,7 @@ wersja 0.6.0 (2019-12-23)
 ----------------------------------------
 
 - 1\. Wprowadzenie
+  - 1\.1\. Tryb przetwarzania/wyświetlania (back end)
 - 2\. Interfejs użytkownika
 - 3\. Obsługiwane formaty graficzne
 - 4\. Przetwarzanie obrazów
@@ -54,6 +55,15 @@ ImPPG (*Image Post-Processor*) dokonuje typowych operacji obróbki obrazu, w pon
 ImPPG umożliwia również wyrównanie sekwencji obrazów, które mogą być znacznie przesunięte względem siebie w przypadkowy sposób. Funkcja ta może by przydatna np. do przygotowania animacji poklatkowej Słońca, gdzie kolejne klatki uległy przesunięciu wskutek niedokładnego prowadzenia montażu teleskopu. Inne możliwe zastosowania to wygładzanie animacji poklatkowych krajobrazu lub przygotowanie surowych klatek (z dużymi drganiami obrazu) do stackowania.
 
 Wyrównywanie (z subpikselową dokładnością) odbywa się metodą korelacji fazowej (która automatycznie dopasowuje do siebie najbardziej kontrastowe obszary) lub poprzez wykrywanie i stabilizację krawędzi tarczy słonecznej.
+
+
+----------------------------------------
+### 1.1. Tryb przetwarzania/wyświetlania (back end)
+
+Poczynając od wersji 0.6.0, ImPPG zawiera dwa back endy: "CPU + bitmapy" oraz "GPU (OpenGL)". Domyślnie włączony jest ten drugi; realizuje przetwarzanie obrazów (oprócz wyrównywania sekwencji) oraz przewijanie i skalowanie podglądu w całości na GPU. Na większości komputerów jest co najmniej kilkakrotnie szybszy od back endu CPU.
+
+Back endy można przełączyć za pomocą menu `Ustawienia/Back end`.
+
 
 
 ----------------------------------------
