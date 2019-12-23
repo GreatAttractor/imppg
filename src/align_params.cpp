@@ -228,8 +228,8 @@ void c_ImageAlignmentParams::DoInitControls()
     m_Parameters.subpixelAlignment = true;
     m_Parameters.alignmentMethod = AlignmentMethod::PHASE_CORRELATION;
 
-    m_CropBitmaps[static_cast<size_t>(CropMode::CROP_TO_INTERSECTION)].LoadFile(wxFileName("images", "crop", "png").GetFullPath(), wxBITMAP_TYPE_PNG);
-    m_CropBitmaps[static_cast<size_t>(CropMode::PAD_TO_BOUNDING_BOX)].LoadFile(wxFileName("images", "pad", "png").GetFullPath(), wxBITMAP_TYPE_PNG);
+    m_CropBitmaps[static_cast<size_t>(CropMode::CROP_TO_INTERSECTION)] = LoadBitmap("crop");
+    m_CropBitmaps[static_cast<size_t>(CropMode::PAD_TO_BOUNDING_BOX)] = LoadBitmap("pad");
 
     wxSizer* szContents = new wxBoxSizer(wxVERTICAL);
 

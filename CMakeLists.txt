@@ -232,12 +232,15 @@ install(FILES
 )
 
 install(FILES
-    images/fit_wnd.png
     images/anim.bin
+    images/crop.png
+    images/fit_wnd.png
+    images/imppg-app.ico
     images/imppg-app.png
     images/load_settings.png
     images/mru_settings.png
     images/open_file.png
+    images/pad.png
     images/save_file.png
     images/save_settings.png
     images/select_all.png
