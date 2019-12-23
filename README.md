@@ -355,7 +355,7 @@ Binary distribution of ImPPG needs only the MO (binary) language files. Beside t
 ----------------------------------------
 ## 12. Change log
 
-**0.6.0** (2019-12-19)
+**0.6.0** (2019-12-23)
 
   - **New features**
     - GPU (OpenGL) back end for much faster processing
