@@ -258,6 +258,21 @@ install(FILES
     DESTINATION ${CMAKE_INSTALL_FULL_LOCALEDIR}/pl/LC_MESSAGES
 )
 
+file(WRITE imppg.desktop
+"[Desktop Entry]
+Type=Application
+Version=1.0
+Name=ImPPG
+Comment=Image Post-Processor
+Exec=${CMAKE_INSTALL_FULL_BINDIR}/imppg
+Icon=${CMAKE_INSTALL_FULL_DATAROOTDIR}/imppg/images/imppg-app.png"
+)
+
+install(FILES
+    imppg.desktop
+    DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/applications
+)
+
 # Packaging -------------------------------------
 
 # Package generator for Ubuntu 18.04 LTS
