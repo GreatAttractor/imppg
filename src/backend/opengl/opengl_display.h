@@ -150,9 +150,6 @@ private:
 
     void OnPaint(wxPaintEvent& event);
 
-    /// Propagates `event` received by m_GLCanvas to `m_ImgView`.
-    void PropagateEventToParent(wxMouseEvent& event);
-
     void MarkSelection();
 
     void FillWholeImgVBO();

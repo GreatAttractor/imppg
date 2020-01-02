@@ -36,7 +36,8 @@ File description:
 namespace imppg::backend
 {
 
-void c_OpenGLDisplay::PropagateEventToParent(wxMouseEvent& event)
+template<typename T>
+void PropagateEventToParent(T& event)
 {
     event.ResumePropagation(1);
     event.Skip();
@@ -78,15 +79,19 @@ c_OpenGLDisplay::c_OpenGLDisplay(c_ScrolledView& imgView)
         event.Skip();
     });
 
-    m_GLCanvas->Bind(wxEVT_LEFT_DOWN,          &c_OpenGLDisplay::PropagateEventToParent, this);
-    m_GLCanvas->Bind(wxEVT_MOTION,             &c_OpenGLDisplay::PropagateEventToParent, this);
-    m_GLCanvas->Bind(wxEVT_LEFT_UP,            &c_OpenGLDisplay::PropagateEventToParent, this);
-    m_GLCanvas->Bind(wxEVT_MOUSE_CAPTURE_LOST, [](wxMouseCaptureLostEvent& event) { event.ResumePropagation(1); event.Skip(); });
-    m_GLCanvas->Bind(wxEVT_MIDDLE_DOWN,        &c_OpenGLDisplay::PropagateEventToParent, this);
-    m_GLCanvas->Bind(wxEVT_RIGHT_DOWN,         &c_OpenGLDisplay::PropagateEventToParent, this);
-    m_GLCanvas->Bind(wxEVT_MIDDLE_UP,          &c_OpenGLDisplay::PropagateEventToParent, this);
-    m_GLCanvas->Bind(wxEVT_RIGHT_UP,           &c_OpenGLDisplay::PropagateEventToParent, this);
-    m_GLCanvas->Bind(wxEVT_MOUSEWHEEL,         &c_OpenGLDisplay::PropagateEventToParent, this);
+    // propagate events received by `m_GLCanvas` to `m_ImgView`
+    for (const auto tag: { wxEVT_LEFT_DOWN,
+                           wxEVT_MOTION,
+                           wxEVT_LEFT_UP,
+                           wxEVT_MIDDLE_DOWN,
+                           wxEVT_RIGHT_DOWN,
+                           wxEVT_MIDDLE_UP,
+                           wxEVT_RIGHT_UP,
+                           wxEVT_MOUSEWHEEL })
+    {
+        m_GLCanvas->Bind(tag, [](wxMouseEvent& event) { PropagateEventToParent(event); });
+    }
+    m_GLCanvas->Bind(wxEVT_MOUSE_CAPTURE_LOST, [](wxMouseCaptureLostEvent& event) { PropagateEventToParent(event); });
 
     if (!m_GLCanvas->SetCurrent(*m_GLContext))
     {
