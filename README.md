@@ -1,7 +1,7 @@
 # ImPPG (Image Post-Processor)
-Copyright (C) 2015-2019 Filip Szczerek (ga.software@yahoo.com)
+Copyright (C) 2015-2020 Filip Szczerek (ga.software@yahoo.com)
 
-version 0.6.0 (2019-12-23)
+version 0.6.1 (2020-01-25)
 
 *This program comes with ABSOLUTELY NO WARRANTY. This is free software, licensed under GNU General Public License v3 or any later version and you are welcome to redistribute it under certain conditions. See the LICENSE file for details.*
 
@@ -201,11 +201,13 @@ Access by:
 ----------------------------------------
 ## 8. Misc
 
-ImPPG stores certain settings (e.g. the main window’s size and position) in an INI file, whose location is platform-dependent. On recent versions of MS Windows the path is `%HOMEPATH%\AppData\Roaming\imppg.ini`, where `%HOMEPATH%` usually equals `C:\Users\<username>`. On Linux the path is `~/.imppg`.
+ImPPG stores certain settings (e.g. the main window’s size and position) in an INI file, whose location is platform-dependent. On recent versions of MS Windows the path is `%HOMEPATH%\AppData\Roaming\imppg.ini`, where `%HOMEPATH%` usually equals `C:\Users\<username>` (but if OneDrive is enabled, the file may be located there). On Linux the path is `~/.imppg`.
 
 
 ----------------------------------------
 ## 9. Known problems
+
+  - ImPPG remembers and restores the positions and sizes of the main proram window and the tone curve editor window. It may happen (rarely) the desktop environment interferes with window positioning and e.g. the tone curve window remains off-screen. In that case, use the menu command `Settings`/`Reset tone curve window position`, or delete the ImPPG configuration file (see section 8).
 
   - (OpenGL mode, MS Windows 8.1, Intel HD Graphics 5500, driver 10.18.14.5074) Cubic interpolation mode is broken (a shader compiler bug, or perhaps a texture read count limitation); use "View/Scaling method/Linear" instead. Note that the same hardware works fine under Linux (Fedora 29 5.3.11-100, Mesa 18.3.6).
 
@@ -365,14 +367,22 @@ Binary distribution of ImPPG needs only the MO (binary) language files. Beside t
 ----------------------------------------
 ## 12. Change log
 
+**0.6.1** (2020-01-25)
+
+  - **Bug fixes**
+    - Invalid batch processing results in OpenGL mode
+
+  - **Enhancements**
+    - Tone curve window position reset command
+
 **0.6.0** (2019-12-23)
 
   - **New features**
     - GPU (OpenGL) back end for much faster processing
-    
+
   - **Enhancements**
     - View scrolling by dragging with the right mouse button (previously: with the middle button)
-    - Zooming in/out with the mouse wheel (previously: Ctrl + mouse wheel)    
+    - Zooming in/out with the mouse wheel (previously: Ctrl + mouse wheel)
 
 **0.5.4** (2019-02-02)
 

@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2015-2019 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2015-2020 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -57,7 +57,7 @@ File description:
 #include "common.h"
 #include "ctrl_ids.h"
 
-const char* DATE_STR = "2019-12-23"; ///< Release date of the current version
+const char* DATE_STR = "2020-01-25"; ///< Release date of the current version
 
 #if !defined(_OPENMP)
 int omp_get_num_procs() { return 1; }
@@ -263,7 +263,7 @@ c_AboutDialog::c_AboutDialog(wxWindow* parent)
     szContents->Add(title, 0, wxALIGN_LEFT | (wxLEFT | wxRIGHT | wxTOP), 5);
 
     wxStaticText* info = new wxStaticText(this, wxID_ANY,
-        wxString::Format(wxString(L"Copyright \u00A9 2015-2019 Filip Szczerek (ga.software@yahoo.com)\n") +
+        wxString::Format(wxString(L"Copyright \u00A9 2015-2020 Filip Szczerek (ga.software@yahoo.com)\n") +
             _("version %d.%d.%d ") + " (%s)\n\n" +
 
             _("This program comes with ABSOLUTELY NO WARRANTY. This is free software,\n"

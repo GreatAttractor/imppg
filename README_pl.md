@@ -1,7 +1,7 @@
 # ImPPG (Image Post-Processor)
-Copyright (C) 2015-2019 Filip Szczerek (ga.software@yahoo.com)
+Copyright (C) 2015-2020 Filip Szczerek (ga.software@yahoo.com)
 
-wersja 0.6.0 (2019-12-23)
+wersja 0.6.1 (2020-01-25)
 
 *Niniejszy program ABSOLUTNIE nie jest objęty JAKĄKOLWIEK GWARANCJĄ. Jest to wolne oprogramowanie na licencji GNU GPL w wersji 3 (lub dowolnej późniejszej) i można je swobodnie rozpowszechniać pod pewnymi warunkami: zob. pełny tekst licencji w pliku LICENSE.*
 
@@ -211,6 +211,8 @@ ImPPG przechowuje pewne ustawienia (np. pozycję i rozmiar okna głównego) w pl
 ----------------------------------------
 ## 9. Znane problemy
 
+  - ImPPG zapamiętuje i przywraca pozycję i wielkość okna głównego i okna edytora krzywej tonalnej. Może się zdarzyć, że środowisko graficzne rozmieści okna nieprawidłowo i np. okno krzywej tonalnej pozostanie poza ekranem. W takim przypadku należy użyć polecenia menu `Ustawienia`/`Resetuj pozycję okna krzywej tonalej`, lub skasować plik konfiguracyjny ImPPG (zob. pkt. 8).
+
   - (tryb OpenGL, MS Windows 8.1, Intel HD Graphics 5500, sterownik 10.18.14.5074) Tryb interpolacji sześciennej działa niepoprawnie (błąd w kompilatorze shaderów albo przekroczenie limitu liczby odczytów tekstury); zamiast niego zalecane jest wybranie "Widok/Metoda skalowania/Liniowe" instead. Pod Linuksem (Fedora 29 5.3.11-100, Mesa 18.3.6) ten sam sprzęt działa poprawnie.
 
   - wxGTK 3.0.2, Fedora 20: Wszystkie przyciski narzędziowe reagują poprawnie, ale czasami wyświetlony stan (wciśnięty lub nie) jest niewłaściwy po użyciu opcji z menu `View` lub przycisków zamykania panelu kontrolnego bądź edytora krzywej tonalnej.
@@ -368,6 +370,14 @@ Dystrybucja binarna ImPPG potrzebuje jedynie plików MO (binarnych). Oprócz pli
 
 ----------------------------------------
 ## 12. Historia zmian
+
+**0.6.1** (2020-01-25)
+
+  - **Poprawki błędów**
+    - Błędne wyniki przetwarzania wsadowego w trybie OpenGL
+
+  - **Ulepszenia**
+    - Funkcja resetowania pozycji okna krzywej tonalnej
 
 **0.6.0** (2019-12-23)
 
