@@ -558,6 +558,8 @@ void c_OpenGLProcessing::SetImage(const c_Image& img, bool linearInterpolation)
 {
     m_Img = &img;
 
+    m_ProcessedOutput = std::nullopt;
+
     const GLfloat imgWidth = static_cast<GLfloat>(m_Img->GetWidth());
     const GLfloat imgHeight = static_cast<GLfloat>(m_Img->GetHeight());
     // 4 values per vertex: position (a full-screen quad), texture coords
