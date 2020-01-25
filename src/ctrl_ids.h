@@ -73,6 +73,7 @@ enum
     ID_ChooseLanguage,
     ID_ToolIconSize,
     ID_ToneCurveWindowSettings,
+    ID_ToneCurveWindowReset,
 
     // View menu items
     ID_Panels,

@@ -1554,6 +1554,18 @@ void c_MainWindow::InitMenu()
 
     menuSettings->Append(ID_ToneCurveWindowSettings, _("Tone curve editor..."), wxEmptyString, false);
 
+    menuSettings->Append(ID_ToneCurveWindowReset, _("Reset tone curve window position"), wxEmptyString, false);
+    menuSettings->Bind(wxEVT_MENU,
+        [this](wxCommandEvent&)
+        {
+            m_ToneCurveEditorWindow.CentreOnParent();
+            m_ToneCurveEditorWindow.SetSize(wxDefaultSize);
+            m_ToneCurveEditorWindow.Show();
+            UpdateToggleControlsState();
+        },
+        ID_ToneCurveWindowReset
+    );
+
     wxMenu* menuView = new wxMenu();
         wxMenu* menuPanels = new wxMenu();
         menuPanels->AppendCheckItem(ID_ToggleProcessingPanel, _("Processing settings"));
