@@ -207,7 +207,7 @@ ImPPG stores certain settings (e.g. the main window’s size and position) in an
 ----------------------------------------
 ## 9. Known problems
 
-  - ImPPG remembers and restores the positions and sizes of the main proram window and the tone curve editor window. It may happen (rarely) the desktop environment interferes with window positioning and e.g. the tone curve window remains off-screen. In that case, use the menu command `Settings`/`Reset tone curve window position`, or delete the ImPPG configuration file (see section 8).
+  - ImPPG remembers and restores the positions and sizes of the main program window and the tone curve editor window. It may happen (rarely) the desktop environment interferes with window positioning and e.g. the tone curve window remains off-screen. In that case, use the menu command `Settings`/`Reset tone curve window position`, or delete the ImPPG configuration file (see section 8).
 
   - (OpenGL mode, MS Windows 8.1, Intel HD Graphics 5500, driver 10.18.14.5074) Cubic interpolation mode is broken (a shader compiler bug, or perhaps a texture read count limitation); use "View/Scaling method/Linear" instead. Note that the same hardware works fine under Linux (Fedora 29 5.3.11-100, Mesa 18.3.6).
 
