@@ -115,8 +115,9 @@ namespace Keys
 #define OpenGLGroup "/OpenGL"
 
     const char* LRCmdBatchSizeMpixIters = OpenGLGroup"/LRCommandBatchSizeMpixIters";
-
     const char* OpenGLInitIncomplete = OpenGLGroup"/OpenGLInitIncomplete";
+
+    const char* NormalizeFITSValues = "/NormalizeFITSValues";
 }
 
 void Initialize(wxFileConfig* _appConfig)
@@ -320,5 +321,7 @@ c_Property<ScalingMethod> DisplayScalingMethod(
     },
     [](const ScalingMethod& val) { appConfig->Write(Keys::DisplayScalingMethod, static_cast<long>(val)); }
 );
+
+PROPERTY_BOOL(NormalizeFITSValues, true);
 
 }  // namespace Configuration

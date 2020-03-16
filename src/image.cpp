@@ -31,6 +31,7 @@ File description:
 #include <optional>
 #include <boost/format.hpp>
 
+#include "appconfig.h"
 #include "imppg_assert.h"
 
 #include "image.h"
@@ -996,8 +997,7 @@ void NormalizeFpImage(c_Image& img, float minLevel, float maxLevel)
 }
 
 #if USE_CFITSIO
-/// Loads an image from a FITS file; the result's pixel format will be PIX_MONO8, PIX_MONO16 or PIX_MONO32F
-std::optional<c_Image> LoadFitsImage(const std::string& fname)
+std::optional<c_Image> LoadFitsImage(const std::string& fname, bool normalize)
 {
     fitsfile* fptr{nullptr};
     int status = 0;
@@ -1093,10 +1093,24 @@ std::optional<c_Image> LoadFitsImage(const std::string& fname)
 
             if (maxval > 1.0f)
             {
-                float maxvalinv = 1.0f/maxval;
-                for (int y = 0; y < dimensions[1]; y++)
-                    for (int x = 0; x < dimensions[0]; x++)
-                        reinterpret_cast<float*>(fitsPixels.get())[x + y*dimensions[0]] *= maxvalinv;
+                if (normalize)
+                {
+                    float maxvalinv = 1.0f/maxval;
+                    for (int y = 0; y < dimensions[1]; y++)
+                        for (int x = 0; x < dimensions[0]; x++)
+                            reinterpret_cast<float*>(fitsPixels.get())[x + y*dimensions[0]] *= maxvalinv;
+                }
+                else
+                {
+                    for (int y = 0; y < dimensions[1]; y++)
+                    {
+                        for (int x = 0; x < dimensions[0]; x++)
+                        {
+                            float& val = reinterpret_cast<float*>(fitsPixels.get())[x + y*dimensions[0]];
+                            if (val > 1.0) val = 1.0;
+                        }
+                    }
+                }
             }
         }
 
@@ -1131,7 +1145,7 @@ std::optional<c_Image> LoadImageAs(
 #if USE_CFITSIO
     if (extension == "fit" || extension == "fits")
     {
-        std::optional<c_Image> result = LoadFitsImage(fname);
+        std::optional<c_Image> result = LoadFitsImage(fname, Configuration::NormalizeFITSValues);
         if (result.has_value())
         {
             if (result->GetPixelFormat() == destFmt)

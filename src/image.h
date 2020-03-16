@@ -372,8 +372,11 @@ std::optional<c_Image> LoadImageFileAsMono8(
 );
 
 #if USE_CFITSIO
-/// Loads an image from a FITS file; the result's pixel format will be PIX_MONO8, PIX_MONO16 or PIX_MONO32F
-std::optional<c_Image> LoadFitsImage(const std::string& fname);
+/// Loads an image from a FITS file; the result's pixel format will be PIX_MONO8, PIX_MONO16 or PIX_MONO32F.
+std::optional<c_Image> LoadFitsImage(
+    const std::string& fname,
+    bool normalize ///< If true, floating-point pixel values will be normalized so that the highest value becomes 1.0.
+);
 #endif
 
 /// Returns (width, height).

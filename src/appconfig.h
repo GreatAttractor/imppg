@@ -93,6 +93,8 @@ namespace Configuration
     extern c_Property<BackEnd>  ProcessingBackEnd;
     extern c_Property<ScalingMethod> DisplayScalingMethod;
     extern c_Property<bool> OpenGLInitIncomplete;
+    /// If true, floating-points values read from a FITS file are normalized, so that the highest becomes 1.0.
+    extern c_Property<bool> NormalizeFITSValues;
 
     /// If zero, draw 1 segment per pixel
     /** NOTE: drawing 1 segment per pixel may be slow for large widths of the tone curve editor window

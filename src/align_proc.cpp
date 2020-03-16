@@ -37,6 +37,7 @@ File description:
 #include "align_disc.h"
 #include "align_phasecorr.h"
 #include "align_proc.h"
+#include "appconfig.h"
 #include "common.h"
 #include "image.h"
 #include "imppg_assert.h"
@@ -71,7 +72,7 @@ std::optional<std::tuple<c_Image, c_Image>> PrepareInputAndOutputImages(wxString
     wxString extension = wxFileName(inputFileName).GetExt().Lower();
     if (extension == "fit" || extension == "fits")
     {
-        auto srcImg = LoadFitsImage(inputFileName.ToStdString());
+        auto srcImg = LoadFitsImage(inputFileName.ToStdString(), Configuration::NormalizeFITSValues);
         if (!srcImg)
         {
             errorMsg = wxString::Format(_("Could not read %s."), inputFileName);
