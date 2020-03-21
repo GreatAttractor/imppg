@@ -59,6 +59,7 @@ File description:
 #include <wx/valnum.h>
 
 #include "wxapp.h" // must be included before others due to wxWidgets' header problems
+#include "adv_settings_wnd.h"
 #include "align.h"
 #include "appconfig.h"
 #include "backend/cpu_bmp/cpu_bmp.h"
@@ -1565,6 +1566,10 @@ void c_MainWindow::InitMenu()
         },
         ID_ToneCurveWindowReset
     );
+
+    menuSettings->AppendSeparator();
+    menuSettings->Append(ID_Advanced, _("Advanced..."), wxEmptyString, false);
+    menuSettings->Bind(wxEVT_MENU, [this](wxCommandEvent&) { ShowAdvancedSettingsDialog(this); }, ID_Advanced);
 
     wxMenu* menuView = new wxMenu();
         wxMenu* menuPanels = new wxMenu();

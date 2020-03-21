@@ -21,6 +21,7 @@ include(GNUInstallDirs)
 
 add_executable(imppg WIN32
     src/about.cpp
+    src/adv_settings_wnd.cpp
     src/align_disc.cpp
     src/align_params.cpp
     src/align_phasecorr.cpp

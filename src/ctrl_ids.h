@@ -74,6 +74,7 @@ enum
     ID_ToolIconSize,
     ID_ToneCurveWindowSettings,
     ID_ToneCurveWindowReset,
+    ID_Advanced,
 
     // View menu items
     ID_Panels,

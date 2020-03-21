@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: ImPPG 0.6\n"
 "Report-Msgid-Bugs-To: Filip Szczerek <ga.software@yahoo.com>\n"
 "POT-Creation-Date: 2016-10-01 22:00+0100\n"
-"PO-Revision-Date: 2020-01-25 12:00+0100\n"
+"PO-Revision-Date: 2020-03-21 13:00+0100\n"
 "Last-Translator: Filip Szczerek <ga.software@yahoo.com>\n"
 "Language-Team: \n"
 "Language: Polish\n"
@@ -902,3 +902,15 @@ msgstr ""
 
 msgid "Reset tone curve window position"
 msgstr "Resetuj pozycję okna krzywej tonalnej"
+
+msgid "Advanced..."
+msgstr "Zaawansowane..."
+
+msgid "Advanced settings"
+msgstr "Ustawienia zaawansowane"
+
+msgid "Normalize FITS pixel values"
+msgstr "Normalizacja wartości pikseli FITS"
+
+msgid "Enables normalization of floating-point pixel values of FITS images; the highest value becomes 1.0."
+msgstr "Włącza normalizację zmiennoprzecinkowych wartości pikseli obrazów FITS; najwyższa wartość zostanie przeskalowana do 1,0."
