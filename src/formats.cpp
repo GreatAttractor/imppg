@@ -44,46 +44,46 @@ const char *INPUT_FILE_FILTERS =
 
 ;
 
-std::string GetOutputFormatDescription(OutputFormat fmt, std::string* wildcard)
+wxString GetOutputFormatDescription(OutputFormat fmt, wxString* wildcard)
 {
     switch (fmt)
     {
     case OutputFormat::BMP_8:
         if (wildcard)
             *wildcard = "*.bmp";
-        return std::string(_("BMP 8-bit"));
+        return _("BMP 8-bit");
 
     case OutputFormat::TIFF_16:
         if (wildcard)
             *wildcard = "*.tif";
-        return std::string(_("TIFF 16-bit"));
+        return _("TIFF 16-bit");
 
 #if (USE_FREEIMAGE)
 
     case OutputFormat::PNG_8:
         if (wildcard)
             *wildcard = "*.png";
-        return std::string(_("PNG 8-bit"));
+        return _("PNG 8-bit");
 
     case OutputFormat::TIFF_8_LZW:
         if (wildcard)
             *wildcard = "*.tif";
-        return std::string(_("TIFF 8-bit (LZW compression)"));
+        return _("TIFF 8-bit (LZW compression)");
 
     case OutputFormat::TIFF_16_ZIP:
         if (wildcard)
             *wildcard = "*.tif";
-        return std::string(_("TIFF 16-bit (ZIP compression)"));
+        return _("TIFF 16-bit (ZIP compression)");
 
     case OutputFormat::TIFF_32F:
         if (wildcard)
             *wildcard = "*.tif";
-        return std::string(_("TIFF 32-bit floating-point"));
+        return _("TIFF 32-bit floating-point");
 
     case OutputFormat::TIFF_32F_ZIP:
         if (wildcard)
             *wildcard = "*.tif";
-        return std::string(_("TIFF 32-bit floating-point (ZIP compression)"));
+        return _("TIFF 32-bit floating-point (ZIP compression)");
 
 #endif
 
@@ -91,17 +91,17 @@ std::string GetOutputFormatDescription(OutputFormat fmt, std::string* wildcard)
     case OutputFormat::FITS_8:
         if (wildcard)
             *wildcard = "*.fit";
-        return std::string(_("FITS 8-bit"));
+        return _("FITS 8-bit");
 
     case OutputFormat::FITS_16:
         if (wildcard)
             *wildcard = "*.fit";
-        return std::string(_("FITS 16-bit"));
+        return _("FITS 16-bit");
 
     case OutputFormat::FITS_32F:
         if (wildcard)
             *wildcard = "*.fit";
-        return std::string(_("FITS 32-bit floating point"));
+        return _("FITS 32-bit floating point");
 #endif
 
     default: return "";
@@ -109,16 +109,16 @@ std::string GetOutputFormatDescription(OutputFormat fmt, std::string* wildcard)
 }
 
 /// Returns output filters suitable for use in a File Save dialog
-std::string GetOutputFilters()
+wxString GetOutputFilters()
 {
-    std::string filters;
+    wxString filters;
 
     for (int i = 0; i < static_cast<int>(OutputFormat::LAST); i++)
     {
         if (i > 0)
             filters += "|";
 
-        std::string wildcard;
+        wxString wildcard;
         filters += GetOutputFormatDescription(static_cast<OutputFormat>(i), &wildcard);
         filters += "|" + wildcard;
     }

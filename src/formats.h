@@ -82,9 +82,9 @@ enum class OutputFileType
 #endif
 };
 
-std::string GetOutputFormatDescription(OutputFormat fmt, std::string* wildcard = nullptr);
+wxString GetOutputFormatDescription(OutputFormat fmt, wxString* wildcard = nullptr);
 
 /// Returns output filters suitable for use in a File Save dialog
-std::string GetOutputFilters();
+wxString GetOutputFilters();
 
 #endif // IMPPG_FORMATS_HEADER

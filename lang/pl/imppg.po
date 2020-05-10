@@ -1,7 +1,6 @@
 # ImPPG: Polish translation
 # Copyright (C) 2015-2020 Filip Szczerek <ga.software@yahoo.com>
 # This file is distributed under the same license as the ImPPG package.
-# Filip Szczerek <ga.software@yahoo.com>, 2020.
 #
 #, fuzzy
 msgid ""

@@ -314,7 +314,8 @@ void c_MainWindow::SelectLanguage()
     static const wxString languageNames[] =
     {
         "English",
-        "polski"
+        "polski",
+        L"українська мова",
 
         // After creating a new translation file, add the language name here
     };
@@ -322,9 +323,10 @@ void c_MainWindow::SelectLanguage()
     static const wxLanguage langIds[] =
     {
         wxLANGUAGE_ENGLISH,
-        wxLANGUAGE_POLISH
+        wxLANGUAGE_POLISH,
+        wxLANGUAGE_UKRAINIAN
     };
-    const int NUM_LANGS_SUPPORTED = 2; // Has to be equal to number of elements in 'languageNames' and 'langIds'
+    const int NUM_LANGS_SUPPORTED = 3; // Has to be equal to number of elements in 'languageNames' and 'langIds'
 
     wxSingleChoiceDialog dlg(this, _("Choose the user interface language:"), _("Language"), NUM_LANGS_SUPPORTED, languageNames);
     for (int i = 0; i < NUM_LANGS_SUPPORTED; i++)

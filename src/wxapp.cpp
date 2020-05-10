@@ -86,7 +86,7 @@ bool c_MyApp::OnInit()
         if (langInfo)
             m_Language = static_cast<wxLanguage>(langInfo->Language);
     }
-    wxFileTranslationsLoader::AddCatalogLookupPathPrefix(".");
+    wxFileTranslationsLoader::AddCatalogLookupPathPrefix("./lang");
     m_Locale.Init(m_Language);
     m_Locale.AddCatalog("wxstd3"); ///< The wxWidgets catalog (translated captions of standard menu items like "Open", control buttons like "Browse" etc.)
     m_Locale.AddCatalog("imppg");
