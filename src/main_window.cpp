@@ -315,7 +315,8 @@ void c_MainWindow::SelectLanguage()
     {
         "English",
         "polski",
-        L"українська мова",
+        L"русский",
+        L"українська",
 
         // After creating a new translation file, add the language name here
     };
@@ -324,9 +325,12 @@ void c_MainWindow::SelectLanguage()
     {
         wxLANGUAGE_ENGLISH,
         wxLANGUAGE_POLISH,
+        wxLANGUAGE_RUSSIAN,
         wxLANGUAGE_UKRAINIAN
     };
-    const int NUM_LANGS_SUPPORTED = 3; // Has to be equal to number of elements in 'languageNames' and 'langIds'
+    const int NUM_LANGS_SUPPORTED = 4; // Has to be equal to number of elements in 'languageNames' and 'langIds'
+    static_assert(NUM_LANGS_SUPPORTED == sizeof(languageNames) / sizeof(languageNames[0]));
+    static_assert(NUM_LANGS_SUPPORTED == sizeof(langIds) / sizeof(langIds[0]));
 
     wxSingleChoiceDialog dlg(this, _("Choose the user interface language:"), _("Language"), NUM_LANGS_SUPPORTED, languageNames);
     for (int i = 0; i < NUM_LANGS_SUPPORTED; i++)
@@ -1537,7 +1541,7 @@ void c_MainWindow::InitMenu()
 
     menuSettings->AppendSubMenu(menuBackEnd, _("Processing back end"));
     menuSettings->Append(ID_NormalizeImage, _("Normalize brightness levels..."), wxEmptyString, false);
-    menuSettings->Append(ID_ChooseLanguage, _("Language..."), wxEmptyString, false);
+    menuSettings->Append(ID_ChooseLanguage, _("Language...") + L" 🌐", wxEmptyString, false);
     menuSettings->Append(ID_ToolIconSize, _(L"Tool icons\u2019 size..."), wxEmptyString, false); // u2019 = apostrophe
 
     menuSettings->Bind(wxEVT_MENU,

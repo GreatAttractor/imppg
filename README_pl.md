@@ -31,7 +31,8 @@ wersja 0.6.1 (2020-01-25)
     - 11\.1\.1. Budowanie pod Ubuntu 18.04
   - 11\.2\. Budowanie pod MS Windows
   - 11\.3\. Język UI
-- 12\. Historia zmian
+- 12\. Acknowledgements
+- 13\. Historia zmian
 
 ----------------------------------------
 
@@ -369,7 +370,13 @@ Dystrybucja binarna ImPPG potrzebuje jedynie plików MO (binarnych). Oprócz pli
 
 
 ----------------------------------------
-## 12. Historia zmian
+## 12. Podziękowania
+
+Tłumaczenie na jęz. rosyjski i ukraiński: Rusłan Pazenko.
+
+
+----------------------------------------
+## 13. Historia zmian
 
 **0.6.1** (2020-01-25)
 

@@ -30,7 +30,8 @@ version 0.6.1 (2020-01-25)
     - 11\.1\.1. Building under Ubuntu 18.04
   - 11\.2\. Building under MS Windows
   - 11\.3\. UI language
-- 12\. Change log
+- 12\. Acknowledgements
+- 13\. Change log
 
 ----------------------------------------
 
@@ -365,7 +366,13 @@ Binary distribution of ImPPG needs only the MO (binary) language files. Beside t
 
 
 ----------------------------------------
-## 12. Change log
+## 12. Acknowledgements
+
+Russian and Ukrainian translations: Rusłan Pazenko.
+
+
+----------------------------------------
+## 13. Change log
 
 **0.6.1** (2020-01-25)
 
