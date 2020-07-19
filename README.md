@@ -375,7 +375,7 @@ Russian and Ukrainian translations: Rusłan Pazenko.
 ## 13. Change log
 
 **0.6.2** (2020-07-04)
-  - **New feataures**
+  - **New features**
     - Russian and Ukrainian translations
 
 **0.6.1** (2020-01-25)
