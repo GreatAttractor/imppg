@@ -626,6 +626,16 @@ c_MainWindow::c_MainWindow()
     });
 
     Bind(wxEVT_IDLE, [this](wxIdleEvent& event) { if (m_BackEnd) { m_BackEnd->OnIdle(event); } });
+
+    DragAcceptFiles(true);
+    Bind(wxEVT_DROP_FILES, [this](wxDropFilesEvent& event) {
+        if (event.GetNumberOfFiles() > 0)
+        {
+            const auto path = event.GetFiles()[0];
+            Configuration::FileOpenPath = wxFileName(path).GetPath();
+            OpenFile(path, true);
+        }
+    });
 }
 
 template<typename T>
