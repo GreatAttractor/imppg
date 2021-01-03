@@ -121,44 +121,19 @@ if(UNIX AND NOT APPLE)
     set(wxWidgets_CONFIG_OPTIONS --toolkit=gtk3)
 endif()
 
-if(NOT WIN32)
-    set(WX_COMPONENTS "adv aui xml core base")
-    if(USE_OPENGL_BACKEND)
-        string(APPEND WX_COMPONENTS " gl")
-    endif()
-
-    find_package(wxWidgets REQUIRED COMPONENTS ${WX_COMPONENTS})
-    include(${wxWidgets_USE_FILE})
-    target_link_libraries(imppg ${wxWidgets_LIBRARIES})
-else()
-    # Not trying to configure "find_package(wxWidgets...)" to use custom paths,
-    # because as of CMake 3.15.5 under MSYS2 it does not work.
-    #
-    # Instead, specify everything explicitly.
-
-    target_include_directories(imppg SYSTEM PRIVATE
-        ${WXWIDGETS_ROOT_DIR}/include
-        ${WXWIDGETS_BUILD_DIR}/lib/gcc_x64_dll/mswu
-    )
-
-    # The library path suffix and library names used here are valid for a MSYS2/MinGW build
-    # of wxWidgets. Change appropriately in case of a different toolchain.
-
-    target_link_directories(imppg PRIVATE ${WXWIDGETS_BUILD_DIR}/lib/gcc_x64_dll)
-
-    target_link_libraries(imppg
-        wxbase31u
-        wxmsw31u_aui
-        wxmsw31u_core
-        wxbase31u_xml
-    )
-
-    if(USE_OPENGL_BACKEND)
-        target_link_libraries(imppg
-            wxmsw31u_gl
-        )
-    endif()
+set(WX_COMPONENTS "adv aui xml core base")
+if(USE_OPENGL_BACKEND)
+	string(APPEND WX_COMPONENTS " gl")
 endif()
+
+if(WIN32)
+find_package(wxWidgets 3.1 REQUIRED COMPONENTS ${WX_COMPONENTS})
+else()
+find_package(wxWidgets REQUIRED COMPONENTS ${WX_COMPONENTS})
+endif()
+
+include(${wxWidgets_USE_FILE})
+target_link_libraries(imppg ${wxWidgets_LIBRARIES})
 
 find_package(OpenMP)
 if(OPENMP_FOUND)

@@ -303,25 +303,13 @@ Dostarczony plik `CMakeLists.txt` umożliwia budowanie w środowisku [MSYS2](htt
 
 By zbudować z użyciem MSYS2, należy zainstalować środowisko zgodnie z instrukcją na http://www.msys2.org/. Następnie otworzyć konsolę MSYS2/MinGW64 (przy domyślnej instalacji: `c:\msys64\mingw64.exe`) i zainstalować narzędzia i biblioteki wymagane przez ImPPG:
 ```
-pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage mingw64/mingw-w64-x86_64-glew
-```
-
-Obecnie (grudzień 2019) w repozytoriach MSYS2 najnowszą wersją wxWidgets jest 3.0, ale ImPPG pod MS Windows wymaga wxWidgets 3.1. Należy pobrać ich kod źródłowy (3.1.3) z wxwidgets.org, a następnie w rozpakowanym katalogu ze źródłami wykonać:
-```
-mkdir build_mingw
-cd build_mingw
-cmake -G "MSYS Makefiles" -DCMAKE_MAKE_PROGRAM=mingw32-make -DCMAKE_BUILD_TYPE=Release ..
-mingw32-make
+pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage mingw64/mingw-w64-x86_64-glew mingw64/mingw-w64-x86_64-wxmsw3.1
 ```
 
 Kod źródłowy ImPPG można pobrać ręcznie lub sklonować Gitem:
 ```
 git clone https://github.com/GreatAttractor/imppg.git
 ```
-następnie trzeba ustawić ścieżki w `config.in`, by odpowiadały położeniu wxWidgets 3.1.
-
-*Uwaga*: Pod MSYS2 należy użyć prawego slasha jako separatora katalogów, np. `C:/Users/MyUsername/Documents`.
-
 
 W katalogu ze źródłami wykonać:
 ```
@@ -335,9 +323,8 @@ By zbudować ImPPG, wykonać:
 ```
 mingw32-make
 ```
-W podkatalogu `build` pojawi się plik wykonywalny `imppg.exe`. Można go uruchomić z konsoli MSYS2 z katalogu ze źródłami ImPPG, dodając uprzednio katalog z plikami DLL wxWidgets 3.1 do zmiennej `PATH`, np.:
+W podkatalogu `build` pojawi się plik wykonywalny `imppg.exe`. Można go uruchomić z konsoli MSYS2 z katalogu ze źródłami ImPPG:
 ```
-export PATH=/c/Users/MyUsername/Downloads/wxWidgets-3.1.3/build_mingw/lib/gcc_x64_dll:$PATH
 build/imppg.exe
 ```
 

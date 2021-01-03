@@ -299,24 +299,13 @@ The provided `CMakeLists.txt` supports the [MSYS2](http://www.msys2.org/) build 
 
 In order to build ImPPG (64-bit) under MSYS2, follow its installation instructions at http://www.msys2.org/. Then open the MSYS2/MinGW64 shell (after default installation: `c:\msys64\mingw64.exe`) and install the ImPPG's dependencies by running:
 ```
-pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage mingw64/mingw-w64-x86_64-glew
-```
-
-As of 2019-12, MSYS2 has only wxWidgets 3.0 in its repositories. However, under MS Windows ImPPG requires wxWidgets 3.1. Download its source code (3.1.3) from wxwidgets.org, and inside the unpacked source folder run:
-```
-mkdir build_mingw
-cd build_mingw
-cmake -G "MSYS Makefiles" -DCMAKE_MAKE_PROGRAM=mingw32-make -DCMAKE_BUILD_TYPE=Release ..
-mingw32-make
+pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage mingw64/mingw-w64-x86_64-glew mingw64/mingw-w64-x86_64-wxmsw3.1
 ```
 
 Download the ImPPG's source code manually or clone it with Git:
 ```
 git clone https://github.com/GreatAttractor/imppg.git
 ```
-then update the wxWidgets paths in `config.in`, matching the location of wxWidgets 3.1.
-
-*Note*: Under MSYS2, use forward slashes as path separators, e.g. `C:/Users/MyUsername/Documents`.
 
 In the ImPPG source folder, run:
 ```
@@ -331,9 +320,8 @@ To compile ImPPG, run:
 mingw32-make
 ```
 
-You will find `imppg.exe` executable in the `build` folder. It can be run from MSYS2 shell, from the ImPPG source folder, after putting the wxWidgets 3.1 DLLs on the search path, e.g.:
+You will find `imppg.exe` executable in the `build` folder. It can be run from MSYS2 shell, from the ImPPG source folder:
 ```
-export PATH=/c/Users/MyUsername/Downloads/wxWidgets-3.1.3/build_mingw/lib/gcc_x64_dll:$PATH
 build/imppg.exe
 ```
 
