@@ -248,7 +248,6 @@ void c_BatchDialog::ProcessNextFile()
     }
 
     m_Processor->StartProcessing(std::move(img.value()), proc);
-
 }
 
 void c_BatchDialog::OnCommandEvent(wxCommandEvent& event)

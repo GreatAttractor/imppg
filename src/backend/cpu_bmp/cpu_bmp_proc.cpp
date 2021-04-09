@@ -36,7 +36,7 @@ void c_CpuAndBitmapsProcessing::StartProcessing(c_Image img, ProcessingSettings 
 {
     m_OwnedImg = std::move(img);
     m_Img = &m_OwnedImg.value();
-    m_Selection = m_OwnedImg.value().GetImageRect();
+    SetSelection(m_OwnedImg.value().GetImageRect());
     m_ProcSettings = procSettings;
     m_UsePreciseToneCurveValues = true;
 
