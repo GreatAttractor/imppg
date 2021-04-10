@@ -73,7 +73,7 @@ c_OpenGLDisplay::c_OpenGLDisplay(c_ScrolledView& imgView)
 
     m_GLContext = std::make_unique<wxGLContext>(m_GLCanvas.get());
 
-    m_GLCanvas->Bind(wxEVT_SIZE, [this](wxSizeEvent& event) {
+    m_GLCanvas->Bind(wxEVT_SIZE, [](wxSizeEvent& event) {
         const auto s = event.GetSize();
         glViewport(0, 0, s.GetWidth(), s.GetHeight());
         event.Skip();
@@ -201,7 +201,7 @@ void c_OpenGLDisplay::OnPaint(wxPaintEvent&)
 
         gl::BindProgramTextures(prog, { {&m_Processor->GetOriginalImg(), uniforms::Image} });
 
-        const auto scrollpos = m_ImgView.GetScrollPos();
+        const auto scrollpos = m_ImgView.GetScrollPosition();
         prog.SetUniform2i(uniforms::ScrollPos, scrollpos.x, scrollpos.y);
         prog.SetUniform2i(
             uniforms::ViewportSize,
@@ -230,7 +230,7 @@ void c_OpenGLDisplay::RenderProcessingResults()
 
     gl::BindProgramTextures(prog, { {renderingResults, uniforms::Image} });
 
-    const auto scrollpos = m_ImgView.GetScrollPos();
+    const auto scrollpos = m_ImgView.GetScrollPosition();
     prog.SetUniform2i(uniforms::ScrollPos, scrollpos.x, scrollpos.y);
     prog.SetUniform2i(
         uniforms::ViewportSize,
@@ -246,7 +246,7 @@ void c_OpenGLDisplay::RenderProcessingResults()
 void c_OpenGLDisplay::MarkSelection()
 {
     const wxRect physSelection = m_PhysSelectionGetter();
-    const wxPoint scrollPos = m_ImgView.GetScrollPos();
+    const wxPoint scrollPos = m_ImgView.GetScrollPosition();
 
     const GLfloat x0 = physSelection.x + scrollPos.x;
     const GLfloat y0 = physSelection.y + scrollPos.y;
@@ -262,7 +262,7 @@ void c_OpenGLDisplay::MarkSelection()
 
     auto& prog = m_GLPrograms.selectionOutline;
     prog.Use();
-    const auto scrollpos = m_ImgView.GetScrollPos();
+    const auto scrollpos = m_ImgView.GetScrollPosition();
     prog.SetUniform2i(uniforms::ScrollPos, scrollpos.x, scrollpos.y);
     prog.SetUniform2i(
         uniforms::ViewportSize,

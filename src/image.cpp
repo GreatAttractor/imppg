@@ -722,7 +722,7 @@ c_Image c_Image::ConvertPixelFormat(PixelFormat destPixFmt)
 /// Converts the specified fragment of 'srcImage' to 'destPixFmt'; result uses c_SimpleBuffer for storage
 c_Image c_Image::GetConvertedPixelFormatSubImage(PixelFormat destPixFmt, unsigned x0, unsigned y0, unsigned width, unsigned height) const
 {
-    return c_Image(std::make_unique<c_SimpleBuffer>(std::move(GetConvertedPixelFormatFragment(*m_Buffer.get(), destPixFmt, x0, y0, width, height))));
+    return c_Image(std::make_unique<c_SimpleBuffer>(GetConvertedPixelFormatFragment(*m_Buffer.get(), destPixFmt, x0, y0, width, height)));
 }
 
 /// Copies a rectangular area from 'src' to 'dest'. Pixel formats of 'src' and 'dest' have to be the same.
@@ -1379,7 +1379,7 @@ bool c_Image::SaveToFile(const std::string& fname, OutputBitDepth outpBitDepth, 
     const auto destPixFmt = GetOutputPixelFormat(m_Buffer->GetPixelFormat(), outpBitDepth);
     if (m_Buffer->GetPixelFormat() != destPixFmt)
     {
-        converted = std::make_unique<c_SimpleBuffer>(std::move(GetConvertedPixelFormatCopy(*m_Buffer.get(), destPixFmt)));
+        converted = std::make_unique<c_SimpleBuffer>(GetConvertedPixelFormatCopy(*m_Buffer.get(), destPixFmt));
         bufToSave = converted.get();
     }
 

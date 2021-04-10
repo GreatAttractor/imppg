@@ -102,8 +102,6 @@ private:
 
     float m_ZoomFactor{ZOOM_NONE};
 
-    float m_NewZoomFactor{ZOOM_NONE};
-
     wxRect m_Selection; ///< Image fragment selected for processing (in logical image coords).
 
     /// Provides selection in physical image view coords.

@@ -325,7 +325,7 @@ void c_CpuAndBitmaps::NewSelection(
         wxRect selectionRst;
         // First, take the scaled selection and limit it to visible area.
         selectionRst = prevScaledLogicalSelection;
-        const wxPoint scrollPos = m_ImgView.GetScrollPos();
+        const wxPoint scrollPos = m_ImgView.GetScrollPosition();
         const wxSize viewSize = m_ImgView.GetContentsPanel().GetSize();
 
         selectionRst.Intersect(wxRect(scrollPos, viewSize));
@@ -443,7 +443,7 @@ void c_CpuAndBitmaps::UpdateSelectionAfterProcessing()
         wxRect selectionRst;
         // first, take the scaled selection and limit it to visible area
         selectionRst = m_ScaledLogicalSelectionGetter();
-        const wxPoint scrollPos = m_ImgView.GetScrollPos();
+        const wxPoint scrollPos = m_ImgView.GetScrollPosition();
         const wxSize viewSize = m_ImgView.GetContentsPanel().GetSize();
 
         selectionRst.Intersect(wxRect(scrollPos, viewSize));

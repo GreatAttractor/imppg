@@ -55,4 +55,11 @@ File description:
     std::abort();                                                                   \
 }
 
+#define IMPPG_ABORT_MSG(msg)                                                        \
+{                                                                                   \
+    std::cerr << __FILE__ << ":" << __LINE__ \
+                << " inside " << __FUNCTION__ << ": " << msg << "\n";               \
+    std::abort();                                                                   \
+}
+
 #endif // ImPPG_ASSERT_H

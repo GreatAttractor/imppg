@@ -83,7 +83,6 @@ File description:
 DECLARE_APP(c_MyApp)
 
 const int BORDER = 5; ///< Border size (in pixels) around controls in sizers
-const int REAL_PREC = 4; ///< Precision of real numbers in text controls
 
 const float ZOOM_STEP = 1.25f; ///< Zoom in/zoom out factor
 const float ZOOM_MIN = 0.05f;

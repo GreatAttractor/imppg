@@ -284,8 +284,6 @@ inline void YvVFilterValues(
     float b0inv, float b1, float b2, float b3, float B
 )
 {
-    IMPPG_ASSERT(direction == 1 || direction == -1);
-
     int startIdx; // Starting index to process (inclusive)
     int endIdx; // End index to process (exclusive)
     if (direction == 1)
@@ -297,6 +295,10 @@ inline void YvVFilterValues(
     {
         startIdx = length - 1;
         endIdx = -1;
+    }
+    else
+    {
+        IMPPG_ABORT_MSG("direction must be 1 or -1");
     }
 
     float prev1, prev2, prev3; // Previously calculated values
