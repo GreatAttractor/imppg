@@ -39,7 +39,6 @@ add_executable(imppg WIN32
 
     src/batch_params.cpp
     src/batch.cpp
-    src/bmp.cpp
     src/common.cpp
     src/cursors.cpp
     src/fft.cpp
@@ -58,9 +57,15 @@ add_executable(imppg WIN32
     src/tcrv_edit.cpp
     src/tcrv_wnd_settings.cpp
     src/tcrv.cpp
-    src/tiff.cpp
     src/wxapp.cpp
 )
+
+if(USE_FREEIMAGE EQUAL 0)
+    target_sources(imppg PRIVATE
+        src/bmp.cpp
+        src/tiff.cpp
+    )
+endif()
 
 if(USE_OPENGL_BACKEND)
     target_sources(imppg PRIVATE
