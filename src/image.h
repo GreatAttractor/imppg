@@ -24,6 +24,7 @@ File description:
 #ifndef ImPPG_IMAGE_H
 #define ImPPG_IMAGE_H
 
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <optional>
