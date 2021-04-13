@@ -1,7 +1,7 @@
 # ImPPG (Image Post-Processor)
-Copyright (C) 2015-2020 Filip Szczerek (ga.software@yahoo.com)
+Copyright (C) 2015-2021 Filip Szczerek (ga.software@yahoo.com)
 
-wersja 0.6.2 (2020-07-04)
+wersja 0.6.3 (2021-04-13)
 
 *Niniejszy program ABSOLUTNIE nie jest objęty JAKĄKOLWIEK GWARANCJĄ. Jest to wolne oprogramowanie na licencji GNU GPL w wersji 3 (lub dowolnej późniejszej) i można je swobodnie rozpowszechniać pod pewnymi warunkami: zob. pełny tekst licencji w pliku LICENSE.*
 
@@ -364,6 +364,14 @@ Tłumaczenie na jęz. rosyjski i ukraiński: Rusłan Pazenko.
 
 ----------------------------------------
 ## 13. Historia zmian
+
+**0.6.3** (2021-04-13)
+
+  - **Ulepszenia**
+    - Otwieranie plików poprzez przeciągnięcie i upuszczenie na oknie ImPPG
+
+  - **Poprawki błędów**
+    - Błąd i zakończenie programu podczas przetwarzania wsadowego w trybie CPU z włączonym deringingiem
 
 **0.6.2** (2020-07-04)
 
