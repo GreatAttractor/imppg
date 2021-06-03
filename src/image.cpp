@@ -192,7 +192,10 @@ std::optional<std::unique_ptr<IImageBuffer>> c_FreeImageBuffer::Create(c_FreeIma
         }
     }
 
-    return result;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wredundant-move"
+    return std::move(result); // `std::move` needed for GCC earlier than v. 8
+#pragma GCC diagnostic pop
 }
 
 unsigned c_FreeImageBuffer::GetWidth() const { return FreeImage_GetWidth(m_FiBmp.get()); }
