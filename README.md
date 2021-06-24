@@ -28,6 +28,7 @@ version 0.6.3 (2021-04-13)
 - 11\. Building from source code
   - 11\.1\. Building under Linux and similar systems using GNU (or compatible) toolchain
     - 11\.1\.1. Building under Ubuntu 18.04
+    - 11\.1\.2. Packaging
   - 11\.2\. Building under MS Windows
   - 11\.3\. UI language
 - 12\. Acknowledgements
@@ -242,39 +243,40 @@ To remove any created CMake configuration, delete `CMakeCache.txt` and the `CMak
 ### 11.1. Building under Linux and similar systems using GNU (or compatible) toolchain
 
 *Note: CMake relies on the presence of the `wx-config` tool to detect and configure wxWidgets-related build options. Sometimes this tool can be named differently, e.g. in Fedora 23 with wxGTK3 packages from repository it is `wx-config-3.0`. Older versions of CMake may not accept it. This can be remedied e.g. by creating a symlink:*
-```
-sudo ln -s /usr/bin/wx-config-3.0 /usr/bin/wx-config
+```bash
+$ sudo ln -s /usr/bin/wx-config-3.0 /usr/bin/wx-config
 ```
 
 Download the source code manually or clone with Git:
-```
-git clone https://github.com/GreatAttractor/imppg.git
+```bash
+$ git clone https://github.com/GreatAttractor/imppg.git
 ```
 
 In the source folder, run:
-```
-mkdir build
-cd build
-cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
+```bash
+$ mkdir build
+$ cd build
+$ cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
 ```
 This creates a native `Makefile`. Unless you edit `config.in` again, from now on there is no need to run CMake.
 
 To compile ImPPG, run:
-```
-make
+```bash
+$ make
 ```
 You will find `imppg` executable in the `build` folder.
 
 To install ImPPG system-wide, run from the `build` folder:
-```
-sudo cmake -P cmake_install.cmake
+```bash
+$ sudo cmake -P cmake_install.cmake
 ```
 
 To uninstall, run:
-```
-cat install_manifest.txt | sudo xargs rm
+```bash
+$ cat install_manifest.txt | sudo xargs rm
 ```
 
+To use a different installation prefix, add `-DCMAKE_INSTALL_PREFIX=<my_dir>` to the initial CMake invocation.
 
 #### 11.1.1. Building under Ubuntu 18.04
 
@@ -285,11 +287,20 @@ git cmake build-essential libboost-dev libwxgtk3.0-gtk3-dev libglew-dev pkg-conf
 
 The default GCC version (7.x) is too old. Install and enable GCC 8 (example instructions: `https://linuxize.com/post/how-to-install-gcc-compiler-on-ubuntu-18-04/`). (Do not choose GCC 9, otherwise the built binary will not run on a clean Ubuntu 18.04 due to too old a version of `libstdc++`.)
 
-After building `imppg`, it can be either installed as in section 11.1, or a Debian package can be created by running:
+After building `imppg`, it can be either installed as in section 11.1, or a Debian package can be created and installed with `apt` (see 11.1.2).
+
+
+#### 11.1.2. Packaging
+
+In order to create a binary package, modify appropriately the final statement in `CMakeLists.txt`:
+```cmake
+include(packaging/ubuntu_20.04.cmake)
 ```
-cpack
+before calling CMake and building (see the `packaging` subdirectory for possible targets). After a successful build, the package can be created by running:
+```bash
+$ cpack
 ```
-and installed with `apt`.
+Note that building needs to be performed in an environment corresponding to the selected target system, so that proper shared objects are linked to (“environment” = a full system installation, a Docker image, or similar).
 
 
 ----------------------------------------
@@ -298,31 +309,31 @@ and installed with `apt`.
 The provided `CMakeLists.txt` supports the [MSYS2](http://www.msys2.org/) build environment. With manual configuration, other toolchains can also be used (e.g. MS Visual Studio).
 
 In order to build ImPPG (64-bit) under MSYS2, follow its installation instructions at http://www.msys2.org/. Then open the MSYS2/MinGW64 shell (after default installation: `c:\msys64\mingw64.exe`) and install the ImPPG's dependencies by running:
-```
-pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage mingw64/mingw-w64-x86_64-glew mingw64/mingw-w64-x86_64-wxmsw3.1
+```bash
+$ pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage mingw64/mingw-w64-x86_64-glew mingw64/mingw-w64-x86_64-wxmsw3.1
 ```
 
 Download the ImPPG's source code manually or clone it with Git:
-```
-git clone https://github.com/GreatAttractor/imppg.git
+```bash
+$ git clone https://github.com/GreatAttractor/imppg.git
 ```
 
 In the ImPPG source folder, run:
-```
-mkdir build
-cd build
-cmake -G "MSYS Makefiles" -DCMAKE_MAKE_PROGRAM=mingw32-make -DCMAKE_BUILD_TYPE=Release ..
+```bash
+$ mkdir build
+$ cd build
+$ cmake -G "MSYS Makefiles" -DCMAKE_MAKE_PROGRAM=mingw32-make -DCMAKE_BUILD_TYPE=Release ..
 ```
 This creates a native `Makefile`. Unless you edit `config.in` again, from now on there is no need to run CMake.
 
 To compile ImPPG, run:
-```
-mingw32-make
+```bash
+$ mingw32-make
 ```
 
 You will find `imppg.exe` executable in the `build` folder. It can be run from MSYS2 shell, from the ImPPG source folder:
-```
-build/imppg.exe
+```bash
+$ build/imppg.exe
 ```
 
 To run ImPPG from Windows Explorer, the subfolders `images`, `pl`, `shaders` and all the necessary DLLs must be placed at the same location as `imppg.exe`. See the MS Windows binary distribution (`imppg-win64.zip`) for an example.
@@ -335,15 +346,15 @@ To run ImPPG from Windows Explorer, the subfolders `images`, `pl`, `shaders` and
 ImPPG supports multiple user interface languages using the wxWidgets built-in internationalization facilities. All translatable strings in the source code are surrounded by the `_()` macro. Adding a new translation requires the `GNU gettext` package and consists of the following steps:
 
 - extraction of translatable strings from sources into a PO file by running:
-```
-xgettext -k_ src/*.cpp src/*.h -o imppg.po
+```bash
+$ xgettext -k_ src/*.cpp src/*.h -o imppg.po
 ```
 
 - translation of UI strings by editing the `msgstr` entries in `imppg.po`
 
 - converting `imppg.po` to binary form by running:
-```
-msgfmt imppg.po -o imppg.mo
+```bash
+$ msgfmt imppg.po -o imppg.mo
 ```
 
 - placing `imppg.mo` in a subdirectory with name equal to the language code (e.g. `pl`, `fr-ca`)

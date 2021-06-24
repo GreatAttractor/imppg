@@ -29,6 +29,7 @@ wersja 0.6.3 (2021-04-13)
 - 11\. Budowanie ze źródeł
   - 11\.1\. Budowanie w systemie Linux i podobnych z użyciem narzędzi GNU (lub kompatybilnych)
     - 11\.1\.1. Budowanie pod Ubuntu 18.04
+    - 11\.1\.2. Tworzenie pakietów
   - 11\.2\. Budowanie pod MS Windows
   - 11\.3\. Język UI
 - 12\. Podziękowania
@@ -246,37 +247,37 @@ By wyczyścić stworzoną przez CMake konfigurację budowania, należy usunąć 
 ### 11.1. Budowanie w systemie Linux i podobnych z użyciem narzędzi GNU (lub kompatybilnych)
 
 *Uwaga: CMake wymaga dostępności narzędzia `wx-config`, by wykryć wxWidgets i skonfigurować związane z nimi ustawienia. Czasami nazwa może być inna, np. w Fedorze 23 z pakietami wxGTK3 z repozytorium jest to `wx-config-3.0`. Można temu zaradzić np. tworząc dowiązanie symboliczne:*
-```
-sudo ln -s /usr/bin/wx-config-3.0 /usr/bin/wx-config
+```bash
+$ sudo ln -s /usr/bin/wx-config-3.0 /usr/bin/wx-config
 ```
 
 Kod źródłowy można pobrać ręcznie lub sklonować Gitem:
-```
-git clone https://github.com/GreatAttractor/imppg.git
+```bash
+$ git clone https://github.com/GreatAttractor/imppg.git
 ```
 
 W katalogu ze źródłami wykonać:
-```
-mkdir build
-cd build
-cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
+```bash
+$ mkdir build
+$ cd build
+$ cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
 ```
 Zostanie utworzony natywny plik `Makefile`. Dopóki `config.in` nie zostanie zmieniony, nie trzeba więcej uruchamiać CMake.
 
 By zbudować ImPPG, wykonać:
-```
-make
+```bash
+$ make
 ```
 W podkatalogu `build` pojawi się plik wykonywalny `imppg`.
 
 By zainstalować ImPPG dla wszystkich użytkowników, wykonać w podkatalogu `build`:
-```
-sudo cmake -P cmake_install.cmake
+```bash
+$ sudo cmake -P cmake_install.cmake
 ```
 
 By odinstalować:
-```
-cat install_manifest.txt | sudo xargs rm
+```bash
+$ cat install_manifest.txt | sudo xargs rm
 ```
 
 
@@ -290,10 +291,23 @@ git cmake build-essential libboost-dev libwxgtk3.0-gtk3-dev libglew-dev pkg-conf
 Domyślna wersja GCC (7.x) jest zbyt stara. Należy zainstalować i uaktywnić GCC 8 (przykładowa instrukcja: `https://linuxize.com/post/how-to-install-gcc-compiler-on-ubuntu-18-04/`). (Nie należy wybierać GCC 9, w przeciwnym razie zbudowany plik wykonywalny nie będzie działał na czystej instalacji Ubuntu 18.04 z powodu przestarzałej wersji `libstdc++`).
 
 Po zbudowaniu można zainstalować ImPPG jak w p. 11.1; można też stworzyć pakiet debianowski poleceniem:
-```
-cpack
+```bash
+$ cpack
 ```
 który można następnie zainstalować narzędziem `apt`.
+
+
+#### 11.1.2. Tworzenie pakietów
+
+By stworzyć pakiet binarny, należy zmodyfikować ostatnią instrukcję w `CMakeLists.txt`:
+```cmake
+include(packaging/ubuntu_20.04.cmake)
+```
+przed wywołaniem CMake i zbudowaniem programu (lista możliwych pakietów - zob. podkatalog `packaging`). Po udanej kompilacji pakiet można stworzyć poleceniem:
+```bash
+$ cpack
+```
+Uwaga: kompilacja musi być przeprowadzona w środowisku odpowiadającym wybranemu rodzajowi pakietu, tak by dołączone zostały właściwe biblioteki dynamiczne („środowisko” = pełna instalacja systemu, obraz Dockera itp.).
 
 
 ----------------------------------------
@@ -302,30 +316,30 @@ który można następnie zainstalować narzędziem `apt`.
 Dostarczony plik `CMakeLists.txt` umożliwia budowanie w środowisku [MSYS2](http://www.msys2.org/). W przypadku ręcznej konfiguracji można użyć również innych środowisk (np. MS Visual Studio).
 
 By zbudować z użyciem MSYS2, należy zainstalować środowisko zgodnie z instrukcją na http://www.msys2.org/. Następnie otworzyć konsolę MSYS2/MinGW64 (przy domyślnej instalacji: `c:\msys64\mingw64.exe`) i zainstalować narzędzia i biblioteki wymagane przez ImPPG:
-```
-pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage mingw64/mingw-w64-x86_64-glew mingw64/mingw-w64-x86_64-wxmsw3.1
+```bash
+$ pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage mingw64/mingw-w64-x86_64-glew mingw64/mingw-w64-x86_64-wxmsw3.1
 ```
 
 Kod źródłowy ImPPG można pobrać ręcznie lub sklonować Gitem:
-```
-git clone https://github.com/GreatAttractor/imppg.git
+```bash
+$ git clone https://github.com/GreatAttractor/imppg.git
 ```
 
 W katalogu ze źródłami wykonać:
-```
-mkdir build
-cd build
-cmake -G "MSYS Makefiles" -DCMAKE_MAKE_PROGRAM=mingw32-make -DCMAKE_BUILD_TYPE=Release ..
+```bash
+$ mkdir build
+$ cd build
+$ cmake -G "MSYS Makefiles" -DCMAKE_MAKE_PROGRAM=mingw32-make -DCMAKE_BUILD_TYPE=Release ..
 ```
 Zostanie utworzony natywny plik `Makefile`. Dopóki `config.in` nie zostanie zmieniony, nie trzeba więcej uruchamiać CMake.
 
 By zbudować ImPPG, wykonać:
-```
-mingw32-make
+```bash
+$ mingw32-make
 ```
 W podkatalogu `build` pojawi się plik wykonywalny `imppg.exe`. Można go uruchomić z konsoli MSYS2 z katalogu ze źródłami ImPPG:
-```
-build/imppg.exe
+```bash
+$ build/imppg.exe
 ```
 
 By uruchomić ImPPG z Eksploratora Windowa, podkatalogi `images`, `pl`, `shaders` i wszystkie niezbędne pliki DLL muszą znajdować się w tym samym miejscu, co `imppg.exe`. Przykład: dystrybucja binarna dla MS Windows (`imppg-win64.zip`).
@@ -338,15 +352,15 @@ By uruchomić ImPPG z Eksploratora Windowa, podkatalogi `images`, `pl`, `shaders
 ImPPG obsługuje wielojęzyczny interfejs użytkownika poprzez wbudowane funkcje regionalizacji biblioteki wxWidgets. Wszystkie wymagające tłumaczenia napisy w kodzie źródłowym otoczone są makrem `_()`. Dla dodania nowego tłumaczenia wymagany jest pakiet `GNU gettext` i wykonanie następujących kroków:
 
 - ekstrakcja napisów do przetłumaczenia z kodu źródłowego do pliku PO poprzez wykonanie:
-```
-    xgettext -k_ src/*.cpp src/*.h -o imppg.po
+```bash
+    $ xgettext -k_ src/*.cpp src/*.h -o imppg.po
 ```
 
 - przetłumaczenie napisów UI, tj. edycja wpisów `msgstr` w `imppg.po`
 
 - konwersja `imppg.po` do postaci binarnej:
-```
-    msgfmt imppg.po -o imppg.mo
+```bash
+    $ msgfmt imppg.po -o imppg.mo
 ```
 
 - umieszczenie `imppg.mo` w podkatalogu o nazwie będącej kodem języka (np. `pl`, `fr-ca`)
