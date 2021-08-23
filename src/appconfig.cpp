@@ -72,6 +72,7 @@ namespace Keys
     const char* ToolIconSize =           UserInterfaceGroup"/ToolIconSize";
     const char* ToneCurveEditorNumDrawSegments = UserInterfaceGroup"/ToneCurveEditorNumDrawSegments";
     const char* ToneCurveEditorColors =  UserInterfaceGroup"/ToneCurveEditorColors";
+    const char* FileOutputFormat =       UserInterfaceGroup"/FileOutputFormat";
 
     const char* ToneCurveEditor_CurveColor                 = UserInterfaceGroup"/ToneCurveEditor_CurveColor";
     const char* ToneCurveEditor_BackgroundColor            = UserInterfaceGroup"/ToneCurveEditor_BackgroundColor";
@@ -191,17 +192,22 @@ PROPERTY_RECT(AlignProgressDialogPosSize);
 PROPERTY_RECT(AlignParamsDialogPosSize);
 PROPERTY_RECT(ToneCurveSettingsDialogPosSize);
 
-c_Property<OutputFormat> BatchOutputFormat(
-    []()
-    {
-        long result = appConfig->ReadLong(Keys::BatchOutputFormat, static_cast<long>(OutputFormat::BMP_8));
-        if (result < 0 || result >= static_cast<long>(OutputFormat::LAST))
-            return OutputFormat::BMP_8;
+// Finds and uses wxFromString() and wxToString() defined above
+#define PROPERTY_OUTPUT_FORMAT(Name)                                                                       \
+    c_Property<OutputFormat> Name(                                                                         \
+        []()                                                                                               \
+        {                                                                                                  \
+            long result = appConfig->ReadLong(Keys::Name, static_cast<long>(OutputFormat::BMP_8));         \
+            if (result < 0 || result >= static_cast<long>(OutputFormat::LAST))                             \
+                return OutputFormat::BMP_8;                                                                \
+                                                                                                           \
+            return static_cast<OutputFormat>(result);                                                      \
+        },                                                                                                 \
+        [](const OutputFormat &val) { appConfig->Write(Keys::Name, static_cast<long>(val)); }              \
+    )
 
-        return static_cast<OutputFormat>(result);
-    },
-    [](const OutputFormat &val) { appConfig->Write(Keys::BatchOutputFormat, static_cast<long>(val)); }
-);
+PROPERTY_OUTPUT_FORMAT(FileOutputFormat);
+PROPERTY_OUTPUT_FORMAT(BatchOutputFormat);
 
 c_Property<ToneCurveEditorColors> ToneCurveColors(
     []()

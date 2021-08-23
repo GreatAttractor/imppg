@@ -78,6 +78,7 @@ namespace Configuration
     /// Code of UI language to use or an empty string (then the system default will used)
     extern c_Property<wxString> UiLanguage;
     extern c_Property<bool>     LogHistogram;
+    extern c_Property<OutputFormat> FileOutputFormat;
     extern c_Property<OutputFormat> BatchOutputFormat;
     extern c_Property<int>      ProcessingPanelWidth;
     extern c_Property<unsigned> ToolIconSize;
@@ -108,7 +109,7 @@ namespace Configuration
     /// If the value is too large wrt. the GPU's performance, the user will experience worsened
     /// responsiveness of the L-R controls (i.e. each change of L-R parameters will block the GUI for
     /// a noticeable moment - a time it takes for the OpenGL command batch to complete).
-    extern c_Property<unsigned>LRCmdBatchSizeMpixIters;
+    extern c_Property<unsigned> LRCmdBatchSizeMpixIters;
 }
 
 #endif
