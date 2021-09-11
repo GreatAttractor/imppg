@@ -302,6 +302,27 @@ $ cpack
 ```
 Note that building needs to be performed in an environment corresponding to the selected target system, so that proper shared objects are linked to (“environment” = a full system installation, a Docker image, or similar).
 
+#### 11.1.3. Building for macOS
+
+*Note: macOS build and support is still work-in-progress*
+
+To build ImPPG for macOS you will need Xcode and [Homebrew](https://brew.sh) installed.
+
+OpenMP is not supported yet as Apple has disabled OpenMP in clang toolchain distributed with Xcode. At this writing the build method has been verified on macOS Big Sur 11.5.2 and Xcode 12.5.1.
+
+Install follwowing libraries with Homebrew:
+```bash
+$ brew update
+$ brew install cmake freeimage glew wxwidgets cfitsio
+```
+
+Now follow Linux build steps:
+```bash
+$ mkdir build
+$ cd build
+$ cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
+$ make -j8
+```
 
 ----------------------------------------
 ### 11.2. Building under MS Windows

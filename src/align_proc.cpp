@@ -45,6 +45,9 @@ File description:
 #include "lrdeconv.h"
 #if USE_FREEIMAGE
 #include "FreeImage.h"
+#ifdef __APPLE__
+   #undef _WINDOWS_
+#endif
 #else
 #include "tiff.h"
 #include "bmp.h"
