@@ -310,7 +310,7 @@ To build ImPPG for macOS you will need Xcode and [Homebrew](https://brew.sh) ins
 
 OpenMP is not supported yet as Apple has disabled OpenMP in clang toolchain distributed with Xcode. At this writing the build method has been verified on macOS Big Sur 11.5.2 and Xcode 12.5.1.
 
-Install follwowing libraries with Homebrew:
+Install following libraries with Homebrew:
 ```bash
 $ brew update
 $ brew install cmake freeimage glew wxwidgets cfitsio
