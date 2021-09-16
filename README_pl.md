@@ -30,6 +30,7 @@ wersja 0.6.3 (2021-04-13)
   - 11\.1\. Budowanie w systemie Linux i podobnych z użyciem narzędzi GNU (lub kompatybilnych)
     - 11\.1\.1. Budowanie pod Ubuntu 18.04
     - 11\.1\.2. Tworzenie pakietów
+    - 11\.1\.3. Budowanie pod macOS
   - 11\.2\. Budowanie pod MS Windows
   - 11\.3\. Język UI
 - 12\. Podziękowania
@@ -309,6 +310,29 @@ $ cpack
 ```
 Uwaga: kompilacja musi być przeprowadzona w środowisku odpowiadającym wybranemu rodzajowi pakietu, tak by dołączone zostały właściwe biblioteki dynamiczne („środowisko” = pełna instalacja systemu, obraz Dockera itp.).
 
+#### 11.1.3. Budowanie pod macOS
+
+*Uwaga: Budowanie pod macOS nie jest jeszcze w pełni ukończone.*
+
+Do budowy ImPPG pod macOS wymagana jest instalacja Xcode oraz [Homebrew](https://brew.sh).
+
+OpenMP nie jest obecnie używany ponieważ Apple wyłączył OpenMP w kompilatorze clang dystrybuowanym razem z Xcode. Obecna metoda budowy została przetestowana we wrzesniu 2021 na macOS Big Sur 11.6 oraz Xcode 12.5.1.
+
+Zainstaluj poniższe biblioteki i narzędzia uzywając Homebrew:
+```bash
+$ brew update
+$ brew install boost cfitsio cmake freeimage glew mesa pkg-config wxwidgets
+```
+
+Wykonaj poniższe instrukcje podobnie jak na Linux'ie:
+```bash
+$ mkdir build
+$ cd build
+$ cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
+$ make -j8
+$ make install
+$ imppg
+```
 
 ----------------------------------------
 ### 11.2. Budowanie pod MS Windows
