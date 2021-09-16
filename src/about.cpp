@@ -162,7 +162,6 @@ public:
 
 void c_AboutDialog::OnLibrariesClick(wxCommandEvent&)
 {
-    // glGetString() segfaults on macOS. I guess GL Context is not initialized.
 #if USE_OPENGL_BACKEND
     const wxString glRenderer{glGetString(GL_RENDERER)};
     const wxString glVersion{glGetString(GL_VERSION)};

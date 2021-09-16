@@ -29,6 +29,7 @@ version 0.6.3 (2021-04-13)
   - 11\.1\. Building under Linux and similar systems using GNU (or compatible) toolchain
     - 11\.1\.1. Building under Ubuntu 18.04
     - 11\.1\.2. Packaging
+    - 11\.1\.3. Building for macOS
   - 11\.2\. Building under MS Windows
   - 11\.3\. UI language
 - 12\. Acknowledgements
@@ -308,12 +309,12 @@ Note that building needs to be performed in an environment corresponding to the 
 
 To build ImPPG for macOS you will need Xcode and [Homebrew](https://brew.sh) installed.
 
-OpenMP is not supported yet as Apple has disabled OpenMP in clang toolchain distributed with Xcode. At this writing the build method has been verified on macOS Big Sur 11.5.2 and Xcode 12.5.1.
+OpenMP is not supported yet as Apple has disabled OpenMP in clang toolchain distributed with Xcode. As of September 2021 the build method has been verified on macOS Big Sur 11.6 and Xcode 12.5.1.
 
 Install following libraries with Homebrew:
 ```bash
 $ brew update
-$ brew install cmake freeimage glew wxwidgets cfitsio
+$ brew install boost cfitsio cmake freeimage glew mesa pkg-config wxwidgets
 ```
 
 Now follow Linux build steps:
@@ -322,6 +323,8 @@ $ mkdir build
 $ cd build
 $ cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
 $ make -j8
+$ make install
+$ imppg
 ```
 
 ----------------------------------------
