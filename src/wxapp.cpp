@@ -36,6 +36,10 @@ File description:
 #include "main_window.h"
 #if USE_FREEIMAGE
 #include "FreeImage.h" // on MSW it has to be the last include (to make sure no wxW header follows it)
+// On macOS FreeImage.h from Homebrew defines _WINDOWS_ (sic!) which affects negatively wx and who knows what else.
+#ifdef __APPLE__
+   #undef _WINDOWS_
+#endif
 #endif
 
 bool c_MyApp::OnInit()

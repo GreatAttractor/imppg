@@ -37,6 +37,9 @@ File description:
 #include "image.h"
 #if (USE_FREEIMAGE)
   #include "FreeImage.h"
+  #ifdef __APPLE__
+    #undef _WINDOWS_
+  #endif
 #else
   #include "bmp.h"
   #include "tiff.h"
