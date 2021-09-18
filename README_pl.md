@@ -316,15 +316,15 @@ Uwaga: kompilacja musi być przeprowadzona w środowisku odpowiadającym wybrane
 
 Do budowy ImPPG pod macOS wymagana jest instalacja Xcode oraz [Homebrew](https://brew.sh).
 
-OpenMP nie jest obecnie używany ponieważ Apple wyłączył OpenMP w kompilatorze clang dystrybuowanym razem z Xcode. Obecna metoda budowy została przetestowana we wrzesniu 2021 na macOS Big Sur 11.6 oraz Xcode 12.5.1.
+OpenMP nie jest obecnie używany, ponieważ Apple wyłączył OpenMP w kompilatorze clang dystrybuowanym razem z Xcode. Obecna metoda budowy została przetestowana we wrześniu 2021 na macOS Big Sur 11.6 oraz Xcode 12.5.1.
 
-Zainstaluj poniższe biblioteki i narzędzia uzywając Homebrew:
+Zainstaluj poniższe biblioteki i narzędzia używając Homebrew:
 ```bash
 $ brew update
 $ brew install boost cfitsio cmake freeimage glew mesa pkg-config wxwidgets
 ```
 
-Wykonaj poniższe instrukcje podobnie jak na Linux'ie:
+Wykonaj poniższe instrukcje podobnie jak na Linuksie:
 ```bash
 $ mkdir build
 $ cd build
