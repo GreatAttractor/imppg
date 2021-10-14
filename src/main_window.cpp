@@ -316,7 +316,6 @@ void c_MainWindow::SelectLanguage()
         "polski",
         L"русский",
         L"українська",
-	"Deutsch",
 
         // After creating a new translation file, add the language name here
     };
@@ -387,9 +386,14 @@ void c_MainWindow::OnSaveFile()
     }
 
     wxFileDialog dlg(this, _("Save image"), Configuration::FileSavePath, wxEmptyString, GetOutputFilters(), wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+
+    const OutputFormat prev_output_format = Configuration::FileOutputFormat;
+    dlg.SetFilterIndex(static_cast<int>(prev_output_format));
+
     if (wxID_OK == dlg.ShowModal())
     {
         Configuration::FileSavePath = wxFileName(dlg.GetPath()).GetPath();
+        Configuration::FileOutputFormat = static_cast<OutputFormat>(dlg.GetFilterIndex());
         const c_Image processedImg = m_BackEnd->GetProcessedSelection();
         if (!processedImg.SaveToFile(dlg.GetPath().ToStdString(), static_cast<OutputFormat>(dlg.GetFilterIndex())))
         {
