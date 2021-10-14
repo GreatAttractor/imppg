@@ -4,16 +4,16 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: \n"
+"Project-Id-Version: ImPPG\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2021-10-13 10:16-0700\n"
-"PO-Revision-Date: 2021-10-14 14:58-0700\n"
+"PO-Revision-Date: 2021-10-14 16:54-0700\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Last-Translator: \n"
-"Language-Team: \n"
+"Language-Team: Marcel Hoffmann\n"
 "X-Generator: Poedit 2.2.4\n"
 
 #: src/about.cpp:191
@@ -147,11 +147,11 @@ msgstr ""
 
 #: src/align_params.cpp:257
 msgid "Crop to intersection"
-msgstr "Crop to intersection"
+msgstr "Bild an den inneren Kanten abschneiden"
 
 #: src/align_params.cpp:258
 msgid "Pad to bounding box"
-msgstr "Pad to bounding box"
+msgstr "Bild zu den äußeren Kanten hin vergrößern"
 
 #: src/align_params.cpp:268
 msgid "Stabilize high-contrast features"
@@ -754,7 +754,7 @@ msgstr "Skalierungsfunktion"
 
 #: src/main_window.cpp:1619
 msgid "Align image sequence..."
-msgstr "Bilderstapel ausrichten..."
+msgstr "Bildersequenz ausrichten..."
 
 #: src/main_window.cpp:1629
 msgid "About ImPPG..."
