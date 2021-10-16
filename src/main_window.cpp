@@ -316,6 +316,7 @@ void c_MainWindow::SelectLanguage()
         "polski",
         L"русский",
         L"українська",
+	"Deutsch",
 
         // After creating a new translation file, add the language name here
     };
