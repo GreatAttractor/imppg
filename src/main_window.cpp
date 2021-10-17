@@ -316,7 +316,7 @@ void c_MainWindow::SelectLanguage()
         "polski",
         L"русский",
         L"українська",
-	"Deutsch",
+        "Deutsch",
 
         // After creating a new translation file, add the language name here
     };
@@ -327,7 +327,7 @@ void c_MainWindow::SelectLanguage()
         wxLANGUAGE_POLISH,
         wxLANGUAGE_RUSSIAN,
         wxLANGUAGE_UKRAINIAN,
-	wxLANGUAGE_GERMAN
+        wxLANGUAGE_GERMAN
     };
     const int NUM_LANGS_SUPPORTED = 5; // Has to be equal to number of elements in 'languageNames' and 'langIds'
     static_assert(NUM_LANGS_SUPPORTED == sizeof(languageNames) / sizeof(languageNames[0]));

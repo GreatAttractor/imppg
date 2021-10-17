@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: ImPPG\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2021-10-13 10:16-0700\n"
-"PO-Revision-Date: 2021-10-14 16:54-0700\n"
+"PO-Revision-Date: 2021-10-17 00:02-0700\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -74,7 +74,7 @@ msgid ""
 "(e.g. sunspots, filaments, prominences, craters) stationary."
 msgstr ""
 "Eine universelle Methode. Fixiert die kontrastreichen Merkmale\n"
-"(z.B. Sonnenflecken, Filamente, Protuberanzen, Krater)"
+"(z.B. Sonnenflecken, Filamente, Protuberanzen, Krater)."
 
 #: src/align_params.cpp:75
 msgid ""
@@ -489,7 +489,9 @@ msgstr "Leerlauf"
 msgid ""
 "Failed to initialize OpenGL!\n"
 "Reverting to CPU mode."
-msgstr "Konnte OpenGL nicht initialisieren! Setze Modus auf CPU zurück."
+msgstr ""
+"Konnte OpenGL nicht initialisieren!\n"
+"Setze Modus auf CPU zurück."
 
 #: src/main_window.cpp:929
 #, c-format
