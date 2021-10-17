@@ -398,6 +398,7 @@ Dystrybucja binarna ImPPG potrzebuje jedynie plików MO (binarnych). Oprócz pli
 ## 12. Podziękowania
 
 Tłumaczenie na jęz. rosyjski i ukraiński: Rusłan Pazenko.
+Tłumaczenie na jęz. niemiecki: Marcel Hoffmann.
 
 
 ----------------------------------------

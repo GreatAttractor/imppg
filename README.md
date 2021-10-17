@@ -392,6 +392,7 @@ Binary distribution of ImPPG needs only the MO (binary) language files. Beside t
 ## 12. Acknowledgements
 
 Russian and Ukrainian translations: Rusłan Pazenko.
+German translation: Marcel Hoffmann.
 
 
 ----------------------------------------
