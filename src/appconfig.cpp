@@ -60,19 +60,20 @@ namespace Keys
 {
 #define UserInterfaceGroup "/UserInterface"
 
-    const char* FileOpenPath =           UserInterfaceGroup"/FileOpenPath";
-    const char* FileSavePath =           UserInterfaceGroup"/FileSavePath";
-    const char* MainWindowPosSize =      UserInterfaceGroup"/MainWindowPosSize";
-    const char* MainWindowMaximized =    UserInterfaceGroup"/MainWindowMaximized";
+    const char* FileOpenPath           = UserInterfaceGroup"/FileOpenPath";
+    const char* FileSavePath           = UserInterfaceGroup"/FileSavePath";
+    const char* MainWindowPosSize      = UserInterfaceGroup"/MainWindowPosSize";
+    const char* MainWindowMaximized    = UserInterfaceGroup"/MainWindowMaximized";
     const char* ToneCurveEditorPosSize = UserInterfaceGroup"/ToneCurveEditorPosSize";
     const char* ToneCurveEditorVisible = UserInterfaceGroup"/ToneCurveEditorVisible";
-    const char* SaveSettingsPath =       UserInterfaceGroup"/SaveSettingsPath";
-    const char* LoadSettingsPath =       UserInterfaceGroup"/LoadSettingsPath";
-    const char* ProcessingPanelWidth =   UserInterfaceGroup"/ProcessingPanelWidth";
-    const char* ToolIconSize =           UserInterfaceGroup"/ToolIconSize";
+    const char* SaveSettingsPath       = UserInterfaceGroup"/SaveSettingsPath";
+    const char* LoadSettingsPath       = UserInterfaceGroup"/LoadSettingsPath";
+    const char* ProcessingPanelWidth   = UserInterfaceGroup"/ProcessingPanelWidth";
+    const char* ToolIconSize           = UserInterfaceGroup"/ToolIconSize";
     const char* ToneCurveEditorNumDrawSegments = UserInterfaceGroup"/ToneCurveEditorNumDrawSegments";
-    const char* ToneCurveEditorColors =  UserInterfaceGroup"/ToneCurveEditorColors";
-    const char* FileOutputFormat =       UserInterfaceGroup"/FileOutputFormat";
+    const char* ToneCurveEditorColors  = UserInterfaceGroup"/ToneCurveEditorColors";
+    const char* FileOutputFormat       = UserInterfaceGroup"/FileOutputFormat";
+    const char* FileInputFormatIndex   = UserInterfaceGroup"/FileInputFormatIndex";
 
     const char* ToneCurveEditor_CurveColor                 = UserInterfaceGroup"/ToneCurveEditor_CurveColor";
     const char* ToneCurveEditor_BackgroundColor            = UserInterfaceGroup"/ToneCurveEditor_BackgroundColor";
@@ -83,18 +84,18 @@ namespace Keys
     const char* ToneCurveEditor_CurvePointSize             = UserInterfaceGroup"/ToneCurveEditor_CurvePointSize";
     const char* ToneCurveSettingsDialogPosSize             = UserInterfaceGroup"/ToneCurveSettingsDialogPosSize";
 
-    const char* BatchFileOpenPath =          UserInterfaceGroup"/BatchFilesOpenPath";
-    const char* BatchLoadSettingsPath =      UserInterfaceGroup"/BatchLoadSettingsPath";
-    const char* BatchOutputPath =            UserInterfaceGroup"/BatchOutputPath";
-    const char* BatchDialogPosSize =         UserInterfaceGroup"/BatchDlgPosSize";
-    const char* BatchProgressDialogPosSize = UserInterfaceGroup"/BatchProgressDlgPosSize";
-    const char* BatchOutputFormat =          UserInterfaceGroup"/BatchOutputFormat";
+    const char* BatchFileOpenPath           = UserInterfaceGroup"/BatchFilesOpenPath";
+    const char* BatchLoadSettingsPath       = UserInterfaceGroup"/BatchLoadSettingsPath";
+    const char* BatchOutputPath             = UserInterfaceGroup"/BatchOutputPath";
+    const char* BatchDialogPosSize          = UserInterfaceGroup"/BatchDlgPosSize";
+    const char* BatchProgressDialogPosSize  = UserInterfaceGroup"/BatchProgressDlgPosSize";
+    const char* BatchOutputFormat           = UserInterfaceGroup"/BatchOutputFormat";
 
 
-    const char* AlignInputPath =             UserInterfaceGroup"/AlignInputPath";
-    const char* AlignOutputPath =            UserInterfaceGroup"/AlignOutputPath";
-    const char* AlignProgressDialogPosSize = UserInterfaceGroup"/AlignProgressDlgPosSize";
-    const char* AlignParamsDialogPosSize =   UserInterfaceGroup"/AlignParamsDlgPosSize";
+    const char* AlignInputPath              = UserInterfaceGroup"/AlignInputPath";
+    const char* AlignOutputPath             = UserInterfaceGroup"/AlignOutputPath";
+    const char* AlignProgressDialogPosSize  = UserInterfaceGroup"/AlignProgressDlgPosSize";
+    const char* AlignParamsDialogPosSize    = UserInterfaceGroup"/AlignParamsDlgPosSize";
 
     /// Indicates maximum frequency (in Hz) of issuing new processing requests by tone curve editor and numerical control sliders
     const char* MAX_PROCESSING_REQUESTS_PER_SEC =  UserInterfaceGroup"/MaxProcessingRequestsPerSecond";
@@ -284,6 +285,7 @@ PROPERTY_UNSIGNED(ToneCurveEditor_CurvePointSize, 4);
 PROPERTY_INT(ProcessingPanelWidth, -1);
 PROPERTY_UNSIGNED(ToolIconSize, DEFAULT_TOOL_ICON_SIZE);
 PROPERTY_UNSIGNED(ToneCurveEditorNumDrawSegments, DEFAULT_TONE_CURVE_EDITOR_NUM_DRAW_SEGMENTS);
+PROPERTY_INT(FileInputFormatIndex, 0);
 
 /// Returns a list of the most recently used saved/loaded settings files
 wxArrayString GetMruSettings()

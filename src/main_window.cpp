@@ -987,9 +987,12 @@ void c_MainWindow::OnOpenFile(wxCommandEvent&)
     wxFileDialog dlg(this, _("Open image file"), Configuration::FileOpenPath, "",
         INPUT_FILE_FILTERS, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 
+    dlg.SetFilterIndex(Configuration::FileInputFormatIndex);
+
     if (dlg.ShowModal() == wxID_OK)
     {
         Configuration::FileOpenPath = dlg.GetDirectory();
+        Configuration::FileInputFormatIndex = dlg.GetFilterIndex();
         wxFileName path = dlg.GetPath();
         OpenFile(path, true);
     }
