@@ -822,7 +822,7 @@ void c_ImageAlignmentWorkerThread::LimbAlignment()
     SendMessageToParent(EID_LIMB_USING_RADIUS, 0, wxEmptyString, &payload);
 
     std::vector<FloatPoint_t> translation; // i-th element is the required translation of i-th image relative to the first image; the first element is (0, 0)
-    double cx0, cy0; // disc center relative to the first image's origin (upper-left corner)
+    double cx0{}, cy0{}; // disc center relative to the first image's origin (upper-left corner)
 
     for (unsigned i = 0; i < limbPoints.size(); i++)
     {
