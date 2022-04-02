@@ -214,6 +214,10 @@ ImPPG przechowuje pewne ustawienia (np. pozycję i rozmiar okna głównego) w pl
 ----------------------------------------
 ## 9. Znane problemy
 
+  - (wxWidgets 3.0.5 + Linux) Tryb OpenGL nie działa prawidłowo, jeśli globalne skalowanie ekranu jest ustawione na 200% lub więcej (tylko 1/4 obszaru podglądu jest wypełniona, kliknięcia przycisków myszy są rejestrowane w błędnym położeniu). Możliwe obejścia:
+    - uruchomić ImPPG z wyłączonym skalowaniem UI, np. pod Fedorą 35/KDE wykonać: `GDK_SCALE= GDK_DPI_SCALE=1 imppg`
+    - używać trybu „CPU + bitmapy”
+
   - ImPPG zapamiętuje i przywraca pozycję i wielkość okna głównego i okna edytora krzywej tonalnej. Może się zdarzyć, że środowisko graficzne rozmieści okna nieprawidłowo i np. okno krzywej tonalnej pozostanie poza ekranem. W takim przypadku należy użyć polecenia menu `Ustawienia`/`Resetuj pozycję okna krzywej tonalej`, lub skasować plik konfiguracyjny ImPPG (zob. pkt. 8).
 
   - (tryb OpenGL, MS Windows 8.1, Intel HD Graphics 5500, sterownik 10.18.14.5074) Tryb interpolacji sześciennej działa niepoprawnie (błąd w kompilatorze shaderów albo przekroczenie limitu liczby odczytów tekstury); zamiast niego zalecane jest wybranie "Widok/Metoda skalowania/Liniowe" instead. Pod Linuksem (Fedora 29 5.3.11-100, Mesa 18.3.6) ten sam sprzęt działa poprawnie.
