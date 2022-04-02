@@ -21,22 +21,23 @@ File description:
     Normalization dialog implementation.
 */
 
-#include <wx/sizer.h>
-#include <wx/button.h>
-#include <wx/stattext.h>
-#include <wx/textctrl.h>
-#include <wx/valnum.h>
-#include <wx/valgen.h>
-#include <wx/checkbox.h>
-
 #include "ctrl_ids.h"
 #include "normalize.h"
+
+#include <wx/button.h>
+#include <wx/checkbox.h>
+#include <wx/msgdlg.h>
+#include <wx/sizer.h>
+#include <wx/stattext.h>
+#include <wx/textctrl.h>
+#include <wx/valgen.h>
+
 
 const int BORDER = 5; ///< Border size (in pixels between) controls
 
 BEGIN_EVENT_TABLE(c_NormalizeDialog, wxDialog)
-    EVT_CLOSE(c_NormalizeDialog::OnClose)
     EVT_CHECKBOX(ID_NormalizationEnabled, c_NormalizeDialog::OnCommandEvent)
+    EVT_BUTTON(wxID_OK, c_NormalizeDialog::OnCommandEvent)
 END_EVENT_TABLE()
 
 c_NormalizeDialog::c_NormalizeDialog(wxWindow* parent, bool normalizationEnabled, float minLevel, float maxLevel)
@@ -53,8 +54,8 @@ c_NormalizeDialog::c_NormalizeDialog(wxWindow* parent, bool normalizationEnabled
     TransferDataToWindow();
     if (!m_NormalizationEnabled)
     {
-        FindWindowById(ID_MinLevel, this)->Disable();
-        FindWindowById(ID_MaxLevel, this)->Disable();
+        m_MinLevelPercentCtrl->Disable();
+        m_MaxLevelPercentCtrl->Disable();
     }
 }
 
@@ -63,17 +64,34 @@ void c_NormalizeDialog::OnCommandEvent(wxCommandEvent& event)
     switch (event.GetId())
     {
     case ID_NormalizationEnabled:
-        FindWindowById(ID_MinLevel, this)->Enable(event.IsChecked());
-        FindWindowById(ID_MaxLevel, this)->Enable(event.IsChecked());
+        m_MinLevelPercentCtrl->Enable(event.IsChecked());
+        m_MaxLevelPercentCtrl->Enable(event.IsChecked());
+        TransferDataFromWindow();
+        break;
+
+    case wxID_OK:
+        if (m_NormalizationEnabled)
+        {
+            double minVal{}, maxVal{};
+            // not writing directly to `m_Min/MaxLevelPercentCtrl` in case only a part of a string got parsed
+            if (!m_MinLevelPercentCtrl->GetValue().ToDouble(&minVal) ||
+                !m_MaxLevelPercentCtrl->GetValue().ToDouble(&maxVal))
+            {
+                wxMessageBox(_("Invalid number."), _("Error"), wxICON_ERROR, this);
+            }
+            else
+            {
+                m_MinLevelPercent = minVal;
+                m_MaxLevelPercent = maxVal;
+                event.Skip();
+            }
+        }
+        else
+        {
+            event.Skip();
+        }
         break;
     }
-}
-
-void c_NormalizeDialog::OnClose(wxCloseEvent& event)
-{
-    if (GetReturnCode() == wxID_OK)
-        TransferDataFromWindow();
-    event.Skip();
 }
 
 void c_NormalizeDialog::InitControls()
@@ -90,15 +108,19 @@ void c_NormalizeDialog::InitControls()
 
     wxSizer* szMin = new wxBoxSizer(wxHORIZONTAL);
     szMin->Add(new wxStaticText(this, wxID_ANY, _("Set the darkest input pixels to:")), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
-    szMin->Add(new wxTextCtrl(this, ID_MinLevel, "0.0", wxDefaultPosition, wxDefaultSize, 0, wxFloatingPointValidator<double>(5, &m_MinLevelPercent)),
-        0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+
+    m_MinLevelPercentCtrl = new wxTextCtrl(this, wxID_ANY, wxString::Format("%.1f", m_MinLevelPercent));
+    szMin->Add(m_MinLevelPercentCtrl, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+
     szMin->Add(new wxStaticText(this, wxID_ANY, "%"), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
     szTop->Add(szMin, 0, wxGROW | wxALL, BORDER);
 
     wxSizer* szMax = new wxBoxSizer(wxHORIZONTAL);
     szMax->Add(new wxStaticText(this, wxID_ANY, _("Set the brightest input pixels to:")), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
-    szMax->Add(new wxTextCtrl(this, ID_MaxLevel, "100.0", wxDefaultPosition, wxDefaultSize, 0, wxFloatingPointValidator<double>(5, &m_MaxLevelPercent)),
-        0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+
+    m_MaxLevelPercentCtrl = new wxTextCtrl(this, wxID_ANY, wxString::Format("%.1f", m_MaxLevelPercent));
+    szMax->Add(m_MaxLevelPercentCtrl, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+
     szMax->Add(new wxStaticText(this, wxID_ANY, "%"), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
     szTop->Add(szMax, 0, wxGROW | wxALL, BORDER);
 

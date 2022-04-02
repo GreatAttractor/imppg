@@ -26,18 +26,11 @@ File description:
 
 #include <wx/dialog.h>
 #include <wx/event.h>
+#include <wx/textctrl.h>
+
 
 class c_NormalizeDialog: public wxDialog
 {
-    void InitControls();
-
-    bool m_NormalizationEnabled;
-    double m_MinLevelPercent;
-    double m_MaxLevelPercent;
-
-    void OnClose(wxCloseEvent& event);
-    void OnCommandEvent(wxCommandEvent& event);
-
 public:
     c_NormalizeDialog(wxWindow* parent, bool normalizationEnabled, float minLevel, float maxLevel);
 
@@ -45,7 +38,20 @@ public:
     double GetMinLevel() { return m_MinLevelPercent/100.0f; }
     double GetMaxLevel() { return m_MaxLevelPercent/100.0f; }
 
+
     DECLARE_EVENT_TABLE()
+
+private:
+    void InitControls();
+
+    void OnCommandEvent(wxCommandEvent& event);
+
+    bool m_NormalizationEnabled{false};
+    double m_MinLevelPercent{0};
+    double m_MaxLevelPercent{100.0};
+
+    wxTextCtrl* m_MinLevelPercentCtrl{nullptr};
+    wxTextCtrl* m_MaxLevelPercentCtrl{nullptr};
 };
 
 #endif

@@ -913,3 +913,6 @@ msgstr "Нормализация значений пикселей FITS"
 
 msgid "Enables normalization of floating-point pixel values of FITS images; the highest value becomes 1.0."
 msgstr "Позволяет нормализировать значения пикселей с плавающей запятой для изображений FITS; самое высокое значение будет до 1,0."
+
+msgid "Invalid number."
+msgstr "Неправильный номер."

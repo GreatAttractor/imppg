@@ -938,3 +938,6 @@ msgid ""
 msgstr ""
 "OpenGL konnte beim letzten Start von ImPPG nicht initialisiert werden. Setze "
 "Verarbeitungsmodus auf \"CPU + bitmaps\" Modus zurück."
+
+msgid "Invalid number."
+msgstr "Ungültige Nummer."
