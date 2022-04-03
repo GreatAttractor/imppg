@@ -24,10 +24,11 @@ File description:
 #include <sstream>
 #include <wx/xml/xml.h>
 
+#include "num_formatter.h"
 #include "settings.h"
 
 const int XML_INDENT = 4;
-const int FLOAT_PREC = 4;
+const unsigned FLOAT_PREC = 4;
 
 /// Names of XML elements in a settings file
 namespace XmlName
@@ -76,11 +77,11 @@ wxXmlNode* CreateToneCurveSettingsNode(const c_ToneCurve& toneCurve)
     result->AddAttribute(XmlName::tcSmooth, toneCurve.GetSmooth() ? trueStr : falseStr);
     result->AddAttribute(XmlName::tcIsGamma, toneCurve.IsGammaMode() ? trueStr : falseStr);
     if (toneCurve.IsGammaMode())
-         result->AddAttribute(XmlName::tcGamma, wxString::FromCDouble(toneCurve.GetGamma(), FLOAT_PREC));
+         result->AddAttribute(XmlName::tcGamma, NumFormatter::Format(toneCurve.GetGamma(), FLOAT_PREC));
     wxString pointsStr;
     for (int i = 0; i < toneCurve.GetNumPoints(); i++)
-        pointsStr += wxString::FromCDouble(toneCurve.GetPoint(i).x, FLOAT_PREC) + ";"+
-                     wxString::FromCDouble(toneCurve.GetPoint(i).y, FLOAT_PREC) + ";";
+        pointsStr += NumFormatter::Format(toneCurve.GetPoint(i).x, FLOAT_PREC) + ";"+
+                     NumFormatter::Format(toneCurve.GetPoint(i).y, FLOAT_PREC) + ";";
 
     result->AddChild(new wxXmlNode(wxXML_TEXT_NODE, wxEmptyString, pointsStr));
 
@@ -90,7 +91,7 @@ wxXmlNode* CreateToneCurveSettingsNode(const c_ToneCurve& toneCurve)
 wxXmlNode* CreateLucyRichardsonSettingsNode(float lrSigma, int lrIters, bool lrDeringing)
 {
     wxXmlNode* result = new wxXmlNode(wxXML_ELEMENT_NODE, XmlName::lucyRichardson);
-    result->AddAttribute(XmlName::lrSigma, wxString::FromCDouble(lrSigma, FLOAT_PREC));
+    result->AddAttribute(XmlName::lrSigma, NumFormatter::Format(lrSigma, FLOAT_PREC));
     result->AddAttribute(XmlName::lrIters, wxString::Format("%d", lrIters));
     result->AddAttribute(XmlName::lrDeringing, lrDeringing ? trueStr : falseStr);
     return result;
@@ -101,11 +102,11 @@ wxXmlNode* CreateUnsharpMaskingSettingsNode(bool adaptive, float sigma, float am
     wxXmlNode* result = new wxXmlNode(wxXML_ELEMENT_NODE, XmlName::unshMask);
 
     result->AddAttribute(XmlName::unshAdaptive, adaptive ? trueStr : falseStr);
-    result->AddAttribute(XmlName::unshSigma, wxString::FromCDouble(sigma, FLOAT_PREC));
-    result->AddAttribute(XmlName::unshAmountMin, wxString::FromCDouble(amountMin, FLOAT_PREC));
-    result->AddAttribute(XmlName::unshAmountMax, wxString::FromCDouble(amountMax, FLOAT_PREC));
-    result->AddAttribute(XmlName::unshThreshold, wxString::FromCDouble(threshold, FLOAT_PREC));
-    result->AddAttribute(XmlName::unshWidth, wxString::FromCDouble(width, FLOAT_PREC));
+    result->AddAttribute(XmlName::unshSigma, NumFormatter::Format(sigma, FLOAT_PREC));
+    result->AddAttribute(XmlName::unshAmountMin, NumFormatter::Format(amountMin, FLOAT_PREC));
+    result->AddAttribute(XmlName::unshAmountMax, NumFormatter::Format(amountMax, FLOAT_PREC));
+    result->AddAttribute(XmlName::unshThreshold, NumFormatter::Format(threshold, FLOAT_PREC));
+    result->AddAttribute(XmlName::unshWidth, NumFormatter::Format(width, FLOAT_PREC));
     return result;
 }
 
@@ -113,8 +114,8 @@ wxXmlNode* CreateNormalizationSettingsNode(bool normalizationEnabled, float norm
 {
     wxXmlNode* result = new wxXmlNode(wxXML_ELEMENT_NODE, XmlName::normalization);
     result->AddAttribute(XmlName::normEnabled, normalizationEnabled ? trueStr : falseStr);
-    result->AddAttribute(XmlName::normMin, wxString::FromCDouble(normMin, FLOAT_PREC));
-    result->AddAttribute(XmlName::normMax, wxString::FromCDouble(normMax, FLOAT_PREC));
+    result->AddAttribute(XmlName::normMin, NumFormatter::Format(normMin, FLOAT_PREC));
+    result->AddAttribute(XmlName::normMax, NumFormatter::Format(normMax, FLOAT_PREC));
     return result;
 }
 
@@ -147,18 +148,20 @@ bool SaveSettings(wxString filePath, const ProcessingSettings& settings)
 
 bool ParseLucyRichardsonSettings(const wxXmlNode* node, float& sigma, int& iterations, bool& deringing)
 {
-    std::stringstream parser;
-
-    parser.str(node->GetAttribute(XmlName::lrSigma).ToStdString());
-    parser >> sigma;
-    if (parser.fail())
+    if (!NumFormatter::Parse(node->GetAttribute(XmlName::lrSigma), sigma))
+    {
         return false;
+    }
 
-    parser.clear();
-    parser.str(node->GetAttribute(XmlName::lrIters).ToStdString());
-    parser >> iterations;
-    if (parser.fail())
+    unsigned long value{};
+    if (!node->GetAttribute(XmlName::lrIters).ToULong(&value))
+    {
         return false;
+    }
+    else
+    {
+        iterations = static_cast<int>(value);
+    }
 
     if (node->GetAttribute(XmlName::lrDeringing) == trueStr)
         deringing = true;
@@ -181,34 +184,30 @@ bool ParseUnsharpMaskingSettings(const wxXmlNode* node, bool& adaptive, float& s
     else
         return false;
 
-    parser.str(node->GetAttribute(XmlName::unshSigma).ToStdString());
-    parser >> sigma;
-    if (parser.fail())
+    if (!NumFormatter::Parse(node->GetAttribute(XmlName::unshSigma), sigma))
+    {
         return false;
+    }
 
-    parser.clear();
-    parser.str(node->GetAttribute(XmlName::unshAmountMin).ToStdString());
-    parser >> amountMin;
-    if (parser.fail())
+    if (!NumFormatter::Parse(node->GetAttribute(XmlName::unshAmountMin), amountMin))
+    {
         return false;
+    }
 
-    parser.clear();
-    parser.str(node->GetAttribute(XmlName::unshAmountMax).ToStdString());
-    parser >> amountMax;
-    if (parser.fail())
+    if (!NumFormatter::Parse(node->GetAttribute(XmlName::unshAmountMax), amountMax))
+    {
         return false;
+    }
 
-    parser.clear();
-    parser.str(node->GetAttribute(XmlName::unshThreshold).ToStdString());
-    parser >> threshold;
-    if (parser.fail())
+    if (!NumFormatter::Parse(node->GetAttribute(XmlName::unshThreshold), threshold))
+    {
         return false;
+    }
 
-    parser.clear();
-    parser.str(node->GetAttribute(XmlName::unshWidth).ToStdString());
-    parser >> width;
-    if (parser.fail())
+    if (!NumFormatter::Parse(node->GetAttribute(XmlName::unshWidth), width))
+    {
         return false;
+    }
 
     return true;
 }
@@ -222,25 +221,21 @@ bool ParseNormalizationSetings(const wxXmlNode* node, bool& normalizationEnabled
     else
         return false;
 
-    std::stringstream parser;
-    parser.str(node->GetAttribute(XmlName::normMin).ToStdString());
-    parser >> normMin;
-    if (parser.fail())
+    if (!NumFormatter::Parse(node->GetAttribute(XmlName::normMin), normMin))
+    {
         return false;
+    }
 
-    parser.clear();
-    parser.str(node->GetAttribute(XmlName::normMax).ToStdString());
-    parser >> normMax;
-    if (parser.fail())
+    if (!NumFormatter::Parse(node->GetAttribute(XmlName::normMax), normMax))
+    {
         return false;
+    }
 
     return true;
 }
 
 bool ParseToneCurveSettings(const wxXmlNode* node, c_ToneCurve& tcurve)
 {
-    std::stringstream parser;
-
     wxString boolStr = node->GetAttribute(XmlName::tcSmooth);
     if (boolStr == "true")
         tcurve.SetSmooth(true);
@@ -254,35 +249,35 @@ bool ParseToneCurveSettings(const wxXmlNode* node, c_ToneCurve& tcurve)
     {
         tcurve.SetGammaMode(true);
 
-        parser.str(node->GetAttribute(XmlName::tcGamma).ToStdString());
-        float gamma;
-        parser >> gamma;
-        if (parser.fail())
+        float gamma{};
+        if (!NumFormatter::Parse(node->GetAttribute(XmlName::tcGamma), gamma))
+        {
             return false;
+        }
         else
+        {
             tcurve.SetGamma(gamma);
+        }
     }
     else if (boolStr == "false")
         tcurve.SetGammaMode(false);
     else
         return false;
 
-    parser.clear();
-    parser.str(node->GetNodeContent().ToStdString());
+    std::vector<float> points_xy;
+    if (!NumFormatter::ParseList(node->GetNodeContent(), points_xy, ';'))
+    {
+        return false;
+    }
+    if (points_xy.size() % 2 != 0)
+    {
+        return false;
+    }
 
     tcurve.ClearPoints();
-    while (true)
+    for (size_t i = 0; i < points_xy.size(); i += 2)
     {
-        float x, y;
-        char separator;
-
-        parser >> x >> separator
-               >> y >> separator;
-
-        if (parser.fail())
-            break;
-
-        tcurve.AddPoint(x, y);
+        tcurve.AddPoint(points_xy[i], points_xy[i + 1]);
     }
 
     if (tcurve.GetNumPoints() < 2)

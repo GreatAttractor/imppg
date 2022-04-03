@@ -217,6 +217,7 @@ void c_MainWindow::LoadSettingsFromFile(wxString settingsFile, bool moveToMruLis
         m_Ctrls.unshAmountMax->SetValue(s.processing.unsharpMasking.amountMax);
         m_Ctrls.unshThreshold->SetValue(s.processing.unsharpMasking.threshold);
         m_Ctrls.unshWidth->SetValue(s.processing.unsharpMasking.width);
+        SetUnsharpMaskingControlsVisibility();
 
         m_Ctrls.tcrvEditor->SetToneCurve(&s.processing.toneCurve);
 
