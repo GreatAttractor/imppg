@@ -1,7 +1,7 @@
 # ImPPG (Image Post-Processor)
-Copyright (C) 2015-2021 Filip Szczerek (ga.software@yahoo.com)
+Copyright (C) 2015-2022 Filip Szczerek (ga.software@yahoo.com)
 
-version 0.6.4 (2021-10-30)
+version 0.6.5 (2022-04-10)
 
 *This program comes with ABSOLUTELY NO WARRANTY. This is free software, licensed under GNU General Public License v3 or any later version and you are welcome to redistribute it under certain conditions. See the LICENSE file for details.*
 
@@ -401,6 +401,12 @@ German translation: Marcel Hoffmann.
 
 ----------------------------------------
 ## 13. Change log
+
+**0.6.5** (2022-04-10)
+
+  - **Bug fixes**
+    - Invalid behavior of the Brightness Normalization dialog for certain combinations of system language and regional settings
+    - Saving and loading of settings files for certain combinations of system language and regional settings
 
 **0.6.4** (2021-10-30)
 
