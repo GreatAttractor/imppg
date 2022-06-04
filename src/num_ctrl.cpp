@@ -83,7 +83,7 @@ c_NumericalCtrl::c_NumericalCtrl(wxWindow* parent, int id,
     m_SpinCtrl = new wxSpinCtrlDouble(this, ID_SpinCtrl, wxString::Format("%f", initialVal),
         wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS | wxTE_PROCESS_ENTER, minVal, maxVal, initialVal, spinCtrlStep);
     m_SpinCtrl->SetDigits(numDigits);
-    szSpinCtrl->Add(m_SpinCtrl, 0, wxALIGN_CENTER_VERTICAL | wxGROW | wxALL, BORDER);
+    szSpinCtrl->Add(m_SpinCtrl, 0, wxGROW | wxALL, BORDER);
     szTop->Add(szSpinCtrl, 0, wxALIGN_LEFT | wxALL, BORDER);
 
     if (autoAdjustNumSteps && numSliderSteps <= 0)
@@ -94,7 +94,7 @@ c_NumericalCtrl::c_NumericalCtrl(wxWindow* parent, int id,
     m_SliderCtrl->Bind(wxEVT_KEY_DOWN, &c_NumericalCtrl::OnSliderKeyDown, this);
     m_SliderCtrl->Bind(wxEVT_KEY_UP, &c_NumericalCtrl::OnSliderKeyUp, this);
 
-    szTop->Add(m_SliderCtrl, 0, wxALIGN_CENTER_HORIZONTAL | wxGROW | wxALL, BORDER);
+    szTop->Add(m_SliderCtrl, 0, wxGROW | wxALL, BORDER);
 
     SetSizer(szTop);
 }

@@ -429,10 +429,10 @@ c_ToneCurveEditor::c_ToneCurveEditor(wxWindow* parent, c_ToneCurve* curve, int i
     m_CurveArea->Bind(wxEVT_MOTION,             &c_ToneCurveEditor::OnCurveAreaMouseMove, this);
     m_CurveArea->Bind(wxEVT_MOUSE_CAPTURE_LOST, &c_ToneCurveEditor::OnMouseCaptureLost, this);
 
-    szTop->Add(new wxStaticText(this, wxID_ANY, _("Left click: add/move point, right click: delete point")), 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxALL, BORDER);
+    szTop->Add(new wxStaticText(this, wxID_ANY, _("Left click: add/move point, right click: delete point")), 0, wxLEFT | wxALL, BORDER);
 
     // Only 'm_CurveArea' has its "proportion" set to 1, so it can fill the parent, while the remaining controls keep their size
-    szTop->Add(m_CurveArea, 1, wxALIGN_CENTER | wxALL | wxGROW, BORDER);
+    szTop->Add(m_CurveArea, 1, wxALL | wxGROW, BORDER);
 
         wxSizer* szSettings = new wxBoxSizer(wxHORIZONTAL);
         szSettings->Add(m_LogarithmicCtrl = new wxToggleButton(this, ID_Logarithmic, _("log"), wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT),

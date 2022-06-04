@@ -79,6 +79,8 @@ c_OpenGLDisplay::c_OpenGLDisplay(c_ScrolledView& imgView)
         event.Skip();
     });
 
+    m_ScaleFactor = m_GLCanvas->GetContentScaleFactor();
+
     // propagate events received by `m_GLCanvas` to `m_ImgView`
     for (const auto tag: { wxEVT_LEFT_DOWN,
                            wxEVT_MOTION,
@@ -93,10 +95,7 @@ c_OpenGLDisplay::c_OpenGLDisplay(c_ScrolledView& imgView)
     }
     m_GLCanvas->Bind(wxEVT_MOUSE_CAPTURE_LOST, [](wxMouseCaptureLostEvent& event) { PropagateEventToParent(event); });
 
-    if (!m_GLCanvas->SetCurrent(*m_GLContext))
-    {
-        throw std::runtime_error("Failed to make GL context current.");
-    }
+    SetGLContextOnGLCanvas();
 
     const GLenum err = glewInit();
     if (GLEW_OK != err)
@@ -188,10 +187,14 @@ void c_OpenGLDisplay::OnPaint(wxPaintEvent&)
 {
     wxPaintDC dc(m_GLCanvas.get());
 
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    const auto s = m_GLCanvas->GetSize();
-    glViewport(0, 0, s.GetWidth(), s.GetHeight());
+    SetGLContextOnGLCanvas();
 
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    const auto canvasSize = m_GLCanvas->GetSize();
+    glViewport(0,
+               0,
+               canvasSize.GetWidth() * m_ScaleFactor,
+               canvasSize.GetHeight() * m_ScaleFactor);
     glClear(GL_COLOR_BUFFER_BIT);
 
     if (m_Img.has_value())
@@ -201,13 +204,11 @@ void c_OpenGLDisplay::OnPaint(wxPaintEvent&)
 
         gl::BindProgramTextures(prog, { {&m_Processor->GetOriginalImg(), uniforms::Image} });
 
-        const auto scrollpos = m_ImgView.GetScrollPosition();
-        prog.SetUniform2i(uniforms::ScrollPos, scrollpos.x, scrollpos.y);
-        prog.SetUniform2i(
-            uniforms::ViewportSize,
-            m_GLCanvas->GetSize().GetWidth(),
-            m_GLCanvas->GetSize().GetHeight()
-        );
+        const auto scrollPos = m_ImgView.GetScrollPosition();
+        prog.SetUniform2i(uniforms::ScrollPos, scrollPos.x, scrollPos.y);
+        prog.SetUniform2i(uniforms::ViewportSize,
+                          canvasSize.GetWidth() * m_ScaleFactor,
+                          canvasSize.GetHeight() * m_ScaleFactor);
 
         m_VBOs.wholeImgScaled.Bind();
         gl::SpecifyVertexAttribPointers();
@@ -215,9 +216,9 @@ void c_OpenGLDisplay::OnPaint(wxPaintEvent&)
 
         RenderProcessingResults();
         MarkSelection();
-    }
 
-    m_GLCanvas->SwapBuffers();
+        m_GLCanvas->SwapBuffers();
+    }
 }
 
 void c_OpenGLDisplay::RenderProcessingResults()
@@ -230,13 +231,12 @@ void c_OpenGLDisplay::RenderProcessingResults()
 
     gl::BindProgramTextures(prog, { {renderingResults, uniforms::Image} });
 
-    const auto scrollpos = m_ImgView.GetScrollPosition();
-    prog.SetUniform2i(uniforms::ScrollPos, scrollpos.x, scrollpos.y);
-    prog.SetUniform2i(
-        uniforms::ViewportSize,
-        m_GLCanvas->GetSize().GetWidth(),
-        m_GLCanvas->GetSize().GetHeight()
-    );
+    const auto scrollPos = m_ImgView.GetScrollPosition();
+    const auto canvasSize = m_GLCanvas->GetSize();
+    prog.SetUniform2i(uniforms::ScrollPos, scrollPos.x, scrollPos.y);
+    prog.SetUniform2i(uniforms::ViewportSize,
+                      canvasSize.GetWidth(),
+                      canvasSize.GetHeight());
 
     m_VBOs.lastChosenSelectionScaled.Bind();
     gl::SpecifyVertexAttribPointers();
@@ -248,26 +248,27 @@ void c_OpenGLDisplay::MarkSelection()
     const wxRect physSelection = m_PhysSelectionGetter();
     const wxPoint scrollPos = m_ImgView.GetScrollPosition();
 
-    const GLfloat x0 = physSelection.x + scrollPos.x;
-    const GLfloat y0 = physSelection.y + scrollPos.y;
+    const GLfloat x0 = (physSelection.x + scrollPos.x) * m_ScaleFactor;
+    const GLfloat y0 = (physSelection.y + scrollPos.y) * m_ScaleFactor;
+    const GLfloat width = physSelection.width * m_ScaleFactor;
+    const GLfloat height = physSelection.height * m_ScaleFactor;
     /// 4 values per vertex: position, texture coords (not used)
     const GLfloat vertexData[] =
     {
         x0, y0,                                              0, 0,
-        x0 + physSelection.width, y0,                        0, 0,
-        x0 + physSelection.width, y0 + physSelection.height, 0, 0,
-        x0, y0 + physSelection.height,                       0, 0
+        x0 + width, y0,                                      0, 0,
+        x0 + width, y0 + height,                             0, 0,
+        x0, y0 + height,                                     0, 0
     };
     m_VBOs.selectionScaled.SetData(vertexData, sizeof(vertexData), GL_DYNAMIC_DRAW);
 
     auto& prog = m_GLPrograms.selectionOutline;
     prog.Use();
-    const auto scrollpos = m_ImgView.GetScrollPosition();
-    prog.SetUniform2i(uniforms::ScrollPos, scrollpos.x, scrollpos.y);
-    prog.SetUniform2i(
-        uniforms::ViewportSize,
-        m_GLCanvas->GetSize().GetWidth(),
-        m_GLCanvas->GetSize().GetHeight()
+    const auto canvasSize = m_GLCanvas->GetSize();
+    prog.SetUniform2i(uniforms::ScrollPos, scrollPos.x, scrollPos.y);
+    prog.SetUniform2i(uniforms::ViewportSize,
+                      canvasSize.GetWidth() * m_ScaleFactor,
+                      canvasSize.GetHeight() * m_ScaleFactor
     );
 
     m_VBOs.selectionScaled.Bind();
@@ -316,10 +317,11 @@ void c_OpenGLDisplay::FillLastChosenSelectionScaledVBO()
 
 void c_OpenGLDisplay::FillWholeImgVBO()
 {
+    const auto absoluteScale = m_ZoomFactor * m_ScaleFactor;
     const GLfloat width =  static_cast<GLfloat>(m_Img.value().GetWidth());
     const GLfloat height = static_cast<GLfloat>(m_Img.value().GetHeight());
-    const GLfloat swidth = width * m_ZoomFactor;
-    const GLfloat sheight = height * m_ZoomFactor;
+    const GLfloat swidth = width * absoluteScale;
+    const GLfloat sheight = height * absoluteScale;
 
     /// 4 values per vertex: position, texture coords
     const GLfloat vertexData[] = {
@@ -457,6 +459,13 @@ bool c_OpenGLDisplay::ProcessingInProgress()
 void c_OpenGLDisplay::AbortProcessing()
 {
     m_Processor->AbortProcessing();
+}
+
+void c_OpenGLDisplay::SetGLContextOnGLCanvas(void) {
+    if (!m_GLCanvas->SetCurrent(*m_GLContext))
+    {
+        throw std::runtime_error("Failed to make GL context current.");
+    }
 }
 
 } // namespace imppg::backend

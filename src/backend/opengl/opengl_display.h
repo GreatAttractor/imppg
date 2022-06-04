@@ -102,6 +102,9 @@ private:
 
     float m_ZoomFactor{ZOOM_NONE};
 
+    /// Some screens, like Retina, are scaled.
+    double m_ScaleFactor{1.0};
+
     wxRect m_Selection; ///< Image fragment selected for processing (in logical image coords).
 
     /// Provides selection in physical image view coords.
@@ -155,6 +158,8 @@ private:
     void FillLastChosenSelectionScaledVBO();
 
     void RenderProcessingResults();
+
+    void SetGLContextOnGLCanvas(void);
 };
 
 } // namespace imppg::backend
