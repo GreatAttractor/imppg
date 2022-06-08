@@ -102,8 +102,8 @@ private:
 
     float m_ZoomFactor{ZOOM_NONE};
 
-    /// Some screens, like Retina, are scaled.
-    double m_ScaleFactor{1.0};
+    /// On some platforms (wxGTK3, wxOSX) GLCanvas is affected by screen scaling.
+    double m_GLCanvasScaleFactor{1.0};
 
     wxRect m_Selection; ///< Image fragment selected for processing (in logical image coords).
 

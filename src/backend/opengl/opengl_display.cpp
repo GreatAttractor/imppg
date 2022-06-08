@@ -79,7 +79,7 @@ c_OpenGLDisplay::c_OpenGLDisplay(c_ScrolledView& imgView)
         event.Skip();
     });
 
-    m_ScaleFactor = m_GLCanvas->GetContentScaleFactor();
+    m_GLCanvasScaleFactor = m_GLCanvas->GetContentScaleFactor();
 
     // propagate events received by `m_GLCanvas` to `m_ImgView`
     for (const auto tag: { wxEVT_LEFT_DOWN,
@@ -187,14 +187,18 @@ void c_OpenGLDisplay::OnPaint(wxPaintEvent&)
 {
     wxPaintDC dc(m_GLCanvas.get());
 
+    // On macOS GL Context needs to be assigned on each paint.
+#ifdef __APPLE__
     SetGLContextOnGLCanvas();
+#endif
 
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     const auto canvasSize = m_GLCanvas->GetSize();
-    glViewport(0,
-               0,
-               canvasSize.GetWidth() * m_ScaleFactor,
-               canvasSize.GetHeight() * m_ScaleFactor);
+    glViewport(
+        0,
+        0,
+        canvasSize.GetWidth() * m_GLCanvasScaleFactor,
+        canvasSize.GetHeight() * m_GLCanvasScaleFactor);
     glClear(GL_COLOR_BUFFER_BIT);
 
     if (m_Img.has_value())
@@ -205,10 +209,14 @@ void c_OpenGLDisplay::OnPaint(wxPaintEvent&)
         gl::BindProgramTextures(prog, { {&m_Processor->GetOriginalImg(), uniforms::Image} });
 
         const auto scrollPos = m_ImgView.GetScrollPosition();
-        prog.SetUniform2i(uniforms::ScrollPos, scrollPos.x, scrollPos.y);
-        prog.SetUniform2i(uniforms::ViewportSize,
-                          canvasSize.GetWidth() * m_ScaleFactor,
-                          canvasSize.GetHeight() * m_ScaleFactor);
+        prog.SetUniform2i(
+            uniforms::ScrollPos,
+            scrollPos.x * m_GLCanvasScaleFactor,
+            scrollPos.y * m_GLCanvasScaleFactor);
+        prog.SetUniform2i(
+            uniforms::ViewportSize,
+            canvasSize.GetWidth() * m_GLCanvasScaleFactor,
+            canvasSize.GetHeight() * m_GLCanvasScaleFactor);
 
         m_VBOs.wholeImgScaled.Bind();
         gl::SpecifyVertexAttribPointers();
@@ -216,9 +224,9 @@ void c_OpenGLDisplay::OnPaint(wxPaintEvent&)
 
         RenderProcessingResults();
         MarkSelection();
-
-        m_GLCanvas->SwapBuffers();
     }
+
+    m_GLCanvas->SwapBuffers();
 }
 
 void c_OpenGLDisplay::RenderProcessingResults()
@@ -234,9 +242,10 @@ void c_OpenGLDisplay::RenderProcessingResults()
     const auto scrollPos = m_ImgView.GetScrollPosition();
     const auto canvasSize = m_GLCanvas->GetSize();
     prog.SetUniform2i(uniforms::ScrollPos, scrollPos.x, scrollPos.y);
-    prog.SetUniform2i(uniforms::ViewportSize,
-                      canvasSize.GetWidth(),
-                      canvasSize.GetHeight());
+    prog.SetUniform2i(
+        uniforms::ViewportSize,
+        canvasSize.GetWidth(),
+        canvasSize.GetHeight());
 
     m_VBOs.lastChosenSelectionScaled.Bind();
     gl::SpecifyVertexAttribPointers();
@@ -248,17 +257,17 @@ void c_OpenGLDisplay::MarkSelection()
     const wxRect physSelection = m_PhysSelectionGetter();
     const wxPoint scrollPos = m_ImgView.GetScrollPosition();
 
-    const GLfloat x0 = (physSelection.x + scrollPos.x) * m_ScaleFactor;
-    const GLfloat y0 = (physSelection.y + scrollPos.y) * m_ScaleFactor;
-    const GLfloat width = physSelection.width * m_ScaleFactor;
-    const GLfloat height = physSelection.height * m_ScaleFactor;
+    const GLfloat x0 = (physSelection.x * m_GLCanvasScaleFactor) + scrollPos.x;
+    const GLfloat y0 = (physSelection.y * m_GLCanvasScaleFactor) + scrollPos.y;
+    const GLfloat width = physSelection.width * m_GLCanvasScaleFactor;
+    const GLfloat height = physSelection.height * m_GLCanvasScaleFactor;
     /// 4 values per vertex: position, texture coords (not used)
     const GLfloat vertexData[] =
     {
-        x0, y0,                                              0, 0,
-        x0 + width, y0,                                      0, 0,
-        x0 + width, y0 + height,                             0, 0,
-        x0, y0 + height,                                     0, 0
+        x0, y0,                  0, 0,
+        x0 + width, y0,          0, 0,
+        x0 + width, y0 + height, 0, 0,
+        x0, y0 + height,         0, 0
     };
     m_VBOs.selectionScaled.SetData(vertexData, sizeof(vertexData), GL_DYNAMIC_DRAW);
 
@@ -266,9 +275,10 @@ void c_OpenGLDisplay::MarkSelection()
     prog.Use();
     const auto canvasSize = m_GLCanvas->GetSize();
     prog.SetUniform2i(uniforms::ScrollPos, scrollPos.x, scrollPos.y);
-    prog.SetUniform2i(uniforms::ViewportSize,
-                      canvasSize.GetWidth() * m_ScaleFactor,
-                      canvasSize.GetHeight() * m_ScaleFactor
+    prog.SetUniform2i(
+        uniforms::ViewportSize,
+        canvasSize.GetWidth() * m_GLCanvasScaleFactor,
+        canvasSize.GetHeight() * m_GLCanvasScaleFactor
     );
 
     m_VBOs.selectionScaled.Bind();
@@ -317,7 +327,7 @@ void c_OpenGLDisplay::FillLastChosenSelectionScaledVBO()
 
 void c_OpenGLDisplay::FillWholeImgVBO()
 {
-    const auto absoluteScale = m_ZoomFactor * m_ScaleFactor;
+    const auto absoluteScale = m_ZoomFactor * m_GLCanvasScaleFactor;
     const GLfloat width =  static_cast<GLfloat>(m_Img.value().GetWidth());
     const GLfloat height = static_cast<GLfloat>(m_Img.value().GetHeight());
     const GLfloat swidth = width * absoluteScale;
