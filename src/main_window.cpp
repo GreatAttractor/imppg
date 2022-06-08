@@ -1312,7 +1312,7 @@ wxPanel* c_MainWindow::CreateLucyRichardsonControlsPanel(wxWindow* parent)
 
     szTop->Add(m_Ctrls.lrSigma = new c_NumericalCtrl(result, ID_LucyRichardsonSigma, _("Sigma:"), 0.5, MAX_GAUSSIAN_SIGMA,
         Default::LR_SIGMA, 0.05, 4, 2, 100, true, maxfreq ? 1000/maxfreq : 0),
-        0, wxALIGN_CENTER_HORIZONTAL | wxGROW | wxALL, BORDER);
+        0, wxGROW | wxALL, BORDER);
 
     wxSizer *szIters = new wxBoxSizer(wxHORIZONTAL);
     szIters->Add(new wxStaticText(result, wxID_ANY, _("Iterations:")), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
@@ -1345,30 +1345,30 @@ wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(wxWindow* parent)
     result->Add(m_Ctrls.unshSigma = new c_NumericalCtrl(
         result->GetStaticBox(), ID_UnsharpMaskingSigma,
         _("Sigma:"), 0.5, MAX_GAUSSIAN_SIGMA, Default::UNSHMASK_SIGMA, 0.05, 4, 2.0, 100, true, maxfreq ? 1000/maxfreq : 0),
-        0, wxALIGN_CENTER_HORIZONTAL | wxGROW | wxALL, BORDER);
+        0, wxGROW | wxALL, BORDER);
 
     m_Ctrls.unshAmountMin = new c_NumericalCtrl(result->GetStaticBox(), ID_UnsharpMaskingAmountMin,
             _("Amount min:"), 0, 100.0, Default::UNSHMASK_AMOUNT, 0.05, 4, 5.0, 100, true, maxfreq ? 1000/maxfreq : 0);
     m_Ctrls.unshAmountMin->SetToolTip(_("Value 1.0: no effect, <1.0: blur, >1.0: sharpen"));
     m_Ctrls.unshAmountMin->Show(false);
-    result->Add(m_Ctrls.unshAmountMin, 0, wxALIGN_CENTER_HORIZONTAL | wxGROW | wxALL, BORDER);
+    result->Add(m_Ctrls.unshAmountMin, 0, wxGROW | wxALL, BORDER);
 
     m_Ctrls.unshAmountMax = new c_NumericalCtrl(result->GetStaticBox(), ID_UnsharpMaskingAmountMax,
             _("Amount:"), 0, 100.0, Default::UNSHMASK_AMOUNT, 0.05, 4, 5.0, 100, true, maxfreq ? 1000/maxfreq : 0);
     m_Ctrls.unshAmountMax->SetToolTip(_("Value 1.0: no effect, <1.0: blur, >1.0: sharpen"));
-    result->Add(m_Ctrls.unshAmountMax, 0, wxALIGN_CENTER_HORIZONTAL | wxGROW | wxALL, BORDER);
+    result->Add(m_Ctrls.unshAmountMax, 0, wxGROW | wxALL, BORDER);
 
     m_Ctrls.unshThreshold = new c_NumericalCtrl(result->GetStaticBox(), ID_UnsharpMaskingThreshold,
             _("Threshold:"), 0, 1.0, Default::UNSHMASK_THRESHOLD, 0.05, 4, 5.0, 100, true, maxfreq ? 1000/maxfreq : 0);
     m_Ctrls.unshThreshold->SetToolTip(_("Input brightness threshold of transition from amount min to amount max"));
     m_Ctrls.unshThreshold->Show(false);
-    result->Add(m_Ctrls.unshThreshold, 0, wxALIGN_CENTER_HORIZONTAL | wxGROW | wxALL, BORDER);
+    result->Add(m_Ctrls.unshThreshold, 0, wxGROW | wxALL, BORDER);
 
     m_Ctrls.unshWidth = new c_NumericalCtrl(result->GetStaticBox(), ID_UnsharpMaskingWidth,
             _("Transition width:"), 0, 1.0, Default::UNSHMASK_THRESHOLD, 0.05, 4, 5.0, 100, true, maxfreq ? 1000/maxfreq : 0);
     m_Ctrls.unshWidth->SetToolTip(_("Amount will be set to amount min for input brightness <= threshold-width and amount max for brightness >= threshold+width"));
     m_Ctrls.unshWidth->Show(false);
-    result->Add(m_Ctrls.unshWidth, 0, wxALIGN_CENTER_HORIZONTAL | wxGROW | wxALL, BORDER);
+    result->Add(m_Ctrls.unshWidth, 0, wxGROW | wxALL, BORDER);
 
     result->Add(m_Ctrls.unshAdaptive = new wxCheckBox(result->GetStaticBox(), ID_UnsharpMaskingAdaptive, _("Adaptive"),
             wxDefaultPosition, wxDefaultSize, wxCHK_2STATE, wxGenericValidator(&m_CurrentSettings.processing.unsharpMasking.adaptive)),
@@ -1392,9 +1392,9 @@ wxWindow* c_MainWindow::CreateProcessingControlsPanel()
     // ...
     // Add notebook pages with controls for other sharpening algorithms here.
     // ...
-    szTop->Add(notebook, 0, wxALIGN_CENTER_HORIZONTAL | wxGROW | wxALL, BORDER);
+    szTop->Add(notebook, 0, wxGROW | wxALL, BORDER);
 
-    szTop->Add(CreateUnsharpMaskingControls(result), 0, wxALIGN_CENTER_HORIZONTAL | wxGROW | wxALL, BORDER);
+    szTop->Add(CreateUnsharpMaskingControls(result), 0, wxGROW | wxALL, BORDER);
 
     result->SetSizer(szTop);
     result->SetScrollRate(1, 1);

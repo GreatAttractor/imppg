@@ -102,6 +102,9 @@ private:
 
     float m_ZoomFactor{ZOOM_NONE};
 
+    /// On some platforms (wxGTK3, wxOSX) GLCanvas is affected by screen scaling.
+    double m_GLCanvasScaleFactor{1.0};
+
     wxRect m_Selection; ///< Image fragment selected for processing (in logical image coords).
 
     /// Provides selection in physical image view coords.
@@ -155,6 +158,8 @@ private:
     void FillLastChosenSelectionScaledVBO();
 
     void RenderProcessingResults();
+
+    void SetGLContextOnGLCanvas(void);
 };
 
 } // namespace imppg::backend
