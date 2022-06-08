@@ -214,9 +214,7 @@ ImPPG przechowuje pewne ustawienia (np. pozycję i rozmiar okna głównego) w pl
 ----------------------------------------
 ## 9. Znane problemy
 
-  - (wxWidgets 3.0.5 + Linux) Tryb OpenGL nie działa prawidłowo, jeśli globalne skalowanie ekranu jest ustawione na 200% lub więcej (tylko 1/4 obszaru podglądu jest wypełniona, kliknięcia przycisków myszy są rejestrowane w błędnym położeniu). Możliwe obejścia:
-    - uruchomić ImPPG z wyłączonym skalowaniem UI, np. pod Fedorą 35/KDE wykonać: `GDK_SCALE= GDK_DPI_SCALE=1 imppg`
-    - używać trybu „CPU + bitmapy”
+  - Poczynając od wersji 3.1.5, wxWidgets pod Linuksem używają EGL dla GL Canvas. Jeśli używana do zbudowania ImPPG biblioteka GLEW nie została zbudowana z obsługą EGL, wywołanie funkcji `glewInit` nie powiedzie się. Rozwiązanie: użyć GLEW z obsługą EGL lub zbudować wxWidgets dodając `-DwxUSE_GLCANVAS_EGL=OFF` do wywołania CMake.
 
   - ImPPG zapamiętuje i przywraca pozycję i wielkość okna głównego i okna edytora krzywej tonalnej. Może się zdarzyć, że środowisko graficzne rozmieści okna nieprawidłowo i np. okno krzywej tonalnej pozostanie poza ekranem. W takim przypadku należy użyć polecenia menu `Ustawienia`/`Resetuj pozycję okna krzywej tonalej`, lub skasować plik konfiguracyjny ImPPG (zob. pkt. 8).
 

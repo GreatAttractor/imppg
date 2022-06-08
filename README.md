@@ -210,9 +210,7 @@ ImPPG stores certain settings (e.g. the main window’s size and position) in an
 ----------------------------------------
 ## 9. Known problems
 
-  - (wxWidgets 3.0.5 + Linux) If global display scaling is set to 200% or more, OpenGL mode does not work correctly (only a quarter of the preview area is filled, mouse events are registered at wrong position). Possible workarounds:
-    - launch ImPPG with disabled UI scaling; e.g., on Fedora 35/KDE, run: `GDK_SCALE= GDK_DPI_SCALE=1 imppg`
-    - use CPU & bitmaps mode
+  - Starting with wxWidgets 3.1.5 on Linux, GL Canvas uses EGL by default. If the GLEW library used for building ImPPG is not built with EGL support, the call to `glewInit` will fail. Solution: either use GLEW built with EGL, or build wxWidgets adding `-DwxUSE_GLCANVAS_EGL=OFF` to its CMake invocation.
 
   - ImPPG remembers and restores the positions and sizes of the main program window and the tone curve editor window. It may happen (rarely) the desktop environment interferes with window positioning and e.g. the tone curve window remains off-screen. In that case, use the menu command `Settings`/`Reset tone curve window position`, or delete the ImPPG configuration file (see section 8).
 
