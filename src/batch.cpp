@@ -81,6 +81,8 @@ class c_BatchDialog: public wxDialog
 
     std::unique_ptr<imppg::backend::IProcessingBackEnd> m_Processor;
 
+    bool m_ProcessNextFile{false};
+
     /// Starts processing of the next file
     void ProcessNextFile();
 
@@ -127,7 +129,13 @@ void c_BatchDialog::OnIdle(wxIdleEvent& event)
     {
         Close();
     }
+
     m_Processor->OnIdle(event);
+
+    if (m_ProcessNextFile && m_CurrentFileIdx.has_value() && *m_CurrentFileIdx < m_FileNames.Count())
+    {
+        ProcessNextFile();
+    }
 }
 
 /// Updates the progress string in the files grid
@@ -209,7 +217,7 @@ void c_BatchDialog::OnProcessingCompleted(CompletionStatus status)
         else
         {
             m_CurrentFileIdx.value() += 1;
-            ProcessNextFile();
+            m_ProcessNextFile = true;
         }
     }
     else
@@ -221,6 +229,8 @@ void c_BatchDialog::OnProcessingCompleted(CompletionStatus status)
 
 void c_BatchDialog::ProcessNextFile()
 {
+    m_ProcessNextFile = false;
+
     if (!m_CurrentFileIdx.has_value())
     {
         m_CurrentFileIdx = 0;
