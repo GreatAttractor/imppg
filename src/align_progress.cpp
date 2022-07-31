@@ -48,7 +48,6 @@ class c_ImageAlignmentProgress: public wxDialog
 
 
     ExclusiveAccessObject<c_ImageAlignmentWorkerThread*> m_WorkerThread{nullptr};
-    wxCriticalSection m_Guard; ///< Guards access to 'm_WorkerThread'
     wxGauge m_ProgressGauge;
     wxStaticText m_InfoText;
     wxTextCtrl m_InfoLog;
