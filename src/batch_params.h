@@ -29,7 +29,7 @@ File description:
 #include <wx/grid.h>
 #include <wx/listbox.h>
 
-#include "image.h"
+#include "image/image.h"
 #include "scrollable_dlg.h"
 
 class c_BatchParamsDialog : public c_ScrollableDialog

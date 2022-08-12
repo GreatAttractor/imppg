@@ -26,7 +26,7 @@ File description:
 #include <wx/filename.h>
 
 #include "appconfig.h"
-#include "common.h"
+#include "common/common.h"
 #include "imppg_assert.h"
 
 static bool wxFromString(const wxString& string, wxRect* rect)

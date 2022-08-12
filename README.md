@@ -238,7 +238,7 @@ ImPPG source code and binaries for MS Windows and Ubuntu 18.04 (x86-64) can be d
 
 Building from source code requires a C++ compiler toolchain (with C++17 support), CMake, Boost libraries v. 1.57.0 or later (though earlier versions may work) and wxWidgets 3.0 (3.1 under MS Windows). Support for more image formats requires the FreeImage library, version 3.14.0 or newer. Without FreeImage the only supported formats are: BMP 8-, 24- and 32-bit, TIFF mono and RGB, 8 or 16 bits per channel (no compression). FITS support (optional) requires the CFITSIO library. Multithreaded processing requires a compiler supporting OpenMP.
 
-To enable/disable usage of CFITSIO, FreeImage and GPU/OpenGL back end (they are enabled by default), edit the `config.in` file.
+To enable/disable usage of CFITSIO, FreeImage and GPU/OpenGL back end (they are enabled by default), edit the `config.cmake` file.
 
 To remove any created CMake configuration, delete `CMakeCache.txt` and the `CMakeFiles` folder.
 
@@ -261,7 +261,7 @@ $ mkdir build
 $ cd build
 $ cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
 ```
-This creates a native `Makefile`. Unless you edit `config.in` again, from now on there is no need to run CMake.
+This creates a native `Makefile`. Unless you edit `config.cmake` again, from now on there is no need to run CMake.
 
 To compile ImPPG, run:
 ```bash
@@ -350,7 +350,7 @@ $ mkdir build
 $ cd build
 $ cmake -G "MSYS Makefiles" -DCMAKE_MAKE_PROGRAM=mingw32-make -DCMAKE_BUILD_TYPE=Release ..
 ```
-This creates a native `Makefile`. Unless you edit `config.in` again, from now on there is no need to run CMake.
+This creates a native `Makefile`. Unless you edit `config.cmake` again, from now on there is no need to run CMake.
 
 To compile ImPPG, run:
 ```bash

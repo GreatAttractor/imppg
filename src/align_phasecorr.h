@@ -30,8 +30,8 @@ File description:
 #include <wx/arrstr.h>
 #include <wx/string.h>
 
-#include "common.h"
-#include "image.h"
+#include "common/common.h"
+#include "image/image.h"
 
 
 /// Returns the smallest power of 2 which is > n

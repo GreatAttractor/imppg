@@ -35,18 +35,14 @@ File description:
 #include <wx/statline.h>
 
 #include "appconfig.h"
-#include "backend/cpu_bmp/cpu_bmp_proc.h"
-#if USE_OPENGL_BACKEND
-#include "backend/opengl/opengl_proc.h"
-#endif
+#include "backend/backend.h"
 #include "batch_params.h"
 #include "batch.h"
-#include "bmp.h"
 #include "ctrl_ids.h"
-#include "image.h"
+#include "image/image.h"
 #include "imppg_assert.h"
 #include "logging.h"
-#include "proc_settings.h"
+#include "common/proc_settings.h"
 #include "settings.h"
 #include "tiff.h"
 
@@ -242,7 +238,12 @@ void c_BatchDialog::ProcessNextFile()
     wxString ext = path.GetExt().Lower();
     std::string errorMsg;
 
-    auto img = LoadImageFileAsMono32f(path.GetFullPath().ToStdString(), path.GetExt().ToStdString(), &errorMsg);
+    auto img = LoadImageFileAsMono32f(
+        path.GetFullPath().ToStdString(),
+        path.GetExt().ToStdString(),
+        Configuration::NormalizeFITSValues,
+        &errorMsg
+    );
     if (!img.has_value())
     {
         wxMessageBox(wxString::Format(_("Could not open file: %s."), path.GetFullPath()) + (errorMsg != "" ? "\n" + errorMsg : ""),
@@ -280,9 +281,9 @@ c_BatchDialog::c_BatchDialog(wxWindow* parent, wxArrayString fileNames,
 {
     switch (Configuration::ProcessingBackEnd)
     {
-    case BackEnd::CPU_AND_BITMAPS: m_Processor = std::make_unique<imppg::backend::c_CpuAndBitmapsProcessing>(); break;
+    case BackEnd::CPU_AND_BITMAPS: m_Processor = imppg::backend::CreateCpuBmpProcessingBackend(); break;
 #if USE_OPENGL_BACKEND
-    case BackEnd::GPU_OPENGL: m_Processor = std::make_unique<imppg::backend::c_OpenGLProcessing>(); break;
+    case BackEnd::GPU_OPENGL: m_Processor = imppg::backend::CreateOpenGLProcessingBackend(Configuration::LRCmdBatchSizeMpixIters); break;
 #endif
     default: IMPPG_ABORT();
     }

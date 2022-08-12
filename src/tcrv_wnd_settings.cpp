@@ -29,7 +29,7 @@ File description:
 #include <wx/stattext.h>
 
 #include "appconfig.h"
-#include "common.h"
+#include "common/common.h"
 #include "tcrv_wnd_settings.h"
 
 

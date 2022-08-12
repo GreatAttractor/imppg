@@ -41,8 +41,8 @@ File description:
 
 #include "align.h"
 #include "appconfig.h"
-#include "common.h"
-#include "formats.h"
+#include "common/common.h"
+#include "common/formats.h"
 #include "scrollable_dlg.h"
 
 enum

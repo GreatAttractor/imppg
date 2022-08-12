@@ -2,7 +2,7 @@
 # ImPPG build file
 #
 # Prerequisite libraries: wxWidgets 3.0 (3.1 under MS Windows), Boost 1.57.0, FreeImage (optional) 3.14.0 or newer, CFITSIO (optional).
-# Before building, edit config.in to configure optional libs.
+# Before building, edit config.cmake to configure optional libs.
 #
 # NOTE: CMake relies on the presence of the "wx-config" tool to detect and configure wxWidgets-related build options.
 #       Sometimes this tool can be named differently, e.g. in Fedora 23 with wxGTK3 packages from repository it is
@@ -15,7 +15,7 @@ project("imppg")
 
 cmake_minimum_required(VERSION 2.8)
 
-include(config.in)
+include(config.cmake)
 include(FindPkgConfig)
 include(GNUInstallDirs)
 
@@ -28,58 +28,21 @@ add_executable(imppg WIN32
     src/align_proc.cpp
     src/align_progress.cpp
     src/appconfig.cpp
-
-    src/backend/cpu_bmp/cpu_bmp_core.cpp
-    src/backend/cpu_bmp/cpu_bmp_proc.cpp
-    src/backend/cpu_bmp/cpu_bmp_proc.h
-    src/backend/cpu_bmp/w_lrdeconv.cpp
-    src/backend/cpu_bmp/w_tcurve.cpp
-    src/backend/cpu_bmp/w_unshmask.cpp
-    src/backend/cpu_bmp/worker.cpp
-
     src/batch_params.cpp
     src/batch.cpp
-    src/common.cpp
     src/cursors.cpp
     src/fft.cpp
-    src/formats.cpp
-    src/gauss.cpp
-    src/image.cpp
-    src/logging.cpp
-    src/lrdeconv.cpp
     src/main_window.cpp
     src/main.cpp
     src/normalize.cpp
     src/num_ctrl.cpp
     src/num_formatter.cpp
     src/scrollable_dlg.cpp
-    src/scrolled_view.cpp
     src/settings.cpp
     src/tcrv_edit.cpp
     src/tcrv_wnd_settings.cpp
-    src/tcrv.cpp
     src/wxapp.cpp
 )
-
-if(USE_FREEIMAGE EQUAL 0)
-    target_sources(imppg PRIVATE
-        src/bmp.cpp
-        src/tiff.cpp
-    )
-endif()
-
-if(USE_OPENGL_BACKEND)
-    target_sources(imppg PRIVATE
-        src/backend/opengl/gl_utils.cpp
-        src/backend/opengl/gl_utils.h
-        src/backend/opengl/opengl_display.cpp
-        src/backend/opengl/opengl_display.h
-        src/backend/opengl/opengl_proc.cpp
-        src/backend/opengl/opengl_proc.h
-        src/backend/opengl/uniforms.cpp
-        src/backend/opengl/uniforms.h
-    )
-endif()
 
 target_include_directories(imppg PRIVATE src)
 target_compile_options(imppg PRIVATE -Wall -Wextra -Wpedantic -Wold-style-cast -Wno-parentheses)
@@ -91,8 +54,6 @@ set(IMPPG_VERSION_MINOR 6)
 set(IMPPG_VERSION_SUBMINOR 5)
 
 target_compile_definitions(imppg PRIVATE
-    IMPPG_SHADERS_DIR="${IMPPG_SHADERS_DIR}"
-    IMPPG_IMAGES_DIR="${IMPPG_IMAGES_DIR}"
     IMPPG_VERSION_MAJOR=${IMPPG_VERSION_MAJOR}
     IMPPG_VERSION_MINOR=${IMPPG_VERSION_MINOR}
     IMPPG_VERSION_SUBMINOR=${IMPPG_VERSION_SUBMINOR}
@@ -139,17 +100,20 @@ find_package(wxWidgets REQUIRED COMPONENTS ${WX_COMPONENTS})
 endif()
 
 include(${wxWidgets_USE_FILE})
-target_link_libraries(imppg ${wxWidgets_LIBRARIES})
+target_link_libraries(imppg PRIVATE ${wxWidgets_LIBRARIES})
 
+# TODO: move to backend
 find_package(OpenMP)
 if(OPENMP_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
 
+# TODO: move to backend
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag(-ffast-math GNU_FFAST_MATH_SUPPORTED)
 
+# TODO: move to backend
 if(GNU_FFAST_MATH_SUPPORTED)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
 endif()
@@ -158,20 +122,10 @@ if(USE_FREEIMAGE EQUAL 1)
     target_compile_definitions(imppg PRIVATE USE_FREEIMAGE=1)
 
     # Cannot do `pkg_check_modules` on `freeimage`; as of FreeImage 3.18.0, there is no `.pc` file provided (checked in MSYS2 and Fedora 29)
-    target_link_libraries(imppg freeimage)
+    target_link_libraries(imppg PRIVATE freeimage)
 endif()
 
 if(USE_OPENGL_BACKEND)
-    if(WIN32)
-        target_link_libraries(imppg opengl32)
-    else()
-        target_link_libraries(imppg GL)
-    endif()
-
-    find_package(GLEW REQUIRED)
-    target_include_directories(imppg PRIVATE ${GLEW_INCLUDE_DIRS})
-    target_link_libraries(imppg GLEW::GLEW)
-
     target_compile_definitions(imppg PRIVATE USE_OPENGL_BACKEND=1)
 else()
     target_compile_definitions(imppg PRIVATE USE_OPENGL_BACKEND=0)
@@ -181,8 +135,16 @@ if(USE_CFITSIO EQUAL 1)
     target_compile_definitions(imppg PRIVATE USE_CFITSIO=1)
     pkg_check_modules(CFITSIO cfitsio REQUIRED)
     target_include_directories(imppg PRIVATE ${CFITSIO_INCLUDE_DIRS})
-    target_link_libraries(imppg ${CFITSIO_LIBRARIES})
+    target_link_libraries(imppg PRIVATE ${CFITSIO_LIBRARIES})
 endif()
+
+add_subdirectory(src/math_utils)
+add_subdirectory(src/image)
+add_subdirectory(src/common)
+add_subdirectory(src/backend)
+add_subdirectory(src/logging)
+
+target_link_libraries(imppg PRIVATE common math_utils backend image logging)
 
 
 # Installation -------------------------------------

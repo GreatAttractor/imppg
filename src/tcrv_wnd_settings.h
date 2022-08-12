@@ -30,7 +30,7 @@ File description:
 #include <wx/radiobox.h>
 #include <wx/spinctrl.h>
 
-#include "common.h"
+#include "common/common.h"
 
 
 class c_ToneCurveWindowSettingsDialog: public wxDialog

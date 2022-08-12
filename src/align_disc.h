@@ -27,8 +27,8 @@ File description:
 #include <cstdint>
 #include <vector>
 
-#include "common.h"
-#include "image.h"
+#include "common/common.h"
+#include "image/image.h"
 
 typedef struct strPointVal
 {

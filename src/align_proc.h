@@ -29,7 +29,7 @@ File description:
 #include <wx/arrstr.h>
 
 #include "align.h"
-#include "common.h"
+#include "common/common.h"
 #include "exclusive_access.h"
 
 class c_ImageAlignmentWorkerThread: public wxThread

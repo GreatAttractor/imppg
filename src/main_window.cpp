@@ -62,15 +62,11 @@ File description:
 #include "adv_settings_wnd.h"
 #include "align.h"
 #include "appconfig.h"
-#include "backend/cpu_bmp/cpu_bmp.h"
-#if USE_OPENGL_BACKEND
-#include "backend/opengl/opengl_display.h"
-#endif
+#include "backend/backend.h"
 #include "batch.h"
-#include "bmp.h"
-#include "common.h"
+#include "common/common.h"
 #include "ctrl_ids.h"
-#include "formats.h"
+#include "common/formats.h"
 #include "imppg_assert.h"
 #include "logging.h"
 #include "main_window.h"
@@ -595,7 +591,7 @@ c_MainWindow::c_MainWindow()
             switch (Configuration::ProcessingBackEnd)
             {
             case BackEnd::CPU_AND_BITMAPS:
-                InitializeBackEnd(std::make_unique<imppg::backend::c_CpuAndBitmaps>(*m_ImageView), std::nullopt);
+                InitializeBackEnd(imppg::backend::CreateCpuBmpDisplayBackend(*m_ImageView), std::nullopt);
                 break;
 
 #if USE_OPENGL_BACKEND
@@ -604,11 +600,11 @@ c_MainWindow::c_MainWindow()
                 Configuration::OpenGLInitIncomplete = true;
                 Configuration::Flush();
 
-                std::unique_ptr<imppg::backend::c_OpenGLDisplay> gl_instance = imppg::backend::c_OpenGLDisplay::Create(*m_ImageView);
+                auto gl_instance = imppg::backend::CreateOpenGLDisplayBackend(*m_ImageView, Configuration::LRCmdBatchSizeMpixIters);
                 if (nullptr == gl_instance)
                 {
                     wxMessageBox(_("Failed to initialize OpenGL!\nReverting to CPU mode."), _("Error"), wxICON_ERROR);
-                    InitializeBackEnd(std::make_unique<imppg::backend::c_CpuAndBitmaps>(*m_ImageView), std::nullopt);
+                    InitializeBackEnd(imppg::backend::CreateCpuBmpDisplayBackend(*m_ImageView), std::nullopt);
                     Configuration::ProcessingBackEnd = BackEnd::CPU_AND_BITMAPS;
                     GetMenuBar()->FindItem(ID_CpuBmpBackEnd)->Check();
                 }
@@ -930,7 +926,12 @@ void c_MainWindow::OpenFile(wxFileName path, bool resetSelection)
 
     std::string errorMsg;
 
-    const auto loadResult = LoadImageFileAsMono32f(path.GetFullPath().ToStdString(), path.GetExt().Lower().ToStdString(), &errorMsg);
+    const auto loadResult = LoadImageFileAsMono32f(
+        path.GetFullPath().ToStdString(),
+        path.GetExt().Lower().ToStdString(),
+        Configuration::NormalizeFITSValues,
+        &errorMsg
+    );
 
     if (!loadResult)
     {
@@ -1522,7 +1523,7 @@ void c_MainWindow::InitMenu()
         [this](wxCommandEvent&)
         {
             std::optional<c_Image> img = m_BackEnd->GetImage();
-            InitializeBackEnd(std::make_unique<imppg::backend::c_CpuAndBitmaps>(*m_ImageView), img);
+            InitializeBackEnd(imppg::backend::CreateCpuBmpDisplayBackend(*m_ImageView), img);
             Configuration::ProcessingBackEnd = BackEnd::CPU_AND_BITMAPS;
             SetStatusText(GetBackEndStatusText(Configuration::ProcessingBackEnd), StatusBarField::BACK_END);
         },
@@ -1538,7 +1539,7 @@ void c_MainWindow::InitMenu()
 
             std::optional<c_Image> img = m_BackEnd->GetImage();
 
-            std::unique_ptr<imppg::backend::c_OpenGLDisplay> gl_instance = imppg::backend::c_OpenGLDisplay::Create(*m_ImageView);
+            auto gl_instance = imppg::backend::CreateOpenGLDisplayBackend(*m_ImageView, Configuration::LRCmdBatchSizeMpixIters);
             if (nullptr == gl_instance)
             {
                 wxMessageBox(_("Failed to initialize OpenGL!"), _("Error"), wxICON_ERROR);

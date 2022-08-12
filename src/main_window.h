@@ -40,12 +40,12 @@ File description:
 #include <wx/timer.h>
 
 #include "backend/backend.h"
-#include "image.h"
+#include "common/scrolled_view.h"
+#include "image/image.h"
 #include "num_ctrl.h"
-#include "proc_settings.h"
-#include "scrolled_view.h"
+#include "common/proc_settings.h"
 #include "tcrv_edit.h"
-#include "tcrv.h"
+#include "common/tcrv.h"
 
 class c_MainWindow: public wxFrame
 {

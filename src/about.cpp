@@ -57,7 +57,7 @@ File description:
 #include <fitsio.h>
 #endif
 
-#include "common.h"
+#include "common/common.h"
 #include "ctrl_ids.h"
 
 const char* DATE_STR = "2022-04-10"; ///< Release date of the current version

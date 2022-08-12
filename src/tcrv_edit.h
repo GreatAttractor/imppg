@@ -35,7 +35,7 @@ File description:
 #include <wx/spinctrl.h>
 
 #include "daction.h"
-#include "tcrv.h"
+#include "common/tcrv.h"
 
 // Event sent to parent every time the curve is changed
 wxDECLARE_EVENT(EVT_TONE_CURVE, wxCommandEvent);

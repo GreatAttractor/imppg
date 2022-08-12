@@ -133,12 +133,6 @@ enum
     ID_Libraries,
 
 //----------------------------------------------------------------------
-// Background thread messages
-
-    ID_FINISHED_PROCESSING, // used by image processing worker threads
-    ID_PROCESSING_PROGRESS, //
-
-//----------------------------------------------------------------------
 // Other items
     ID_MruSettings, ///< Dropdown list of the most recently used proc. settings
     ID_MruListItem,

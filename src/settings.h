@@ -24,8 +24,8 @@ File description:
 #ifndef IMPGG_PRESET_H
 #define IMPGG_PRESET_H
 
-#include "proc_settings.h"
-#include "tcrv.h"
+#include "common/proc_settings.h"
+#include "common/tcrv.h"
 
 /// Saves the settings of Lucy-Richardson deconvolution, unsharp masking, tone curve and deringing; returns 'false' on error.
 bool SaveSettings(wxString filePath, const ProcessingSettings& settings);

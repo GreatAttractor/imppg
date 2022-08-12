@@ -21,28 +21,28 @@ File description:
     Image alignment worker thread implementation.
 */
 
-#include <optional>
-
 #include <algorithm>
+#include <boost/math/special_functions/round.hpp>
 #include <climits>
 #include <cmath>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <tuple>
 #include <vector>
-#include <boost/math/special_functions/round.hpp>
 #include <wx/filename.h>
 
 #include "align_disc.h"
 #include "align_phasecorr.h"
 #include "align_proc.h"
 #include "appconfig.h"
-#include "common.h"
-#include "image.h"
+#include "common/common.h"
+#include "image/image.h"
 #include "imppg_assert.h"
 #include "logging.h"
-#include "lrdeconv.h"
+#include "math_utils/convolution.h"
+#include "math_utils/math_utils.h"
 #if USE_FREEIMAGE
 #include "FreeImage.h"
 #ifdef __APPLE__
@@ -340,7 +340,7 @@ float GetQuality(const c_Image& img, const Rectangle_t& area)
             float val10 = img.GetRowAs<float>(area.y + y)[area.x + x+1];
             float val01 = img.GetRowAs<float>(area.y + y+1)[area.x + x];
 
-            result += SQR(val10 - val00) + SQR(val01 - val00);
+            result += sqr(val10 - val00) + sqr(val01 - val00);
         }
 
     return result;
@@ -405,7 +405,11 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
         Point_t stabilizationPos;
 
         // Scan the first image's intersection portion for the highest-contrast area
-        const auto loadResult = LoadImageFileAsMono32f(m_Parameters.inputFiles[0].ToStdString(), wxFileName(m_Parameters.inputFiles[0]).GetExt().Lower().ToStdString());
+        const auto loadResult = LoadImageFileAsMono32f(
+            m_Parameters.inputFiles[0].ToStdString(),
+            wxFileName(m_Parameters.inputFiles[0]).GetExt().Lower().ToStdString(),
+            Configuration::NormalizeFITSValues
+        );
         if (!loadResult)
         {
             errorMsg = wxString::Format(_("Could not read %s."), m_Parameters.inputFiles[0]);
@@ -460,7 +464,11 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
 
             SendMessageToParent(EID_LIMB_STABILIZATION_PROGRESS, i);
 
-            const auto loadResult = LoadImageFileAsMono32f(m_Parameters.inputFiles[i].ToStdString(), wxFileName(m_Parameters.inputFiles[i]).GetExt().Lower().ToStdString());
+            const auto loadResult = LoadImageFileAsMono32f(
+                m_Parameters.inputFiles[i].ToStdString(),
+                wxFileName(m_Parameters.inputFiles[i]).GetExt().Lower().ToStdString(),
+                Configuration::NormalizeFITSValues
+            );
             if (!loadResult)
             {
                 errorMsg = wxString::Format(_("Could not read %s."), m_Parameters.inputFiles[i]);
@@ -574,7 +582,7 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
 
             FloatPoint_t correction(0.0f, 0.0f); // difference after projection
 
-            float len = std::sqrt(SQR(p.x - smoothTrack.cx) + SQR(p.y - smoothTrack.cy));
+            float len = std::sqrt(sqr(p.x - smoothTrack.cx) + sqr(p.y - smoothTrack.cy));
             if (len > 1.0e-8f)
             {
                 FloatPoint_t proj(smoothTrack.r * (p.x - smoothTrack.cx) / len + smoothTrack.cx,
@@ -619,7 +627,7 @@ void CountNeighborsAboveThreshold(
     numAbove = 0; numTotal = 0;
     for (int y = std::max(static_cast<int>(p.y - radius), 0); y <= std::min(static_cast<int>(p.y + radius), static_cast<int>(img.GetHeight())-1); y++)
         for (int x = std::max(static_cast<int>(p.x - radius), 0); x <= std::min(static_cast<int>(p.x + radius), static_cast<int>(img.GetWidth())-1); x++)
-            if (SQR(x - p.x) + SQR(y - p.y) <= SQR(radius))
+            if (sqr(x - p.x) + sqr(y - p.y) <= sqr(radius))
             {
                 numTotal++;
                 if (img.GetRowAs<uint8_t>(y)[x] > threshold)
@@ -642,7 +650,11 @@ bool c_ImageAlignmentWorkerThread::FindRadii(
         if (IsAbortRequested())
             return false;
 
-        const auto loadResult = LoadImageFileAsMono8(m_Parameters.inputFiles[i].ToStdString(), wxFileName(m_Parameters.inputFiles[i]).GetExt().Lower().ToStdString());
+        const auto loadResult = LoadImageFileAsMono8(
+            m_Parameters.inputFiles[i].ToStdString(),
+            wxFileName(m_Parameters.inputFiles[i]).GetExt().Lower().ToStdString(),
+            Configuration::NormalizeFITSValues
+        );
         if (!loadResult)
         {
             m_CompletionMessage = wxString::Format(_("Could not read %s."), m_Parameters.inputFiles[i]);

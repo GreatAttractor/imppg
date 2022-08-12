@@ -37,11 +37,12 @@ File description:
 #include <wx/settings.h>
 
 #include "appconfig.h"
-#include "common.h"
+#include "common/common.h"
 #include "ctrl_ids.h"
 #include "cursors.h"
 #include "tcrv_edit.h"
 #include "tcrv_wnd_settings.h"
+#include "math_utils/math_utils.h"
 
 // Event sent to parent every time the curve is changed
 wxDEFINE_EVENT(EVT_TONE_CURVE, wxCommandEvent);
@@ -194,9 +195,9 @@ void c_ToneCurveEditor::OnMouseCaptureLost(wxMouseCaptureLostEvent&)
 /// Returns 'true' if distance between point [pointIdx] and (x,y) is below MIN_GRAB_DIST
 bool c_ToneCurveEditor::IsPointDistBelowThreshold(float x, float y, int pointIdx)
 {
-    return (SQR(m_Curve->GetPoint(pointIdx).x - x) +
-            SQR(m_Curve->GetPoint(pointIdx).y - y)
-            <= SQR(MIN_GRAB_DIST / 100.0f));
+    return (sqr(m_Curve->GetPoint(pointIdx).x - x) +
+            sqr(m_Curve->GetPoint(pointIdx).y - y)
+            <= sqr(MIN_GRAB_DIST / 100.0f));
 }
 
 void c_ToneCurveEditor::OnCurveAreaRightDown(wxMouseEvent& event)

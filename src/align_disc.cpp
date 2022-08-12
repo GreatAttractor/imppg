@@ -21,6 +21,10 @@ File description:
     Disc detection code.
 */
 
+#include "align_disc.h"
+#include "imppg_assert.h"
+#include "math_utils/math_utils.h"
+
 #include <cstdint>
 #include <cstdlib>
 #include <algorithm>
@@ -31,9 +35,6 @@ File description:
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/operation.hpp>
 #include <boost/math/special_functions/fpclassify.hpp>
-
-#include "align_disc.h"
-#include "imppg_assert.h"
 
 using namespace boost::numeric::ublas;
 
@@ -149,7 +150,7 @@ void CullToConvexHull(std::vector<Point_t>& points)
         for (unsigned i = 0; i < points.size(); i++)
         {
             Point_t vec(points[i].x - lastHullPt.x, points[i].y - lastHullPt.y);
-            float vecLen = std::sqrt(SQR(vec.x) + SQR(vec.y));
+            float vecLen = std::sqrt(sqr(vec.x) + sqr(vec.y));
             if (vecLen == 0.0f)
             {
                 continue;
@@ -201,7 +202,7 @@ float GetSumSqrDiffsFromHistogram(
 
     float sumSqrDiffs = 0.0f;
     for (size_t i = iMin; i <= iMax; i++)
-        sumSqrDiffs += histogram[i] * SQR(i - avg);
+        sumSqrDiffs += histogram[i] * sqr(i - avg);
 
     return sumSqrDiffs;
 }
@@ -489,7 +490,7 @@ bool FitCircleToPoints(
             J(i, 2) = -1          (only if we are also fitting the radius)
             */
 
-            double pdist = sqrt(SQR(B(0, 0) - points[i].x) + SQR(B(1, 0) - points[i].y));
+            double pdist = sqrt(sqr(B(0, 0) - points[i].x) + sqr(B(1, 0) - points[i].y));
 
             if (forceRadius == 0.0)
                 Rs(i, 0) = pdist - B(2, 0);

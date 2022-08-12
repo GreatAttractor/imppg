@@ -29,11 +29,13 @@ File description:
 #include <wx/filename.h>
 
 #include "align_phasecorr.h"
-#include "common.h"
+#include "appconfig.h"
+#include "common/common.h"
 #include "fft.h"
-#include "image.h"
+#include "image/image.h"
 #include "imppg_assert.h"
 #include "logging.h"
+#include "math_utils/math_utils.h"
 
 /// Returns 0 for x=0, 1 for x=1
 inline float BlackmanWindow(float x)
@@ -59,7 +61,7 @@ c_Image CalcWindowFunction(
         for (int x = 0; x < wndWidth/2; x++)
         {
             float value = 0.0f;
-            float dist = SQR((x - wndWidth*0.5f) / (wndWidth*0.5f)) + SQR((y - wndHeight*0.5f) / (wndHeight*0.5f));
+            float dist = sqr((x - wndWidth*0.5f) / (wndWidth*0.5f)) + sqr((y - wndHeight*0.5f) / (wndHeight*0.5f));
             if (dist < 1)
                 value = BlackmanWindow(1.0f - dist);
 
@@ -274,7 +276,12 @@ bool DetermineTranslationVectors(
     // Read the first image and calculate its FFT
     Log::Print(wxString::Format("Loading %s... ", inputFiles[0]));
     std::string localErrorMsg;
-    const auto loadResult = LoadImageFileAsMono32f(inputFiles[0].ToStdString(), wxFileName(inputFiles[0]).GetExt().Lower().ToStdString(), &localErrorMsg);
+    const auto loadResult = LoadImageFileAsMono32f(
+        inputFiles[0].ToStdString(),
+        wxFileName(inputFiles[0]).GetExt().Lower().ToStdString(),
+        Configuration::NormalizeFITSValues,
+        &localErrorMsg
+    );
     Log::Print("done.\n");
     if (!loadResult)
     {
@@ -319,7 +326,12 @@ bool DetermineTranslationVectors(
         // Read the current (i-th) file
         Log::Print(wxString::Format("Loading %s... ", inputFiles[i]));
         std::string localErrorMsg;
-        const auto loadResult = LoadImageFileAsMono32f(inputFiles[i].ToStdString(), wxFileName(inputFiles[i]).GetExt().Lower().ToStdString(), &localErrorMsg);
+        const auto loadResult = LoadImageFileAsMono32f(
+            inputFiles[i].ToStdString(),
+            wxFileName(inputFiles[i]).GetExt().Lower().ToStdString(),
+            Configuration::NormalizeFITSValues,
+            &localErrorMsg
+        );
         Log::Print("done.\n");
         if (!loadResult)
         {

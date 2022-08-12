@@ -23,7 +23,7 @@ File description:
 
 #include <cassert>
 
-#include "common.h"
+#include "common/common.h"
 #include "imppg_assert.h"
 #include "scrollable_dlg.h"
 

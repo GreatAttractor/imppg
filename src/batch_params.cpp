@@ -34,8 +34,8 @@ File description:
 
 #include "appconfig.h"
 #include "batch_params.h"
-#include "common.h"
-#include "image.h"
+#include "common/common.h"
+#include "image/image.h"
 
 enum
 {

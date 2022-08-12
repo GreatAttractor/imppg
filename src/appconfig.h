@@ -28,8 +28,8 @@ File description:
 #include <wx/fileconf.h>
 #include <wx/gdicmn.h>
 
-#include "common.h"
-#include "formats.h"
+#include "common/common.h"
+#include "common/formats.h"
 
 
 namespace Configuration
