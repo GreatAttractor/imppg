@@ -21,7 +21,7 @@ File description:
     Script interoperability implementation.
 */
 
-//#include "ctrl_ids.h"
+#include "interop/classes/SettingsWrapper.h"
 #include "interop/classes/DirectoryIterator.h"
 #include "interop/classes/DummyObject1.h"
 #include "interop/classes/DummyObject2.h"
@@ -151,7 +151,10 @@ void Prepare(lua_State* lua, wxEvtHandler& parent)
 
     RegisterClass<DummyObject1>(lua);
     RegisterClass<DummyObject2>(lua);
+    RegisterClass<SettingsWrapper>(lua);
+
     RegisterIterator<DirectoryIterator>(lua);
+
 }
 
 void Finish()

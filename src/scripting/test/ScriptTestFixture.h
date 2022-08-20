@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "common/proc_settings.h"
+
 namespace scripting { class ScriptMessagePayload; }
 class wxAppConsole;
 class wxThreadEvent;
@@ -27,6 +29,8 @@ public:
 
     void CheckStringNotifications(std::initializer_list<std::string> expected) const;
 
+    const ProcessingSettings& GetSettingsNotification() const;
+
 private:
     void OnRunnerMessage(wxThreadEvent& event);
     void OnScriptFunctionCall(scripting::ScriptMessagePayload& payload);
@@ -36,4 +40,5 @@ private:
     std::vector<std::filesystem::path> m_TemporaryFiles;
     // value: occurrence count
     std::unordered_map<std::string, std::size_t> m_StringNotifications;
+    ProcessingSettings m_SettingsNotification;
 };

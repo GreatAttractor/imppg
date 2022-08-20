@@ -23,6 +23,7 @@ File description:
 
 #pragma once
 
+#include "common/proc_settings.h"
 #include "scripting/script_exceptions.h"
 
 #include <future>
@@ -50,12 +51,14 @@ namespace call
 struct None {};
 struct Dummy {};
 struct NotifyString { std::string s; };
+struct NotifySettings { ProcessingSettings settings; };
 }
 
 using FunctionCall = std::variant<
     call::None,
     call::Dummy,
-    call::NotifyString
+    call::NotifyString,
+    call::NotifySettings
 >;
 
 /// Payload of messages sent by script runner's worker thread to parent.

@@ -1,5 +1,6 @@
 #include "interop/classes/DummyObject1.h"
 #include "interop/classes/DummyObject2.h"
+#include "interop/classes/SettingsWrapper.h"
 #include "interop/functions/common.h"
 #include "interop/functions/imppg.h"
 #include "interop/state.h"
@@ -29,6 +30,11 @@ const luaL_Reg imppg[] = {
     {"create_dummy2", [](lua_State* lua) -> int {
         int i = luaL_checkinteger(lua, 1);
         new(PrepareObject<DummyObject2>(lua)) DummyObject2(i);
+        return 1;
+    }},
+
+    {"new_settings", [](lua_State* lua) -> int {
+        new(PrepareObject<SettingsWrapper>(lua)) SettingsWrapper();
         return 1;
     }},
 

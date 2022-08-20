@@ -64,9 +64,14 @@ void ScriptTestFixture::OnRunnerMessage(wxThreadEvent& event)
 
 void ScriptTestFixture::OnScriptFunctionCall(scripting::ScriptMessagePayload& payload)
 {
+    //TODO: use visitor
     if (const auto* call = std::get_if<scripting::call::NotifyString>(&payload.GetCall()))
     {
         m_StringNotifications[call->s] += 1;
+    }
+    else if (const auto* call = std::get_if<scripting::call::NotifySettings>(&payload.GetCall()))
+    {
+        m_SettingsNotification = call->settings;
     }
 
     payload.SignalCompletion();
@@ -87,4 +92,9 @@ void ScriptTestFixture::CheckStringNotifications(std::initializer_list<std::stri
             BOOST_REQUIRE_EQUAL(static_cast<std::size_t>(1), iter->second);
         }
     }
+}
+
+const ProcessingSettings& ScriptTestFixture::GetSettingsNotification() const
+{
+    return m_SettingsNotification;
 }

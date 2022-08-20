@@ -1,5 +1,6 @@
 #pragma once
 
+#include "interop/classes/SettingsWrapper.h"
 #include "interop/state.h"
 
 #include <lua.hpp>
@@ -18,6 +19,13 @@ T* PrepareObject(lua_State* lua)
     lua_setmetatable(lua, -2);
     g_State->OnObjectCreated<T>();
     return *pptr;
+}
+
+template<typename T>
+T& GetObject(lua_State* lua, int stackIndex)
+{
+    auto* object = *static_cast<T**>(luaL_checkudata(lua, 1, typeid(T).name()));
+    return *object;
 }
 
 std::string GetString(lua_State* lua, int stackPos);
