@@ -22,13 +22,12 @@ add_library(scripting STATIC
 target_include_directories(scripting PUBLIC include)
 target_include_directories(scripting PRIVATE src)
 
-if(ENABLE_SCRIPTING EQUAL 1)
-    pkg_check_modules(LUA lua REQUIRED)
-    target_include_directories(scripting PRIVATE ${LUA_INCLUDE_DIRS})
-    target_link_libraries(scripting PRIVATE ${LUA_LIBRARIES})
 
-    #TODO check which minimal version of Lua we need and enforce it here (initial implementation uses 5.4)
-endif()
+pkg_check_modules(LUA lua REQUIRED)
+target_include_directories(scripting PRIVATE ${LUA_INCLUDE_DIRS})
+target_link_libraries(scripting PRIVATE ${LUA_LIBRARIES})
+
+#TODO check which minimal version of Lua we need and enforce it here (initial implementation uses 5.4)
 
 target_link_libraries(scripting PRIVATE ${wxWidgets_LIBRARIES})
 
