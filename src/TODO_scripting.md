@@ -1,0 +1,1 @@
+- przenieść script dialog z powrotem do roota?

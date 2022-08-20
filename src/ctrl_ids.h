@@ -64,6 +64,7 @@ enum
     ID_LoadSettings,
     ID_SaveSettings,
     ID_BatchProcessing,
+    ID_RunScript,
     ID_FileMenuEnd,
 
     // Settings menu items
@@ -133,6 +134,7 @@ enum
     ID_Libraries,
 
 //----------------------------------------------------------------------
+
 // Other items
     ID_MruSettings, ///< Dropdown list of the most recently used proc. settings
     ID_MruListItem,

@@ -58,51 +58,49 @@ namespace Configuration
     void StoreMruSettings(const wxArrayString& settings);
     void EmptyMruList();
 
-    extern c_Property<wxString> FileOpenPath;
-    extern c_Property<wxString> FileSavePath;
-    extern c_Property<bool>     MainWindowMaximized;
-    extern c_Property<wxRect>   MainWindowPosSize;
-    extern c_Property<wxRect>   ToneCurveEditorPosSize;
-    extern c_Property<bool>     ToneCurveEditorVisible;
-    extern c_Property<wxString> LoadSettingsPath;
-    extern c_Property<wxString> SaveSettingsPath;
-    extern c_Property<wxString> BatchFileOpenPath;
-    extern c_Property<wxString> BatchLoadSettingsPath;
-    extern c_Property<wxString> BatchOutputPath;
-    extern c_Property<wxRect>   BatchDialogPosSize;
-    extern c_Property<wxRect>   BatchProgressDialogPosSize;
-    extern c_Property<wxRect>   AlignProgressDialogPosSize;
-    extern c_Property<wxString> AlignInputPath;
-    extern c_Property<wxString> AlignOutputPath;
-    extern c_Property<wxRect>   AlignParamsDialogPosSize;
+    extern c_Property<wxString>              FileOpenPath;
+    extern c_Property<wxString>              FileSavePath;
+    extern c_Property<bool>                  MainWindowMaximized;
+    extern c_Property<wxRect>                MainWindowPosSize;
+    extern c_Property<wxRect>                ToneCurveEditorPosSize;
+    extern c_Property<bool>                  ToneCurveEditorVisible;
+    extern c_Property<wxString>              LoadSettingsPath;
+    extern c_Property<wxString>              SaveSettingsPath;
+    extern c_Property<wxString>              BatchFileOpenPath;
+    extern c_Property<wxString>              BatchLoadSettingsPath;
+    extern c_Property<wxString>              BatchOutputPath;
+    extern c_Property<wxRect>                BatchDialogPosSize;
+    extern c_Property<wxRect>                BatchProgressDialogPosSize;
+    extern c_Property<wxRect>                AlignProgressDialogPosSize;
+    extern c_Property<wxString>              AlignInputPath;
+    extern c_Property<wxString>              AlignOutputPath;
+    extern c_Property<wxRect>                AlignParamsDialogPosSize;
     /// Code of UI language to use or an empty string (then the system default will used)
-    extern c_Property<wxString> UiLanguage;
-    extern c_Property<bool>     LogHistogram;
-    extern c_Property<int>      FileInputFormatIndex;
-    extern c_Property<OutputFormat> FileOutputFormat;
-    extern c_Property<OutputFormat> BatchOutputFormat;
-    extern c_Property<int>      ProcessingPanelWidth;
-    extern c_Property<unsigned> ToolIconSize;
+    extern c_Property<wxString>              UiLanguage;
+    extern c_Property<bool>                  LogHistogram;
+    extern c_Property<int>                   FileInputFormatIndex;
+    extern c_Property<OutputFormat>          FileOutputFormat;
+    extern c_Property<OutputFormat>          BatchOutputFormat;
+    extern c_Property<int>                   ProcessingPanelWidth;
+    extern c_Property<unsigned>              ToolIconSize;
     extern c_Property<ToneCurveEditorColors> ToneCurveColors;
-    extern c_Property<wxColor>  ToneCurveEditor_CurveColor;
-    extern c_Property<wxColor>  ToneCurveEditor_BackgroundColor;
-    extern c_Property<wxColor>  ToneCurveEditor_CurvePointColor;
-    extern c_Property<wxColor>  ToneCurveEditor_SelectedCurvePointColor;
-    extern c_Property<wxColor>  ToneCurveEditor_HistogramColor;
-    extern c_Property<unsigned> ToneCurveEditor_CurveWidth;
-    extern c_Property<unsigned> ToneCurveEditor_CurvePointSize;
-    extern c_Property<wxRect>   ToneCurveSettingsDialogPosSize;
-    extern c_Property<BackEnd>  ProcessingBackEnd;
-    extern c_Property<ScalingMethod> DisplayScalingMethod;
-    extern c_Property<bool> OpenGLInitIncomplete;
+    extern c_Property<wxColor>               ToneCurveEditor_CurveColor;
+    extern c_Property<wxColor>               ToneCurveEditor_BackgroundColor;
+    extern c_Property<wxColor>               ToneCurveEditor_CurvePointColor;
+    extern c_Property<wxColor>               ToneCurveEditor_SelectedCurvePointColor;
+    extern c_Property<wxColor>               ToneCurveEditor_HistogramColor;
+    extern c_Property<unsigned>              ToneCurveEditor_CurveWidth;
+    extern c_Property<unsigned>              ToneCurveEditor_CurvePointSize;
+    extern c_Property<wxRect>                ToneCurveSettingsDialogPosSize;
+    extern c_Property<BackEnd>               ProcessingBackEnd;
+    extern c_Property<ScalingMethod>         DisplayScalingMethod;
+    extern c_Property<bool>                  OpenGLInitIncomplete;
     /// If true, floating-points values read from a FITS file are normalized, so that the highest becomes 1.0.
-    extern c_Property<bool> NormalizeFITSValues;
-
+    extern c_Property<bool>                  NormalizeFITSValues;
     /// If zero, draw 1 segment per pixel
     /** NOTE: drawing 1 segment per pixel may be slow for large widths of the tone curve editor window
         (e.g. on a 3840x2160 display). */
-    extern c_Property<unsigned> ToneCurveEditorNumDrawSegments;
-
+    extern c_Property<unsigned>              ToneCurveEditorNumDrawSegments;
     /// Number of megapixel-iterations of L-R deconvolution to perform in a single OpenGL command batch.
     /// E.g. the value of 4 corresponds to, for instance, a 400x200 pixels selection with 50 L-R iterations
     /// (400*200*50).
@@ -110,7 +108,8 @@ namespace Configuration
     /// If the value is too large wrt. the GPU's performance, the user will experience worsened
     /// responsiveness of the L-R controls (i.e. each change of L-R parameters will block the GUI for
     /// a noticeable moment - a time it takes for the OpenGL command batch to complete).
-    extern c_Property<unsigned> LRCmdBatchSizeMpixIters;
+    extern c_Property<unsigned>              LRCmdBatchSizeMpixIters;
+    extern c_Property<wxRect>                ScriptDialogPosSize;
 }
 
 #endif

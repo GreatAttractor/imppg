@@ -15,6 +15,8 @@ project("imppg")
 
 cmake_minimum_required(VERSION 2.8)
 
+enable_testing()
+
 include(config.cmake)
 include(FindPkgConfig)
 include(GNUInstallDirs)
@@ -88,7 +90,7 @@ if(UNIX AND NOT APPLE)
     set(wxWidgets_CONFIG_OPTIONS --toolkit=gtk3)
 endif()
 
-set(WX_COMPONENTS "adv aui xml core base")
+set(WX_COMPONENTS "adv aui xml core base richtext")
 if(USE_OPENGL_BACKEND)
 	string(APPEND WX_COMPONENTS " gl")
 endif()
@@ -138,13 +140,24 @@ if(USE_CFITSIO EQUAL 1)
     target_link_libraries(imppg PRIVATE ${CFITSIO_LIBRARIES})
 endif()
 
+if(ENABLE_SCRIPTING EQUAL 1)
+    target_compile_definitions(imppg PRIVATE ENABLE_SCRIPTING=1)
+    target_sources(imppg PRIVATE src/script_dialog.cpp)
+endif()
+
 add_subdirectory(src/math_utils)
 add_subdirectory(src/image)
 add_subdirectory(src/common)
 add_subdirectory(src/backend)
 add_subdirectory(src/logging)
+if(ENABLE_SCRIPTING)
+    add_subdirectory(src/scripting)
+endif()
 
 target_link_libraries(imppg PRIVATE common math_utils backend image logging)
+if(ENABLE_SCRIPTING EQUAL 1)
+    target_link_libraries(imppg PRIVATE scripting)
+endif()
 
 
 # Installation -------------------------------------

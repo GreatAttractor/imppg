@@ -114,6 +114,9 @@ class c_MainWindow: public wxFrame
     void LoadSettingsFromFile(wxString settingsFile, bool moveToMruListStart);
     void IndicateSettingsModified();
     wxRect GetPhysicalSelection() const; ///< Returns current selection in physical `m_ImageView` coords.
+#if ENABLE_SCRIPTING
+    void RunScript();
+#endif
 
     template<typename T>
     void InitializeBackEnd(std::unique_ptr<T> backEnd, std::optional<c_Image> img);

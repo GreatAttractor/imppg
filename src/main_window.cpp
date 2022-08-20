@@ -71,6 +71,9 @@ File description:
 #include "logging.h"
 #include "main_window.h"
 #include "normalize.h"
+#if ENABLE_SCRIPTING
+#include "script_dialog.h"
+#endif
 #include "settings.h"
 #include "tcrv_wnd_settings.h"
 #include "tiff.h"
@@ -141,6 +144,7 @@ BEGIN_EVENT_TABLE(c_MainWindow, wxFrame)
     EVT_TOOL(ID_MruSettings,  c_MainWindow::OnSettingsFile)
 
     EVT_MENU(ID_BatchProcessing, c_MainWindow::OnCommandEvent)
+    EVT_MENU(ID_RunScript, c_MainWindow::OnCommandEvent)
     EVT_CHECKBOX(ID_LucyRichardsonDeringing, c_MainWindow::OnCommandEvent)
     EVT_MENU(ID_NormalizeImage, c_MainWindow::OnCommandEvent)
     EVT_MENU(ID_ChooseLanguage, c_MainWindow::OnCommandEvent)
@@ -1301,6 +1305,12 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent& event)
         m_BackEnd->SetScalingMethod(s.scalingMethod);
         Configuration::DisplayScalingMethod = s.scalingMethod;
         break;
+
+    case ID_RunScript:
+#if ENABLE_SCRIPTING
+        RunScript();
+#endif
+        break;
     }
 }
 
@@ -1497,6 +1507,9 @@ void c_MainWindow::InitMenu()
     menuFile->Append(ID_SaveSettings, _("Save processing settings..."));
     menuFile->AppendSeparator();
     menuFile->Append(ID_BatchProcessing, _("Batch processing..."));
+#if ENABLE_SCRIPTING
+    menuFile->Append(ID_RunScript, _("Run script..."));
+#endif
     menuFile->AppendSeparator();
     menuFile->Append(wxID_EXIT);
 
@@ -1796,3 +1809,23 @@ void c_MainWindow::OnProcessingPanelScrolled(wxScrollWinEvent &event)
     FindWindowById(ID_ProcessingControlsPanel)->Refresh(false);
     event.Skip();
 }
+
+#if ENABLE_SCRIPTING
+void c_MainWindow::RunScript()
+{
+    if (m_BackEnd->ProcessingInProgress())
+    {
+        if (wxYES == wxMessageBox(_("Processing in progress, abort it?"), _("Warning"), wxICON_EXCLAMATION | wxYES_NO, this))
+        {
+            m_BackEnd->AbortProcessing();
+        }
+        else
+        {
+            return;
+        }
+    }
+
+    scripting::c_ScriptDialog dialog(this);
+    dialog.ShowModal();
+}
+#endif
