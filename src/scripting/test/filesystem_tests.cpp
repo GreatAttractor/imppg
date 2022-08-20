@@ -74,7 +74,7 @@ end
     });
 }
 
-BOOST_FIXTURE_TEST_CASE(FilesExist_ListFileByNameMask_FilesListed, ScriptTestFixture)
+BOOST_FIXTURE_TEST_CASE(FilesExist_ListFilesByNameMask_FilesListed, ScriptTestFixture)
 {
     std::string script{R"(
 
