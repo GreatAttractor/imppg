@@ -6,7 +6,7 @@
 
 namespace fs = std::filesystem;
 
-BOOST_FIXTURE_TEST_CASE(FilesExist_ListAllWithExtension_FilesListed, ScriptTestFixture)
+BOOST_FIXTURE_TEST_CASE(ListFilesFilteredByExtension, ScriptTestFixture)
 {
     std::string script{R"(
 
@@ -29,7 +29,7 @@ end
     });
 }
 
-BOOST_FIXTURE_TEST_CASE(FilesExist_ListAll_FilesListed, ScriptTestFixture)
+BOOST_FIXTURE_TEST_CASE(ListAllFiles, ScriptTestFixture)
 {
     std::string script{R"(
 
@@ -51,7 +51,7 @@ end
     });
 }
 
-BOOST_FIXTURE_TEST_CASE(FilesExist_ListDirectory_FilesListed, ScriptTestFixture)
+BOOST_FIXTURE_TEST_CASE(ListFilesInDirectory, ScriptTestFixture)
 {
     std::string script{R"(
 
@@ -74,7 +74,7 @@ end
     });
 }
 
-BOOST_FIXTURE_TEST_CASE(FilesExist_ListFilesByNameMask_FilesListed, ScriptTestFixture)
+BOOST_FIXTURE_TEST_CASE(ListFilesByNameMask, ScriptTestFixture)
 {
     std::string script{R"(
 
