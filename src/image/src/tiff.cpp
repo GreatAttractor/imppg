@@ -357,7 +357,7 @@ std::optional<c_Image> ReadTiff(
     file.read(reinterpret_cast<char*>(&tiffHeader), sizeof(tiffHeader));
     if (file.gcount() != sizeof(tiffHeader))
     {
-        if (errorMsg) *errorMsg = "File header is incomplete.";
+        if (errorMsg) *errorMsg = "file header is incomplete";
         return std::nullopt;
     }
 
@@ -367,7 +367,7 @@ std::optional<c_Image> ReadTiff(
 
     if (SWAP16cnd(tiffHeader.version, enDiff) != TIFF_VERSION)
     {
-        if (errorMsg) *errorMsg = "Unknown TIFF version.";
+        if (errorMsg) *errorMsg = "unknown TIFF version";
         return std::nullopt;
     }
 
@@ -379,7 +379,7 @@ std::optional<c_Image> ReadTiff(
     numDirEntries = SWAP16cnd(numDirEntries, enDiff);
     if (file.gcount() != sizeof(numDirEntries))
     {
-        if (errorMsg) *errorMsg = "The number of TIFF directory entries tag is incomplete.";
+        if (errorMsg) *errorMsg = "the number of TIFF directory entries tag is incomplete";
         return std::nullopt;
     }
 
@@ -400,7 +400,7 @@ std::optional<c_Image> ReadTiff(
         file.read(reinterpret_cast<char*>(&tiffField), sizeof(tiffField));
         if (file.gcount() != sizeof(tiffField))
         {
-            if (errorMsg) *errorMsg = "TIFF field is incomplete.";
+            if (errorMsg) *errorMsg = "TIFF field is incomplete";
             return std::nullopt;
         }
         nextFieldPos = file.tellg();
@@ -452,7 +452,7 @@ std::optional<c_Image> ReadTiff(
 
                  if (!allEqual)
                  {
-                    if (errorMsg) *errorMsg = "Files with differing bit depts per channel are not supported.";
+                    if (errorMsg) *errorMsg = "files with differing bit depts per channel are not supported";
                     return std::nullopt;
                  }
 
@@ -461,7 +461,7 @@ std::optional<c_Image> ReadTiff(
 
             if (bitsPerSample != 8 && bitsPerSample != 16)
             {
-                if (errorMsg) *errorMsg = "Only 8 and 16 bits per channel files are supported.";
+                if (errorMsg) *errorMsg = "only 8 and 16 bits per channel files are supported";
                 return std::nullopt;
             }
             break;
@@ -469,7 +469,7 @@ std::optional<c_Image> ReadTiff(
         case TAG_COMPRESSION:
             if (tiffField.value != NO_COMPRESSION)
             {
-                if (errorMsg) *errorMsg = "Compression is not supported.";
+                if (errorMsg) *errorMsg = "compression is not supported";
                 return std::nullopt;
             }
             break;
@@ -514,7 +514,7 @@ std::optional<c_Image> ReadTiff(
         case TAG_PLANAR_CONFIGURATION:
             if (tiffField.value != PLANAR_CONFIGURATION_CHUNKY)
             {
-                if (errorMsg) *errorMsg = "Files with planar configuration other than packed (chunky) are not supported.";
+                if (errorMsg) *errorMsg = "files with planar configuration other than packed (chunky) are not supported";
                 return std::nullopt;
             }
             break;
@@ -531,7 +531,7 @@ std::optional<c_Image> ReadTiff(
         samplesPerPixel == 3 && photometricInterpretation != PHMET_RGB ||
         samplesPerPixel != 1 && samplesPerPixel != 3)
     {
-        if (errorMsg) *errorMsg = "Only RGB and grayscale images are supported.";
+        if (errorMsg) *errorMsg = "only RGB and grayscale images are supported";
         return std::nullopt;
     }
 
@@ -564,8 +564,8 @@ std::optional<c_Image> ReadTiff(
 
             if (file.gcount() != numBytesToRead)
             {
-                if (errorMsg) *errorMsg = boost::str(boost::format("The file is incomplete: pixel data in strip %d is too short. "
-                    "Expected %d bytes, but read only %d.")
+                if (errorMsg) *errorMsg = boost::str(boost::format("the file is incomplete: pixel data in strip %d is too short; "
+                    "expected %d bytes, but read only %d")
                     % i
                     % stripByteCounts[i]
                     % (currentRow * numBytesToRead)
