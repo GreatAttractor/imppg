@@ -1,8 +1,12 @@
 #include "ScriptTestFixture.h"
 
+#include <boost/algorithm/string/replace.hpp>
 #include <boost/test/unit_test.hpp>
+#include <filesystem>
 #include <future>
 #include <memory>
+
+namespace fs = std::filesystem;
 
 BOOST_AUTO_TEST_SUITE(Dummy);
 
@@ -51,12 +55,23 @@ imppg.test.notify_settings(s)
 
 BOOST_FIXTURE_TEST_CASE(RenameMe, ScriptTestFixture)
 {
-    const char* script = R"(
+    std::string script{R"(
 
 image = imppg.load_image("$ROOT/image.tif")
 imppg.test.notify_image(image)
 
-    )";
+    )"};
+    const auto root = fs::temp_directory_path();
+    boost::algorithm::replace_all(script, "$ROOT", root.generic_string());
 
-    RunScript(script);
+    c_Image image{128, 64, PixelFormat::PIX_MONO8};
+    image.ClearToZero();
+    image.SaveToFile(root / "image.tif", OutputFormat::TIFF_16);
+
+    RunScript(script.c_str());
+
+    const auto& loadedImage = GetImageNotification();
+    BOOST_CHECK_EQUAL(image.GetWidth(), loadedImage.GetWidth());
+    BOOST_CHECK_EQUAL(image.GetHeight(), loadedImage.GetHeight());
+    BOOST_FAIL("finish implementing this");
 }

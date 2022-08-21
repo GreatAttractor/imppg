@@ -33,6 +33,8 @@ public:
 
     const ProcessingSettings& GetSettingsNotification() const;
 
+    const c_Image& GetImageNotification() const;
+
 private:
     void OnRunnerMessage(wxThreadEvent& event);
     void OnScriptFunctionCall(scripting::ScriptMessagePayload& payload);

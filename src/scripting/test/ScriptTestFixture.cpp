@@ -110,3 +110,8 @@ const ProcessingSettings& ScriptTestFixture::GetSettingsNotification() const
 {
     return m_SettingsNotification.value();
 }
+
+const c_Image& ScriptTestFixture::GetImageNotification() const
+{
+    return m_ImageNotification.value();
+}
