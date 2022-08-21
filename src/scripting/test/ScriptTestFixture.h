@@ -4,10 +4,12 @@
 #include <future>
 #include <initializer_list>
 #include <memory>
+#include <optional>
 #include <unordered_map>
 #include <vector>
 
 #include "common/proc_settings.h"
+#include "image/image.h"
 
 namespace scripting { class ScriptMessagePayload; }
 class wxAppConsole;
@@ -40,5 +42,6 @@ private:
     std::vector<std::filesystem::path> m_TemporaryFiles;
     // value: occurrence count
     std::unordered_map<std::string, std::size_t> m_StringNotifications;
-    ProcessingSettings m_SettingsNotification;
+    std::optional<ProcessingSettings> m_SettingsNotification;
+    std::optional<c_Image> m_ImageNotification;
 };

@@ -7,6 +7,8 @@ add_library(scripting STATIC
     src/interop/classes/DummyObject2.h
     src/interop/classes/SettingsWrapper.cpp
     src/interop/classes/SettingsWrapper.h
+    src/interop/classes/ImageWrapper.cpp
+    src/interop/classes/ImageWrapper.h
     src/interop/functions/common.cpp
     src/interop/functions/common.h
     src/interop/functions/imppg_filesystem.cpp

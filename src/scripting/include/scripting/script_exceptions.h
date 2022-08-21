@@ -29,4 +29,5 @@ class ScriptExecutionError: public std::runtime_error
 {
 public:
     ScriptExecutionError(const char* message): std::runtime_error(message) {}
+    ScriptExecutionError(const std::string& message): ScriptExecutionError(message.c_str()) {}
 };

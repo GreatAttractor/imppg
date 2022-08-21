@@ -24,6 +24,7 @@ File description:
 #pragma once
 
 #include "common/proc_settings.h"
+#include "image/image.h"
 #include "scripting/script_exceptions.h"
 
 #include <future>
@@ -36,7 +37,7 @@ namespace scripting
 
 namespace MessageId
 {
-    enum { ScriptFunctionCall, ScriptFinished };
+    enum { ScriptFunctionCall, ScriptError, ScriptFinished };
 }
 
 /// Represents errors during script's execution of ImPPG-side functions.
@@ -50,15 +51,17 @@ namespace call
 {
 struct None {};
 struct Dummy {};
-struct NotifyString { std::string s; };
+struct NotifyImage { c_Image image; };
 struct NotifySettings { ProcessingSettings settings; };
+struct NotifyString { std::string s; };
 }
 
 using FunctionCall = std::variant<
     call::None,
     call::Dummy,
-    call::NotifyString,
-    call::NotifySettings
+    call::NotifyImage,
+    call::NotifySettings,
+    call::NotifyString
 >;
 
 /// Payload of messages sent by script runner's worker thread to parent.
@@ -74,6 +77,10 @@ public:
 
     ScriptMessagePayload(FunctionCall call, std::promise<void>&& completion)
     : m_Call(call), m_Completion(std::move(completion))
+    {}
+
+    ScriptMessagePayload(std::string message)
+    : m_Message(std::move(message))
     {}
 
     ScriptMessagePayload(const ScriptMessagePayload& other)
@@ -100,9 +107,12 @@ public:
 
     void SignalCompletion() { m_Completion.set_value(); }
 
+    const std::string& GetMessage() const { return m_Message; }
+
 private:
     FunctionCall m_Call;
     std::promise<void> m_Completion;
+    std::string m_Message;
 };
 
 /// Prepares interop for script execution.

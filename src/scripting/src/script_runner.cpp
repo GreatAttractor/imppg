@@ -21,19 +21,15 @@ File description:
     Script runner thread implementation.
 */
 
-///#include "ctrl_ids.h"
 #include "scripting/script_exceptions.h"
 #include "scripting/interop.h"
 #include "scripting/script_runner.h"
 
 #include <array>
-#include <chrono> //TESTING #############
 #include <iostream> //TESTING ############
 #include <lua.hpp>
 #include <thread>
 #include <sstream>
-
-using namespace std::chrono_literals; //TESTING #############
 
 /// Expects that Lua state variable `lua` is in scope.
 #define CHECKED_CALL(funcCall)                                                         \
@@ -45,7 +41,7 @@ using namespace std::chrono_literals; //TESTING #############
             std::stringstream s;                                                       \
             s << "failure at " << __FILE__ << ":" << __LINE__                          \
               << ", error code: " << result << ", message: " << lua_tostring(lua, -1); \
-            throw ScriptExecutionError(s.str().c_str());                               \
+            throw ScriptExecutionError(s.str());                                       \
         }                                                                              \
     } while (false);
 
@@ -75,7 +71,7 @@ const char* StreamReader(lua_State* lua, void* opaqueReaderState, std::size_t* s
 namespace scripting
 {
 
-c_ScriptRunner::c_ScriptRunner(
+ScriptRunner::ScriptRunner(
     std::unique_ptr<std::istream> script,
     wxEvtHandler& parent,
     std::future<void>&& stopRequested
@@ -87,7 +83,7 @@ c_ScriptRunner::c_ScriptRunner(
 {
 }
 
-wxThread::ExitCode c_ScriptRunner::Entry()
+wxThread::ExitCode ScriptRunner::Entry()
 {
     lua_State *lua = luaL_newstate();
 
@@ -114,15 +110,11 @@ wxThread::ExitCode c_ScriptRunner::Entry()
         lua_close(lua);
         scripting::Finish();
     }
-    catch (const ScriptExecutionError& exc)
+    catch (const std::runtime_error& exc)
     {
-        std::cout << "ScriptExecutionError: " << exc.what() << std::endl;
-        //TODO: send error msg
-    }
-    catch (...)
-    {
-        std::cout << "Unexpected exception caught." << std::endl;
-        //TODO: send error msg
+        auto* event = new wxThreadEvent(wxEVT_THREAD, MessageId::ScriptError);
+        event->SetPayload(ScriptMessagePayload(exc.what()));
+        m_Parent.QueueEvent(event);
     }
 
     auto* event = new wxThreadEvent(wxEVT_THREAD, MessageId::ScriptFinished);
@@ -131,7 +123,7 @@ wxThread::ExitCode c_ScriptRunner::Entry()
     return static_cast<wxThread::ExitCode>(0);
 }
 
-c_ScriptRunner::~c_ScriptRunner()
+ScriptRunner::~ScriptRunner()
 {
     Wait();
 }

@@ -3,9 +3,7 @@
 namespace scripting
 {
 
-//int DummyObject1::get() const { return 55; }
-
-ProcessingSettings SettingsWrapper::GetSettings() const
+const ProcessingSettings& SettingsWrapper::GetSettings() const
 {
     return m_SettingsWrapper;
 }

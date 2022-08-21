@@ -60,7 +60,7 @@ private:
     wxButton* m_BtnRun{nullptr};
     wxButton* m_BtnStop{nullptr};
     wxButton* m_BtnTogglePause{nullptr};
-    std::unique_ptr<c_ScriptRunner> m_Runner;
+    std::unique_ptr<ScriptRunner> m_Runner;
     bool m_CloseAfterRunnerEnds{false};
     std::unique_ptr<std::promise<void>> m_StopScript;
     wxRichTextCtrl* m_Console{nullptr};

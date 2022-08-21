@@ -21,8 +21,9 @@ File description:
     Script interoperability implementation.
 */
 
-#include "interop/classes/SettingsWrapper.h"
 #include "interop/classes/DirectoryIterator.h"
+#include "interop/classes/ImageWrapper.h"
+#include "interop/classes/SettingsWrapper.h"
 #include "interop/classes/DummyObject1.h"
 #include "interop/classes/DummyObject2.h"
 #include "interop/functions/imppg_filesystem.h"
@@ -151,6 +152,7 @@ void Prepare(lua_State* lua, wxEvtHandler& parent)
 
     RegisterClass<DummyObject1>(lua);
     RegisterClass<DummyObject2>(lua);
+    RegisterClass<ImageWrapper>(lua);
     RegisterClass<SettingsWrapper>(lua);
 
     RegisterIterator<DirectoryIterator>(lua);

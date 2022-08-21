@@ -31,7 +31,7 @@ ScriptTestFixture::~ScriptTestFixture()
 void ScriptTestFixture::RunScript(const char* scriptText)
 {
     std::promise<void> stopScript;
-    scripting::c_ScriptRunner runner(std::make_unique<std::stringstream>(scriptText), *m_App, stopScript.get_future());
+    scripting::ScriptRunner runner(std::make_unique<std::stringstream>(scriptText), *m_App, stopScript.get_future());
     runner.Run();
     m_App->MainLoop();
     runner.Wait();
@@ -54,6 +54,13 @@ void ScriptTestFixture::OnRunnerMessage(wxThreadEvent& event)
         break;
     }
 
+    case scripting::MessageId::ScriptError:
+    {
+        auto payload = event.GetPayload<scripting::ScriptMessagePayload>();
+        BOOST_FAIL("Script execution error: " << payload.GetMessage() << ".");
+        break;
+    }
+
     case scripting::MessageId::ScriptFinished:
         m_App->ExitMainLoop();
         break;
@@ -64,14 +71,19 @@ void ScriptTestFixture::OnRunnerMessage(wxThreadEvent& event)
 
 void ScriptTestFixture::OnScriptFunctionCall(scripting::ScriptMessagePayload& payload)
 {
-    //TODO: use visitor
-    if (const auto* call = std::get_if<scripting::call::NotifyString>(&payload.GetCall()))
+    auto& callVariant = payload.GetCall();
+
+    if (const auto* call = std::get_if<scripting::call::NotifyString>(&callVariant))
     {
         m_StringNotifications[call->s] += 1;
     }
-    else if (const auto* call = std::get_if<scripting::call::NotifySettings>(&payload.GetCall()))
+    else if (auto* call = std::get_if<scripting::call::NotifySettings>(&callVariant))
     {
-        m_SettingsNotification = call->settings;
+        m_SettingsNotification = std::move(call->settings);
+    }
+    else if (auto* call = std::get_if<scripting::call::NotifyImage>(&callVariant))
+    {
+        m_ImageNotification = std::move(call->image);
     }
 
     payload.SignalCompletion();
@@ -96,5 +108,5 @@ void ScriptTestFixture::CheckStringNotifications(std::initializer_list<std::stri
 
 const ProcessingSettings& ScriptTestFixture::GetSettingsNotification() const
 {
-    return m_SettingsNotification;
+    return m_SettingsNotification.value();
 }

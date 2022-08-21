@@ -142,11 +142,10 @@ void c_ScriptDialog::OnScriptFileSelected(wxFileDirPickerEvent& event)
 void c_ScriptDialog::OnRunScript(wxCommandEvent&)
 {
     IMPPG_ASSERT(!IsRunnerActive());
-    std::cout << "Attempting to run..." << std::endl;
 
     auto scriptStream = std::make_unique<std::ifstream>(m_ScriptFileCtrl->GetPath(), std::ios::binary);
     m_StopScript = std::make_unique<std::promise<void>>();
-    m_Runner = std::make_unique<c_ScriptRunner>(std::move(scriptStream), *this, m_StopScript->get_future());
+    m_Runner = std::make_unique<ScriptRunner>(std::move(scriptStream), *this, m_StopScript->get_future());
     m_Runner->Run();
     m_BtnRun->Disable();
     m_BtnStop->Enable();
@@ -219,6 +218,13 @@ void c_ScriptDialog::OnRunnerMessage(wxThreadEvent& event)
 {
     switch (event.GetId())
     {
+    case scripting::MessageId::ScriptError:
+    {
+        auto payload = event.GetPayload<ScriptMessagePayload>();
+        m_Console->AppendText(_("Script execution error: ") + payload.GetMessage() + ".\n");
+        break;
+    }
+
     case scripting::MessageId::ScriptFinished:
         m_Console->AppendText(_("Script execution finished.") + "\n");
         m_Runner->Wait();

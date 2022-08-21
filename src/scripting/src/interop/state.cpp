@@ -35,8 +35,8 @@ void State::VerifyAllObjectsRemoved() const
     {
         if (numObjects != 0)
         {
-            throw ScriptExecutionError((std::string{"expected 0 objects of type "} + typeName + ", but found "
-                + boost::lexical_cast<std::string>(numObjects)).c_str());
+            throw ScriptExecutionError(std::string{"expected 0 objects of type "} + typeName + ", but found "
+                + boost::lexical_cast<std::string>(numObjects));
         }
     }
 }

@@ -48,3 +48,15 @@ imppg.test.notify_settings(s)
     BOOST_CHECK_EQUAL(1.0, settings.toneCurve.GetPoint(1).x);
     BOOST_CHECK_EQUAL(1.0, settings.toneCurve.GetPoint(1).y);
 }
+
+BOOST_FIXTURE_TEST_CASE(RenameMe, ScriptTestFixture)
+{
+    const char* script = R"(
+
+image = imppg.load_image("$ROOT/image.tif")
+imppg.test.notify_image(image)
+
+    )";
+
+    RunScript(script);
+}

@@ -33,11 +33,11 @@ File description:
 namespace scripting
 {
 
-class c_ScriptRunner: public wxThread
+class ScriptRunner: public wxThread
 {
 public:
-    c_ScriptRunner(std::unique_ptr<std::istream> script, wxEvtHandler& parent, std::future<void>&& stopRequested);
-    ~c_ScriptRunner();
+    ScriptRunner(std::unique_ptr<std::istream> script, wxEvtHandler& parent, std::future<void>&& stopRequested);
+    ~ScriptRunner();
 
 private:
     ExitCode Entry() override;

@@ -1,5 +1,6 @@
 #include "interop/classes/DummyObject1.h"
 #include "interop/classes/DummyObject2.h"
+#include "interop/classes/ImageWrapper.h"
 #include "interop/classes/SettingsWrapper.h"
 #include "interop/functions/common.h"
 #include "interop/functions/imppg.h"
@@ -35,6 +36,12 @@ const luaL_Reg imppg[] = {
 
     {"new_settings", [](lua_State* lua) -> int {
         new(PrepareObject<SettingsWrapper>(lua)) SettingsWrapper();
+        return 1;
+    }},
+
+    {"load_image", [](lua_State* lua) -> int {
+        const std::string imagePath = GetString(lua, 1);
+        new(PrepareObject<ImageWrapper>(lua)) ImageWrapper(imagePath);
         return 1;
     }},
 
