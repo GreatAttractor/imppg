@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2016-2021 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2016-2022 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -1137,10 +1137,10 @@ std::optional<c_Image> LoadFitsImage(const std::string& fname, bool normalize)
 #endif
 
 std::optional<c_Image> LoadImageAs(
-    const std::string& fname,     ///< Full path (including file name and extension).
-    const std::string& extension, ///< Lowercase extension.
-    PixelFormat destFmt,          ///< Pixel format of the result; can be one of PIX_MONO8, PIX_MONO32F.
-    std::string* errorMsg,        ///< If not null, may receive an error message (if any).
+    const std::string& fname,
+    const std::string& extension,
+    std::optional<PixelFormat> destFmt, ///< Pixel format to convert to; can be one of PIX_MONO8, PIX_MONO32F.
+    std::string* errorMsg, ///< If not null, may receive an error message (if any).
     /// If true, floating-points values read from a FITS file are normalized, so that the highest becomes 1.0.
     bool normalizeFITSvalues
 )
@@ -1154,10 +1154,10 @@ std::optional<c_Image> LoadImageAs(
         std::optional<c_Image> result = LoadFitsImage(fname, normalizeFITSvalues);
         if (result.has_value())
         {
-            if (result->GetPixelFormat() == destFmt)
+            if (!destFmt.has_value() || result->GetPixelFormat() == destFmt.value())
                 return result;
             else
-                return result->ConvertPixelFormat(destFmt);
+                return result->ConvertPixelFormat(destFmt.value());
         }
         else
             return std::nullopt;
@@ -1178,40 +1178,46 @@ std::optional<c_Image> LoadImageAs(
 
     if (fif != FIF_UNKNOWN && FreeImage_FIFSupportsReading(fif))
     {
-        //FIBITMAP* fibmp = FreeImage_Load(fif, fname.c_str());
         c_FreeImageHandleWrapper fibmp(FreeImage_Load(fif, fname.c_str()));
         if (!fibmp)
             return std::nullopt;
 
         c_FreeImageHandleWrapper fibmpConv{nullptr};
 
-        switch (destFmt)
+        if (destFmt.has_value())
         {
-        case PixelFormat::PIX_MONO8:
+            switch (destFmt.value())
             {
-                // currently this it the only universal way in FreeImage to convert ANY bitmap type to grayscale
-                c_FreeImageHandleWrapper fiBmpFloat(FreeImage_ConvertToFloat(fibmp.get()));
-                fibmpConv = FreeImage_ConvertToStandardType(fiBmpFloat.get());
+            case PixelFormat::PIX_MONO8:
+                {
+                    // currently this it the only universal way in FreeImage to convert ANY bitmap type to grayscale
+                    c_FreeImageHandleWrapper fiBmpFloat(FreeImage_ConvertToFloat(fibmp.get()));
+                    fibmpConv = FreeImage_ConvertToStandardType(fiBmpFloat.get());
+                }
+                break;
+
+            case PixelFormat::PIX_MONO32F: fibmpConv.reset(FreeImage_ConvertToFloat(fibmp.get())); break;
+            default: IMPPG_ABORT();
             }
-            break;
 
-        case PixelFormat::PIX_MONO32F: fibmpConv.reset(FreeImage_ConvertToFloat(fibmp.get())); break;
-        default: IMPPG_ABORT();
+            if (!fibmpConv)
+                return std::nullopt;
         }
-
-        if (!fibmpConv)
-            return std::nullopt;
+        else
+        {
+            fibmpConv = std::move(fibmp);
+        }
 
         auto img = c_Image(
             FreeImage_GetWidth(fibmpConv.get()),
             FreeImage_GetHeight(fibmpConv.get()),
-            destFmt
+            destFmt.value()
         );
         for (unsigned row = 0; row < img.GetHeight(); row++)
             memcpy(
                 img.GetRow(img.GetHeight() - 1 - row),
                 FreeImage_GetScanLine(fibmpConv.get(), row),
-                img.GetWidth() * BytesPerPixel[static_cast<size_t>(destFmt)]
+                img.GetWidth() * BytesPerPixel[static_cast<size_t>(destFmt.value())]
             );
 
         return img;
@@ -1231,9 +1237,13 @@ std::optional<c_Image> LoadImageAs(
         {
             return std::nullopt;
         }
+        else if (destFmt.has_value() && newImg->GetPixelFormat() != destFmt.value())
+        {
+            return newImg.value().ConvertPixelFormat(destFmt.value());
+        }
         else
         {
-            return newImg.value().ConvertPixelFormat(destFmt);
+            return newImg.value();
         }
 #endif
 }

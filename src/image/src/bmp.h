@@ -26,8 +26,6 @@ File description:
 
 #include <optional>
 
-#include "image/image.h"
-
 std::optional<c_Image> ReadBmp(const std::string& fileName);
 
 /// Returns `false` on error.

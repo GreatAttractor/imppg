@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2016-2021 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2016-2022 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -372,6 +372,15 @@ std::optional<c_Image> LoadImageFileAsMono8(
     const std::string& extension,   ///< lowercase extension
     bool normalizeFITSvalues,
     std::string* errorMsg = nullptr ///< If not null, may receive an error message (if any)
+);
+
+std::optional<c_Image> LoadImageAs(
+    const std::string& fname,     ///< Full path (including file name and extension).
+    const std::string& extension, ///< Lowercase extension.
+    std::optional<PixelFormat> destFmt, ///< Pixel format to convert to; can be one of PIX_MONO8, PIX_MONO32F.
+    std::string* errorMsg,        ///< If not null, may receive an error message (if any).
+    /// If true, floating-points values read from a FITS file are normalized, so that the highest becomes 1.0.
+    bool normalizeFITSvalues
 );
 
 #if USE_CFITSIO

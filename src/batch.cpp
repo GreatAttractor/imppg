@@ -44,7 +44,6 @@ File description:
 #include "logging.h"
 #include "common/proc_settings.h"
 #include "settings.h"
-#include "tiff.h"
 
 using namespace imppg::backend;
 

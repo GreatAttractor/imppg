@@ -76,8 +76,6 @@ File description:
 #endif
 #include "settings.h"
 #include "tcrv_wnd_settings.h"
-#include "tiff.h"
-
 
 DECLARE_APP(c_MyApp)
 

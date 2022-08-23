@@ -61,14 +61,8 @@ target_compile_definitions(imppg PRIVATE
     IMPPG_VERSION_SUBMINOR=${IMPPG_VERSION_SUBMINOR}
 )
 
-if (CMAKE_VERSION VERSION_LESS "3.1")
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
-    endif()
-else()
-    set_property(TARGET imppg PROPERTY CXX_STANDARD 17)
-    set_property(TARGET imppg PROPERTY CXX_STANDARD_REQUIRED ON)
-endif()
+include(utils.cmake)
+set_cpp_standard(imppg)
 
 if(WIN32)
     # The RC file includes the application manifest and defines the application icon.
