@@ -54,6 +54,7 @@ struct Dummy {};
 struct NotifyImage { c_Image image; };
 struct NotifySettings { ProcessingSettings settings; };
 struct NotifyString { std::string s; };
+struct NotifyNumber { double number; };
 }
 
 using FunctionCall = std::variant<
@@ -61,7 +62,8 @@ using FunctionCall = std::variant<
     call::Dummy,
     call::NotifyImage,
     call::NotifySettings,
-    call::NotifyString
+    call::NotifyString,
+    call::NotifyNumber
 >;
 
 /// Payload of messages sent by script runner's worker thread to parent.

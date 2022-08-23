@@ -1,1 +1,1 @@
-- przenieść script dialog z powrotem do roota?
+- Add some "print-to-imppg's console" functionality. Consider io.output() (with ImPPG providing a file descriptor). Then use it in all API examples instead of just `print`.

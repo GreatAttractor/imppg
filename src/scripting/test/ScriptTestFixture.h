@@ -35,6 +35,8 @@ public:
 
     const c_Image& GetImageNotification() const;
 
+    void CheckNumberNotifications(std::initializer_list<double> expected) const;
+
 private:
     void OnRunnerMessage(wxThreadEvent& event);
     void OnScriptFunctionCall(scripting::ScriptMessagePayload& payload);
@@ -46,4 +48,5 @@ private:
     std::unordered_map<std::string, std::size_t> m_StringNotifications;
     std::optional<ProcessingSettings> m_SettingsNotification;
     std::optional<c_Image> m_ImageNotification;
+    std::vector<double> m_NumberNotifications;
 };

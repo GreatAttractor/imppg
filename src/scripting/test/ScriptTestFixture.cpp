@@ -85,6 +85,10 @@ void ScriptTestFixture::OnScriptFunctionCall(scripting::ScriptMessagePayload& pa
     {
         m_ImageNotification = std::move(call->image);
     }
+    else if (auto* call = std::get_if<scripting::call::NotifyNumber>(&callVariant))
+    {
+        m_NumberNotifications.push_back(call->number);
+    }
 
     payload.SignalCompletion();
 }
@@ -114,4 +118,15 @@ const ProcessingSettings& ScriptTestFixture::GetSettingsNotification() const
 const c_Image& ScriptTestFixture::GetImageNotification() const
 {
     return m_ImageNotification.value();
+}
+
+void ScriptTestFixture::CheckNumberNotifications(std::initializer_list<double> expected) const
+{
+    BOOST_REQUIRE_EQUAL(expected.size(), m_NumberNotifications.size());
+    std::size_t index{0};
+    for (const auto& expectedNumber: expected)
+    {
+        BOOST_CHECK_EQUAL(expectedNumber, m_NumberNotifications[index]);
+        ++index;
+    }
 }

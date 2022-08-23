@@ -4,6 +4,7 @@ add_executable(scripting_tests
     scripting_tests.cpp
     ScriptTestFixture.cpp
     ScriptTestFixture.h
+    settings_tests.cpp
 )
 
 include(FindPkgConfig)

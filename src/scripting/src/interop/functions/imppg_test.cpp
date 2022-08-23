@@ -23,6 +23,11 @@ void NotifyImage(const scripting::ImageWrapper& img)
     scripting::g_State->CallFunctionAndAwaitCompletion(scripting::call::NotifyImage{img.GetImage()});
 }
 
+void NotifyNumber(double number)
+{
+    scripting::g_State->CallFunctionAndAwaitCompletion(scripting::call::NotifyNumber{number});
+}
+
 } // end of private definitions
 
 namespace scripting::functions

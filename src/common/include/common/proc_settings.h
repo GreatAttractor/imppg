@@ -37,7 +37,7 @@ struct ProcessingSettings
 
     struct
     {
-        float sigma{1.3}; ///< Lucy-Richardson deconvolution kernel sigma
+        float sigma{1.0}; ///< Lucy-Richardson deconvolution kernel sigma
         int iterations{0}; ///< Number of Lucy-Richardson deconvolution iterations.
         struct
         {
@@ -48,7 +48,7 @@ struct ProcessingSettings
     struct
     {
         bool adaptive{false}; ///If true, adaptive unsharp masking is used.
-        float sigma{1.3}; ///< Gaussian kernel sigma.
+        float sigma{1.0}; ///< Gaussian kernel sigma.
         float amountMin{1.0}; ///< Amount (weight) of the unsharped layer; <1.0 blurs, >1.0 sharpens; if adaptive=true, used as the min amount.
         float amountMax{1.0}; ///< Max amount.
         float threshold{0.1}; ///< Threshold of input image brightness where the min-max amount transition occurs.
