@@ -5,6 +5,9 @@ add_library(common STATIC
     src/tcrv.cpp
 )
 
+include(../../utils.cmake)
+set_cpp_standard(common)
+
 target_compile_definitions(common PRIVATE
     IMPPG_IMAGES_DIR="${IMPPG_IMAGES_DIR}"
 )

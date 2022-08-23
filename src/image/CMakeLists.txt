@@ -12,6 +12,9 @@ if(USE_FREEIMAGE EQUAL 0)
     )
 endif()
 
+include(../../utils.cmake)
+set_cpp_standard(image)
+
 target_include_directories(image PUBLIC include)
 
 if(USE_CFITSIO EQUAL 1)
