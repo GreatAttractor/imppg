@@ -23,6 +23,9 @@ add_library(scripting STATIC
     src/script_runner.cpp
 )
 
+include(../../utils.cmake)
+set_cpp_standard(scripting)
+
 target_include_directories(scripting PUBLIC include)
 target_include_directories(scripting PRIVATE src)
 

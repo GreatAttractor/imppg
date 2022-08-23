@@ -53,11 +53,11 @@ imppg.test.notify_settings(s)
     BOOST_CHECK_EQUAL(1.0, settings.toneCurve.GetPoint(1).y);
 }
 
-BOOST_FIXTURE_TEST_CASE(RenameMe, ScriptTestFixture)
+BOOST_FIXTURE_TEST_CASE(LoadImageAsMono32f, ScriptTestFixture)
 {
     std::string script{R"(
 
-image = imppg.load_image("$ROOT/image.tif")
+image = imppg.load_image_as_mono32f("$ROOT/image.tif")
 imppg.test.notify_image(image)
 
     )"};
@@ -73,5 +73,5 @@ imppg.test.notify_image(image)
     const auto& loadedImage = GetImageNotification();
     BOOST_CHECK_EQUAL(image.GetWidth(), loadedImage.GetWidth());
     BOOST_CHECK_EQUAL(image.GetHeight(), loadedImage.GetHeight());
-    BOOST_FAIL("finish implementing this");
+    BOOST_CHECK(PixelFormat::PIX_MONO32F == loadedImage.GetPixelFormat());
 }

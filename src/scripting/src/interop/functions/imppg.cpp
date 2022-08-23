@@ -39,7 +39,7 @@ const luaL_Reg imppg[] = {
         return 1;
     }},
 
-    {"load_image", [](lua_State* lua) -> int {
+    {"load_image_as_mono32f", [](lua_State* lua) -> int {
         const std::string imagePath = GetString(lua, 1);
         new(PrepareObject<ImageWrapper>(lua)) ImageWrapper(imagePath);
         return 1;
