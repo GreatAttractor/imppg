@@ -48,9 +48,6 @@ File description:
 #ifdef __APPLE__
    #undef _WINDOWS_
 #endif
-#else
-#include "tiff.h"
-#include "bmp.h"
 #endif
 
 /// Arguments: image index and its determined translation vector.
@@ -162,10 +159,7 @@ std::optional<std::tuple<c_Image, c_Image>> PrepareInputAndOutputImages(wxString
         std::optional<c_Image> loadResult;
 
         wxString ext = wxFileName(inputFileName).GetExt().Lower();
-        if (ext == "tif" || ext == "tiff")
-            loadResult = ReadTiff(inputFileName.ToStdString());
-        else if (ext == "bmp")
-            loadResult = ReadBmp(inputFileName.ToStdString());
+        loadResult = LoadImageAs(inputFileName.ToStdString(), ext.ToStdString(), std::nullopt, nullptr, false);
 
         if (!loadResult)
         {
