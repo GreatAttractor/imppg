@@ -16,6 +16,7 @@ include(../../utils.cmake)
 set_cpp_standard(image)
 
 target_include_directories(image PUBLIC include)
+target_include_directories(image PRIVATE ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(image PRIVATE common)
 
