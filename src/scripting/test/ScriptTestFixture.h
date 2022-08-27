@@ -37,6 +37,10 @@ public:
 
     void CheckNumberNotifications(std::initializer_list<double> expected) const;
 
+    void CheckBooleanNotifications(std::initializer_list<bool> expected) const;
+
+    void CheckIntegerNotifications(std::initializer_list<int> expected) const;
+
 private:
     void OnRunnerMessage(wxThreadEvent& event);
     void OnScriptFunctionCall(scripting::ScriptMessagePayload& payload);
@@ -49,4 +53,6 @@ private:
     std::optional<ProcessingSettings> m_SettingsNotification;
     std::optional<c_Image> m_ImageNotification;
     std::vector<double> m_NumberNotifications;
+    std::vector<bool> m_BooleanNotifications;
+    std::vector<int> m_IntegerNotifications;
 };

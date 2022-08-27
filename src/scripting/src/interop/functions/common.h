@@ -1,6 +1,5 @@
 #pragma once
 
-#include "interop/classes/SettingsWrapper.h"
 #include "interop/state.h"
 
 #include <lua.hpp>
@@ -29,5 +28,11 @@ T& GetObject(lua_State* lua, int stackIndex)
 }
 
 std::string GetString(lua_State* lua, int stackPos);
+
+int GetInteger(lua_State* lua, int stackPos);
+
+double GetNumber(lua_State* lua, int stackPos);
+
+bool GetBoolean(lua_State* lua, int stackPos);
 
 }

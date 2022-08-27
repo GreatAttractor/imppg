@@ -28,12 +28,25 @@ void NotifyNumber(double number)
     scripting::g_State->CallFunctionAndAwaitCompletion(scripting::call::NotifyNumber{number});
 }
 
+void NotifyBoolean(bool value)
+{
+    scripting::g_State->CallFunctionAndAwaitCompletion(scripting::call::NotifyBoolean{value});
+}
+
+void NotifyInteger(int value)
+{
+    scripting::g_State->CallFunctionAndAwaitCompletion(scripting::call::NotifyInteger{value});
+}
+
 } // end of private definitions
 
 namespace scripting::functions
 {
 
 const luaL_Reg imppg_test[] = {
+    {"notify_boolean", [](lua_State* lua) -> int { NotifyBoolean(scripting::GetBoolean(lua, 1)); return 0; }},
+    {"notify_integer", [](lua_State* lua) -> int { NotifyInteger(scripting::GetInteger(lua, 1)); return 0; }},
+    {"notify_number", [](lua_State* lua) -> int { NotifyNumber(scripting::GetNumber(lua, 1)); return 0; }},
     {"notify_string", [](lua_State* lua) -> int { NotifyString(scripting::GetString(lua, 1)); return 0; }},
     {"notify_settings", [](lua_State* lua) -> int { NotifySettings(scripting::GetObject<SettingsWrapper>(lua, 1)); return 0; }},
     {"notify_image", [](lua_State* lua) -> int { NotifyImage(scripting::GetObject<ImageWrapper>(lua, 1)); return 0; }},

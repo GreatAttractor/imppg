@@ -51,16 +51,20 @@ namespace call
 {
 struct None {};
 struct Dummy {};
+struct NotifyBoolean { bool value; };
 struct NotifyImage { c_Image image; };
+struct NotifyInteger { int value; };
+struct NotifyNumber { double number; };
 struct NotifySettings { ProcessingSettings settings; };
 struct NotifyString { std::string s; };
-struct NotifyNumber { double number; };
 }
 
 using FunctionCall = std::variant<
     call::None,
     call::Dummy,
+    call::NotifyBoolean,
     call::NotifyImage,
+    call::NotifyInteger,
     call::NotifySettings,
     call::NotifyString,
     call::NotifyNumber

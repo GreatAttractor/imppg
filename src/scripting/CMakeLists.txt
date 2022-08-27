@@ -27,7 +27,7 @@ include(../../utils.cmake)
 set_cpp_standard(scripting)
 
 target_include_directories(scripting PUBLIC include)
-target_include_directories(scripting PRIVATE src)
+target_include_directories(scripting PRIVATE src ${Boost_INCLUDE_DIRS})
 
 
 pkg_check_modules(LUA lua REQUIRED)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common/proc_settings.h"
+#include "interop/classes/method.h"
 
 #include <lua.hpp>
 
@@ -10,9 +11,151 @@ namespace scripting
 class SettingsWrapper
 {
 public:
+    bool get_normalization_enabled() const;
+    void normalization_enabled(bool enabled);
+
+    double get_normalization_min() const;
+    void normalization_min(double value);
+
+    double get_normalization_max() const;
+    void normalization_max(double value);
+
+    double get_lr_deconv_sigma() const;
+    void lr_deconv_sigma(double value);
+
+    int get_lr_deconv_num_iters() const;
+    void lr_deconv_num_iters(int value);
+
+    bool get_lr_deconv_deringing() const;
+    void lr_deconv_deringing(bool enabled);
+
+    bool get_unsh_mask_adaptive() const;
+    void unsh_mask_adaptive(bool enabled);
+
+    double get_unsh_mask_sigma() const;
+    void unsh_mask_sigma(double value);
+
+    double get_unsh_mask_amount_min() const;
+    void unsh_mask_amount_min(double value);
+
+    double get_unsh_mask_amount_max() const;
+    void unsh_mask_amount_max(double value);
+
+    double get_unsh_mask_amount() const;
+    void unsh_mask_amount(double value);
+
+    double get_unsh_mask_threshold() const;
+    void unsh_mask_threshold(double value);
+
+    double get_unsh_mask_twidth() const;
+    void unsh_mask_twidth(double value);
+
     static const luaL_Reg* GetMethods()
     {
         static const luaL_Reg methods[] = {
+            {"get_normalization_enabled", [](lua_State* lua) {
+                return ConstMethodBoolResult<SettingsWrapper>(lua, &SettingsWrapper::get_normalization_enabled);
+            }},
+
+            {"normalization_enabled", [](lua_State* lua) {
+                return MethodBoolArg<SettingsWrapper>(lua, &SettingsWrapper::normalization_enabled);
+            }},
+
+            {"get_normalization_min", [](lua_State* lua) {
+                return ConstMethodDoubleResult<SettingsWrapper>(lua, &SettingsWrapper::get_normalization_min);
+            }},
+
+            {"normalization_min", [](lua_State* lua) {
+                return MethodDoubleArg<SettingsWrapper>(lua, &SettingsWrapper::normalization_min);
+            }},
+
+            {"get_normalization_max", [](lua_State* lua) {
+                return ConstMethodDoubleResult<SettingsWrapper>(lua, &SettingsWrapper::get_normalization_max);
+            }},
+
+            {"normalization_max", [](lua_State* lua) {
+                return MethodDoubleArg<SettingsWrapper>(lua, &SettingsWrapper::normalization_max);
+            }},
+
+            {"get_lr_deconv_sigma", [](lua_State* lua) {
+                return ConstMethodDoubleResult<SettingsWrapper>(lua, &SettingsWrapper::get_lr_deconv_sigma);
+            }},
+
+            {"lr_deconv_sigma", [](lua_State* lua) {
+                return MethodDoubleArg<SettingsWrapper>(lua, &SettingsWrapper::lr_deconv_sigma);
+            }},
+
+            {"get_lr_deconv_num_iters", [](lua_State* lua) {
+                return ConstMethodIntResult<SettingsWrapper>(lua, &SettingsWrapper::get_lr_deconv_num_iters);
+            }},
+
+            {"lr_deconv_num_iters", [](lua_State* lua) {
+                return MethodIntArg<SettingsWrapper>(lua, &SettingsWrapper::lr_deconv_num_iters);
+            }},
+
+            {"get_lr_deconv_deringing", [](lua_State* lua) {
+                return ConstMethodBoolResult<SettingsWrapper>(lua, &SettingsWrapper::get_lr_deconv_deringing);
+            }},
+
+            {"lr_deconv_deringing", [](lua_State* lua) {
+                return MethodBoolArg<SettingsWrapper>(lua, &SettingsWrapper::lr_deconv_deringing);
+            }},
+
+            {"get_unsh_mask_adaptive", [](lua_State* lua) {
+                return ConstMethodBoolResult<SettingsWrapper>(lua, &SettingsWrapper::get_unsh_mask_adaptive);
+            }},
+
+            {"unsh_mask_adaptive", [](lua_State* lua) {
+                return MethodBoolArg<SettingsWrapper>(lua, &SettingsWrapper::unsh_mask_adaptive);
+            }},
+
+            {"get_unsh_mask_sigma", [](lua_State* lua) {
+                return ConstMethodDoubleResult<SettingsWrapper>(lua, &SettingsWrapper::get_unsh_mask_sigma);
+            }},
+
+            {"unsh_mask_sigma", [](lua_State* lua) {
+                return MethodDoubleArg<SettingsWrapper>(lua, &SettingsWrapper::unsh_mask_sigma);
+            }},
+
+            {"get_unsh_mask_amount_min", [](lua_State* lua) {
+                return ConstMethodDoubleResult<SettingsWrapper>(lua, &SettingsWrapper::get_unsh_mask_amount_min);
+            }},
+
+            {"unsh_mask_amount_min", [](lua_State* lua) {
+                return MethodDoubleArg<SettingsWrapper>(lua, &SettingsWrapper::unsh_mask_amount_min);
+            }},
+
+            {"get_unsh_mask_amount_max", [](lua_State* lua) {
+                return ConstMethodDoubleResult<SettingsWrapper>(lua, &SettingsWrapper::get_unsh_mask_amount_max);
+            }},
+
+            {"unsh_mask_amount_max", [](lua_State* lua) {
+                return MethodDoubleArg<SettingsWrapper>(lua, &SettingsWrapper::unsh_mask_amount_max);
+            }},
+
+            {"get_unsh_mask_amount", [](lua_State* lua) {
+                return ConstMethodDoubleResult<SettingsWrapper>(lua, &SettingsWrapper::get_unsh_mask_amount);
+            }},
+
+            {"unsh_mask_amount", [](lua_State* lua) {
+                return MethodDoubleArg<SettingsWrapper>(lua, &SettingsWrapper::unsh_mask_amount);
+            }},
+
+            {"get_unsh_mask_threshold", [](lua_State* lua) {
+                return ConstMethodDoubleResult<SettingsWrapper>(lua, &SettingsWrapper::get_unsh_mask_threshold);
+            }},
+
+            {"unsh_mask_threshold", [](lua_State* lua) {
+                return MethodDoubleArg<SettingsWrapper>(lua, &SettingsWrapper::unsh_mask_threshold);
+            }},
+
+            {"get_unsh_mask_twidth", [](lua_State* lua) {
+                return ConstMethodDoubleResult<SettingsWrapper>(lua, &SettingsWrapper::get_unsh_mask_twidth);
+            }},
+
+            {"unsh_mask_twidth", [](lua_State* lua) {
+                return MethodDoubleArg<SettingsWrapper>(lua, &SettingsWrapper::unsh_mask_twidth);
+            }},
 
             {nullptr, nullptr} // end-of-data marker
         };
@@ -23,7 +166,7 @@ public:
     const ProcessingSettings& GetSettings() const;
 
 private:
-    ProcessingSettings m_SettingsWrapper;
+    ProcessingSettings m_Settings;
 };
 
 }

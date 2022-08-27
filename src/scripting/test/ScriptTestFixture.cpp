@@ -89,6 +89,14 @@ void ScriptTestFixture::OnScriptFunctionCall(scripting::ScriptMessagePayload& pa
     {
         m_NumberNotifications.push_back(call->number);
     }
+    else if (auto* call = std::get_if<scripting::call::NotifyBoolean>(&callVariant))
+    {
+        m_BooleanNotifications.push_back(call->value);
+    }
+    else if (auto* call = std::get_if<scripting::call::NotifyInteger>(&callVariant))
+    {
+        m_IntegerNotifications.push_back(call->value);
+    }
 
     payload.SignalCompletion();
 }
@@ -127,6 +135,28 @@ void ScriptTestFixture::CheckNumberNotifications(std::initializer_list<double> e
     for (const auto& expectedNumber: expected)
     {
         BOOST_CHECK_EQUAL(expectedNumber, m_NumberNotifications[index]);
+        ++index;
+    }
+}
+
+void ScriptTestFixture::CheckBooleanNotifications(std::initializer_list<bool> expected) const
+{
+    BOOST_REQUIRE_EQUAL(expected.size(), m_BooleanNotifications.size());
+    std::size_t index{0};
+    for (const auto& expectedValue: expected)
+    {
+        BOOST_CHECK_EQUAL(expectedValue, m_BooleanNotifications[index]);
+        ++index;
+    }
+}
+
+void ScriptTestFixture::CheckIntegerNotifications(std::initializer_list<int> expected) const
+{
+    BOOST_REQUIRE_EQUAL(expected.size(), m_IntegerNotifications.size());
+    std::size_t index{0};
+    for (const auto& expectedValue: expected)
+    {
+        BOOST_CHECK_EQUAL(expectedValue, m_IntegerNotifications[index]);
         ++index;
     }
 }

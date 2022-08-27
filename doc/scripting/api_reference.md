@@ -81,3 +81,17 @@ Methods:
   s = imppg.new_settings()
   print(s:get_unsh_mask_sigma())
   ```
+
+- `get_unsh_mask_amount`
+
+  Returns the unsharp mask *amount*.
+
+  *Parameters:* none
+
+  ----
+  *Example:*
+
+  ```Lua
+  s = imppg.new_settings()
+  print(s:get_unsh_mask_amount())
+  ```
