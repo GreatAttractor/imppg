@@ -77,7 +77,7 @@ Processing back ends can be switched via menu `Settings/Back end`.
 
   - The current selection can be changed at any time by dragging the mouse with left button pressed. Changing the selection cancels all previously started processing (if any).
 
-  - The smaller the selection, the faster the processing. For fine-tuning of L–R deconvolution's *sigma*, it is recommended to use moderately small areas; this way moving the *sigma* slider will show the results almost instantaneously. The refreshing is slightly slower when the current zoom factor is not 100%.
+  - The smaller the selection, the faster the processing. For fine-tuning of L–R deconvolution’s *sigma*, it is recommended to use moderately small areas; this way moving the *sigma* slider will show the results almost instantaneously. The refreshing is slightly slower when the current zoom factor is not 100%.
 
   - The view can be zoomed in/out by using toolbar buttons, `View` menu items or mouse wheel.
 
@@ -102,7 +102,7 @@ An illustrated processing tutorial can be found at http://greatattractor.github.
 ----------------------------------------
 ### 4.1. Brightness normalization
 
-ImPPG can automatically adjust the input image's brightness levels (before all other processing steps) to fall into the user-supplied range of `min` to `max` (specified as percentage of the full brightness; 0% = black, 100% = white). The darkest input pixels will get the `min` value, the brightest: the `max` value.
+ImPPG can automatically adjust the input image’s brightness levels (before all other processing steps) to fall into the user-supplied range of `min` to `max` (specified as percentage of the full brightness; 0% = black, 100% = white). The darkest input pixels will get the `min` value, the brightest: the `max` value.
 
 Both `min` and `max` can be less than 0% and larger than 100% (this may clip the histogram). It is also allowed for `max` to be less than `min`; this will invert brightness levels (create a negative; also possible via tone curve adjustment, see sec. 4.4).
 
@@ -115,7 +115,7 @@ Access by:
 ----------------------------------------
 ### 4.2. Lucy–Richardson deconvolution
 
-ImPPG performs image sharpening via non-blind Lucy–Richardson deconvolution using Gaussian kernel. The kernel's width is specified by Gaussian *sigma*; increasing this value makes the sharpening coarser.
+ImPPG performs image sharpening via non-blind Lucy–Richardson deconvolution using Gaussian kernel. The kernel’s width is specified by Gaussian *sigma*; increasing this value makes the sharpening coarser.
 
 Recommended number of deconvolution iterations: 30 to 70. Specify 0 to disable L–R deconvolution.
 
@@ -128,7 +128,7 @@ Access by:
 ----------------------------------------
 ### 4.3. Unsharp masking
 
-Unsharp masking can be used for final sharpening (independently of L–R deconvolution) or blurring of the image. The *sigma* parameter specifies the Gaussian kernel's width; the larger the value, the coarser the sharpening or blurring. `Amount` specifies the effect's strength. Value < 1.0 blurs the image, 1.0 does nothing, value > 1.0 sharpens the image.
+Unsharp masking can be used for final sharpening (independently of L–R deconvolution) or blurring of the image. The *sigma* parameter specifies the Gaussian kernel’s width; the larger the value, the coarser the sharpening or blurring. `Amount` specifies the effect’s strength. Value < 1.0 blurs the image, 1.0 does nothing, value > 1.0 sharpens the image.
 
 
 #### Adaptive mode
@@ -146,7 +146,7 @@ Access by:
 ----------------------------------------
 ### 4.4. Tone curve
 
-The tone curve editor allows changing the input-output mapping of brightness levels. The tone curve is only applied after all the other processing steps. The histogram shown in the editor window's background corresponds to the output (just the current selection) of previous processing steps **before** the application of the tone curve.
+The tone curve editor allows changing the input-output mapping of brightness levels. The tone curve is only applied after all the other processing steps. The histogram shown in the editor window’s background corresponds to the output (just the current selection) of previous processing steps **before** the application of the tone curve.
 
 Access by:
     menu: `View`/`Panels`/`Tone curve` or the corresponding toolbar button
@@ -183,7 +183,7 @@ The output files are saved under names suffixed with `_aligned`. FITS files are 
 ----------------------------------------
 ### 7.1. High-contrast features stabilization (phase correlation)
 
-A general-purpose method. Attempts to keep the high-contrast features (e.g. sunspots, filaments, prominences, craters) stationary. In some cases it may be undesirable, e.g. in a multi-hour time-lapse of a sunspot nearing the solar disc's limb; phase correlation would tend to keep the sunspot stationary, but not the limb.
+A general-purpose method. Attempts to keep the high-contrast features (e.g. sunspots, filaments, prominences, craters) stationary. In some cases it may be undesirable, e.g. in a multi-hour time-lapse of a sunspot nearing the solar disc’s limb; phase correlation would tend to keep the sunspot stationary, but not the limb.
 
 
 ----------------------------------------
@@ -204,7 +204,7 @@ Access by:
 ----------------------------------------
 ## 8. Misc
 
-ImPPG stores certain settings (e.g. the main window's size and position) in an INI file, whose location is platform-dependent. On recent versions of MS Windows the path is `%HOMEPATH%\AppData\Roaming\imppg.ini`, where `%HOMEPATH%` usually equals `C:\Users\<username>` (but if OneDrive is enabled, the file may be located there). On Linux the path is `~/.imppg`.
+ImPPG stores certain settings (e.g. the main window’s size and position) in an INI file, whose location is platform-dependent. On recent versions of MS Windows the path is `%HOMEPATH%\AppData\Roaming\imppg.ini`, where `%HOMEPATH%` usually equals `C:\Users\<username>` (but if OneDrive is enabled, the file may be located there). On Linux the path is `~/.imppg`.
 
 
 ----------------------------------------
@@ -216,7 +216,7 @@ ImPPG stores certain settings (e.g. the main window's size and position) in an I
 
   - (OpenGL mode, MS Windows 8.1, Intel HD Graphics 5500, driver 10.18.14.5074) Cubic interpolation mode is broken (a shader compiler bug, or perhaps a texture read count limitation); use "View/Scaling method/Linear" instead. Note that the same hardware works fine under Linux (Fedora 29 5.3.11-100, Mesa 18.3.6).
 
-  - (wxGTK 3.0.2, Fedora 20) All the toolbar buttons react correctly, but their displayed state may be incorrect after using the `View` menu items/close boxes of tone curve editor and processing controls panel. Cause: sometimes check tool's Toggle() method does not work.
+  - (wxGTK 3.0.2, Fedora 20) All the toolbar buttons react correctly, but their displayed state may be incorrect after using the `View` menu items/close boxes of tone curve editor and processing controls panel. Cause: sometimes check tool’s Toggle() method does not work.
 
   - (wxGTK) As of 2/2015, some of GTK themes function incorrectly (e.g. “QtCurve”, but not “Raleigh”). In ImPPG this may manifest as follows:
     - `File open` dialog does not show any files after it is opened; the files do appear when the dialog is resized by the user
@@ -339,12 +339,12 @@ CC=/usr/local/opt/llvm/bin/clang CXX=/usr/local/opt/llvm/bin/clang++ LDFLAGS="-L
 
 The provided `CMakeLists.txt` supports the [MSYS2](http://www.msys2.org/) build environment. With manual configuration, other toolchains can also be used (e.g. MS Visual Studio).
 
-In order to build ImPPG (64-bit) under MSYS2, follow its installation instructions at http://www.msys2.org/. Then open the MSYS2/MinGW64 shell (after default installation: `c:\msys64\mingw64.exe`) and install the ImPPG's dependencies by running:
+In order to build ImPPG (64-bit) under MSYS2, follow its installation instructions at http://www.msys2.org/. Then open the MSYS2/MinGW64 shell (after default installation: `c:\msys64\mingw64.exe`) and install the ImPPG’s dependencies by running:
 ```bash
 $ pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage mingw64/mingw-w64-x86_64-glew mingw64/mingw-w64-x86_64-wxmsw3.1
 ```
 
-Download the ImPPG's source code manually or clone it with Git:
+Download the ImPPG’s source code manually or clone it with Git:
 ```bash
 $ git clone https://github.com/GreatAttractor/imppg.git
 ```
