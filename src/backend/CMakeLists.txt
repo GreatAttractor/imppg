@@ -29,8 +29,7 @@ include(../../utils.cmake)
 set_cpp_standard(backend)
 
 target_include_directories(backend PUBLIC include)
-target_include_directories(backend PRIVATE src)
-target_include_directories(backend PRIVATE ${Boost_INCLUDE_DIRS})
+target_include_directories(backend PRIVATE src ${Boost_INCLUDE_DIRS})
 
 if(USE_OPENGL_BACKEND)
     if(WIN32)
