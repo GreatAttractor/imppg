@@ -318,12 +318,12 @@ Uwaga: kompilacja musi być przeprowadzona w środowisku odpowiadającym wybrane
 
 Do budowy ImPPG pod macOS wymagana jest instalacja Xcode oraz [Homebrew](https://brew.sh).
 
-OpenMP nie jest obecnie używany, ponieważ Apple wyłączył OpenMP w kompilatorze clang dystrybuowanym razem z Xcode. Obecna metoda budowy została przetestowana we wrześniu 2021 na macOS Big Sur 11.6 oraz Xcode 12.5.1.
+Wsparcie dla OpenMP jest możliwe używając kompilatora LLVM z Homebrew, ponieważ Apple wyłączył OpenMP w kompilatorze clang dystrybuowanym razem z Xcode. Obecna metoda budowy została przetestowana w lipcu 2022 na macOS Monterey 12.5 oraz Xcode 13.4.1.
 
 Zainstaluj poniższe biblioteki i narzędzia używając Homebrew:
 ```bash
 $ brew update
-$ brew install boost cfitsio cmake freeimage glew mesa pkg-config wxwidgets
+$ brew install boost cfitsio cmake freeimage glew mesa pkg-config wxwidgets llvm libomp
 ```
 
 Wykonaj poniższe instrukcje podobnie jak na Linuksie:
@@ -334,6 +334,11 @@ $ cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
 $ make -j8
 $ make install
 $ imppg
+```
+
+Aby dodatkowo właczyć wsparcie OpenMP wyołaj `cmake` z nastepującymi dodatkowymi zmiennymi:
+```bash
+CC=/usr/local/opt/llvm/bin/clang CXX=/usr/local/opt/llvm/bin/clang++ LDFLAGS="-L/usr/local/opt/llvm/lib" CPPFLAGS="-I/usr/local/opt/llvm/include" cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
 ```
 
 ----------------------------------------
