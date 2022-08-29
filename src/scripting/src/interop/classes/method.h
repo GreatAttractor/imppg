@@ -19,7 +19,7 @@ int MethodNoResult(lua_State* lua, void (T::* method)())
 template<typename T>
 int ConstMethodIntResult(lua_State* lua, int (T::* method)() const)
 {
-    auto* object = *static_cast<T**>(luaL_checkudata(lua, 1, typeid(T).name()));
+    const auto* object = *static_cast<const T**>(luaL_checkudata(lua, 1, typeid(T).name()));
     lua_pushinteger(lua, (object->*method)());
     return 1;
 }
@@ -27,7 +27,7 @@ int ConstMethodIntResult(lua_State* lua, int (T::* method)() const)
 template<typename T>
 int ConstMethodDoubleResult(lua_State* lua, double (T::* method)() const)
 {
-    auto* object = *static_cast<T**>(luaL_checkudata(lua, 1, typeid(T).name()));
+    const auto* object = *static_cast<const T**>(luaL_checkudata(lua, 1, typeid(T).name()));
     lua_pushnumber(lua, (object->*method)());
     return 1;
 }
@@ -35,7 +35,7 @@ int ConstMethodDoubleResult(lua_State* lua, double (T::* method)() const)
 template<typename T>
 int ConstMethodBoolResult(lua_State* lua, bool (T::* method)() const)
 {
-    auto* object = *static_cast<T**>(luaL_checkudata(lua, 1, typeid(T).name()));
+    const auto* object = *static_cast<const T**>(luaL_checkudata(lua, 1, typeid(T).name()));
     lua_pushboolean(lua, (object->*method)());
     return 1;
 }
@@ -43,7 +43,7 @@ int ConstMethodBoolResult(lua_State* lua, bool (T::* method)() const)
 template<typename T>
 int ConstMethodIntArgIntResult(lua_State* lua, int (T::* method)(int) const)
 {
-    auto* object = *static_cast<T**>(luaL_checkudata(lua, 1, typeid(T).name()));
+    const auto* object = *static_cast<const T**>(luaL_checkudata(lua, 1, typeid(T).name()));
     int i = luaL_checkinteger(lua, 2);
     lua_pushinteger(lua, (object->*method)(i));
     return 1;
