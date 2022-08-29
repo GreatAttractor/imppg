@@ -20,7 +20,7 @@ version 0.6.5 (2022-04-10)
 - 5\. Saving/loading settings
 - 6\. Batch processing
 - 7\. Image sequence alignment
-  - 7\.1\. High-contrast features stablization (phase correlation)
+  - 7\.1\. High-contrast features stabilization (phase correlation)
   - 7\.2\. Solar limb stabilization
 - 8\. Misc
 - 9\. Known problems
@@ -77,7 +77,7 @@ Processing back ends can be switched via menu `Settings/Back end`.
 
   - The current selection can be changed at any time by dragging the mouse with left button pressed. Changing the selection cancels all previously started processing (if any).
 
-  - The smaller the selection, the faster the processing. For fine-tuning of L–R deconvolution’s *sigma*, it is recommended to use moderately small areas; this way moving the *sigma* slider will show the results almost instanteneously. The refreshing is slightly slower when the current zoom factor is not 100%.
+  - The smaller the selection, the faster the processing. For fine-tuning of L–R deconvolution’s *sigma*, it is recommended to use moderately small areas; this way moving the *sigma* slider will show the results almost instantaneously. The refreshing is slightly slower when the current zoom factor is not 100%.
 
   - The view can be zoomed in/out by using toolbar buttons, `View` menu items or mouse wheel.
 
@@ -311,12 +311,12 @@ Note that building needs to be performed in an environment corresponding to the 
 
 To build ImPPG for macOS you will need Xcode and [Homebrew](https://brew.sh) installed.
 
-OpenMP is not supported yet as Apple has disabled OpenMP in clang toolchain distributed with Xcode. As of September 2021 the build method has been verified on macOS Big Sur 11.6 and Xcode 12.5.1.
+OpenMP is currently supported with 3rd party LLVM toolchain installed with Homebrew as Apple disabled OpenMP in clang toolchain distributed with Xcode. As of July 2022 the build method was verified on macOS Monterey 12.5 and Xcode 13.4.1.
 
 Install following libraries with Homebrew:
 ```bash
 $ brew update
-$ brew install boost cfitsio cmake freeimage glew mesa pkg-config wxwidgets
+$ brew install boost cfitsio cmake freeimage glew mesa pkg-config wxwidgets llvm libomp
 ```
 
 Now follow Linux build steps:
@@ -329,17 +329,22 @@ $ make install
 $ imppg
 ```
 
+To enable OpenMP with Homebrew toolchain invoke `cmake` with following variables:
+```bash
+CC=/usr/local/opt/llvm/bin/clang CXX=/usr/local/opt/llvm/bin/clang++ LDFLAGS="-L/usr/local/opt/llvm/lib" CPPFLAGS="-I/usr/local/opt/llvm/include" cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
+```
+
 ----------------------------------------
 ### 11.2. Building under MS Windows
 
 The provided `CMakeLists.txt` supports the [MSYS2](http://www.msys2.org/) build environment. With manual configuration, other toolchains can also be used (e.g. MS Visual Studio).
 
-In order to build ImPPG (64-bit) under MSYS2, follow its installation instructions at http://www.msys2.org/. Then open the MSYS2/MinGW64 shell (after default installation: `c:\msys64\mingw64.exe`) and install the ImPPG's dependencies by running:
+In order to build ImPPG (64-bit) under MSYS2, follow its installation instructions at http://www.msys2.org/. Then open the MSYS2/MinGW64 shell (after default installation: `c:\msys64\mingw64.exe`) and install the ImPPG’s dependencies by running:
 ```bash
 $ pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage mingw64/mingw-w64-x86_64-glew mingw64/mingw-w64-x86_64-wxmsw3.1
 ```
 
-Download the ImPPG's source code manually or clone it with Git:
+Download the ImPPG’s source code manually or clone it with Git:
 ```bash
 $ git clone https://github.com/GreatAttractor/imppg.git
 ```
