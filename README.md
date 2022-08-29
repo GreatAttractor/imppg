@@ -238,9 +238,14 @@ ImPPG source code and binaries for MS Windows and Ubuntu 18.04 (x86-64) can be d
 
 Building from source code requires a C++ compiler toolchain (with C++17 support), CMake, Boost libraries v. 1.57.0 or later (though earlier versions may work) and wxWidgets 3.0 (3.1 under MS Windows). Support for more image formats requires the FreeImage library, version 3.14.0 or newer. Without FreeImage the only supported formats are: BMP 8-, 24- and 32-bit, TIFF mono and RGB, 8 or 16 bits per channel (no compression). FITS support (optional) requires the CFITSIO library. Multithreaded processing requires a compiler supporting OpenMP.
 
-To enable/disable usage of CFITSIO, FreeImage and GPU/OpenGL back end (they are enabled by default), edit the `config.cmake` file.
+To enable/disable usage of CFITSIO, FreeImage, GPU/OpenGL back end and scripting (they are enabled by default), edit the `config.cmake` file.
 
 To remove any created CMake configuration, delete `CMakeCache.txt` and the `CMakeFiles` folder.
+
+To run the tests, execute (from the `build` directory):
+```bash
+$ ctest
+```
 
 
 ### 11.1. Building under Linux and similar systems using GNU (or compatible) toolchain

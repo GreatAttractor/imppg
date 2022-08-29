@@ -242,9 +242,14 @@ Kod źródłowy ImPPG oraz pliki wykonywalne dla MS Windows i Ubuntu 18.04 (x86-
 
 Budowanie ze źródeł wymaga narzędzi do kompilacji C++ (z obsługą C++17), CMake, bibliotek Boost w wersji 1.57.0 lub późniejszej (choć wcześniejsze też mogą działać) oraz wxWidgets 3.0 (3.1 pod MS Windows). Do obsługi większej liczby formatów graficznych potrzebna jest biblioteka FreeImage w wersji co najmniej 3.14.0. Bez niej obsługiwane są jedynie: BMP 8-, 24- i 32-bitowe, TIFF mono lub RGB, 8 lub 16 bitów na kanał (bez kompresji). Obsługę plików FITS (opcjonalną) zapewnia biblioteka CFITSIO. Przetwarzanie wielowątkowe wymaga kompilatora obsługującego OpenMP.
 
-Obsługę CFITSIO, FreeImage i trybu GPU/OpenGL można wyłączyć edytując plik `config.cmake` (domyślnie są włączone).
+Obsługę CFITSIO, FreeImage, trybu GPU/OpenGL i skryptów można wyłączyć edytując plik `config.cmake` (domyślnie są włączone).
 
 By wyczyścić stworzoną przez CMake konfigurację budowania, należy usunąć `CMakeCache.txt` i katalog `CMakeFiles`.
+
+Wykonanie testów (z katalogu `build`):
+```bash
+$ ctest
+```
 
 
 ### 11.1. Budowanie w systemie Linux i podobnych z użyciem narzędzi GNU (lub kompatybilnych)
