@@ -3,6 +3,6 @@ add_library(logging STATIC
 )
 
 include(../../utils.cmake)
-set_cpp_standard(logging)
+set_compiler_options(logging)
 
 target_include_directories(logging PUBLIC include)

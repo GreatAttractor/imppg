@@ -70,6 +70,7 @@ void LucyRichardsonGaussian(
     std::function<bool ()> checkAbort
 )
 {
+    IMPPG_ASSERT(input.GetPixelFormat() == PixelFormat::PIX_MONO32F);
     int width = input.GetWidth(), height = input.GetHeight();
 
     auto prev = std::unique_ptr<float[]>(new float[width * height]);
@@ -224,7 +225,9 @@ void BlurThresholdVicinity(
 {
     IMPPG_ASSERT(input.GetWidth() == output.GetWidth() &&
                  input.GetHeight() == output.GetHeight() &&
-                 workBuf.size() == input.GetWidth() * input.GetHeight());
+                 workBuf.size() == input.GetWidth() * input.GetHeight() &&
+                 input.GetPixelFormat() == PixelFormat::PIX_MONO32F &&
+                 input.GetPixelFormat() == output.GetPixelFormat());
 
     FillTresholdVicinityMask(input, workBuf, threshold, sigma);
 
@@ -246,4 +249,3 @@ void BlurThresholdVicinity(
         }
     }
 }
-

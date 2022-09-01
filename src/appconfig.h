@@ -110,6 +110,7 @@ namespace Configuration
     /// a noticeable moment - a time it takes for the OpenGL command batch to complete).
     extern c_Property<unsigned>              LRCmdBatchSizeMpixIters;
     extern c_Property<wxRect>                ScriptDialogPosSize;
+    extern c_Property<wxString>              ScriptOpenPath;
 }
 
 #endif

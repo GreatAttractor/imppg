@@ -23,7 +23,7 @@ T* PrepareObject(lua_State* lua)
 template<typename T>
 T& GetObject(lua_State* lua, int stackIndex)
 {
-    auto* object = *static_cast<T**>(luaL_checkudata(lua, 1, typeid(T).name()));
+    auto* object = *static_cast<T**>(luaL_checkudata(lua, stackIndex, typeid(T).name()));
     return *object;
 }
 

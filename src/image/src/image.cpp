@@ -700,6 +700,55 @@ static c_SimpleBuffer GetConvertedPixelFormatFragment(
             width, inPtr, inPtrStep, outPtr, outPtrStep);
             break;
 
+            case PixelFormat::PIX_RGB32F: ConvertWholeLine<std::uint16_t, float>([](const std::uint16_t* src, float* dest) {
+                dest[0] = static_cast<float>(src[0]) / 0xFFFF;
+                dest[1] = static_cast<float>(src[1]) / 0xFFFF;
+                dest[2] = static_cast<float>(src[2]) / 0xFFFF;
+            },
+            width, inPtr, inPtrStep, outPtr, outPtrStep);
+            break;
+
+            default: IMPPG_ABORT();
+            }
+        } break;
+
+        case PixelFormat::PIX_RGB32F: {
+            switch (destPixFmt)
+            {
+            case PixelFormat::PIX_MONO8: ConvertWholeLine<float, uint8_t>([](const float* src, uint8_t* dest) {
+                *dest = ((src[0] + src[1] + src[2]) / 3) * 0xFF;
+            },
+            width, inPtr, inPtrStep, outPtr, outPtrStep);
+            break;
+
+            case PixelFormat::PIX_MONO16: ConvertWholeLine<float, uint16_t>([](const float* src, uint16_t* dest) {
+                *dest = ((src[0] + src[1] + src[2]) / 3) * 0xFFFF;
+            },
+            width, inPtr, inPtrStep, outPtr, outPtrStep);
+            break;
+
+            case PixelFormat::PIX_MONO32F: ConvertWholeLine<float, float>([](const float* src, float* dest) {
+                *dest = (src[0] + src[1] + src[2]) / 3.0;
+            },
+            width, inPtr, inPtrStep, outPtr, outPtrStep);
+            break;
+
+            case PixelFormat::PIX_RGB8: ConvertWholeLine<float, uint8_t>([](const float* src, uint8_t* dest) {
+                dest[0] = src[0] * 0xFF;
+                dest[1] = src[1] * 0xFF;
+                dest[2] = src[2] * 0xFF;
+            },
+            width, inPtr, inPtrStep, outPtr, outPtrStep);
+            break;
+
+            case PixelFormat::PIX_RGB16: ConvertWholeLine<float, uint16_t>([](const float* src, uint16_t* dest) {
+                dest[0] = src[0] * 0xFFFF;
+                dest[1] = src[1] * 0xFFFF;
+                dest[2] = src[2] * 0xFFFF;
+            },
+            width, inPtr, inPtrStep, outPtr, outPtrStep);
+            break;
+
             default: IMPPG_ABORT();
             }
         } break;
@@ -1211,7 +1260,7 @@ std::optional<c_Image> LoadImageAs(
         auto img = c_Image(
             FreeImage_GetWidth(fibmpConv.get()),
             FreeImage_GetHeight(fibmpConv.get()),
-            destFmt.value()
+            destFmt.value() //FIXME: support destFmt == std::nullopt
         );
         for (unsigned row = 0; row < img.GetHeight(); row++)
             memcpy(
@@ -1434,4 +1483,139 @@ bool c_Image::SaveToFile(const std::string& fname, OutputFormat outpFormat) cons
 
     const auto [outpBitDept, outpFileType] = DecodeOutputFormat(outpFormat);
     return SaveToFile(fname, outpBitDept, outpFileType);
+}
+
+std::tuple<c_Image, c_Image, c_Image> c_Image::SplitRGB() const
+{
+    IMPPG_ASSERT(3 == NumChannels[static_cast<std::size_t>(GetPixelFormat())]);
+
+    const auto destPixFmt = [=]() {
+        switch (this->GetPixelFormat())
+        {
+            case PixelFormat::PIX_RGB8: return PixelFormat::PIX_MONO8;
+            case PixelFormat::PIX_RGB16: return PixelFormat::PIX_MONO16;
+            case PixelFormat::PIX_RGB32F: return PixelFormat::PIX_MONO32F;
+
+            default: IMPPG_ABORT_MSG("unexpected pixel format");
+        }
+    }();
+
+    c_Image imgR(GetWidth(), GetHeight(), destPixFmt);
+    c_Image imgG(GetWidth(), GetHeight(), destPixFmt);
+    c_Image imgB(GetWidth(), GetHeight(), destPixFmt);
+
+    const auto ExtractChannelFromLine = [](unsigned width, std::size_t channel, const auto* src, auto* dest) {
+        for (unsigned i = 0; i < width; i++)
+        {
+            dest[i] = src[3 * i + channel];
+        }
+    };
+
+    for (unsigned y = 0; y < GetHeight(); ++y)
+    {
+        switch (destPixFmt)
+        {
+            case PixelFormat::PIX_MONO8:
+                ExtractChannelFromLine(GetWidth(), 0, GetRowAs<std::uint8_t>(y), imgR.GetRowAs<std::uint8_t>(y));
+                ExtractChannelFromLine(GetWidth(), 1, GetRowAs<std::uint8_t>(y), imgG.GetRowAs<std::uint8_t>(y));
+                ExtractChannelFromLine(GetWidth(), 2, GetRowAs<std::uint8_t>(y), imgB.GetRowAs<std::uint8_t>(y));
+                break;
+
+            case PixelFormat::PIX_MONO16:
+                ExtractChannelFromLine(GetWidth(), 0, GetRowAs<std::uint16_t>(y), imgR.GetRowAs<std::uint16_t>(y));
+                ExtractChannelFromLine(GetWidth(), 1, GetRowAs<std::uint16_t>(y), imgG.GetRowAs<std::uint16_t>(y));
+                ExtractChannelFromLine(GetWidth(), 2, GetRowAs<std::uint16_t>(y), imgB.GetRowAs<std::uint16_t>(y));
+                break;
+
+            case PixelFormat::PIX_MONO32F:
+                ExtractChannelFromLine(GetWidth(), 0, GetRowAs<float>(y), imgR.GetRowAs<float>(y));
+                ExtractChannelFromLine(GetWidth(), 1, GetRowAs<float>(y), imgG.GetRowAs<float>(y));
+                ExtractChannelFromLine(GetWidth(), 2, GetRowAs<float>(y), imgB.GetRowAs<float>(y));
+                break;
+
+            default: IMPPG_ABORT();
+        }
+    }
+
+    return {imgR, imgG, imgB};
+}
+
+c_Image c_Image::CombineRGB(const c_Image& red, const c_Image& green, const c_Image& blue)
+{
+    for (const auto* img: {&red, &green, &blue})
+    {
+        IMPPG_ASSERT(1 == NumChannels[static_cast<std::size_t>(img->GetPixelFormat())]);
+    }
+    IMPPG_ASSERT(red.GetWidth() == green.GetWidth() && red.GetWidth() == blue.GetWidth());
+    IMPPG_ASSERT(red.GetHeight() == green.GetHeight() && red.GetHeight() == blue.GetHeight());
+    IMPPG_ASSERT(red.GetPixelFormat() == green.GetPixelFormat() && red.GetPixelFormat() == blue.GetPixelFormat());
+
+    const auto destPixFmt = [&]() {
+        switch (red.GetPixelFormat())
+        {
+            case PixelFormat::PIX_MONO8: return PixelFormat::PIX_RGB8;
+            case PixelFormat::PIX_MONO16: return PixelFormat::PIX_RGB16;
+            case PixelFormat::PIX_MONO32F: return PixelFormat::PIX_RGB32F;
+
+            default: IMPPG_ABORT_MSG("unexpected pixel format");
+        }
+    }();
+
+    c_Image rgb(red.GetWidth(), red.GetHeight(), destPixFmt);
+
+    const auto CombineChannelsFromLine = [](
+        unsigned width,
+        const auto* red,
+        const auto* green,
+        const auto* blue,
+        auto* dest
+    )
+    {
+        for (unsigned i = 0; i < width; i++)
+        {
+            dest[3 * i + 0] = red[i];
+            dest[3 * i + 1] = green[i];
+            dest[3 * i + 2] = blue[i];
+        }
+    };
+
+    for (unsigned y = 0; y < red.GetHeight(); ++y)
+    {
+        switch (destPixFmt)
+        {
+            case PixelFormat::PIX_RGB8:
+                CombineChannelsFromLine(
+                    rgb.GetWidth(),
+                    red.GetRowAs<std::uint8_t>(y),
+                    green.GetRowAs<std::uint8_t>(y),
+                    blue.GetRowAs<std::uint8_t>(y),
+                    rgb.GetRowAs<std::uint8_t>(y)
+                );
+                break;
+
+            case PixelFormat::PIX_RGB16:
+                CombineChannelsFromLine(
+                    rgb.GetWidth(),
+                    red.GetRowAs<std::uint16_t>(y),
+                    green.GetRowAs<std::uint16_t>(y),
+                    blue.GetRowAs<std::uint16_t>(y),
+                    rgb.GetRowAs<std::uint16_t>(y)
+                );
+                break;
+
+            case PixelFormat::PIX_RGB32F:
+                CombineChannelsFromLine(
+                    rgb.GetWidth(),
+                    red.GetRowAs<float>(y),
+                    green.GetRowAs<float>(y),
+                    blue.GetRowAs<float>(y),
+                    rgb.GetRowAs<float>(y)
+                );
+                break;
+
+            default: IMPPG_ABORT();
+        }
+    }
+
+    return rgb;
 }

@@ -50,6 +50,11 @@ c_UnsharpMaskingThread::c_UnsharpMaskingThread(
 
     IMPPG_ASSERT(m_Params.input.GetHeight() == rawInput.GetHeight());
     IMPPG_ASSERT(m_Params.output.GetHeight() == rawInput.GetHeight());
+
+    IMPPG_ASSERT(
+        m_Params.input.GetPixelFormat() == PixelFormat::PIX_MONO32F &&
+        m_Params.input.GetPixelFormat() == m_Params.output.GetPixelFormat()
+    );
 }
 
 void c_UnsharpMaskingThread::DoWork()

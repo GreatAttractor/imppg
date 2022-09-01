@@ -36,7 +36,12 @@ c_ToneCurveThread::c_ToneCurveThread(
 ): IWorkerThread(std::move(params)),
    toneCurve(toneCurve),
    m_UsePreciseValues(usePreciseValues)
-{}
+{
+    IMPPG_ASSERT(
+        m_Params.input.GetPixelFormat() == PixelFormat::PIX_MONO32F &&
+        m_Params.input.GetPixelFormat() == m_Params.output.GetPixelFormat()
+    );
+}
 
 void c_ToneCurveThread::DoWork()
 {

@@ -6,7 +6,7 @@ add_library(common STATIC
 )
 
 include(../../utils.cmake)
-set_cpp_standard(common)
+set_compiler_options(common)
 
 target_compile_definitions(common PRIVATE
     IMPPG_IMAGES_DIR="${IMPPG_IMAGES_DIR}"

@@ -116,6 +116,8 @@ namespace Keys
 
     const char* ScriptDialogPosSize = UserInterfaceGroup"/ScriptDialogPosSize";
 
+    const char* ScriptOpenPath = UserInterfaceGroup"/ScriptOpenPath";
+
 #define OpenGLGroup "/OpenGL"
 
     const char* LRCmdBatchSizeMpixIters = OpenGLGroup"/LRCommandBatchSizeMpixIters";
@@ -334,5 +336,7 @@ c_Property<ScalingMethod> DisplayScalingMethod(
 );
 
 PROPERTY_BOOL(NormalizeFITSValues, true);
+
+PROPERTY_STRING(ScriptOpenPath);
 
 }  // namespace Configuration

@@ -42,6 +42,10 @@ c_LucyRichardsonThread::c_LucyRichardsonThread(
    numIterations(numIterations),
    m_Deringing{deringing, deringingThreshold, deringingSigma, deringingWorkBuf}
 {
+    IMPPG_ASSERT(
+        m_Params.input.GetPixelFormat() == PixelFormat::PIX_MONO32F &&
+        m_Params.input.GetPixelFormat() == m_Params.output.GetPixelFormat()
+    );
 }
 
 void c_LucyRichardsonThread::IterationNotification(int iter, int totalIters)

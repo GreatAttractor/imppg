@@ -47,7 +47,6 @@ add_executable(imppg WIN32
 )
 
 target_include_directories(imppg PRIVATE src)
-target_compile_options(imppg PRIVATE -Wall -Wextra -Wpedantic -Wold-style-cast -Wno-parentheses)
 
 set(IMPPG_SHADERS_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/imppg/shaders)
 set(IMPPG_IMAGES_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/imppg/images)
@@ -62,7 +61,7 @@ target_compile_definitions(imppg PRIVATE
 )
 
 include(utils.cmake)
-set_cpp_standard(imppg)
+set_compiler_options(imppg)
 
 if(WIN32)
     # The RC file includes the application manifest and defines the application icon.

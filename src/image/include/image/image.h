@@ -29,6 +29,7 @@ File description:
 #include <memory>
 #include <optional>
 #include <string>
+#include <tuple>
 #include <type_traits>
 #include <wx/gdicmn.h>
 
@@ -219,6 +220,11 @@ public:
         const std::string& fname, ///< Full destination path
         OutputFormat outpFormat
     ) const;
+
+    /// Splits RGB image into mono images (same bit depth as original) representing each channel.
+    std::tuple<c_Image, c_Image, c_Image> SplitRGB() const;
+
+    static c_Image CombineRGB(const c_Image& red, const c_Image& green, const c_Image& blue);
 };
 
 /// Lightweight wrapper of a fragment of an image buffer; does not allocate any pixels memory itself.

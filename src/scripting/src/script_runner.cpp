@@ -58,7 +58,7 @@ struct StreamReaderState
     std::unique_ptr<std::istream> stream;
 };
 
-const char* StreamReader(lua_State* lua, void* opaqueReaderState, std::size_t* size)
+const char* StreamReader(lua_State*, void* opaqueReaderState, std::size_t* size)
 {
     auto* state = static_cast<StreamReaderState*>(opaqueReaderState);
     state->stream->read(state->dataChunk.data(), StreamReaderState::CHUNK_SIZE);

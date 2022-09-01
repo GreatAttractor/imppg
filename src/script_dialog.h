@@ -23,6 +23,7 @@ File description:
 
 #pragma once
 
+#include "backend/backend.h"
 #include "scripting/script_runner.h"
 #include "scrollable_dlg.h"
 
@@ -61,9 +62,11 @@ private:
     wxButton* m_BtnStop{nullptr};
     wxButton* m_BtnTogglePause{nullptr};
     std::unique_ptr<ScriptRunner> m_Runner;
+    wxRichTextCtrl* m_Console{nullptr};
+
     bool m_CloseAfterRunnerEnds{false};
     std::unique_ptr<std::promise<void>> m_StopScript;
-    wxRichTextCtrl* m_Console{nullptr};
+    std::unique_ptr<imppg::backend::IProcessingBackEnd> m_Processor;
 };
 
 }

@@ -27,11 +27,13 @@ File description:
 #include "imppg_assert.h"
 #include "scripting/interop.h"
 #include "script_dialog.h"
+#include "settings.h"
 
 #include <chrono> //TESTING ##########
 #include <fstream>
 #include <iostream> //TESTING ###########
 #include <thread> //TESTING ###########
+#include <wx/filename.h>
 #include <wx/msgdlg.h>
 #include <wx/statline.h>
 
@@ -61,6 +63,18 @@ c_ScriptDialog::c_ScriptDialog(wxWindow* parent)
     SetPosition(r.GetPosition());
     SetSize(r.GetSize());
     FixWindowPosition(*this);
+
+    //TODO:
+//     switch (Configuration::ProcessingBackEnd)
+//     {
+//     case BackEnd::CPU_AND_BITMAPS: m_Processor = imppg::backend::CreateCpuBmpProcessingBackend(); break;
+// #if USE_OPENGL_BACKEND
+//     case BackEnd::GPU_OPENGL: m_Processor = imppg::backend::CreateOpenGLProcessingBackend(Configuration::LRCmdBatchSizeMpixIters); break;
+// #endif
+//     default: IMPPG_ABORT();
+//     }
+
+    m_Processor = imppg::backend::CreateCpuBmpProcessingBackend(); //TESTING #######
 }
 
 void c_ScriptDialog::DoInitControls()
@@ -90,7 +104,7 @@ void c_ScriptDialog::DoInitControls()
     );
     m_ScriptFileCtrl->Bind(wxEVT_FILEPICKER_CHANGED, &c_ScriptDialog::OnScriptFileSelected, this);
     szScriptFile->Add(m_ScriptFileCtrl, 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
-    //TODO: m_ScriptFileCtrl->SetInitialDirectory(Configuration::BatchLoadSettingsPath);
+    m_ScriptFileCtrl->SetInitialDirectory(Configuration::ScriptOpenPath);
     m_ScriptFilePath =
         new wxStaticText(GetContainer(), wxID_ANY, _("Select the script file."), wxDefaultPosition, wxDefaultSize);
     szScriptFile->Add(m_ScriptFilePath, 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
@@ -137,6 +151,7 @@ void c_ScriptDialog::OnScriptFileSelected(wxFileDirPickerEvent& event)
     IMPPG_ASSERT(!IsRunnerActive());
     m_ScriptFilePath->SetLabel(event.GetPath());
     m_BtnRun->Enable();
+    Configuration::ScriptOpenPath = wxFileName(event.GetPath()).GetPath();
 }
 
 void c_ScriptDialog::OnRunScript(wxCommandEvent&)
@@ -206,12 +221,14 @@ void c_ScriptDialog::OnClose(wxCloseEvent& event)
     Configuration::ScriptDialogPosSize = wxRect(GetPosition(), GetSize());
 }
 
-void c_ScriptDialog::OnIdle(wxIdleEvent&)
+void c_ScriptDialog::OnIdle(wxIdleEvent& event)
 {
     if (!IsRunnerActive() && m_CloseAfterRunnerEnds)
     {
         Close();
     }
+
+    if (m_Processor) { m_Processor->OnIdle(event); }
 }
 
 void c_ScriptDialog::OnRunnerMessage(wxThreadEvent& event)
@@ -244,12 +261,65 @@ void c_ScriptDialog::OnRunnerMessage(wxThreadEvent& event)
 void c_ScriptDialog::OnScriptFunctionCall(wxThreadEvent& event)
 {
     auto payload = event.GetPayload<ScriptMessagePayload>();
-    if (std::get_if<call::Dummy>(&payload.GetCall()))
+
+    const auto& call = payload.GetCall();
+    if (std::get_if<call::Dummy>(&call))
     {
         std::cout << "Main thread: simulating long operation..." << std::endl;
         std::this_thread::sleep_for(1s);
+        payload.SignalCompletion();
     }
-    payload.SignalCompletion();
+    else if (const auto* processImage = std::get_if<call::ProcessImage>(&call))
+    {
+        //temporary experimental code for RGB processing
+        const c_Image image = [processImage]() {
+            auto result = LoadImageAs(processImage->imagePath, "tif", PixelFormat::PIX_RGB32F, nullptr, false);
+            if (!result) { throw std::runtime_error("failed to load image"); }
+            return *result;
+        }();
+
+        ProcessingSettings settings;
+        IMPPG_ASSERT(LoadSettings(processImage->settingsPath, settings, nullptr, nullptr, nullptr));
+
+        const bool isRGB = (NumChannels[static_cast<std::size_t>(image.GetPixelFormat())] == 3);
+        if (!isRGB) { throw std::runtime_error("not yet supported"); }
+
+        auto input = image.SplitRGB();
+
+        //FIXME: add proper OnIdle interaction; for now just a blocking approach (legal only for the CPU backend)
+        m_Processor->SetProcessingCompletedHandler([processor = m_Processor.get(), input, settings, callData = *processImage, payload = std::move(payload)](imppg::backend::CompletionStatus) {
+            c_Image resultR = processor->GetProcessedOutput();
+
+            // need to copy these for later use - the lambda we're currently executing has been assigned as the completion hander of processor,
+            // and calling `SetProcessingCompletedHandler` below with a different lambda will immediately destroy our state variables
+            const auto input2 = input;
+            const auto settings2 = settings;
+            const auto processor2 = processor;
+
+            processor->SetProcessingCompletedHandler([processor, input, settings, callData, payload = std::move(payload), resultR = std::move(resultR)](imppg::backend::CompletionStatus) {
+                c_Image resultG = processor->GetProcessedOutput();
+
+                const auto input2 = input;
+                const auto settings2 = settings;
+                const auto processor2 = processor;
+
+                processor->SetProcessingCompletedHandler([processor, input, settings, callData, payload = std::move(payload), resultR = std::move(resultR), resultG = std::move(resultG)](imppg::backend::CompletionStatus) mutable {
+                    c_Image resultB = processor->GetProcessedOutput();
+
+                    c_Image resultRGB = c_Image::CombineRGB(resultR, resultG, resultB);
+                    IMPPG_ASSERT(resultRGB.SaveToFile(callData.outputImagePath, OutputFormat::BMP_8));
+
+                    payload.SignalCompletion();
+                });
+
+                processor2->StartProcessing(std::get<2>(input2), settings2);
+            });
+
+            processor2->StartProcessing(std::get<1>(input2), settings2);
+        });
+
+        m_Processor->StartProcessing(std::get<0>(input), settings);
+    }
 }
 
 }

@@ -13,7 +13,7 @@ if(USE_FREEIMAGE EQUAL 0)
 endif()
 
 include(../../utils.cmake)
-set_cpp_standard(image)
+set_compiler_options(image)
 
 target_include_directories(image PUBLIC include)
 target_include_directories(image PRIVATE ${Boost_INCLUDE_DIRS})

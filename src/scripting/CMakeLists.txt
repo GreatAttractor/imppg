@@ -24,7 +24,7 @@ add_library(scripting STATIC
 )
 
 include(../../utils.cmake)
-set_cpp_standard(scripting)
+set_compiler_options(scripting)
 
 target_include_directories(scripting PUBLIC include)
 target_include_directories(scripting PRIVATE src ${Boost_INCLUDE_DIRS})

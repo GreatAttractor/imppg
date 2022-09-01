@@ -45,6 +45,18 @@ const luaL_Reg imppg[] = {
         return 1;
     }},
 
+    //TODO: rename?
+    {"process_image", [](lua_State* lua) -> int {
+        const std::string imagePath = GetString(lua, 1);
+        const std::string settingsPath = GetString(lua, 2);
+        const std::string outputImagePath = GetString(lua, 3);
+
+        scripting::g_State->CallFunctionAndAwaitCompletion(scripting::call::ProcessImage{imagePath, settingsPath,
+            outputImagePath});
+
+        return 0; //TODO: return processing result
+    }},
+
     {nullptr, nullptr} // end-of-data marker
 };
 
