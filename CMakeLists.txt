@@ -97,18 +97,15 @@ endif()
 include(${wxWidgets_USE_FILE})
 target_link_libraries(imppg PRIVATE ${wxWidgets_LIBRARIES})
 
-# TODO: move to backend
 find_package(OpenMP)
 if(OPENMP_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
 
-# TODO: move to backend
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag(-ffast-math GNU_FFAST_MATH_SUPPORTED)
 
-# TODO: move to backend
 if(GNU_FFAST_MATH_SUPPORTED)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
 endif()

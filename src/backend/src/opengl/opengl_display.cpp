@@ -54,16 +54,10 @@ static const int IMPPG_GL_ATTRIBUTES[] =
 
 std::unique_ptr<IDisplayBackEnd> CreateOpenGLDisplayBackend(c_ScrolledView& imgView, unsigned lRCmdBatchSizeMpixIters)
 {
-    return c_OpenGLDisplay::Create(imgView, lRCmdBatchSizeMpixIters);
-}
-
-//TODO: remove this?
-std::unique_ptr<c_OpenGLDisplay> c_OpenGLDisplay::Create(c_ScrolledView& imgView, unsigned lRCmdBatchSizeMpixIters)
-{
     if (!wxGLCanvas::IsDisplaySupported(IMPPG_GL_ATTRIBUTES))
         return nullptr;
     else
-        return std::unique_ptr<c_OpenGLDisplay>(new c_OpenGLDisplay(imgView, lRCmdBatchSizeMpixIters));
+        return std::make_unique<c_OpenGLDisplay>(imgView, lRCmdBatchSizeMpixIters);
 }
 
 c_OpenGLDisplay::c_OpenGLDisplay(c_ScrolledView& imgView, unsigned lRCmdBatchSizeMpixIters)
