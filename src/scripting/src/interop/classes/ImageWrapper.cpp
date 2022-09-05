@@ -22,12 +22,12 @@ ImageWrapper::ImageWrapper(const std::string& imagePath)
         throw ScriptExecutionError(message);
     }
 
-    m_Image = std::move(image);
+    m_Image = std::make_shared<c_Image>(std::move(image.value()));
 }
 
-const c_Image& ImageWrapper::GetImage() const
+const std::shared_ptr<c_Image>& ImageWrapper::GetImage() const
 {
-    return m_Image.value();
+    return m_Image;
 }
 
 }

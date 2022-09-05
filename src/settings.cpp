@@ -275,9 +275,16 @@ bool ParseToneCurveSettings(const wxXmlNode* node, c_ToneCurve& tcurve)
     }
 
     tcurve.ClearPoints();
+    float lastX = -1.0;
     for (size_t i = 0; i < points_xy.size(); i += 2)
     {
-        tcurve.AddPoint(points_xy[i], points_xy[i + 1]);
+        const auto x = points_xy[i];
+        const auto y = points_xy[i + 1];
+        if (x < 0.0 || x > 1.0 || y < 0.0 || y > 1.0 || x <= lastX) { return false; }
+
+        tcurve.AddPoint(x, y);
+
+        lastX = x;
     }
 
     if (tcurve.GetNumPoints() < 2)

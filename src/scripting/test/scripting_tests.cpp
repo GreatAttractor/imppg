@@ -2,6 +2,7 @@
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/test/unit_test.hpp>
+#include <cstdint>
 #include <filesystem>
 #include <future>
 #include <memory>
@@ -30,34 +31,11 @@ imppg.test.test.notify_string("s2")
     CheckStringNotifications({"s1", "s2"});
 }
 
-BOOST_FIXTURE_TEST_CASE(NewSettingsConstructed_DefaultValues, ScriptTestFixture)
-{
-    const char* script = R"(
-
-s = imppg.new_settings()
-imppg.test.notify_settings(s)
-
-    )";
-
-    RunScript(script);
-
-    const ProcessingSettings& settings = GetSettingsNotification();
-    BOOST_CHECK_EQUAL(0, settings.LucyRichardson.iterations);
-    BOOST_CHECK_EQUAL(false, settings.LucyRichardson.deringing.enabled);
-    BOOST_CHECK_EQUAL(false, settings.unsharpMasking.adaptive);
-    BOOST_CHECK_EQUAL(1.0, settings.unsharpMasking.amountMax);
-    BOOST_CHECK_EQUAL(2, settings.toneCurve.GetNumPoints());
-    BOOST_CHECK_EQUAL(0.0, settings.toneCurve.GetPoint(0).x);
-    BOOST_CHECK_EQUAL(0.0, settings.toneCurve.GetPoint(0).y);
-    BOOST_CHECK_EQUAL(1.0, settings.toneCurve.GetPoint(1).x);
-    BOOST_CHECK_EQUAL(1.0, settings.toneCurve.GetPoint(1).y);
-}
-
-BOOST_FIXTURE_TEST_CASE(LoadImageAsMono32f, ScriptTestFixture)
+BOOST_FIXTURE_TEST_CASE(LoadImage, ScriptTestFixture)
 {
     std::string script{R"(
 
-image = imppg.load_image_as_mono32f("$ROOT/image.tif")
+image = imppg.load_image("$ROOT/image.tif")
 imppg.test.notify_image(image)
 
     )"};
@@ -73,5 +51,42 @@ imppg.test.notify_image(image)
     const auto& loadedImage = GetImageNotification();
     BOOST_CHECK_EQUAL(image.GetWidth(), loadedImage.GetWidth());
     BOOST_CHECK_EQUAL(image.GetHeight(), loadedImage.GetHeight());
+    // image is converted to 32-bit floating-point upon loading
     BOOST_CHECK(PixelFormat::PIX_MONO32F == loadedImage.GetPixelFormat());
+}
+
+BOOST_FIXTURE_TEST_CASE(LoadAndProcessImage, ScriptTestFixture)
+{
+    std::string script{R"(
+
+settings = imppg.new_settings()
+-- horizontal tone curve mapping everything to 0.5 brightness
+settings:tc_set_point(0, 0.0, 0.5)
+settings:tc_set_point(1, 0.0, 0.5)
+image = imppg.load_image("$ROOT/image.bmp")
+
+processed_image = imppg.process_image(image, settings)
+
+imppg.test.notify_image(processed_image)
+
+    )"};
+    const auto root = fs::temp_directory_path();
+    boost::algorithm::replace_all(script, "$ROOT", root.generic_string());
+
+    c_Image image{128, 64, PixelFormat::PIX_MONO8};
+    image.ClearToZero();
+    image.SaveToFile(root / "image.bmp", OutputFormat::BMP_8);
+
+    RunScript(script.c_str());
+
+    const auto& processedImg = GetImageNotification();
+    BOOST_REQUIRE(PixelFormat::PIX_MONO32F == processedImg.GetPixelFormat());
+    for (unsigned y = 0; y < processedImg.GetHeight(); ++y)
+    {
+        const float* row = processedImg.GetRowAs<float>(y);
+        for (unsigned x = 0; x < processedImg.GetWidth(); ++x)
+        {
+            BOOST_REQUIRE(0.5 == row[x]);
+        }
+    }
 }

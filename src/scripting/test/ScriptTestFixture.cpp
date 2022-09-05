@@ -79,11 +79,11 @@ void ScriptTestFixture::OnScriptFunctionCall(scripting::ScriptMessagePayload& pa
     }
     else if (auto* call = std::get_if<scripting::call::NotifySettings>(&callVariant))
     {
-        m_SettingsNotification = std::move(call->settings);
+        m_SettingsNotification = call->settings;
     }
     else if (auto* call = std::get_if<scripting::call::NotifyImage>(&callVariant))
     {
-        m_ImageNotification = std::move(call->image);
+        m_ImageNotification = call->image;
     }
     else if (auto* call = std::get_if<scripting::call::NotifyNumber>(&callVariant))
     {
@@ -120,12 +120,14 @@ void ScriptTestFixture::CheckStringNotifications(std::initializer_list<std::stri
 
 const ProcessingSettings& ScriptTestFixture::GetSettingsNotification() const
 {
-    return m_SettingsNotification.value();
+    BOOST_REQUIRE(nullptr != m_SettingsNotification);
+    return *m_SettingsNotification;
 }
 
 const c_Image& ScriptTestFixture::GetImageNotification() const
 {
-    return m_ImageNotification.value();
+    BOOST_REQUIRE(nullptr != m_ImageNotification);
+    return *m_ImageNotification;
 }
 
 void ScriptTestFixture::CheckNumberNotifications(std::initializer_list<double> expected) const

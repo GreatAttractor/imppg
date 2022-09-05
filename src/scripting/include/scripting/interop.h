@@ -29,6 +29,7 @@ File description:
 
 #include <future>
 #include <lua.hpp>
+#include <memory>
 #include <variant>
 #include <wx/event.h>
 
@@ -52,14 +53,13 @@ namespace call
 struct None {};
 struct Dummy {};
 struct NotifyBoolean { bool value; };
-struct NotifyImage { c_Image image; };
+struct NotifyImage { std::shared_ptr<c_Image> image; };
 struct NotifyInteger { int value; };
 struct NotifyNumber { double number; };
-struct NotifySettings { ProcessingSettings settings; };
+struct NotifySettings { std::shared_ptr<ProcessingSettings> settings; };
 struct NotifyString { std::string s; };
 
-//TODO: rename?
-struct ProcessImage
+struct ProcessImageFile
 {
     std::string imagePath;
     std::string settingsPath;
@@ -77,7 +77,7 @@ using FunctionCall = std::variant<
     call::NotifySettings,
     call::NotifyString,
     call::NotifyNumber,
-    call::ProcessImage
+    call::ProcessImageFile
 >;
 
 /// Payload of messages sent by script runner's worker thread to parent.

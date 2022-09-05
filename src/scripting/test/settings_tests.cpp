@@ -2,6 +2,29 @@
 
 #include <boost/test/unit_test.hpp>
 
+BOOST_FIXTURE_TEST_CASE(NewSettingsConstructed_DefaultValues, ScriptTestFixture)
+{
+    const char* script = R"(
+
+s = imppg.new_settings()
+imppg.test.notify_settings(s)
+
+    )";
+
+    RunScript(script);
+
+    const ProcessingSettings& settings = GetSettingsNotification();
+    BOOST_CHECK_EQUAL(0, settings.LucyRichardson.iterations);
+    BOOST_CHECK_EQUAL(false, settings.LucyRichardson.deringing.enabled);
+    BOOST_CHECK_EQUAL(false, settings.unsharpMasking.adaptive);
+    BOOST_CHECK_EQUAL(1.0, settings.unsharpMasking.amountMax);
+    BOOST_CHECK_EQUAL(2, settings.toneCurve.GetNumPoints());
+    BOOST_CHECK_EQUAL(0.0, settings.toneCurve.GetPoint(0).x);
+    BOOST_CHECK_EQUAL(0.0, settings.toneCurve.GetPoint(0).y);
+    BOOST_CHECK_EQUAL(1.0, settings.toneCurve.GetPoint(1).x);
+    BOOST_CHECK_EQUAL(1.0, settings.toneCurve.GetPoint(1).y);
+}
+
 BOOST_FIXTURE_TEST_CASE(CallSettingsValuesSetters_GettersReturnSameValues, ScriptTestFixture)
 {
     const char* script = R"(

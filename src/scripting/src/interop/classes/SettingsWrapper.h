@@ -4,6 +4,7 @@
 #include "interop/classes/method.h"
 
 #include <lua.hpp>
+#include <memory>
 
 namespace scripting
 {
@@ -49,6 +50,9 @@ public:
 
     double get_unsh_mask_twidth() const;
     void unsh_mask_twidth(double value);
+
+    void tc_add_point(double x, double y);
+    void tc_set_point(int index, double x, double y);
 
     static const luaL_Reg* GetMethods()
     {
@@ -157,16 +161,24 @@ public:
                 return MethodDoubleArg<SettingsWrapper>(lua, &SettingsWrapper::unsh_mask_twidth);
             }},
 
+            {"tc_add_point", [](lua_State* lua) {
+                return MethodDoubleDoubleArg<SettingsWrapper>(lua, &SettingsWrapper::tc_add_point);
+            }},
+
+            {"tc_set_point", [](lua_State* lua) {
+                return MethodIntDoubleDoubleArg<SettingsWrapper>(lua, &SettingsWrapper::tc_set_point);
+            }},
+
             {nullptr, nullptr} // end-of-data marker
         };
 
         return methods;
     }
 
-    const ProcessingSettings& GetSettings() const;
+    const std::shared_ptr<ProcessingSettings>& GetSettings() const;
 
 private:
-    ProcessingSettings m_Settings;
+    std::shared_ptr<ProcessingSettings> m_Settings{new ProcessingSettings{}};
 };
 
 }

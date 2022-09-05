@@ -24,6 +24,7 @@ File description:
 #include <math.h>
 #include <algorithm>
 
+#include "../../imppg_assert.h"
 #include "common/tcrv.h"
 #include "common/common.h"
 #include "math_utils/math_utils.h"
@@ -61,6 +62,9 @@ c_ToneCurve& c_ToneCurve::operator=(const c_ToneCurve& c)
 
 void c_ToneCurve::UpdatePoint(int idx, float x, float y)
 {
+    if (idx > 0) { IMPPG_ASSERT(m_Points[idx - 1].x < x); }
+    if (static_cast<std::size_t>(idx) < m_Points.size() - 1) { IMPPG_ASSERT(x < m_Points[idx + 1].x); }
+
     m_Points[idx].x = x;
     m_Points[idx].y = y;
     if (m_Smooth)
@@ -280,6 +284,10 @@ int c_ToneCurve::AddPoint(float x, float y)
     const auto insertAt = std::lower_bound(m_Points.begin(), m_Points.end(), FloatPoint_t(x, 0.0f));
     int result = insertAt - m_Points.begin();
     m_Points.insert(insertAt, FloatPoint_t(x, y));
+
+    if (result > 0) { IMPPG_ASSERT(m_Points[result - 1].x < x); }
+    if (static_cast<std::size_t>(result) < m_Points.size() - 1) { IMPPG_ASSERT(m_Points[result].x < m_Points[result + 1].x); }
+
     if (m_Smooth)
         CalculateSpline();
     return result;

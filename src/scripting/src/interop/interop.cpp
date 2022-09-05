@@ -46,11 +46,9 @@ namespace
 template<typename T>
 int GarbageCollectHandler(lua_State* lua)
 {
-    auto lua_userdata = static_cast<T**>(luaL_checkudata(lua, 1, typeid(T).name()));
-    auto* object = *static_cast<T**>(lua_userdata);
+    void* storage = luaL_checkudata(lua, 1, typeid(T).name());
+    auto* object = static_cast<T*>(storage);
     object->~T();
-    operator delete[](object);
-    object = nullptr;
     g_State->OnObjectDestroyed<T>();
     return 0;
 }

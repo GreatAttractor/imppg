@@ -7,17 +7,17 @@
 
 ### `imppg`
 
-- `load_image_as_mono32f`
+- `load_image`
 
-  Loads an image as 32-bit floating-point monochrome.
+  Loads a monochrome or RGB image; the resulting object can be passed to image processing functions.
 
   *Parameters:*
-  - path to image file
+  - image file path
 
   ----
   *Example:*
   ```Lua
-  image = imppg.load_image_as_mono32f("/path/to/image.tif")
+  image = imppg.load_image("/path/to/image.tif")
   ```
 
 - `new_settings`
@@ -30,6 +30,39 @@
   *Example:*
   ```Lua
   settings = imppg.new_settings()
+  ```
+
+- `process_image_file`
+
+  Processes an image file according to a settings file and saves the result.
+  **TODO** specifying output format
+
+  *Parameters*:
+  - image file path
+  - settings file path
+  - processed image file path
+
+  ----
+  *Example*
+  ```Lua
+  imppg.process_image_file("/path/to/image.tif", "/path/to/settings.xml", "/path/to/output.tif")
+  ```
+
+- `process_image`
+
+  Processes image according to given settings and returns the result.
+
+  *Parameters*:
+  - image
+  - settings
+
+  ----
+  *Example*
+  ```Lua
+  settings = imppg.new_settings()
+  settings.unsh_mask_sigma(1.5)
+  image = imppg.load_image("/path/to/image.tif")
+  processed_image = imppg.process_image(image, settings)
   ```
 
 ### `imppg.filesystem`

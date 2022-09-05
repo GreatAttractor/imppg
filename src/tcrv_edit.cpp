@@ -23,6 +23,7 @@ File description:
 
 #include <math.h>
 #include <algorithm>
+#include <limits>
 #include <wx/dcclient.h>
 #include <wx/dcmemory.h>
 #include <wx/pen.h>
@@ -133,15 +134,15 @@ void c_ToneCurveEditor::GetCurveLogicalCoords(int x, int y, float minx, float ma
     *logx = static_cast<float>(x) / m_CurveArea->GetClientRect().width;
     *logy = 1.0f - static_cast<float>(y) / m_CurveArea->GetClientRect().height;
 
-    if (*logx < minx)
+    if (*logx <= minx)
         *logx = minx;
-    else if (*logx > maxx)
+    else if (*logx >= maxx)
         *logx = maxx;
 
-    if (*logy < 0)
-        *logy = 0;
-    else if (*logy > 1)
-        *logy = 1;
+    if (*logy < 0.0)
+        *logy = 0.0;
+    else if (*logy > 1.0)
+        *logy = 1.0;
 }
 
 void c_ToneCurveEditor::OnInvert(wxCommandEvent&)
@@ -158,6 +159,21 @@ void c_ToneCurveEditor::OnReset(wxCommandEvent&)
     m_GammaToggleCtrl->SetValue(m_Curve->IsGammaMode());
     m_CurveArea->Refresh(false);
     DelayedAction();
+}
+
+float c_ToneCurveEditor::CorrectLogicalXPosition(int pointIdx, float x)
+{
+    if (pointIdx > 0 && x <= m_Curve->GetPoint(pointIdx).x)
+    {
+        x += std::numeric_limits<float>::epsilon();
+    }
+    else if (pointIdx < m_Curve->GetNumPoints() - 1 &&
+        x >= m_Curve->GetPoint(pointIdx + 1).x)
+    {
+        x -= std::numeric_limits<float>::epsilon();
+    }
+
+    return x;
 }
 
 void c_ToneCurveEditor::OnCurveAreaMouseMove(wxMouseEvent& event)
@@ -179,6 +195,8 @@ void c_ToneCurveEditor::OnCurveAreaMouseMove(wxMouseEvent& event)
         m_CurveArea->SetCursor(Cursors::crHandClosed);
 
         GetCurveLogicalCoords(event.GetX(), event.GetY(), m_MouseOps.minx, m_MouseOps.maxx, &x, &y);
+
+        x = CorrectLogicalXPosition(m_MouseOps.draggedPointIdx, x);
 
         m_Curve->UpdatePoint(m_MouseOps.draggedPointIdx, x, y);
         m_CurveArea->Refresh(false);
@@ -235,6 +253,11 @@ void c_ToneCurveEditor::OnCurveAreaLeftDown(wxMouseEvent& event)
     else
     {
         // Create and grab a new point
+        if (x == m_Curve->GetPoint(pIdx).x)
+        {
+            x -= std::numeric_limits<float>::epsilon();
+        }
+
         m_MouseOps.draggedPointIdx = m_Curve->AddPoint(x, y);
         m_CurveArea->SetCursor(wxCURSOR_SIZING);
         DeactivateGammaMode();
@@ -242,9 +265,8 @@ void c_ToneCurveEditor::OnCurveAreaLeftDown(wxMouseEvent& event)
 
     m_MouseOps.dragging = true;
 
-    // Set 'minx' and 'maxx' appropriately so that
-    // the point cannot be dragged before its
-    // predecessor or after its successor
+    // set 'minx' and 'maxx' appropriately so that the point cannot be dragged onto or before its predecessor
+    // nor onto or after its successor
     if (m_MouseOps.draggedPointIdx == 0)
         m_MouseOps.minx = 0;
     else
@@ -268,6 +290,8 @@ void c_ToneCurveEditor::OnCurveAreaLeftUp(wxMouseEvent& event)
 
     if (m_MouseOps.dragging)
     {
+        x = CorrectLogicalXPosition(m_MouseOps.draggedPointIdx, x);
+
         m_Curve->UpdatePoint(m_MouseOps.draggedPointIdx, x, y);
         m_MouseOps.draggedPointIdx = -1;
         m_MouseOps.dragging = false;

@@ -3,6 +3,7 @@
 #include "image/image.h"
 
 #include <lua.hpp>
+#include <memory>
 #include <optional>
 #include <string>
 
@@ -24,11 +25,10 @@ public:
         return methods;
     }
 
-    const c_Image& GetImage() const;
+    const std::shared_ptr<c_Image>& GetImage() const;
 
 private:
-    // optional used for delayed construction
-    std::optional<c_Image> m_Image;
+    std::shared_ptr<c_Image> m_Image;
 };
 
 }

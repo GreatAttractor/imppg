@@ -89,6 +89,8 @@ private:
     /// Sends EVT_TONE_CURVE event to parent, but no more frequently than each 'm_UpdateEvtDelay' milliseconds
     void SignalToneCurveUpdate();
 
+    float CorrectLogicalXPosition(int pointIdx, float x);
+
     wxPanel* m_CurveArea{nullptr};
     c_ToneCurve* m_Curve{nullptr};
     struct

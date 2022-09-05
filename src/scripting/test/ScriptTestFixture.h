@@ -4,7 +4,6 @@
 #include <future>
 #include <initializer_list>
 #include <memory>
-#include <optional>
 #include <unordered_map>
 #include <vector>
 
@@ -41,6 +40,12 @@ public:
 
     void CheckIntegerNotifications(std::initializer_list<int> expected) const;
 
+    template<typename Value>
+    static void FillImage(c_Image& image, Value value, std::size_t channel = 0)
+    {
+        //
+    }
+
 private:
     void OnRunnerMessage(wxThreadEvent& event);
     void OnScriptFunctionCall(scripting::ScriptMessagePayload& payload);
@@ -50,8 +55,8 @@ private:
     std::vector<std::filesystem::path> m_TemporaryFiles;
     // value: occurrence count
     std::unordered_map<std::string, std::size_t> m_StringNotifications;
-    std::optional<ProcessingSettings> m_SettingsNotification;
-    std::optional<c_Image> m_ImageNotification;
+    std::shared_ptr<ProcessingSettings> m_SettingsNotification;
+    std::shared_ptr<c_Image> m_ImageNotification;
     std::vector<double> m_NumberNotifications;
     std::vector<bool> m_BooleanNotifications;
     std::vector<int> m_IntegerNotifications;
