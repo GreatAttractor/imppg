@@ -56,8 +56,8 @@ private:
     std::vector<std::filesystem::path> m_TemporaryFiles;
     // value: occurrence count
     std::unordered_map<std::string, std::size_t> m_StringNotifications;
-    std::shared_ptr<ProcessingSettings> m_SettingsNotification;
-    std::shared_ptr<c_Image> m_ImageNotification;
+    std::optional<ProcessingSettings> m_SettingsNotification;
+    std::shared_ptr<const c_Image> m_ImageNotification;
     std::vector<double> m_NumberNotifications;
     std::vector<bool> m_BooleanNotifications;
     std::vector<int> m_IntegerNotifications;

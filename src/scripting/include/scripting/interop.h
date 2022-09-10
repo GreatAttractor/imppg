@@ -46,10 +46,10 @@ namespace call
 struct None {};
 struct Dummy {};
 struct NotifyBoolean { bool value; };
-struct NotifyImage { std::shared_ptr<c_Image> image; };
+struct NotifyImage { std::shared_ptr<const c_Image> image; };
 struct NotifyInteger { int value; };
 struct NotifyNumber { double number; };
-struct NotifySettings { std::shared_ptr<ProcessingSettings> settings; };
+struct NotifySettings { ProcessingSettings settings; };
 struct NotifyString { std::string s; };
 
 struct ProcessImageFile
@@ -57,6 +57,12 @@ struct ProcessImageFile
     std::string imagePath;
     std::string settingsPath;
     std::string outputImagePath;
+};
+
+struct ProcessImage
+{
+    std::shared_ptr<const c_Image> image;
+    ProcessingSettings setings;
 };
 
 }
@@ -70,7 +76,19 @@ using FunctionCall = std::variant<
     call::NotifySettings,
     call::NotifyString,
     call::NotifyNumber,
+    call::ProcessImage,
     call::ProcessImageFile
+>;
+
+namespace call_result
+{
+struct Success {};
+struct Error { std::string message; };
+}
+
+using FunctionCallResult = std::variant<
+    call_result::Success,
+    call_result::Error
 >;
 
 /// Payload of messages sent by script runner's worker thread to parent.
@@ -84,7 +102,7 @@ public:
     : m_Call(call::None{})
     {}
 
-    ScriptMessagePayload(FunctionCall call, std::promise<void>&& completion)
+    ScriptMessagePayload(FunctionCall call, std::promise<FunctionCallResult>&& completion)
     : m_Call(call), m_Completion(std::move(completion))
     {}
 
@@ -114,13 +132,13 @@ public:
 
     const FunctionCall& GetCall() const { return m_Call; }
 
-    void SignalCompletion() { m_Completion.set_value(); }
+    void SignalCompletion(FunctionCallResult&& result) { m_Completion.set_value(std::move(result)); }
 
     const std::string& GetMessage() const { return m_Message; }
 
 private:
     FunctionCall m_Call;
-    std::promise<void> m_Completion;
+    std::promise<FunctionCallResult> m_Completion;
     std::string m_Message;
 };
 

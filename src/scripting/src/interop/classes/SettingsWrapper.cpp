@@ -15,24 +15,24 @@ std::string blc(const T& t) { return boost::lexical_cast<std::string>(t); }
 
 }
 
-const std::shared_ptr<ProcessingSettings>& SettingsWrapper::GetSettings() const
+const ProcessingSettings& SettingsWrapper::GetSettings() const
 {
     return m_Settings;
 }
 
 bool SettingsWrapper::get_normalization_enabled() const
 {
-    return m_Settings->normalization.enabled;
+    return m_Settings.normalization.enabled;
 }
 
 void SettingsWrapper::normalization_enabled(bool enabled)
 {
-    m_Settings->normalization.enabled = enabled;
+    m_Settings.normalization.enabled = enabled;
 }
 
 double SettingsWrapper::get_normalization_min() const
 {
-    return m_Settings->normalization.min;
+    return m_Settings.normalization.min;
 }
 
 void SettingsWrapper::normalization_min(double value)
@@ -41,12 +41,12 @@ void SettingsWrapper::normalization_min(double value)
     {
         throw ScriptExecutionError{std::string{"invalid normalization min value: "} + blc(value)};
     }
-    m_Settings->normalization.min = value;
+    m_Settings.normalization.min = value;
 }
 
 double SettingsWrapper::get_normalization_max() const
 {
-    return m_Settings->normalization.max;
+    return m_Settings.normalization.max;
 }
 
 void SettingsWrapper::normalization_max(double value)
@@ -55,12 +55,12 @@ void SettingsWrapper::normalization_max(double value)
     {
         throw ScriptExecutionError{std::string{"invalid normalization max value: "} + blc(value)};
     }
-    m_Settings->normalization.max = value;
+    m_Settings.normalization.max = value;
 }
 
 double SettingsWrapper::get_lr_deconv_sigma() const
 {
-    return m_Settings->LucyRichardson.sigma;
+    return m_Settings.LucyRichardson.sigma;
 }
 
 void SettingsWrapper::lr_deconv_sigma(double value)
@@ -69,12 +69,12 @@ void SettingsWrapper::lr_deconv_sigma(double value)
     {
         throw ScriptExecutionError{std::string{"invalid L-R deconvolution sigma value: "} + blc(value)};
     }
-    m_Settings->LucyRichardson.sigma = value;
+    m_Settings.LucyRichardson.sigma = value;
 }
 
 int SettingsWrapper::get_lr_deconv_num_iters() const
 {
-    return m_Settings->LucyRichardson.iterations;
+    return m_Settings.LucyRichardson.iterations;
 }
 
 void SettingsWrapper::lr_deconv_num_iters(int value)
@@ -83,32 +83,32 @@ void SettingsWrapper::lr_deconv_num_iters(int value)
     {
         throw ScriptExecutionError{std::string{"invalid L-R deconvolution num iters value: "} + blc(value)};
     }
-    m_Settings->LucyRichardson.iterations = value;
+    m_Settings.LucyRichardson.iterations = value;
 }
 
 bool SettingsWrapper::get_lr_deconv_deringing() const
 {
-    return m_Settings->LucyRichardson.deringing.enabled;
+    return m_Settings.LucyRichardson.deringing.enabled;
 }
 
 void SettingsWrapper::lr_deconv_deringing(bool enabled)
 {
-    m_Settings->LucyRichardson.deringing.enabled = enabled;
+    m_Settings.LucyRichardson.deringing.enabled = enabled;
 }
 
 bool SettingsWrapper::get_unsh_mask_adaptive() const
 {
-    return m_Settings->unsharpMasking.adaptive;
+    return m_Settings.unsharpMasking.adaptive;
 }
 
 void SettingsWrapper::unsh_mask_adaptive(bool enabled)
 {
-    m_Settings->unsharpMasking.adaptive = enabled;
+    m_Settings.unsharpMasking.adaptive = enabled;
 }
 
 double SettingsWrapper::get_unsh_mask_sigma() const
 {
-    return m_Settings->unsharpMasking.sigma;
+    return m_Settings.unsharpMasking.sigma;
 }
 
 void SettingsWrapper::unsh_mask_sigma(double value)
@@ -117,12 +117,12 @@ void SettingsWrapper::unsh_mask_sigma(double value)
     {
         throw ScriptExecutionError{std::string{"invalid unsharp mask sigma value: "} + blc(value)};
     }
-    m_Settings->unsharpMasking.sigma = value;
+    m_Settings.unsharpMasking.sigma = value;
 }
 
 double SettingsWrapper::get_unsh_mask_amount_min() const
 {
-    return m_Settings->unsharpMasking.amountMin;
+    return m_Settings.unsharpMasking.amountMin;
 }
 
 void SettingsWrapper::unsh_mask_amount_min(double value)
@@ -131,12 +131,12 @@ void SettingsWrapper::unsh_mask_amount_min(double value)
     {
         throw ScriptExecutionError{std::string{"invalid unsharp mask amount min value: "} + blc(value)};
     }
-    m_Settings->unsharpMasking.amountMin = value;
+    m_Settings.unsharpMasking.amountMin = value;
 }
 
 double SettingsWrapper::get_unsh_mask_amount_max() const
 {
-    return m_Settings->unsharpMasking.amountMax;
+    return m_Settings.unsharpMasking.amountMax;
 }
 
 void SettingsWrapper::unsh_mask_amount_max(double value)
@@ -145,12 +145,12 @@ void SettingsWrapper::unsh_mask_amount_max(double value)
     {
         throw ScriptExecutionError{std::string{"invalid unsharp mask amount max value: "} + blc(value)};
     }
-    m_Settings->unsharpMasking.amountMax = value;
+    m_Settings.unsharpMasking.amountMax = value;
 }
 
 double SettingsWrapper::get_unsh_mask_amount() const
 {
-    return m_Settings->unsharpMasking.amountMax;
+    return m_Settings.unsharpMasking.amountMax;
 }
 
 void SettingsWrapper::unsh_mask_amount(double value)
@@ -159,12 +159,12 @@ void SettingsWrapper::unsh_mask_amount(double value)
     {
         throw ScriptExecutionError{std::string{"invalid unsharp mask amount value: "} + blc(value)};
     }
-    m_Settings->unsharpMasking.amountMax = value;
+    m_Settings.unsharpMasking.amountMax = value;
 }
 
 double SettingsWrapper::get_unsh_mask_threshold() const
 {
-    return m_Settings->unsharpMasking.threshold;
+    return m_Settings.unsharpMasking.threshold;
 }
 
 void SettingsWrapper::unsh_mask_threshold(double value)
@@ -173,12 +173,12 @@ void SettingsWrapper::unsh_mask_threshold(double value)
     {
         throw ScriptExecutionError{std::string{"invalid unsharp mask threshold value: "} + blc(value)};
     }
-    m_Settings->unsharpMasking.threshold = value;
+    m_Settings.unsharpMasking.threshold = value;
 }
 
 double SettingsWrapper::get_unsh_mask_twidth() const
 {
-    return m_Settings->unsharpMasking.width;
+    return m_Settings.unsharpMasking.width;
 }
 
 void SettingsWrapper::unsh_mask_twidth(double value)
@@ -187,22 +187,22 @@ void SettingsWrapper::unsh_mask_twidth(double value)
     {
         throw ScriptExecutionError{std::string{"invalid unsharp mask transition width value: "} + blc(value)};
     }
-    m_Settings->unsharpMasking.width = value;
+    m_Settings.unsharpMasking.width = value;
 }
 
 int SettingsWrapper::tc_add_point(double x, double y)
 {
-    if (m_Settings->toneCurve.GetPoint(m_Settings->toneCurve.GetIdxOfClosestPoint(x, y)).x == x)
+    if (m_Settings.toneCurve.GetPoint(m_Settings.toneCurve.GetIdxOfClosestPoint(x, y)).x == x)
     {
         throw ScriptExecutionError(std::string{"tone curve point at X = "} + blc(x) + " already exists");
     }
 
-    return static_cast<int>(m_Settings->toneCurve.AddPoint(x, y));
+    return static_cast<int>(m_Settings.toneCurve.AddPoint(x, y));
 }
 
 void SettingsWrapper::tc_set_point(int index, double x, double y)
 {
-    auto& tc = m_Settings->toneCurve;
+    auto& tc = m_Settings.toneCurve;
     if (index < 0 || static_cast<std::size_t>(index) >= tc.GetNumPoints())
     {
         throw ScriptExecutionError("tone curve point index out of range");

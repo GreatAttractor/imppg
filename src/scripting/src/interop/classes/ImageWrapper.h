@@ -25,10 +25,10 @@ public:
         return methods;
     }
 
-    const std::shared_ptr<c_Image>& GetImage() const;
+    const std::shared_ptr<const c_Image>& GetImage() const;
 
 private:
-    std::shared_ptr<c_Image> m_Image;
+    std::shared_ptr<const c_Image> m_Image;
 };
 
 }

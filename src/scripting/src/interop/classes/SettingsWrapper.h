@@ -175,10 +175,10 @@ public:
         return methods;
     }
 
-    const std::shared_ptr<ProcessingSettings>& GetSettings() const;
+    const ProcessingSettings& GetSettings() const;
 
 private:
-    std::shared_ptr<ProcessingSettings> m_Settings{new ProcessingSettings{}};
+    ProcessingSettings m_Settings{};
 };
 
 }

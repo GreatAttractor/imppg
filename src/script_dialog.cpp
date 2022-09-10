@@ -267,7 +267,7 @@ void c_ScriptDialog::OnScriptFunctionCall(wxThreadEvent& event)
     {
         std::cout << "Main thread: simulating long operation..." << std::endl;
         std::this_thread::sleep_for(1s);
-        payload.SignalCompletion();
+        payload.SignalCompletion(call_result::Success{});
     }
     else if (const auto* processImageFile = std::get_if<call::ProcessImageFile>(&call))
     {
@@ -309,7 +309,7 @@ void c_ScriptDialog::OnScriptFunctionCall(wxThreadEvent& event)
                     c_Image resultRGB = c_Image::CombineRGB(resultR, resultG, resultB);
                     IMPPG_ASSERT(resultRGB.SaveToFile(callData.outputImagePath, OutputFormat::BMP_8));
 
-                    payload.SignalCompletion();
+                    payload.SignalCompletion(call_result::Success{});
                 });
 
                 processor2->StartProcessing(std::get<2>(input2), settings2);

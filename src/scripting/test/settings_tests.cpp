@@ -73,7 +73,7 @@ imppg.test.notify_number(s:get_unsh_mask_twidth())
     CheckIntegerNotifications({123});
 }
 
-BOOST_FIXTURE_TEST_CASE(AddTwoToneCurvePointsWithSameX_ExceptionThrown, ScriptTestFixture)
+BOOST_FIXTURE_TEST_CASE(AddTwoToneCurvePointsWithSameX_ExecutionFails, ScriptTestFixture)
 {
     const char* script = R"(
 
@@ -86,7 +86,7 @@ s:tc_add_point(0.5, 0)
     BOOST_CHECK(!RunScript(script));
 }
 
-BOOST_FIXTURE_TEST_CASE(ModifyToneCurvePointToOverlapWithSuccessor_ExceptionThrown, ScriptTestFixture)
+BOOST_FIXTURE_TEST_CASE(ModifyToneCurvePointToOverlapWithSuccessor_ExecutionFails, ScriptTestFixture)
 {
     const char* script = R"(
 
@@ -100,7 +100,7 @@ s.tc_set_point(new_idx1, 0.2, 0)
     BOOST_CHECK(!RunScript(script));
 }
 
-BOOST_FIXTURE_TEST_CASE(ModifyToneCurvePointToOverlapWithPredecessor_ExceptionThrown, ScriptTestFixture)
+BOOST_FIXTURE_TEST_CASE(ModifyToneCurvePointToOverlapWithPredecessor_ExecutionFails, ScriptTestFixture)
 {
     const char* script = R"(
 

@@ -12,11 +12,15 @@ std::unique_ptr<State> g_State;
 void State::CallFunctionAndAwaitCompletion(FunctionCall functionCall)
 {
     auto* event = new wxThreadEvent(wxEVT_THREAD, MessageId::ScriptFunctionCall);
-    std::promise<void> completionSend;
-    std::future<void> completionRecv = completionSend.get_future();
+    std::promise<FunctionCallResult> completionSend;
+    std::future<FunctionCallResult> completionRecv = completionSend.get_future();
     event->SetPayload(ScriptMessagePayload(functionCall, std::move(completionSend)));
     m_Parent.QueueEvent(event);
-    completionRecv.wait();
+    const FunctionCallResult result = completionRecv.get();
+    if (auto* error = std::get_if<call_result::Error>(&result))
+    {
+        throw ScriptExecutionError(error->message);
+    }
 }
 
 void State::OnObjectCreatedImpl(const char* typeName)

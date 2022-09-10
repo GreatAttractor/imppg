@@ -74,6 +74,7 @@ void ScriptTestFixture::OnRunnerMessage(wxThreadEvent& event)
 void ScriptTestFixture::OnScriptFunctionCall(scripting::ScriptMessagePayload& payload)
 {
     auto& callVariant = payload.GetCall();
+    auto result = scripting::call_result::Success{};
 
     if (const auto* call = std::get_if<scripting::call::NotifyString>(&callVariant))
     {
@@ -100,7 +101,7 @@ void ScriptTestFixture::OnScriptFunctionCall(scripting::ScriptMessagePayload& pa
         m_IntegerNotifications.push_back(call->value);
     }
 
-    payload.SignalCompletion();
+    payload.SignalCompletion(std::move(result));
 }
 
 void ScriptTestFixture::CheckStringNotifications(std::initializer_list<std::string> expected) const
@@ -122,7 +123,7 @@ void ScriptTestFixture::CheckStringNotifications(std::initializer_list<std::stri
 
 const ProcessingSettings& ScriptTestFixture::GetSettingsNotification() const
 {
-    BOOST_REQUIRE(nullptr != m_SettingsNotification);
+    BOOST_REQUIRE(m_SettingsNotification.has_value());
     return *m_SettingsNotification;
 }
 

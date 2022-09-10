@@ -20,6 +20,7 @@ add_library(scripting STATIC
     src/interop/interop.cpp
     src/interop/state.cpp
     src/interop/state.h
+    src/script_image_processor.cpp
     src/script_runner.cpp
 )
 
@@ -34,6 +35,6 @@ pkg_check_modules(LUA lua REQUIRED)
 target_include_directories(scripting PRIVATE ${LUA_INCLUDE_DIRS})
 #TODO check which minimal version of Lua we need and enforce it here (initial implementation uses 5.4)
 
-target_link_libraries(scripting PRIVATE ${wxWidgets_LIBRARIES} ${LUA_LIBRARIES} common)
+target_link_libraries(scripting PRIVATE ${wxWidgets_LIBRARIES} ${LUA_LIBRARIES} backend common)
 
 add_subdirectory(test)
