@@ -41,13 +41,6 @@ namespace MessageId
     enum { ScriptFunctionCall, ScriptError, ScriptFinished };
 }
 
-/// Represents errors during script's execution of ImPPG-side functions.
-class Error: public ScriptExecutionError
-{
-public:
-    Error(const char* message): ScriptExecutionError(message) {}
-};
-
 namespace call
 {
 struct None {};
