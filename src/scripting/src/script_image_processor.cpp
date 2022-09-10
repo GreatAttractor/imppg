@@ -44,21 +44,25 @@ ScriptImageProcessor::ScriptImageProcessor(std::unique_ptr<imppg::backend::IProc
 {
 }
 
-void ScriptImageProcessor::HandleProcessingRequest(ScriptMessagePayload&& request)
+FunctionCallResult ScriptImageProcessor::HandleProcessingRequest(const FunctionCall& request)
 {
-    const auto handler = Overload{
-        [](const call::ProcessImageFile& call) {
+    FunctionCallResult result = call_result::Success{};
 
+    const auto handler = Overload{
+        [&](const call::ProcessImageFile& call) {
+            result = call_result::Error{"not implemented"};
         },
 
-        [](const call::ProcessImage& call) {
-
+        [&](const call::ProcessImage& call) {
+            result = call_result::Error{"not implemented"};
         },
 
         [](auto) { IMPPG_ABORT_MSG("invalid message passed to ScriptImageProcessor"); },
     };
 
-    std::visit(handler, request.GetCall());
+    std::visit(handler, request);
+
+    return result;
 }
 
 void ScriptImageProcessor::OnIdle(wxIdleEvent& event)

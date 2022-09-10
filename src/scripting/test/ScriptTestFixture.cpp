@@ -1,3 +1,4 @@
+#include "backend/backend.h"
 #include "ScriptTestFixture.h"
 #include "scripting/interop.h"
 #include "scripting/script_runner.h"
@@ -12,10 +13,12 @@
 #include <wx/init.h>
 
 ScriptTestFixture::ScriptTestFixture()
+: m_Processor(imppg::backend::CreateCpuBmpProcessingBackend())
 {
     wxInitialize();
     m_App = std::make_unique<wxAppConsole>();
     m_App->Bind(wxEVT_THREAD, &ScriptTestFixture::OnRunnerMessage, this);
+    m_App->Bind(wxEVT_IDLE, &scripting::ScriptImageProcessor::OnIdle, &m_Processor);
 }
 
 ScriptTestFixture::~ScriptTestFixture()
@@ -76,7 +79,11 @@ void ScriptTestFixture::OnScriptFunctionCall(scripting::ScriptMessagePayload& pa
     auto& callVariant = payload.GetCall();
     auto result = scripting::call_result::Success{};
 
-    if (const auto* call = std::get_if<scripting::call::NotifyString>(&callVariant))
+    if (const auto* call = std::get_if<scripting::call::None>(&callVariant))
+    {}
+    else if (const auto* call = std::get_if<scripting::call::Dummy>(&callVariant))
+    {}
+    else if (const auto* call = std::get_if<scripting::call::NotifyString>(&callVariant))
     {
         m_StringNotifications[call->s] += 1;
     }
@@ -99,6 +106,10 @@ void ScriptTestFixture::OnScriptFunctionCall(scripting::ScriptMessagePayload& pa
     else if (auto* call = std::get_if<scripting::call::NotifyInteger>(&callVariant))
     {
         m_IntegerNotifications.push_back(call->value);
+    }
+    else
+    {
+        m_Processor.HandleProcessingRequest(callVariant);
     }
 
     payload.SignalCompletion(std::move(result));

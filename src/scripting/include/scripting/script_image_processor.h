@@ -38,7 +38,7 @@ class ScriptImageProcessor
 public:
     ScriptImageProcessor(std::unique_ptr<imppg::backend::IProcessingBackEnd> processor);
 
-    void HandleProcessingRequest(ScriptMessagePayload&& request);
+    FunctionCallResult HandleProcessingRequest(const FunctionCall& request);
 
     void OnIdle(wxIdleEvent& event);
 

@@ -9,6 +9,7 @@
 
 #include "common/proc_settings.h"
 #include "image/image.h"
+#include "scripting/script_image_processor.h"
 
 namespace scripting { class ScriptMessagePayload; }
 class wxAppConsole;
@@ -48,9 +49,11 @@ public:
     }
 
 private:
+    void OnIdle(wxIdleEvent& event);
     void OnRunnerMessage(wxThreadEvent& event);
     void OnScriptFunctionCall(scripting::ScriptMessagePayload& payload);
 
+    scripting::ScriptImageProcessor m_Processor;
     std::unique_ptr<wxAppConsole> m_App;
     std::promise<void> m_StopScript;
     std::vector<std::filesystem::path> m_TemporaryFiles;
