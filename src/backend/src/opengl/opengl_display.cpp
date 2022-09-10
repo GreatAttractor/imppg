@@ -198,7 +198,7 @@ void c_OpenGLDisplay::OnPaint(wxPaintEvent&)
         canvasSize.GetHeight() * m_GLCanvasScaleFactor);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    if (m_Img.has_value())
+    if (m_Img)
     {
         auto& prog = (m_ScalingMethod == ScalingMethod::CUBIC) ? m_GLPrograms.monoOutputCubic : m_GLPrograms.monoOutput;
         prog.Use();
@@ -286,7 +286,7 @@ void c_OpenGLDisplay::MarkSelection()
 void c_OpenGLDisplay::ImageViewScrolledOrResized(float zoomFactor)
 {
     m_ZoomFactor = zoomFactor;
-    if (m_Img.has_value())
+    if (m_Img)
     {
         FillWholeImgVBO();
         FillLastChosenSelectionScaledVBO();
@@ -296,7 +296,7 @@ void c_OpenGLDisplay::ImageViewScrolledOrResized(float zoomFactor)
 void c_OpenGLDisplay::ImageViewZoomChanged(float zoomFactor)
 {
     m_ZoomFactor = zoomFactor;
-    if (m_Img.has_value())
+    if (m_Img)
     {
         FillWholeImgVBO();
         FillLastChosenSelectionScaledVBO();
@@ -325,8 +325,8 @@ void c_OpenGLDisplay::FillLastChosenSelectionScaledVBO()
 void c_OpenGLDisplay::FillWholeImgVBO()
 {
     const auto absoluteScale = m_ZoomFactor * m_GLCanvasScaleFactor;
-    const GLfloat width =  static_cast<GLfloat>(m_Img.value().GetWidth());
-    const GLfloat height = static_cast<GLfloat>(m_Img.value().GetHeight());
+    const GLfloat width =  static_cast<GLfloat>(m_Img->GetWidth());
+    const GLfloat height = static_cast<GLfloat>(m_Img->GetHeight());
     const GLfloat swidth = width * absoluteScale;
     const GLfloat sheight = height * absoluteScale;
 
@@ -343,7 +343,7 @@ void c_OpenGLDisplay::FillWholeImgVBO()
 
 void c_OpenGLDisplay::SetImage(c_Image&& img, std::optional<wxRect> newSelection)
 {
-    m_Img = std::move(img);
+    m_Img = std::make_shared<const c_Image>(std::move(img));
 
     if (newSelection.has_value())
     {
@@ -351,7 +351,7 @@ void c_OpenGLDisplay::SetImage(c_Image&& img, std::optional<wxRect> newSelection
         m_Processor->SetSelection(m_Selection);
     }
 
-    m_Processor->SetImage(m_Img.value(), ScalingMethod::LINEAR == m_ScalingMethod);
+    m_Processor->SetImage(m_Img, ScalingMethod::LINEAR == m_ScalingMethod);
 
     FillWholeImgVBO();
     FillLastChosenSelectionScaledVBO();
@@ -370,7 +370,7 @@ Histogram c_OpenGLDisplay::GetHistogram()
         return DetermineHistogram(img, img.GetImageRect());
     }
     else if (m_Img)
-        return DetermineHistogram(m_Img.value(), m_Selection);
+        return DetermineHistogram(*m_Img, m_Selection);
     else
         return Histogram{};
 }
@@ -380,7 +380,7 @@ void c_OpenGLDisplay::NewSelection(const wxRect& selection, const wxRect&)
     m_Selection = selection;
     m_Processor->SetSelection(selection);
     FillLastChosenSelectionScaledVBO();
-    if (m_Img.has_value())
+    if (m_Img)
     {
         m_Processor->StartProcessing(ProcessingRequest::SHARPENING);
     }
@@ -398,7 +398,7 @@ void c_OpenGLDisplay::SetScalingMethod(ScalingMethod scalingMethod)
 void c_OpenGLDisplay::ToneCurveChanged(const ProcessingSettings& procSettings)
 {
     m_Processor->SetProcessingSettings(procSettings);
-    if (m_Img.has_value())
+    if (m_Img)
     {
         m_Processor->StartProcessing(ProcessingRequest::TONE_CURVE);
     }
@@ -407,7 +407,7 @@ void c_OpenGLDisplay::ToneCurveChanged(const ProcessingSettings& procSettings)
 void c_OpenGLDisplay::UnshMaskSettingsChanged(const ProcessingSettings& procSettings)
 {
     m_Processor->SetProcessingSettings(procSettings);
-    if (m_Img.has_value())
+    if (m_Img)
     {
         m_Processor->StartProcessing(ProcessingRequest::UNSHARP_MASKING);
     }
@@ -416,7 +416,7 @@ void c_OpenGLDisplay::UnshMaskSettingsChanged(const ProcessingSettings& procSett
 void c_OpenGLDisplay::LRSettingsChanged(const ProcessingSettings& procSettings)
 {
     m_Processor->SetProcessingSettings(procSettings);
-    if (m_Img.has_value())
+    if (m_Img)
     {
         m_Processor->StartProcessing(ProcessingRequest::SHARPENING);
     }
@@ -425,7 +425,7 @@ void c_OpenGLDisplay::LRSettingsChanged(const ProcessingSettings& procSettings)
 void c_OpenGLDisplay::NewProcessingSettings(const ProcessingSettings& procSettings)
 {
     m_Processor->SetProcessingSettings(procSettings);
-    if (m_Img.has_value())
+    if (m_Img)
     {
         m_Processor->StartProcessing(ProcessingRequest::SHARPENING);
     }

@@ -30,7 +30,6 @@ File description:
 
 #include <functional>
 #include <memory>
-#include <optional>
 #include <wx/scrolwin.h>
 
 namespace imppg::backend {
@@ -86,7 +85,7 @@ public:
     virtual void SetScalingMethod(ScalingMethod scalingMethod) = 0;
 
     /// Returns the original image being edited.
-    virtual const std::optional<c_Image>& GetImage() const = 0;
+    virtual const std::shared_ptr<const c_Image>& GetImage() const = 0;
 
     /// Provides a function to be called when progress text of back end's operations changes.
     virtual void SetProgressTextHandler(std::function<void(wxString)>) {}
@@ -111,7 +110,7 @@ public:
 class IProcessingBackEnd
 {
 public:
-    virtual void StartProcessing(c_Image img, ProcessingSettings procSettings) = 0;
+    virtual void StartProcessing(std::shared_ptr<const c_Image> img, ProcessingSettings procSettings) = 0;
 
     /// Can only be called after processing completes.
     virtual const c_Image& GetProcessedOutput() = 0;

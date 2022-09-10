@@ -131,7 +131,7 @@ void c_CpuAndBitmaps::ImageViewScrolledOrResized(float zoomFactor)
 void c_CpuAndBitmaps::ImageViewZoomChanged(float zoomFactor)
 {
     m_ZoomFactor = zoomFactor;
-    if (m_Img.has_value())
+    if (m_Img != nullptr)
     {
         CreateScaledPreview(m_ZoomFactor);
     }
@@ -139,13 +139,13 @@ void c_CpuAndBitmaps::ImageViewZoomChanged(float zoomFactor)
 
 void c_CpuAndBitmaps::SetImage(c_Image&& img, std::optional<wxRect> newSelection)
 {
-    m_Img = std::move(img);
+    m_Img = std::make_shared<const c_Image>(std::move(img));
     m_ImgBmp = ImageToRgbBitmap(
-        m_Img.value(),
+        *m_Img,
         0,
         0,
-        m_Img.value().GetWidth(),
-        m_Img.value().GetHeight()
+        m_Img->GetWidth(),
+        m_Img->GetHeight()
     );
 
     if (m_ZoomFactor != ZOOM_NONE)
@@ -154,7 +154,7 @@ void c_CpuAndBitmaps::SetImage(c_Image&& img, std::optional<wxRect> newSelection
     if (newSelection.has_value())
         m_Selection = newSelection.value();
 
-    m_Processor.SetImage(m_Img.value());
+    m_Processor.SetImage(m_Img);
     if (newSelection.has_value())
     {
         m_Processor.SetSelection(newSelection.value());
@@ -299,7 +299,7 @@ Histogram c_CpuAndBitmaps::GetHistogram()
     }
     else
     {
-        return DetermineHistogram(m_Img.value(), m_Selection);
+        return DetermineHistogram(*m_Img, m_Selection);
     }
 }
 
@@ -309,7 +309,7 @@ void c_CpuAndBitmaps::NewSelection(
 )
 {
     // restore unprocessed image contents in the previous selection
-    wxBitmap restored = ImageToRgbBitmap(m_Img.value(), m_Selection.x, m_Selection.y, m_Selection.width, m_Selection.height);
+    wxBitmap restored = ImageToRgbBitmap(*m_Img, m_Selection.x, m_Selection.y, m_Selection.width, m_Selection.height);
     wxMemoryDC restoredDc(restored);
     wxMemoryDC(m_ImgBmp.value()).Blit(m_Selection.GetTopLeft(), m_Selection.GetSize(), &restoredDc, wxPoint(0, 0));
 
@@ -513,7 +513,7 @@ c_CpuAndBitmaps::~c_CpuAndBitmaps()
 
 c_Image c_CpuAndBitmaps::GetProcessedSelection()
 {
-    IMPPG_ASSERT(m_Img.has_value());
+    IMPPG_ASSERT(m_Img != nullptr);
 
     AbortProcessing();
 

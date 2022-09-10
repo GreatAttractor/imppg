@@ -38,7 +38,7 @@ class c_OpenGLProcessing: public IProcessingBackEnd
 public:
     // IProcessingBackEnd functions ---------------------------------------------------------------
 
-    void StartProcessing(c_Image img, ProcessingSettings procSettings) override;
+    void StartProcessing(std::shared_ptr<const c_Image> img, ProcessingSettings procSettings) override;
 
     void SetProcessingCompletedHandler(std::function<void(CompletionStatus)> handler) override;
 
@@ -56,7 +56,7 @@ public:
     /// (e.g., `c_OpenGLDisplay` has been constructed and its `MainWindowShown` method called).
     c_OpenGLProcessing(unsigned lRCmdBatchSizeMpixIters);
 
-    void SetImage(const c_Image& img, bool linearInterpolation);
+    void SetImage(std::shared_ptr<const c_Image> img, bool linearInterpolation);
 
     void SetSelection(wxRect selection);
 
@@ -98,10 +98,9 @@ public:
     bool IsProcessingInProgress() const { return (!m_LRSync.abortRequested && m_LRSync.numIterationsLeft > 0); }
 
 private:
-    std::optional<c_Image> m_OwnedImg; ///< Set with `IProcessingBackEnd::StartProcessing`.
-    std::optional<c_Image> m_ProcessedOutput;
+    std::shared_ptr<const c_Image> m_Img; /// < Image being processed.
 
-    const c_Image* m_Img{nullptr}; /// < Image being processed (may point to `m_OwnedImg`).
+    std::optional<c_Image> m_ProcessedOutput;
 
     ProcessingSettings m_ProcessingSettings{};
 

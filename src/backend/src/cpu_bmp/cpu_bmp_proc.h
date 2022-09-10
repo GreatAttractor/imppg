@@ -29,6 +29,7 @@ File description:
 #include "../../exclusive_access.h"
 
 #include <functional>
+#include <memory>
 
 namespace imppg::backend {
 
@@ -38,7 +39,7 @@ public:
 
     // IProcessingBackEnd functions ---------------------------------------------------------------
 
-    void StartProcessing(c_Image img, ProcessingSettings procSettings) override;
+    void StartProcessing(std::shared_ptr<const c_Image> img, ProcessingSettings procSettings) override;
 
     void SetProcessingCompletedHandler(std::function<void(CompletionStatus)> handler) override;
 
@@ -62,7 +63,7 @@ public:
 
     ~c_CpuAndBitmapsProcessing() override;
 
-    void SetImage(c_Image& img) { m_Img = &img; }
+    void SetImage(std::shared_ptr<const c_Image> img) { m_Img = img; }
 
     void SetSelection(wxRect selection);
 
@@ -108,9 +109,7 @@ private:
 
     void OnThreadEvent(wxThreadEvent& event);
 
-    std::optional<c_Image> m_OwnedImg; ///< Image provided via `StartProcessing` (when in batch processing mode).
-
-    c_Image* m_Img{nullptr}; ///< Image being processed.
+    std::shared_ptr<const c_Image> m_Img; ///< Image being processed.
 
     wxRect m_Selection; ///< Fragment of `m_Img` selected for processing (in logical image coords).
 

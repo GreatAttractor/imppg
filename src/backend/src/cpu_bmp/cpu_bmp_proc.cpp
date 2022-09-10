@@ -36,11 +36,10 @@ std::unique_ptr<IProcessingBackEnd> CreateCpuBmpProcessingBackend()
     return std::make_unique<c_CpuAndBitmapsProcessing>();
 }
 
-void c_CpuAndBitmapsProcessing::StartProcessing(c_Image img, ProcessingSettings procSettings)
+void c_CpuAndBitmapsProcessing::StartProcessing(std::shared_ptr<const c_Image> img, ProcessingSettings procSettings)
 {
-    m_OwnedImg = std::move(img);
-    m_Img = &m_OwnedImg.value();
-    SetSelection(m_OwnedImg.value().GetImageRect());
+    m_Img = img;
+    SetSelection(m_Img->GetImageRect());
     m_ProcSettings = procSettings;
     m_UsePreciseToneCurveValues = true;
 

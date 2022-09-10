@@ -312,13 +312,13 @@ void c_ScriptDialog::OnScriptFunctionCall(wxThreadEvent& event)
                     payload.SignalCompletion(call_result::Success{});
                 });
 
-                processor2->StartProcessing(std::get<2>(input2), settings2);
+                processor2->StartProcessing(std::make_shared<const c_Image>(std::get<2>(input2)), settings2);
             });
 
-            processor2->StartProcessing(std::get<1>(input2), settings2);
+            processor2->StartProcessing(std::make_shared<const c_Image>(std::get<1>(input2)), settings2);
         });
 
-        m_Processor->StartProcessing(std::get<0>(input), settings);
+        m_Processor->StartProcessing(std::make_shared<const c_Image>(std::get<0>(input)), settings);
     }
 }
 

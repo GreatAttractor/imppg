@@ -74,7 +74,7 @@ public:
 
     void SetScalingMethod(ScalingMethod scalingMethod) override;
 
-    const std::optional<c_Image>& GetImage() const override { return m_Img; }
+    const std::shared_ptr<const c_Image>& GetImage() const override { return m_Img; }
 
     void OnIdle(wxIdleEvent& event) override;
 
@@ -96,7 +96,7 @@ private:
 
     std::unique_ptr<wxGLContext> m_GLContext;
 
-    std::optional<c_Image> m_Img;
+    std::shared_ptr<const c_Image> m_Img;
 
     float m_ZoomFactor{ZOOM_NONE};
 

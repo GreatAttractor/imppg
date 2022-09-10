@@ -41,11 +41,11 @@ static std::vector<float> GetGaussianKernel(float sigma)
     return CalculateHalf1DGaussianKernel(static_cast<int>(ceilf(sigma) * 3), sigma);
 }
 
-void c_OpenGLProcessing::StartProcessing(c_Image img, ProcessingSettings procSettings)
+void c_OpenGLProcessing::StartProcessing(std::shared_ptr<const c_Image> img, ProcessingSettings procSettings)
 {
-    m_OwnedImg = std::move(img);
-    SetSelection(m_OwnedImg.value().GetImageRect());
-    SetImage(m_OwnedImg.value(), false);
+    m_Img = std::move(img);
+    SetSelection(m_Img->GetImageRect());
+    SetImage(m_Img, false);
     SetProcessingSettings(procSettings);
     StartProcessing(ProcessingRequest::SHARPENING);
 }
@@ -558,9 +558,9 @@ void c_OpenGLProcessing::SetSelection(wxRect selection)
     }
 }
 
-void c_OpenGLProcessing::SetImage(const c_Image& img, bool linearInterpolation)
+void c_OpenGLProcessing::SetImage(std::shared_ptr<const c_Image> img, bool linearInterpolation)
 {
-    m_Img = &img;
+    m_Img = img;
 
     m_ProcessedOutput = std::nullopt;
 

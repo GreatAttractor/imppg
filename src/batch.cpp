@@ -257,7 +257,7 @@ void c_BatchDialog::ProcessNextFile()
         NormalizeFpImage(img.value(), proc.normalization.min, proc.normalization.max);
     }
 
-    m_Processor->StartProcessing(std::move(img.value()), proc);
+    m_Processor->StartProcessing(std::make_shared<const c_Image>(std::move(img.value())), proc);
 }
 
 void c_BatchDialog::OnCommandEvent(wxCommandEvent& event)
