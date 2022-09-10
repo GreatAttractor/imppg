@@ -269,17 +269,17 @@ void c_ScriptDialog::OnScriptFunctionCall(wxThreadEvent& event)
         std::this_thread::sleep_for(1s);
         payload.SignalCompletion();
     }
-    else if (const auto* processImage = std::get_if<call::ProcessImage>(&call))
+    else if (const auto* processImageFile = std::get_if<call::ProcessImageFile>(&call))
     {
         //temporary experimental code for RGB processing
-        const c_Image image = [processImage]() {
-            auto result = LoadImageAs(processImage->imagePath, "tif", PixelFormat::PIX_RGB32F, nullptr, false);
+        const c_Image image = [processImageFile]() {
+            auto result = LoadImageAs(processImageFile->imagePath, "tif", PixelFormat::PIX_RGB32F, nullptr, false);
             if (!result) { throw std::runtime_error("failed to load image"); }
             return *result;
         }();
 
         ProcessingSettings settings;
-        IMPPG_ASSERT(LoadSettings(processImage->settingsPath, settings, nullptr, nullptr, nullptr));
+        IMPPG_ASSERT(LoadSettings(processImageFile->settingsPath, settings, nullptr, nullptr, nullptr));
 
         const bool isRGB = (NumChannels[static_cast<std::size_t>(image.GetPixelFormat())] == 3);
         if (!isRGB) { throw std::runtime_error("not yet supported"); }
@@ -287,7 +287,7 @@ void c_ScriptDialog::OnScriptFunctionCall(wxThreadEvent& event)
         auto input = image.SplitRGB();
 
         //FIXME: add proper OnIdle interaction; for now just a blocking approach (legal only for the CPU backend)
-        m_Processor->SetProcessingCompletedHandler([processor = m_Processor.get(), input, settings, callData = *processImage, payload = std::move(payload)](imppg::backend::CompletionStatus) {
+        m_Processor->SetProcessingCompletedHandler([processor = m_Processor.get(), input, settings, callData = *processImageFile, payload = std::move(payload)](imppg::backend::CompletionStatus) {
             c_Image resultR = processor->GetProcessedOutput();
 
             // need to copy these for later use - the lambda we're currently executing has been assigned as the completion hander of processor,

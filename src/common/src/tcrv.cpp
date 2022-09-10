@@ -21,15 +21,16 @@ File description:
     Tone curve class implementation.
 */
 
-#include <math.h>
-#include <algorithm>
-
 #include "../../imppg_assert.h"
 #include "common/tcrv.h"
 #include "common/common.h"
 #include "math_utils/math_utils.h"
 
-const int DEFAULT_LUT_SIZE = 1 << 16;
+#include <algorithm>
+#include <limits>
+#include <cmath>
+
+const std::size_t DEFAULT_LUT_SIZE = 1 << 16;
 
 c_ToneCurve::c_ToneCurve()
 : m_Smooth(true), m_IsGamma(false), m_Gamma(1.0f)
@@ -60,7 +61,7 @@ c_ToneCurve& c_ToneCurve::operator=(const c_ToneCurve& c)
     return *this;
 }
 
-void c_ToneCurve::UpdatePoint(int idx, float x, float y)
+void c_ToneCurve::UpdatePoint(std::size_t idx, float x, float y)
 {
     if (idx > 0) { IMPPG_ASSERT(m_Points[idx - 1].x < x); }
     if (static_cast<std::size_t>(idx) < m_Points.size() - 1) { IMPPG_ASSERT(x < m_Points[idx + 1].x); }
@@ -181,17 +182,13 @@ void c_ToneCurve::Reset()
     m_Smooth = true;
 }
 
-/// Returns index of the curve point closest to (x, y)
-int c_ToneCurve::GetIdxOfClosestPoint(
-    float x, ///< X coordinate, range [0; 1]
-    float y  ///< Y coordinate, range [0; 1]
-) const
+std::size_t c_ToneCurve::GetIdxOfClosestPoint(float x, float y) const
 {
     float minDistSq = 1.0e+6f;
-    unsigned minIdx = -1;
+    auto minIdx = std::numeric_limits<std::size_t>::max();
 
     // The number of points will not be high, so just check all of them
-    for (unsigned i = 0; i < m_Points.size(); i++)
+    for (std::size_t i = 0; i < m_Points.size(); i++)
     {
         float distSq = sqr(m_Points[i].x - x) + sqr(m_Points[i].y - y);
         if (distSq < minDistSq)
@@ -234,7 +231,7 @@ float c_ToneCurve::GetPreciseValue(
     else
     {
         // Index of the point with X >= input
-        unsigned nextIdx = std::lower_bound(m_Points.cbegin(), m_Points.cend(), FloatPoint_t(input, 0)) - m_Points.begin();
+        std::size_t nextIdx = std::lower_bound(m_Points.cbegin(), m_Points.cend(), FloatPoint_t(input, 0)) - m_Points.begin();
 
         // If 'input' is at or past the last point, return the value at the last point
         if (nextIdx == m_Points.size() && input >= m_Points.back().x)
@@ -269,7 +266,7 @@ float c_ToneCurve::GetPreciseValue(
 }
 
 /// Removes the specified point. If there are only 2 points, does nothing.
-void c_ToneCurve::RemovePoint(int index)
+void c_ToneCurve::RemovePoint(std::size_t index)
 {
      if (m_Points.size() > 2)
      {
@@ -279,17 +276,20 @@ void c_ToneCurve::RemovePoint(int index)
 }
 
 /// Adds a curve point; returns its index
-int c_ToneCurve::AddPoint(float x, float y)
+std::size_t c_ToneCurve::AddPoint(float x, float y)
 {
     const auto insertAt = std::lower_bound(m_Points.begin(), m_Points.end(), FloatPoint_t(x, 0.0f));
-    int result = insertAt - m_Points.begin();
+    const std::size_t result = insertAt - m_Points.begin();
     m_Points.insert(insertAt, FloatPoint_t(x, y));
 
     if (result > 0) { IMPPG_ASSERT(m_Points[result - 1].x < x); }
-    if (static_cast<std::size_t>(result) < m_Points.size() - 1) { IMPPG_ASSERT(m_Points[result].x < m_Points[result + 1].x); }
+    if (result < m_Points.size() - 1) { IMPPG_ASSERT(m_Points[result].x < m_Points[result + 1].x); }
 
     if (m_Smooth)
+    {
         CalculateSpline();
+    }
+
     return result;
 }
 

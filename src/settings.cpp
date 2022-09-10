@@ -79,9 +79,11 @@ wxXmlNode* CreateToneCurveSettingsNode(const c_ToneCurve& toneCurve)
     if (toneCurve.IsGammaMode())
          result->AddAttribute(XmlName::tcGamma, NumFormatter::Format(toneCurve.GetGamma(), FLOAT_PREC));
     wxString pointsStr;
-    for (int i = 0; i < toneCurve.GetNumPoints(); i++)
+    for (std::size_t i = 0; i < toneCurve.GetNumPoints(); i++)
+    {
         pointsStr += NumFormatter::Format(toneCurve.GetPoint(i).x, FLOAT_PREC) + ";"+
                      NumFormatter::Format(toneCurve.GetPoint(i).y, FLOAT_PREC) + ";";
+    }
 
     result->AddChild(new wxXmlNode(wxXML_TEXT_NODE, wxEmptyString, pointsStr));
 

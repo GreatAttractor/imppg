@@ -72,3 +72,22 @@ imppg.test.notify_number(s:get_unsh_mask_twidth())
     CheckNumberNotifications({0.25, 0.75, 5.0, 5.0, 1.0, 2.0, 2.0, 0.125, 0.125});
     CheckIntegerNotifications({123});
 }
+
+BOOST_FIXTURE_TEST_CASE(AddTwoToneCurvePointsWithSameX_ExceptionThrown, ScriptTestFixture)
+{
+    const char* script = R"(
+
+s = imppg.new_settings()
+s.
+
+    )";
+}
+
+// BOOST_FIXTURE_TEST_CASE(, ScriptTestFixture)
+// BOOST_FIXTURE_TEST_CASE(, ScriptTestFixture)
+// BOOST_FIXTURE_TEST_CASE(, ScriptTestFixture)
+// BOOST_FIXTURE_TEST_CASE(, ScriptTestFixture)
+// BOOST_FIXTURE_TEST_CASE(, ScriptTestFixture)
+// BOOST_FIXTURE_TEST_CASE(, ScriptTestFixture)
+// BOOST_FIXTURE_TEST_CASE(, ScriptTestFixture)
+// BOOST_FIXTURE_TEST_CASE(, ScriptTestFixture)

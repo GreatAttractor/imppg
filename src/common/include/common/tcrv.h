@@ -80,10 +80,10 @@ public:
     void ClearPoints();
 
     /// Adds a curve point (keeps all points sorted by their 'x'); returns its index
-    int AddPoint(float x, float y);
+    std::size_t AddPoint(float x, float y);
 
     /// Removes the specified point. If there are only 2 points, does nothing.
-    void RemovePoint(int index);
+    void RemovePoint(std::size_t index);
 
     bool GetSmooth() const { return m_Smooth; }
     void SetSmooth(bool smooth);
@@ -110,19 +110,19 @@ public:
     ) const;
 
     /// Returns index of the curve point closest to (x, y)
-    int GetIdxOfClosestPoint(
+    std::size_t GetIdxOfClosestPoint(
         float x, ///< X coordinate, range [0; 1]
         float y  ///< Y coordinate, range [0; 1]
-        ) const;
+    ) const;
 
-    const FloatPoint_t& GetPoint(int idx) const
+    const FloatPoint_t& GetPoint(std::size_t idx) const
     {
         return m_Points[idx];
     }
 
-    void UpdatePoint(int idx, float x, float y);
+    void UpdatePoint(std::size_t idx, float x, float y);
 
-    int GetNumPoints() const
+    std::size_t GetNumPoints() const
     {
         return m_Points.size();
     }

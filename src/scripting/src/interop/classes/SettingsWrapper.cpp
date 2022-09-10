@@ -192,11 +192,17 @@ void SettingsWrapper::unsh_mask_twidth(double value)
 
 void SettingsWrapper::tc_add_point(double x, double y)
 {
+    if (m_Settings->toneCurve.GetPoint(m_Settings->toneCurve.GetIdxOfClosestPoint(x, y)).x == x)
+    {
+        throw ScriptExecutionError(std::string{"tone curve point at X = "} + blc(x) + " already exists");
+    }
 
+    m_Settings->toneCurve.AddPoint(x, y);
 }
 
 void SettingsWrapper::tc_set_point(int index, double x, double y)
 {
+    //const
 }
 
 }

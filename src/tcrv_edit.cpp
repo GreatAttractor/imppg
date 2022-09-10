@@ -161,7 +161,7 @@ void c_ToneCurveEditor::OnReset(wxCommandEvent&)
     DelayedAction();
 }
 
-float c_ToneCurveEditor::CorrectLogicalXPosition(int pointIdx, float x)
+float c_ToneCurveEditor::CorrectLogicalXPosition(std::size_t pointIdx, float x)
 {
     if (pointIdx > 0 && x <= m_Curve->GetPoint(pointIdx).x)
     {
@@ -318,7 +318,7 @@ void c_ToneCurveEditor::MarkCurvePoints(
     const auto brPoint = wxBrush(pointColor);
     const auto brSelPoint = wxBrush(selPointColor);
 
-    for (int i = 0; i < m_Curve->GetNumPoints(); i++)
+    for (std::size_t i = 0; i < m_Curve->GetNumPoints(); i++)
     {
         if (i != m_MouseOps.draggedPointIdx)
             dc.SetBrush(brPoint);
