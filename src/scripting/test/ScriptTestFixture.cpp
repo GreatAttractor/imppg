@@ -28,13 +28,14 @@ ScriptTestFixture::~ScriptTestFixture()
     }
 }
 
-void ScriptTestFixture::RunScript(const char* scriptText)
+bool ScriptTestFixture::RunScript(const char* scriptText)
 {
     std::promise<void> stopScript;
     scripting::ScriptRunner runner(std::make_unique<std::stringstream>(scriptText), *m_App, stopScript.get_future());
     runner.Run();
     m_App->MainLoop();
     runner.Wait();
+    return !m_ScriptExecutionFailure;
 }
 
 void ScriptTestFixture::CreateFile(const std::filesystem::path& path)
@@ -57,7 +58,8 @@ void ScriptTestFixture::OnRunnerMessage(wxThreadEvent& event)
     case scripting::MessageId::ScriptError:
     {
         auto payload = event.GetPayload<scripting::ScriptMessagePayload>();
-        BOOST_FAIL("Script execution error: " << payload.GetMessage() << ".");
+        BOOST_TEST_MESSAGE("Script execution error: " << payload.GetMessage() << ".");
+        m_ScriptExecutionFailure = true;
         break;
     }
 

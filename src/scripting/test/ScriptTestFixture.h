@@ -21,7 +21,8 @@ public:
 
     ~ScriptTestFixture();
 
-    void RunScript(const char* scriptText);
+    /// Returns false on script execution error.
+    bool RunScript(const char* scriptText);
 
     /// Creates file which is deleted on ScriptTestFixture destruction.
     void CreateFile(const std::filesystem::path& path);
@@ -60,4 +61,5 @@ private:
     std::vector<double> m_NumberNotifications;
     std::vector<bool> m_BooleanNotifications;
     std::vector<int> m_IntegerNotifications;
+    bool m_ScriptExecutionFailure{false};
 };

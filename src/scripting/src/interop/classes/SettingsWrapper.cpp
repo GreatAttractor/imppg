@@ -190,19 +190,33 @@ void SettingsWrapper::unsh_mask_twidth(double value)
     m_Settings->unsharpMasking.width = value;
 }
 
-void SettingsWrapper::tc_add_point(double x, double y)
+int SettingsWrapper::tc_add_point(double x, double y)
 {
     if (m_Settings->toneCurve.GetPoint(m_Settings->toneCurve.GetIdxOfClosestPoint(x, y)).x == x)
     {
         throw ScriptExecutionError(std::string{"tone curve point at X = "} + blc(x) + " already exists");
     }
 
-    m_Settings->toneCurve.AddPoint(x, y);
+    return static_cast<int>(m_Settings->toneCurve.AddPoint(x, y));
 }
 
 void SettingsWrapper::tc_set_point(int index, double x, double y)
 {
-    //const
+    auto& tc = m_Settings->toneCurve;
+    if (index < 0 || static_cast<std::size_t>(index) >= tc.GetNumPoints())
+    {
+        throw ScriptExecutionError("tone curve point index out of range");
+    }
+    if (static_cast<std::size_t>(index) > 0 && x <= tc.GetPoint(index - 1).x)
+    {
+        throw ScriptExecutionError("cannot set tone curve point at or to the left of its predecessor");
+    }
+    if (static_cast<std::size_t>(index) < tc.GetNumPoints() - 1 && x >= tc.GetPoint(index + 1).x)
+    {
+        throw ScriptExecutionError("cannot set tone curve point at or to the right of its successor");
+    }
+
+    tc.UpdatePoint(index, x, y);
 }
 
 }

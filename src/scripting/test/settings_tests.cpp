@@ -78,16 +78,38 @@ BOOST_FIXTURE_TEST_CASE(AddTwoToneCurvePointsWithSameX_ExceptionThrown, ScriptTe
     const char* script = R"(
 
 s = imppg.new_settings()
-s.
+s:tc_add_point(0.5, 0)
+s:tc_add_point(0.5, 0)
 
     )";
+
+    BOOST_CHECK(!RunScript(script));
 }
 
-// BOOST_FIXTURE_TEST_CASE(, ScriptTestFixture)
-// BOOST_FIXTURE_TEST_CASE(, ScriptTestFixture)
-// BOOST_FIXTURE_TEST_CASE(, ScriptTestFixture)
-// BOOST_FIXTURE_TEST_CASE(, ScriptTestFixture)
-// BOOST_FIXTURE_TEST_CASE(, ScriptTestFixture)
-// BOOST_FIXTURE_TEST_CASE(, ScriptTestFixture)
-// BOOST_FIXTURE_TEST_CASE(, ScriptTestFixture)
-// BOOST_FIXTURE_TEST_CASE(, ScriptTestFixture)
+BOOST_FIXTURE_TEST_CASE(ModifyToneCurvePointToOverlapWithSuccessor_ExceptionThrown, ScriptTestFixture)
+{
+    const char* script = R"(
+
+s = imppg.new_settings()
+new_idx1 = s.tc_add_point(0.1, 0)
+new_idx2 = s.tc_add_point(0.2, 0)
+s.tc_set_point(new_idx1, 0.2, 0)
+
+    )";
+
+    BOOST_CHECK(!RunScript(script));
+}
+
+BOOST_FIXTURE_TEST_CASE(ModifyToneCurvePointToOverlapWithPredecessor_ExceptionThrown, ScriptTestFixture)
+{
+    const char* script = R"(
+
+s = imppg.new_settings()
+new_idx1 = s.tc_add_point(0.1, 0)
+new_idx2 = s.tc_add_point(0.2, 0)
+s.tc_set_point(new_idx2, 0.1, 0)
+
+    )";
+
+    BOOST_CHECK(!RunScript(script));
+}

@@ -62,7 +62,7 @@ BOOST_FIXTURE_TEST_CASE(LoadAndProcessImage, ScriptTestFixture)
 settings = imppg.new_settings()
 -- horizontal tone curve mapping everything to 0.5 brightness
 settings:tc_set_point(0, 0.0, 0.5)
-settings:tc_set_point(1, 0.0, 0.5)
+settings:tc_set_point(1, 1.0, 0.5)
 image = imppg.load_image("$ROOT/image.bmp")
 
 processed_image = imppg.process_image(image, settings)

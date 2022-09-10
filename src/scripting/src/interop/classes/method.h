@@ -95,6 +95,14 @@ int MethodDoubleDoubleArg(lua_State* lua, void (T::* method)(double, double))
 }
 
 template<typename T>
+int MethodDoubleDoubleArgIntResult(lua_State* lua, int (T::* method)(double, double))
+{
+    auto* object = GetObject<T>(lua);
+    lua_pushinteger(lua, (object->*method)(GetNumber(lua, 2), GetNumber(lua, 3)));
+    return 1;
+}
+
+template<typename T>
 int MethodIntDoubleDoubleArg(lua_State* lua, void (T::* method)(int, double, double))
 {
     auto* object = GetObject<T>(lua);

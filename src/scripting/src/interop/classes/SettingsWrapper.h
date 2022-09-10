@@ -51,7 +51,7 @@ public:
     double get_unsh_mask_twidth() const;
     void unsh_mask_twidth(double value);
 
-    void tc_add_point(double x, double y);
+    int tc_add_point(double x, double y);
     void tc_set_point(int index, double x, double y);
 
     static const luaL_Reg* GetMethods()
@@ -162,7 +162,7 @@ public:
             }},
 
             {"tc_add_point", [](lua_State* lua) {
-                return MethodDoubleDoubleArg<SettingsWrapper>(lua, &SettingsWrapper::tc_add_point);
+                return MethodDoubleDoubleArgIntResult<SettingsWrapper>(lua, &SettingsWrapper::tc_add_point);
             }},
 
             {"tc_set_point", [](lua_State* lua) {
