@@ -278,7 +278,6 @@ bool DetermineTranslationVectors(
     std::string localErrorMsg;
     const auto loadResult = LoadImageFileAsMono32f(
         inputFiles[0].ToStdString(),
-        wxFileName(inputFiles[0]).GetExt().Lower().ToStdString(),
         Configuration::NormalizeFITSValues,
         &localErrorMsg
     );
@@ -328,7 +327,6 @@ bool DetermineTranslationVectors(
         std::string localErrorMsg;
         const auto loadResult = LoadImageFileAsMono32f(
             inputFiles[i].ToStdString(),
-            wxFileName(inputFiles[i]).GetExt().Lower().ToStdString(),
             Configuration::NormalizeFITSValues,
             &localErrorMsg
         );

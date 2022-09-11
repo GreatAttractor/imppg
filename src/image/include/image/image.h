@@ -367,7 +367,6 @@ void NormalizeFpImage(c_Image& img, float minLevel, float maxLevel);
 /// Loads the specified image file and converts it to PIX_MONO32F.
 std::optional<c_Image> LoadImageFileAsMono32f(
     const std::string& fname,        ///< Full path (including file name and extension)
-    const std::string& extension,    ///< lowercase extension
     bool normalizeFITSvalues,
     std::string* errorMsg = nullptr  ///< If not null, may receive an error message (if any)
 );
@@ -375,14 +374,12 @@ std::optional<c_Image> LoadImageFileAsMono32f(
 /// Loads the specified image file and converts it to PIX_MONO8.
 std::optional<c_Image> LoadImageFileAsMono8(
     const std::string& fname,       ///< Full path (including file name and extension)
-    const std::string& extension,   ///< lowercase extension
     bool normalizeFITSvalues,
     std::string* errorMsg = nullptr ///< If not null, may receive an error message (if any)
 );
 
 std::optional<c_Image> LoadImageAs(
     const std::string& fname,     ///< Full path (including file name and extension).
-    const std::string& extension, ///< Lowercase extension.
     std::optional<PixelFormat> destFmt, ///< Pixel format to convert to; can be one of PIX_MONO8, PIX_MONO32F.
     std::string* errorMsg,        ///< If not null, may receive an error message (if any).
     /// If true, floating-points values read from a FITS file are normalized, so that the highest becomes 1.0.
@@ -399,8 +396,7 @@ std::optional<c_Image> LoadFitsImage(
 
 /// Returns (width, height).
 std::optional<std::tuple<unsigned, unsigned>> GetImageSize(
-    const std::string& fname,     ///< Full path (including file name and extension).
-    const std::string& extension  ///< Lowercase extension.
+    const std::string& fname     ///< Full path (including file name and extension).
 );
 
 #endif // ImPPG_HEADER_H

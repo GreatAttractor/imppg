@@ -243,10 +243,7 @@ void c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment()
 
     for (size_t i = 0; i < m_Parameters.inputFiles.Count(); i++)
     {
-        const auto result = GetImageSize(
-            m_Parameters.inputFiles[i].ToStdString(),
-            wxFileName(m_Parameters.inputFiles[i].ToStdString()).GetExt().ToStdString()
-        );
+        const auto result = GetImageSize(m_Parameters.inputFiles[i].ToStdString());
 
         if (!result)
         {
@@ -401,7 +398,6 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
         // Scan the first image's intersection portion for the highest-contrast area
         const auto loadResult = LoadImageFileAsMono32f(
             m_Parameters.inputFiles[0].ToStdString(),
-            wxFileName(m_Parameters.inputFiles[0]).GetExt().Lower().ToStdString(),
             Configuration::NormalizeFITSValues
         );
         if (!loadResult)
@@ -460,7 +456,6 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
 
             const auto loadResult = LoadImageFileAsMono32f(
                 m_Parameters.inputFiles[i].ToStdString(),
-                wxFileName(m_Parameters.inputFiles[i]).GetExt().Lower().ToStdString(),
                 Configuration::NormalizeFITSValues
             );
             if (!loadResult)
@@ -646,7 +641,6 @@ bool c_ImageAlignmentWorkerThread::FindRadii(
 
         const auto loadResult = LoadImageFileAsMono8(
             m_Parameters.inputFiles[i].ToStdString(),
-            wxFileName(m_Parameters.inputFiles[i]).GetExt().Lower().ToStdString(),
             Configuration::NormalizeFITSValues
         );
         if (!loadResult)
