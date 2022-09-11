@@ -926,7 +926,6 @@ void c_MainWindow::OpenFile(wxFileName path, bool resetSelection)
 
     const auto loadResult = LoadImageFileAsMono32f(
         path.GetFullPath().ToStdString(),
-        path.GetExt().Lower().ToStdString(),
         Configuration::NormalizeFITSValues,
         &errorMsg
     );

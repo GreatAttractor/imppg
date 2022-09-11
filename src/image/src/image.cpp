@@ -27,6 +27,7 @@ File description:
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <optional>
 #include <boost/format.hpp>
 
@@ -72,6 +73,19 @@ bool IsMachineBigEndian()
     static uint16_t value16 = 0x1122;
     static uint8_t* ptr = reinterpret_cast<uint8_t*>(&value16);
     return (ptr[0] == 0x11);
+}
+
+static std::string GetExtension(const std::string& filePath)
+{
+    const std::string extension = std::filesystem::path(filePath).extension();
+    if (extension.size() >= 1 && extension[0] == '.')
+    {
+        return extension.substr(1);
+    }
+    else
+    {
+        return extension;
+    }
 }
 
 #if USE_CFITSIO
@@ -1138,7 +1152,6 @@ std::optional<c_Image> LoadFitsImage(const std::string& fname, bool normalize)
 
 std::optional<c_Image> LoadImageAs(
     const std::string& fname,
-    const std::string& extension,
     std::optional<PixelFormat> destFmt, ///< Pixel format to convert to; can be one of PIX_MONO8, PIX_MONO32F.
     std::string* errorMsg, ///< If not null, may receive an error message (if any).
     /// If true, floating-points values read from a FITS file are normalized, so that the highest becomes 1.0.
@@ -1147,6 +1160,8 @@ std::optional<c_Image> LoadImageAs(
 {
     if (errorMsg)
         *errorMsg = "";
+
+    const auto extension = GetExtension(fname);
 
 #if USE_CFITSIO
     if (extension == "fit" || extension == "fits")
@@ -1165,8 +1180,6 @@ std::optional<c_Image> LoadImageAs(
 #endif
 
 #if USE_FREEIMAGE
-    (void)extension; // avoid unused parameter warning when USE_CFITSIO is 0
-
     //TODO: add handling of FreeImage's error message (if any)
 
     FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;
@@ -1250,23 +1263,21 @@ std::optional<c_Image> LoadImageAs(
 
 std::optional<c_Image> LoadImageFileAsMono32f(
     const std::string& fname,     ///< Full path (including file name and extension).
-    const std::string& extension, ///< Lowercase extension.
     /// If true, floating-points values read from a FITS file are normalized, so that the highest becomes 1.0.
     bool normalizeFITSvalues,
     std::string* errorMsg         ///< If not null, may receive an error message (if any).
 )
 {
-    return LoadImageAs(fname, extension, PixelFormat::PIX_MONO32F, errorMsg, normalizeFITSvalues);
+    return LoadImageAs(fname, PixelFormat::PIX_MONO32F, errorMsg, normalizeFITSvalues);
 }
 
 std::optional<c_Image> LoadImageFileAsMono8(
     const std::string& fname,
-    const std::string& extension,
     bool normalizeFITSvalues,
     std::string* errorMsg
 )
 {
-    return LoadImageAs(fname, extension, PixelFormat::PIX_MONO8, errorMsg, normalizeFITSvalues);
+    return LoadImageAs(fname, PixelFormat::PIX_MONO8, errorMsg, normalizeFITSvalues);
 }
 
 /// Multiply by another image; both images have to be PIX_MONO32F and have the same dimensions
@@ -1285,8 +1296,9 @@ void c_Image::Multiply(const c_Image& mult)
 }
 
 /// Returns 'true' if image's width and height were successfully read; returns 'false' on error
-std::optional<std::tuple<unsigned, unsigned>> GetImageSize(const std::string& fname, const std::string& extension)
+std::optional<std::tuple<unsigned, unsigned>> GetImageSize(const std::string& fname)
 {
+    const auto extension = GetExtension(fname);
 #if USE_CFITSIO
     if (extension == "fit" || extension == "fits")
     {

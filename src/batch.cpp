@@ -239,7 +239,6 @@ void c_BatchDialog::ProcessNextFile()
 
     auto img = LoadImageFileAsMono32f(
         path.GetFullPath().ToStdString(),
-        path.GetExt().ToStdString(),
         Configuration::NormalizeFITSValues,
         &errorMsg
     );
