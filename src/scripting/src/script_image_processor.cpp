@@ -22,7 +22,10 @@ File description:
 */
 
 #include "../../imppg_assert.h"
+#include "common/proc_settings.h"
 #include "scripting/script_image_processor.h"
+
+#include <wx/intl.h>
 
 // private definitions
 namespace
@@ -39,35 +42,68 @@ template<class... Ts> Overload(Ts...) -> Overload<Ts...>;
 namespace scripting
 {
 
-ScriptImageProcessor::ScriptImageProcessor(std::unique_ptr<imppg::backend::IProcessingBackEnd> processor)
+ScriptImageProcessor::ScriptImageProcessor(
+    std::unique_ptr<imppg::backend::IProcessingBackEnd> processor,
+    bool normalizeFitsValues
+)
 : m_Processor(std::move(processor))
+, m_NormalizeFitsValues(normalizeFitsValues)
 {
 }
 
-FunctionCallResult ScriptImageProcessor::HandleProcessingRequest(const FunctionCall& request)
+void ScriptImageProcessor::StartProcessing(
+    FunctionCall request,
+    std::function<void(FunctionCallResult)> onCompletion
+)
 {
-    FunctionCallResult result = call_result::Success{};
+    std::optional<wxString> errorMsg = std::nullopt;
 
     const auto handler = Overload{
-        [&](const call::ProcessImageFile& call) {
-            //auto result = LoadImageFileAsMono32f(call.imagePath, "tif", nullptr, false);
+        [&, this](const call::ProcessImageFile& call) {
+            std::string loadErrorMsg;
+            auto loadResult = LoadImageFileAsMono32f(call.imagePath, m_NormalizeFitsValues, &loadErrorMsg);
+            if (!loadResult)
+            {
+                onCompletion(call_result::Error{
+                    wxString::Format(_("failed to load image from %s; %s"), call.imagePath, loadErrorMsg).ToStdString()
+                });
+                return;
+            }
+            auto image = std::make_shared<const c_Image>(std::move(loadResult.value()));
 
+            ProcessingSettings settings{};
+            if (!LoadSettings(call.settingsPath, settings))
+            {
+                onCompletion(call_result::Error{
+                    wxString::Format(_("failed to load processing settings from %s"), call.settingsPath).ToStdString()
+                });
+                return;
+            }
 
-
-
-            result = call_result::Error{"not implemented"};
+            m_Processor->SetProcessingCompletedHandler(
+                [onCompletion = std::move(onCompletion)](imppg::backend::CompletionStatus) {
+                    onCompletion(call_result::Success{});
+                }
+            );
+            m_Processor->StartProcessing(image, settings);
         },
 
         [&](const call::ProcessImage& call) {
-            result = call_result::Error{"not implemented"};
+
+            m_Processor->SetProcessingCompletedHandler(
+                [onCompletion = std::move(onCompletion), this](imppg::backend::CompletionStatus) {
+                    onCompletion(call_result::ImageProcessed{
+                        std::make_shared<const c_Image>(m_Processor->GetProcessedOutput())
+                    });
+                }
+            );
+            m_Processor->StartProcessing(call.image, call.settings);
         },
 
         [](auto) { IMPPG_ABORT_MSG("invalid message passed to ScriptImageProcessor"); },
     };
 
     std::visit(handler, request);
-
-    return result;
 }
 
 void ScriptImageProcessor::OnIdle(wxIdleEvent& event)

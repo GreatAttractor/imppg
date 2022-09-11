@@ -56,16 +56,20 @@ const luaL_Reg imppg[] = {
         return 0; //TODO: return processing result
     }},
 
-    // {"process_image", [](lua_State* lua) -> int {
-    //     const std::string imagePath = GetString(lua, 1);
-    //     const std::string settingsPath = GetString(lua, 2);
-    //     const std::string outputImagePath = GetString(lua, 3);
+    {"process_image", [](lua_State* lua) -> int {
+        const auto image = GetObject<ImageWrapper>(lua, 1);
+        const auto settings = GetObject<SettingsWrapper>(lua, 2);
 
-    //     scripting::g_State->CallFunctionAndAwaitCompletion(scripting::call::ProcessImage{imagePath, settingsPath,
-    //         outputImagePath});
+        const auto result = scripting::g_State->CallFunctionAndAwaitCompletion(
+            scripting::call::ProcessImage{image.GetImage(), settings.GetSettings()}
+        );
+        const auto* processedImg = std::get_if<call_result::ImageProcessed>(&result);
+        IMPPG_ASSERT(processedImg != nullptr);
 
-    //     return 0; //TODO: return processing result
-    // }},
+        new(PrepareObject<ImageWrapper>(lua)) ImageWrapper(processedImg->image);
+
+        return 1;
+    }},
 
     {nullptr, nullptr} // end-of-data marker
 };

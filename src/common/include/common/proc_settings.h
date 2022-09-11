@@ -26,6 +26,9 @@ File description:
 
 #include "common/tcrv.h"
 
+#include <string>
+
+/// Default-constructed settings do not have any effect on image.
 struct ProcessingSettings
 {
     /// Normalization is performed prior to all other processing steps.
@@ -63,5 +66,18 @@ struct ProcessingSettings
 
     c_ToneCurve toneCurve;
 };
+
+/// Saves the settings of Lucy-Richardson deconvolution, unsharp masking, tone curve and deringing; returns 'false' on error.
+bool SaveSettings(const std::string& filePath, const ProcessingSettings& settings);
+
+/// Loads the settings of Lucy-Richardson deconvolution, unsharp masking, tone curve and deringing; returns 'false' on error.
+/** If the specified file does not contain some of the settings, the corresponding parameters' values will not be updated.*/
+bool LoadSettings(
+    const std::string& filePath,
+    ProcessingSettings& settings,
+    bool* loadedLR = nullptr,
+    bool* loadedUnsh = nullptr,
+    bool* loadedTCurve = nullptr
+);
 
 #endif // IMPGG_PROCESSING_SETTINGS_HEADER

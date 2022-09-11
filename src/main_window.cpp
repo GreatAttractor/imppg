@@ -74,7 +74,7 @@ File description:
 #if ENABLE_SCRIPTING
 #include "script_dialog.h"
 #endif
-#include "settings.h"
+#include "common/proc_settings.h"
 #include "tcrv_wnd_settings.h"
 
 DECLARE_APP(c_MyApp)
@@ -188,7 +188,7 @@ void c_MainWindow::LoadSettingsFromFile(wxString settingsFile, bool moveToMruLis
 {
     auto& s = m_CurrentSettings;
 
-    if (!LoadSettings(settingsFile, s.processing))
+    if (!LoadSettings(settingsFile.ToStdString(), s.processing))
     {
         wxMessageBox(_("Failed to load processing settings."), _("Error"), wxOK | wxCENTRE | wxICON_ERROR);
 
@@ -259,7 +259,7 @@ void c_MainWindow::OnSettingsFile(wxCommandEvent& event)
                     fname.SetExt("xml");
 
 
-                if (!SaveSettings(fname.GetFullPath(), s.processing))
+                if (!SaveSettings(fname.GetFullPath().ToStdString(), s.processing))
                 {
                     wxMessageBox(_("Failed to save processing settings."), _("Error"), wxOK | wxCENTRE | wxICON_ERROR);
                 }

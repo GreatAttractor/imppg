@@ -62,7 +62,7 @@ struct ProcessImageFile
 struct ProcessImage
 {
     std::shared_ptr<const c_Image> image;
-    ProcessingSettings setings;
+    ProcessingSettings settings;
 };
 
 }
@@ -83,11 +83,13 @@ using FunctionCall = std::variant<
 namespace call_result
 {
 struct Success {};
+struct ImageProcessed { std::shared_ptr<const c_Image> image; };
 struct Error { std::string message; };
 }
 
 using FunctionCallResult = std::variant<
     call_result::Success,
+    call_result::ImageProcessed,
     call_result::Error
 >;
 

@@ -7,14 +7,14 @@
 namespace scripting
 {
 
+ImageWrapper::ImageWrapper(const std::shared_ptr<const c_Image>& image)
+: m_Image(image)
+{}
+
 ImageWrapper::ImageWrapper(const std::string& imagePath)
 {
     std::string internalErrorMsg;
-    std::string extension = std::filesystem::path(imagePath).extension().generic_string();
-    // remove the leading period
-    if (extension.length() > 0) { extension = extension.substr(1); }
-    boost::to_lower(extension);
-    auto image = LoadImageFileAsMono32f(imagePath, extension, false, &internalErrorMsg);
+    auto image = LoadImageFileAsMono32f(imagePath, false, &internalErrorMsg);
     if (!image.has_value())
     {
         auto message = std::string{"failed to load image from "} + imagePath;

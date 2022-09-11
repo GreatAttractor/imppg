@@ -1,6 +1,8 @@
 add_library(common STATIC
     src/common.cpp
     src/formats.cpp
+    src/num_formatter.cpp
+    src/proc_settings.cpp
     src/scrolled_view.cpp
     src/tcrv.cpp
 )

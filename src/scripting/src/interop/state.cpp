@@ -9,7 +9,7 @@ namespace scripting
 
 std::unique_ptr<State> g_State;
 
-void State::CallFunctionAndAwaitCompletion(FunctionCall functionCall)
+FunctionCallResult State::CallFunctionAndAwaitCompletion(FunctionCall functionCall)
 {
     auto* event = new wxThreadEvent(wxEVT_THREAD, MessageId::ScriptFunctionCall);
     std::promise<FunctionCallResult> completionSend;
@@ -21,6 +21,8 @@ void State::CallFunctionAndAwaitCompletion(FunctionCall functionCall)
     {
         throw ScriptExecutionError(error->message);
     }
+
+    return result;
 }
 
 void State::OnObjectCreatedImpl(const char* typeName)

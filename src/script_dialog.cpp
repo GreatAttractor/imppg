@@ -23,11 +23,11 @@ File description:
 
 #include "appconfig.h"
 #include "common/common.h"
+#include "common/proc_settings.h"
 #include "ctrl_ids.h"
 #include "imppg_assert.h"
 #include "scripting/interop.h"
 #include "script_dialog.h"
-#include "settings.h"
 
 #include <chrono> //TESTING ##########
 #include <fstream>
@@ -273,7 +273,7 @@ void c_ScriptDialog::OnScriptFunctionCall(wxThreadEvent& event)
     {
         //temporary experimental code for RGB processing
         const c_Image image = [processImageFile]() {
-            auto result = LoadImageAs(processImageFile->imagePath, "tif", PixelFormat::PIX_RGB32F, nullptr, false);
+            auto result = LoadImageAs(processImageFile->imagePath, PixelFormat::PIX_RGB32F, nullptr, false);
             if (!result) { throw std::runtime_error("failed to load image"); }
             return *result;
         }();

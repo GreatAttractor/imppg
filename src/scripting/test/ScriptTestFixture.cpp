@@ -13,7 +13,7 @@
 #include <wx/init.h>
 
 ScriptTestFixture::ScriptTestFixture()
-: m_Processor(imppg::backend::CreateCpuBmpProcessingBackend())
+: m_Processor(imppg::backend::CreateCpuBmpProcessingBackend(), false)
 {
     wxInitialize();
     m_App = std::make_unique<wxAppConsole>();
@@ -77,42 +77,57 @@ void ScriptTestFixture::OnRunnerMessage(wxThreadEvent& event)
 void ScriptTestFixture::OnScriptFunctionCall(scripting::ScriptMessagePayload& payload)
 {
     auto& callVariant = payload.GetCall();
-    auto result = scripting::call_result::Success{};
+
+    const auto returnOk = [&]() { payload.SignalCompletion(scripting::call_result::Success{}); };
 
     if (const auto* call = std::get_if<scripting::call::None>(&callVariant))
-    {}
+    {
+        returnOk();
+    }
     else if (const auto* call = std::get_if<scripting::call::Dummy>(&callVariant))
-    {}
+    {
+        returnOk();
+    }
     else if (const auto* call = std::get_if<scripting::call::NotifyString>(&callVariant))
     {
         m_StringNotifications[call->s] += 1;
+        returnOk();
     }
     else if (auto* call = std::get_if<scripting::call::NotifySettings>(&callVariant))
     {
         m_SettingsNotification = call->settings;
+        returnOk();
     }
     else if (auto* call = std::get_if<scripting::call::NotifyImage>(&callVariant))
     {
         m_ImageNotification = call->image;
+        returnOk();
     }
     else if (auto* call = std::get_if<scripting::call::NotifyNumber>(&callVariant))
     {
         m_NumberNotifications.push_back(call->number);
+        returnOk();
     }
     else if (auto* call = std::get_if<scripting::call::NotifyBoolean>(&callVariant))
     {
         m_BooleanNotifications.push_back(call->value);
+        returnOk();
     }
     else if (auto* call = std::get_if<scripting::call::NotifyInteger>(&callVariant))
     {
         m_IntegerNotifications.push_back(call->value);
+        returnOk();
     }
     else
     {
-        m_Processor.HandleProcessingRequest(callVariant);
+        scripting::FunctionCall callCopy = callVariant;
+        m_Processor.StartProcessing(
+            std::move(callCopy),
+            [payload = std::move(payload)](scripting::FunctionCallResult result) mutable {
+                payload.SignalCompletion(std::move(result));
+            }
+        );
     }
-
-    payload.SignalCompletion(std::move(result));
 }
 
 void ScriptTestFixture::CheckStringNotifications(std::initializer_list<std::string> expected) const

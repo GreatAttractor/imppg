@@ -38,9 +38,7 @@ add_executable(imppg WIN32
     src/main.cpp
     src/normalize.cpp
     src/num_ctrl.cpp
-    src/num_formatter.cpp
     src/scrollable_dlg.cpp
-    src/settings.cpp
     src/tcrv_edit.cpp
     src/tcrv_wnd_settings.cpp
     src/wxapp.cpp

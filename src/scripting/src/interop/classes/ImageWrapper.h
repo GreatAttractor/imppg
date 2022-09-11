@@ -15,6 +15,8 @@ class ImageWrapper
 public:
     ImageWrapper(const std::string& imagePath);
 
+    ImageWrapper(const std::shared_ptr<const c_Image>& image);
+
     static const luaL_Reg* GetMethods()
     {
         static const luaL_Reg methods[] = {

@@ -26,7 +26,9 @@ File description:
 #include "backend/backend.h"
 #include "scripting/interop.h"
 
+#include <functional>
 #include <memory>
+#include <optional>
 #include <wx/event.h>
 
 namespace scripting
@@ -36,14 +38,21 @@ namespace scripting
 class ScriptImageProcessor
 {
 public:
-    ScriptImageProcessor(std::unique_ptr<imppg::backend::IProcessingBackEnd> processor);
+    ScriptImageProcessor(
+        std::unique_ptr<imppg::backend::IProcessingBackEnd> processor,
+        bool normalizeFitsValues
+    );
 
-    FunctionCallResult HandleProcessingRequest(const FunctionCall& request);
+    void StartProcessing(
+        FunctionCall request,
+        std::function<void(FunctionCallResult)> onCompletion ///< Receives error message on error.
+    );
 
     void OnIdle(wxIdleEvent& event);
 
 private:
     std::unique_ptr<imppg::backend::IProcessingBackEnd> m_Processor;
+    bool m_NormalizeFitsValues{false};
 };
 
 }

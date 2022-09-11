@@ -18,14 +18,18 @@ You should have received a copy of the GNU General Public License
 along with ImPPG.  If not, see <http://www.gnu.org/licenses/>.
 
 File description:
-    Processing settings getters/setters implementation.
+    Processing settings loading/saving implementation.
 */
+
+#include "common/num_formatter.h"
+#include "common/proc_settings.h"
 
 #include <sstream>
 #include <wx/xml/xml.h>
 
-#include "num_formatter.h"
-#include "settings.h"
+// private definitions
+namespace
+{
 
 const int XML_INDENT = 4;
 const unsigned FLOAT_PREC = 4;
@@ -119,33 +123,6 @@ wxXmlNode* CreateNormalizationSettingsNode(bool normalizationEnabled, float norm
     result->AddAttribute(XmlName::normMin, NumFormatter::Format(normMin, FLOAT_PREC));
     result->AddAttribute(XmlName::normMax, NumFormatter::Format(normMax, FLOAT_PREC));
     return result;
-}
-
-bool SaveSettings(wxString filePath, const ProcessingSettings& settings)
-{
-    wxXmlNode* root = new wxXmlNode(wxXML_ELEMENT_NODE, XmlName::root);
-
-    root->AddChild(CreateLucyRichardsonSettingsNode(
-        settings.LucyRichardson.sigma,
-        settings.LucyRichardson.iterations,
-        settings.LucyRichardson.deringing.enabled
-    ));
-    root->AddChild(CreateUnsharpMaskingSettingsNode(
-        settings.unsharpMasking.adaptive,
-        settings.unsharpMasking.sigma,
-        settings.unsharpMasking.amountMin,
-        settings.unsharpMasking.amountMax,
-        settings.unsharpMasking.threshold,
-        settings.unsharpMasking.width
-    ));
-    root->AddChild(CreateToneCurveSettingsNode(settings.toneCurve));
-    root->AddChild(CreateNormalizationSettingsNode(
-        settings.normalization.enabled,
-        settings.normalization.min,
-        settings.normalization.max
-    ));
-
-    return CreateAndSaveDocument(filePath, root);
 }
 
 bool ParseLucyRichardsonSettings(const wxXmlNode* node, float& sigma, int& iterations, bool& deringing)
@@ -295,8 +272,37 @@ bool ParseToneCurveSettings(const wxXmlNode* node, c_ToneCurve& tcurve)
         return true;
 }
 
+} // end of private definitions
+
+bool SaveSettings(const std::string& filePath, const ProcessingSettings& settings)
+{
+    wxXmlNode* root = new wxXmlNode(wxXML_ELEMENT_NODE, XmlName::root);
+
+    root->AddChild(CreateLucyRichardsonSettingsNode(
+        settings.LucyRichardson.sigma,
+        settings.LucyRichardson.iterations,
+        settings.LucyRichardson.deringing.enabled
+    ));
+    root->AddChild(CreateUnsharpMaskingSettingsNode(
+        settings.unsharpMasking.adaptive,
+        settings.unsharpMasking.sigma,
+        settings.unsharpMasking.amountMin,
+        settings.unsharpMasking.amountMax,
+        settings.unsharpMasking.threshold,
+        settings.unsharpMasking.width
+    ));
+    root->AddChild(CreateToneCurveSettingsNode(settings.toneCurve));
+    root->AddChild(CreateNormalizationSettingsNode(
+        settings.normalization.enabled,
+        settings.normalization.min,
+        settings.normalization.max
+    ));
+
+    return CreateAndSaveDocument(filePath, root);
+}
+
 bool LoadSettings(
-    wxString filePath,
+    const std::string& filePath,
     ProcessingSettings& settings,
     bool* loadedLR,
     bool* loadedUnsh,

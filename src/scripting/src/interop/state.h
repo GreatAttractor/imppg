@@ -18,7 +18,8 @@ class State
 public:
     State(wxEvtHandler& parent): m_Parent(parent) {}
 
-    void CallFunctionAndAwaitCompletion(FunctionCall functionCall);
+    /// If the result is `Error`, throws automatically.
+    FunctionCallResult CallFunctionAndAwaitCompletion(FunctionCall functionCall);
 
     template<typename T>
     void OnObjectCreated()
