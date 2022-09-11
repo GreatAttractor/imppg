@@ -90,3 +90,5 @@ imppg.test.notify_image(processed_image)
         }
     }
 }
+
+//TODO: similar, but for imppg.process_image_file

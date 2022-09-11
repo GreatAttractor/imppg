@@ -50,6 +50,11 @@ FunctionCallResult ScriptImageProcessor::HandleProcessingRequest(const FunctionC
 
     const auto handler = Overload{
         [&](const call::ProcessImageFile& call) {
+            //auto result = LoadImageFileAsMono32f(call.imagePath, "tif", nullptr, false);
+
+
+
+
             result = call_result::Error{"not implemented"};
         },
 
