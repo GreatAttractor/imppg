@@ -156,7 +156,11 @@ void c_ScriptDialog::OnRunScript(wxCommandEvent&)
 {
     IMPPG_ASSERT(!IsRunnerActive());
 
-    auto scriptStream = std::make_unique<std::ifstream>(m_ScriptFileCtrl->GetPath(), std::ios::binary);
+    const auto scriptPath = m_ScriptFileCtrl->GetPath();
+
+    m_Console->AppendText(wxString::Format(_("Running script %s..."), scriptPath) + "\n");
+
+    auto scriptStream = std::make_unique<std::ifstream>(scriptPath, std::ios::binary);
     m_StopScript = std::make_unique<std::promise<void>>();
     m_Runner = std::make_unique<ScriptRunner>(std::move(scriptStream), *this, m_StopScript->get_future());
     m_Runner->Run();

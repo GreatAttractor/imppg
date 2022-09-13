@@ -112,6 +112,9 @@ public:
     {
         lua_newtable(m_Lua);
         luaL_setfuncs(m_Lua, functions, 0);
+
+        lua_pushinteger(m_Lua, 555);
+        lua_setfield(m_Lua, -2, "magic");
     }
 
     ~SubmoduleRegistrator()
