@@ -55,7 +55,6 @@ imppg.test.notify_image(image)
     BOOST_CHECK(PixelFormat::PIX_MONO32F == loadedImage.GetPixelFormat());
 }
 
-//FIXME: boost warns one of threads was not terminated (in CPU backend?)
 BOOST_FIXTURE_TEST_CASE(LoadAndProcessImage, ScriptTestFixture)
 {
     std::string script{R"(

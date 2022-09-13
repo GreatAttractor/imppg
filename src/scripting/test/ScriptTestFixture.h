@@ -53,7 +53,7 @@ private:
     void OnRunnerMessage(wxThreadEvent& event);
     void OnScriptFunctionCall(scripting::ScriptMessagePayload& payload);
 
-    scripting::ScriptImageProcessor m_Processor;
+    std::unique_ptr<scripting::ScriptImageProcessor> m_Processor;
     std::unique_ptr<wxAppConsole> m_App;
     std::promise<void> m_StopScript;
     std::vector<std::filesystem::path> m_TemporaryFiles;

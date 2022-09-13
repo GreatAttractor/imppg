@@ -13,16 +13,20 @@
 #include <wx/init.h>
 
 ScriptTestFixture::ScriptTestFixture()
-: m_Processor(imppg::backend::CreateCpuBmpProcessingBackend(), false)
 {
     wxInitialize();
+
+    m_Processor =
+        std::make_unique<scripting::ScriptImageProcessor>(imppg::backend::CreateCpuBmpProcessingBackend(), false);
+
     m_App = std::make_unique<wxAppConsole>();
     m_App->Bind(wxEVT_THREAD, &ScriptTestFixture::OnRunnerMessage, this);
-    m_App->Bind(wxEVT_IDLE, &scripting::ScriptImageProcessor::OnIdle, &m_Processor);
+    m_App->Bind(wxEVT_IDLE, &scripting::ScriptImageProcessor::OnIdle, m_Processor.get());
 }
 
 ScriptTestFixture::~ScriptTestFixture()
 {
+    m_Processor.reset(); // contained `wxThread`s must be destroyed before `wxUninitialize`
     m_App.reset();
     wxUninitialize();
     for (const auto& filePath: m_TemporaryFiles)
@@ -121,7 +125,7 @@ void ScriptTestFixture::OnScriptFunctionCall(scripting::ScriptMessagePayload& pa
     else
     {
         scripting::FunctionCall callCopy = callVariant;
-        m_Processor.StartProcessing(
+        m_Processor->StartProcessing(
             std::move(callCopy),
             [payload = std::move(payload)](scripting::FunctionCallResult result) mutable {
                 payload.SignalCompletion(std::move(result));

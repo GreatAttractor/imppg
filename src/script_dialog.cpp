@@ -65,16 +65,14 @@ c_ScriptDialog::c_ScriptDialog(wxWindow* parent)
     FixWindowPosition(*this);
 
     //TODO:
-//     switch (Configuration::ProcessingBackEnd)
-//     {
-//     case BackEnd::CPU_AND_BITMAPS: m_Processor = imppg::backend::CreateCpuBmpProcessingBackend(); break;
-// #if USE_OPENGL_BACKEND
-//     case BackEnd::GPU_OPENGL: m_Processor = imppg::backend::CreateOpenGLProcessingBackend(Configuration::LRCmdBatchSizeMpixIters); break;
-// #endif
-//     default: IMPPG_ABORT();
-//     }
-
-    m_Processor = imppg::backend::CreateCpuBmpProcessingBackend(); //TESTING #######
+    switch (Configuration::ProcessingBackEnd)
+    {
+    case BackEnd::CPU_AND_BITMAPS: m_Processor = imppg::backend::CreateCpuBmpProcessingBackend(); break;
+#if USE_OPENGL_BACKEND
+    case BackEnd::GPU_OPENGL: m_Processor = imppg::backend::CreateOpenGLProcessingBackend(Configuration::LRCmdBatchSizeMpixIters); break;
+#endif
+    default: IMPPG_ABORT();
+    }
 }
 
 void c_ScriptDialog::DoInitControls()

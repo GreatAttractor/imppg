@@ -97,3 +97,14 @@ end
         (root / "file20suffix.tif").generic_string()
     });
 }
+
+BOOST_FIXTURE_TEST_CASE(NonExistentDirectory_ListFiles_ExecutionFails, ScriptTestFixture)
+{
+    std::string script{R"(
+
+imppg.filesystem.list_files("/985849872632452/non-existent-dir")
+
+    )"};
+
+    BOOST_CHECK(!RunScript(script.c_str()));
+}

@@ -1,4 +1,7 @@
 #include "interop/classes/DirectoryIterator.h"
+#include "scripting/script_exceptions.h"
+
+#include <wx/intl.h>
 
 namespace fs = std::filesystem;
 
@@ -50,7 +53,12 @@ DirectoryIterator::DirectoryIterator(std::string fileNamePattern)
         dirToIterateIn = patternPath.parent_path();
     }
     m_RegEx = std::regex{ConvertFileNamePatternToRegEx(fileNamePattern)};
-    m_DirIter = std::filesystem::directory_iterator{dirToIterateIn};
+    std::error_code ec{};
+    m_DirIter = std::filesystem::directory_iterator{dirToIterateIn, ec};
+    if (ec)
+    {
+        throw ScriptExecutionError{wxString::Format(_("cannot access directory %s"), dirToIterateIn.generic_string())};
+    }
 }
 
 std::optional<std::string> DirectoryIterator::Next()
