@@ -26,9 +26,9 @@ File description:
 #include "interop/classes/SettingsWrapper.h"
 #include "interop/classes/DummyObject1.h"
 #include "interop/classes/DummyObject2.h"
-#include "interop/functions/imppg_filesystem.h"
-#include "interop/functions/imppg_test.h"
-#include "interop/functions/imppg.h"
+#include "interop/modules/imppg_filesystem.h"
+#include "interop/modules/imppg_test.h"
+#include "interop/modules/imppg.h"
 #include "interop/state.h"
 #include "scripting/interop.h"
 
@@ -84,54 +84,71 @@ void RegisterIterator(lua_State* lua)
     lua_pop(lua, 1);
 }
 
-class ModuleRegistrator
+class ModuleRegistratorBase
 {
 public:
-    ModuleRegistrator(lua_State* lua, const char* moduleName, const luaL_Reg* functions)
-    : m_ModuleName(moduleName), m_Lua(lua)
+    ModuleRegistratorBase(
+        lua_State* lua,
+        const char* moduleName,
+        const luaL_Reg* functions,
+        const std::vector<std::pair<std::string, int>>& constants
+    ): m_ModuleName(moduleName), m_Lua(lua)
     {
         lua_newtable(m_Lua);
         luaL_setfuncs(m_Lua, functions, 0);
+        for (const auto& c: constants)
+        {
+            lua_pushinteger(m_Lua, c.second);
+            lua_setfield(m_Lua, -2, c.first.c_str());
+        }
     }
+
+protected:
+    const char* m_ModuleName{nullptr};
+    lua_State* m_Lua{nullptr};
+};
+
+class ModuleRegistrator final: public ModuleRegistratorBase
+{
+public:
+    ModuleRegistrator(
+        lua_State* lua,
+        const char* moduleName,
+        const luaL_Reg* functions,
+        const std::vector<std::pair<std::string, int>>& constants
+    ): ModuleRegistratorBase(lua, moduleName, functions, constants)
+    {}
 
     ~ModuleRegistrator()
     {
         lua_setglobal(m_Lua, m_ModuleName);
     }
-
-private:
-    const char* m_ModuleName{nullptr};
-    lua_State* m_Lua{nullptr};
 };
 
-class SubmoduleRegistrator
+class SubmoduleRegistrator final: public ModuleRegistratorBase
 {
 public:
-    SubmoduleRegistrator(lua_State* lua, const char* moduleName, const luaL_Reg* functions)
-    : m_ModuleName(moduleName), m_Lua(lua)
-    {
-        lua_newtable(m_Lua);
-        luaL_setfuncs(m_Lua, functions, 0);
-
-        lua_pushinteger(m_Lua, 555);
-        lua_setfield(m_Lua, -2, "magic");
-    }
+    SubmoduleRegistrator(
+        lua_State* lua,
+        const char* moduleName,
+        const luaL_Reg* functions,
+        const std::vector<std::pair<std::string, int>>& constants
+    ): ModuleRegistratorBase(lua, moduleName, functions, constants)
+    {}
 
     ~SubmoduleRegistrator()
     {
         lua_setfield(m_Lua, -2, m_ModuleName);
     }
-
-private:
-    const char* m_ModuleName{nullptr};
-    lua_State* m_Lua{nullptr};
 };
 
-#define BEGIN_MODULE(name, functions) { const ModuleRegistrator modreg__LINE__(lua, name, functions);
+#define BEGIN_MODULE(name, namespace) \
+    { const ModuleRegistrator modreg__LINE__(lua, name, namespace::functions, namespace::constants);
 
 #define END_MODULE() }
 
-#define BEGIN_SUBMODULE(name, functions) { const SubmoduleRegistrator submodreg__LINE__(lua, name, functions);
+#define BEGIN_SUBMODULE(name, namespace) \
+    { const SubmoduleRegistrator submodreg__LINE__(lua, name, namespace::functions, namespace::constants);
 
 #define END_SUBMODULE() }
 
@@ -141,12 +158,12 @@ void Prepare(lua_State* lua, wxEvtHandler& parent)
 {
     g_State = std::make_unique<State>(parent);
 
-    BEGIN_MODULE("imppg", scripting::functions::imppg);
-        BEGIN_SUBMODULE("filesystem", scripting::functions::imppg_filesystem);
+    BEGIN_MODULE("imppg", scripting::modules::imppg);
+        BEGIN_SUBMODULE("filesystem", scripting::modules::imppg::filesystem);
         END_SUBMODULE();
 
-        BEGIN_SUBMODULE("test", scripting::functions::imppg_test);
-            BEGIN_SUBMODULE("test", scripting::functions::imppg_test);
+        BEGIN_SUBMODULE("test", scripting::modules::imppg::test);
+            BEGIN_SUBMODULE("test", scripting::modules::imppg::test);
             END_SUBMODULE();
         END_SUBMODULE();
     END_MODULE();
@@ -157,7 +174,6 @@ void Prepare(lua_State* lua, wxEvtHandler& parent)
     RegisterClass<SettingsWrapper>(lua);
 
     RegisterIterator<DirectoryIterator>(lua);
-
 }
 
 void Finish()

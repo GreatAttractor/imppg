@@ -1,6 +1,6 @@
 #pragma once
 
-#include "interop/functions/common.h"
+#include "interop/modules/common.h"
 
 #include <lua.hpp>
 #include <typeinfo>

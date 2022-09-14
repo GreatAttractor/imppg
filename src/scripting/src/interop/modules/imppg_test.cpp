@@ -1,7 +1,7 @@
 #include "interop/classes/ImageWrapper.h"
 #include "interop/classes/SettingsWrapper.h"
-#include "interop/functions/common.h"
-#include "interop/functions/imppg_test.h"
+#include "interop/modules/common.h"
+#include "interop/modules/imppg_test.h"
 #include "interop/state.h"
 
 // private definitions
@@ -40,10 +40,10 @@ void NotifyInteger(int value)
 
 } // end of private definitions
 
-namespace scripting::functions
+namespace scripting::modules::imppg::test
 {
 
-const luaL_Reg imppg_test[] = {
+const luaL_Reg functions[] = {
     {"notify_boolean", [](lua_State* lua) -> int { NotifyBoolean(scripting::GetBoolean(lua, 1)); return 0; }},
     {"notify_integer", [](lua_State* lua) -> int { NotifyInteger(scripting::GetInteger(lua, 1)); return 0; }},
     {"notify_number", [](lua_State* lua) -> int { NotifyNumber(scripting::GetNumber(lua, 1)); return 0; }},
@@ -53,5 +53,7 @@ const luaL_Reg imppg_test[] = {
 
     {nullptr, nullptr} // end-of-data marker
 };
+
+const std::vector<std::pair<std::string, int>> constants{};
 
 }

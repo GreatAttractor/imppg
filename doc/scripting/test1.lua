@@ -27,9 +27,6 @@ s:unsh_mask_sigma(1.3)
 s:unsh_mask_amount(2.4)
 -- TODO: s:unsh_mask(1.3, 2.4)
 
-
-print(imppg.test.magic)
-
 -- END TESTING ############
 
 print("Lua script ends.")

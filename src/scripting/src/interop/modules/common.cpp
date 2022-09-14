@@ -1,4 +1,4 @@
-#include "interop/functions/common.h"
+#include "interop/modules/common.h"
 #include "scripting/script_exceptions.h"
 
 namespace scripting

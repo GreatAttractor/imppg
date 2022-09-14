@@ -1,9 +1,10 @@
+#include "common/formats.h"
 #include "interop/classes/DummyObject1.h"
 #include "interop/classes/DummyObject2.h"
 #include "interop/classes/ImageWrapper.h"
 #include "interop/classes/SettingsWrapper.h"
-#include "interop/functions/common.h"
-#include "interop/functions/imppg.h"
+#include "interop/modules/common.h"
+#include "interop/modules/imppg.h"
 #include "interop/state.h"
 
 // private definitions
@@ -17,10 +18,10 @@ void Dummy()
 
 } // end of private definitions
 
-namespace scripting::functions
+namespace scripting::modules::imppg
 {
 
-const luaL_Reg imppg[] = {
+const luaL_Reg functions[] = {
     {"handler1", [](lua_State*) -> int { Dummy(); return 0; }},
 
     {"create_dummy1", [](lua_State* lua) -> int {
@@ -72,6 +73,27 @@ const luaL_Reg imppg[] = {
     }},
 
     {nullptr, nullptr} // end-of-data marker
+};
+
+const std::vector<std::pair<std::string, int>> constants{
+#if USE_FREEIMAGE
+    {"BMP_8",        static_cast<int>(OutputFormat::BMP_8)},
+    {"PNG_8",        static_cast<int>(OutputFormat::PNG_8)},
+    {"TIFF_8_LZW",   static_cast<int>(OutputFormat::TIFF_8_LZW)},
+    {"TIFF_16",      static_cast<int>(OutputFormat::TIFF_16)},
+    {"TIFF_16_ZIP",  static_cast<int>(OutputFormat::TIFF_16_ZIP)},
+    {"TIFF_32F",     static_cast<int>(OutputFormat::TIFF_32F)},
+    {"TIFF_32F_ZIP", static_cast<int>(OutputFormat::TIFF_32F_ZIP)},
+#else
+    {"BMP_8",        static_cast<int>(OutputFormat::BMP_8)},
+    {"TIFF_16",      static_cast<int>(OutputFormat::TIFF_16)},
+#endif
+
+#if USE_CFITSIO
+    {"FITS_8",       static_cast<int>(OutputFormat::FITS_8)},
+    {"FITS_16",      static_cast<int>(OutputFormat::FITS_16)},
+    {"FITS_32F",     static_cast<int>(OutputFormat::FITS_32F)},
+#endif
 };
 
 }

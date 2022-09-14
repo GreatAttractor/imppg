@@ -9,4 +9,12 @@ function(set_compiler_options target)
     endif()
 
     target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Wold-style-cast -Wno-parentheses)
+
+    if(USE_CFITSIO EQUAL 1)
+        target_compile_definitions(${target} PRIVATE USE_CFITSIO=1)
+    endif()
+
+    if(USE_FREEIMAGE EQUAL 1)
+        target_compile_definitions(${target} PRIVATE USE_FREEIMAGE=1)
+    endif()
 endfunction()

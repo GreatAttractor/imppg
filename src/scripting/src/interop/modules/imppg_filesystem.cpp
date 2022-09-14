@@ -1,14 +1,14 @@
 #include "interop/classes/DirectoryIterator.h"
-#include "interop/functions/common.h"
-#include "interop/functions/imppg_filesystem.h"
+#include "interop/modules/common.h"
+#include "interop/modules/imppg_filesystem.h"
 #include "interop/state.h"
 
 #include <filesystem>
 
-namespace scripting::functions
+namespace scripting::modules::imppg::filesystem
 {
 
-const luaL_Reg imppg_filesystem[] = {
+const luaL_Reg functions[] = {
     {"list_files", [](lua_State* lua) -> int {
         const auto fileNamePattern = scripting::GetString(lua, 1);
         new(PrepareObject<DirectoryIterator>(lua)) DirectoryIterator(std::move(fileNamePattern));
@@ -32,5 +32,7 @@ const luaL_Reg imppg_filesystem[] = {
 
     {nullptr, nullptr} // end-of-data marker
 };
+
+const std::vector<std::pair<std::string, int>> constants{};
 
 }

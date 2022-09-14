@@ -122,7 +122,6 @@ else()
 endif()
 
 if(USE_CFITSIO EQUAL 1)
-    target_compile_definitions(imppg PRIVATE USE_CFITSIO=1)
     pkg_check_modules(CFITSIO cfitsio REQUIRED)
     target_include_directories(imppg PRIVATE ${CFITSIO_INCLUDE_DIRS})
     target_link_libraries(imppg PRIVATE ${CFITSIO_LIBRARIES})

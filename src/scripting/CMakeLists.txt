@@ -9,14 +9,14 @@ add_library(scripting STATIC
     src/interop/classes/SettingsWrapper.h
     src/interop/classes/ImageWrapper.cpp
     src/interop/classes/ImageWrapper.h
-    src/interop/functions/common.cpp
-    src/interop/functions/common.h
-    src/interop/functions/imppg_filesystem.cpp
-    src/interop/functions/imppg_filesystem.h
-    src/interop/functions/imppg_test.cpp
-    src/interop/functions/imppg_test.h
-    src/interop/functions/imppg.cpp
-    src/interop/functions/imppg.h
+    src/interop/modules/common.cpp
+    src/interop/modules/common.h
+    src/interop/modules/imppg_filesystem.cpp
+    src/interop/modules/imppg_filesystem.h
+    src/interop/modules/imppg_test.cpp
+    src/interop/modules/imppg_test.h
+    src/interop/modules/imppg.cpp
+    src/interop/modules/imppg.h
     src/interop/interop.cpp
     src/interop/state.cpp
     src/interop/state.h
