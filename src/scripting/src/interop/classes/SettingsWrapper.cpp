@@ -207,11 +207,11 @@ void SettingsWrapper::tc_set_point(int index, double x, double y)
     {
         throw ScriptExecutionError("tone curve point index out of range");
     }
-    if (static_cast<std::size_t>(index) > 0 && x <= tc.GetPoint(index - 1).x)
+    if (static_cast<std::size_t>(index) > 0 && static_cast<float>(x) <= tc.GetPoint(index - 1).x)
     {
         throw ScriptExecutionError("cannot set tone curve point at or to the left of its predecessor");
     }
-    if (static_cast<std::size_t>(index) < tc.GetNumPoints() - 1 && x >= tc.GetPoint(index + 1).x)
+    if (static_cast<std::size_t>(index) < tc.GetNumPoints() - 1 && static_cast<float>(x) >= tc.GetPoint(index + 1).x)
     {
         throw ScriptExecutionError("cannot set tone curve point at or to the right of its successor");
     }

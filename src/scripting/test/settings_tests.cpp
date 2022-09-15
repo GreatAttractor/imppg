@@ -91,9 +91,9 @@ BOOST_FIXTURE_TEST_CASE(ModifyToneCurvePointToOverlapWithSuccessor_ExecutionFail
     const char* script = R"(
 
 s = imppg.new_settings()
-new_idx1 = s.tc_add_point(0.1, 0)
-new_idx2 = s.tc_add_point(0.2, 0)
-s.tc_set_point(new_idx1, 0.2, 0)
+new_idx1 = s:tc_add_point(0.1, 0)
+new_idx2 = s:tc_add_point(0.2, 0)
+s:tc_set_point(new_idx1, 0.2, 0)
 
     )";
 
@@ -105,9 +105,9 @@ BOOST_FIXTURE_TEST_CASE(ModifyToneCurvePointToOverlapWithPredecessor_ExecutionFa
     const char* script = R"(
 
 s = imppg.new_settings()
-new_idx1 = s.tc_add_point(0.1, 0)
-new_idx2 = s.tc_add_point(0.2, 0)
-s.tc_set_point(new_idx2, 0.1, 0)
+new_idx1 = s:tc_add_point(0.1, 0)
+new_idx2 = s:tc_add_point(0.2, 0)
+s:tc_set_point(new_idx2, 0.1, 0)
 
     )";
 

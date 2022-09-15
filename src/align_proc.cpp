@@ -159,7 +159,7 @@ std::optional<std::tuple<c_Image, c_Image>> PrepareInputAndOutputImages(wxString
         std::optional<c_Image> loadResult;
 
         wxString ext = wxFileName(inputFileName).GetExt().Lower();
-        loadResult = LoadImageAs(inputFileName.ToStdString(), ext.ToStdString(), std::nullopt, nullptr, false);
+        loadResult = LoadImage(inputFileName.ToStdString(), ext.ToStdString(), std::nullopt, nullptr, false);
 
         if (!loadResult)
         {

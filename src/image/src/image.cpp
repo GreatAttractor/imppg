@@ -1199,7 +1199,7 @@ std::optional<c_Image> LoadFitsImage(const std::string& fname, bool normalize)
 }
 #endif
 
-std::optional<c_Image> LoadImageAs(
+std::optional<c_Image> LoadImage(
     const std::string& fname,
     std::optional<PixelFormat> destFmt, ///< Pixel format to convert to; can be one of PIX_MONO8, PIX_MONO32F.
     std::string* errorMsg, ///< If not null, may receive an error message (if any).
@@ -1317,7 +1317,7 @@ std::optional<c_Image> LoadImageFileAsMono32f(
     std::string* errorMsg         ///< If not null, may receive an error message (if any).
 )
 {
-    return LoadImageAs(fname, PixelFormat::PIX_MONO32F, errorMsg, normalizeFITSvalues);
+    return LoadImage(fname, PixelFormat::PIX_MONO32F, errorMsg, normalizeFITSvalues);
 }
 
 std::optional<c_Image> LoadImageFileAsMono8(
@@ -1326,7 +1326,7 @@ std::optional<c_Image> LoadImageFileAsMono8(
     std::string* errorMsg
 )
 {
-    return LoadImageAs(fname, PixelFormat::PIX_MONO8, errorMsg, normalizeFITSvalues);
+    return LoadImage(fname, PixelFormat::PIX_MONO8, errorMsg, normalizeFITSvalues);
 }
 
 /// Multiply by another image; both images have to be PIX_MONO32F and have the same dimensions

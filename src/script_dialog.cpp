@@ -275,7 +275,7 @@ void c_ScriptDialog::OnScriptFunctionCall(wxThreadEvent& event)
     {
         //temporary experimental code for RGB processing
         const c_Image image = [processImageFile]() {
-            auto result = LoadImageAs(processImageFile->imagePath, PixelFormat::PIX_RGB32F, nullptr, false);
+            auto result = LoadImage(processImageFile->imagePath, PixelFormat::PIX_RGB32F, nullptr, false);
             if (!result) { throw std::runtime_error("failed to load image"); }
             return *result;
         }();
