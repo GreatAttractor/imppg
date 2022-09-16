@@ -36,28 +36,38 @@ const luaL_Reg functions[] = {
     }},
 
     {"new_settings", [](lua_State* lua) -> int {
+        CheckNumArgs(lua, "new_settings", 0);
         new(PrepareObject<SettingsWrapper>(lua)) SettingsWrapper();
         return 1;
     }},
 
     {"load_image", [](lua_State* lua) -> int {
+        CheckNumArgs(lua, "load_image", 1);
         const std::string imagePath = GetString(lua, 1);
         new(PrepareObject<ImageWrapper>(lua)) ImageWrapper(imagePath);
         return 1;
     }},
 
     {"process_image_file", [](lua_State* lua) -> int {
+        CheckNumArgs(lua, "process_image_file", 4);
         const std::string imagePath = GetString(lua, 1);
         const std::string settingsPath = GetString(lua, 2);
         const std::string outputImagePath = GetString(lua, 3);
+        const int ofVal = GetInteger(lua, 4);
+
+        if (ofVal < 0 || ofVal >= static_cast<int>(OutputFormat::LAST))
+        {
+            throw ScriptExecutionError{"invalid output format"};
+        }
 
         scripting::g_State->CallFunctionAndAwaitCompletion(scripting::call::ProcessImageFile{imagePath, settingsPath,
-            outputImagePath});
+            outputImagePath, static_cast<OutputFormat>(ofVal)});
 
         return 0; //TODO: return processing result
     }},
 
     {"process_image", [](lua_State* lua) -> int {
+        CheckNumArgs(lua, "process_image", 2);
         const auto image = GetObject<ImageWrapper>(lua, 1);
         const auto settings = GetObject<SettingsWrapper>(lua, 2);
 

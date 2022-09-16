@@ -10,6 +10,7 @@ namespace scripting::modules::imppg::filesystem
 
 const luaL_Reg functions[] = {
     {"list_files", [](lua_State* lua) -> int {
+        CheckNumArgs(lua, "list_files", 1);
         const auto fileNamePattern = scripting::GetString(lua, 1);
         new(PrepareObject<DirectoryIterator>(lua)) DirectoryIterator(std::move(fileNamePattern));
         lua_pushcclosure(lua, [](lua_State* lua) {

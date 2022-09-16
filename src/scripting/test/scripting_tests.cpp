@@ -95,7 +95,7 @@ BOOST_FIXTURE_TEST_CASE(ProcessImageFile, ScriptTestFixture)
 {
     std::string script{R"(
 
-imppg.process_image_file("$ROOT/image.bmp", "$ROOT/settings.xml", "$ROOT/output.tif",xoxoxoxo imppg.TIFF_16)
+imppg.process_image_file("$ROOT/image.bmp", "$ROOT/settings.xml", "$ROOT/output.tif", imppg.TIFF_16)
 
     )"};
 

@@ -81,8 +81,19 @@ void ScriptImageProcessor::StartProcessing(
             }
 
             m_Processor->SetProcessingCompletedHandler(
-                [onCompletion = std::move(onCompletion)](imppg::backend::CompletionStatus) {
-                    onCompletion(call_result::Success{});
+                [this, onCompletion = std::move(onCompletion), outPath = call.outputImagePath, outFmt = call.outputFormat]
+                    (imppg::backend::CompletionStatus) {
+
+                        if (!m_Processor->GetProcessedOutput().SaveToFile(outPath, outFmt))
+                        {
+                            onCompletion(call_result::Error{
+                                wxString::Format(_("failed to save output file %s"), outPath).ToStdString()
+                            });
+                        }
+                        else
+                        {
+                            onCompletion(call_result::Success{});
+                        }
                 }
             );
             m_Processor->StartProcessing(image, settings);

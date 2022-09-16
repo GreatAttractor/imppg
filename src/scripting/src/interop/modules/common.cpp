@@ -32,4 +32,15 @@ bool GetBoolean(lua_State* lua, int stackPos)
     return lua_toboolean(lua, stackPos);
 }
 
+void CheckNumArgs(lua_State* lua, const char* functionName, int expectedNum)
+{
+    const int numArgs = lua_gettop(lua);
+    if (numArgs != expectedNum)
+    {
+        throw ScriptExecutionError{
+            wxString::Format(_("expected %d arguments to %s"), expectedNum, functionName).ToStdString()
+        };
+    }
+}
+
 }

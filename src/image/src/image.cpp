@@ -170,13 +170,37 @@ std::optional<std::unique_ptr<IImageBuffer>> c_FreeImageBuffer::Create(c_FreeIma
     switch (FreeImage_GetImageType(fiBmp.get()))
     {
     case FIT_BITMAP:
-        switch (FreeImage_GetBPP(fiBmp.get()) / 8)
         {
-        case 3: pixFmt = PixelFormat::PIX_RGB8; break;
-        case 4: pixFmt = PixelFormat::PIX_RGBA8; break;
-        default: return std::nullopt;
+            const auto colorType = FreeImage_GetColorType(fiBmp.get());
+            const auto bytesPerPixel = FreeImage_GetBPP(fiBmp.get()) / 8;
+
+            if (FIC_RGB == colorType || FIC_RGBALPHA == colorType)
+            {
+                switch (bytesPerPixel)
+                {
+                case 3: pixFmt = PixelFormat::PIX_RGB8; break;
+                case 4: pixFmt = PixelFormat::PIX_RGBA8; break;
+                case 6: pixFmt = PixelFormat::PIX_RGB16; break;
+                case 8: pixFmt = PixelFormat::PIX_RGBA16; break;
+                default: return std::nullopt;
+                }
+            }
+            else if (FIC_MINISBLACK == colorType)
+            {
+                switch (bytesPerPixel)
+                {
+                case 1: pixFmt = PixelFormat::PIX_MONO8; break;
+                case 2: pixFmt = PixelFormat::PIX_MONO16; break;
+                default: return std::nullopt;
+                }
+            }
+            else
+            {
+                return std::nullopt;
+            }
+
+            break;
         }
-        break;
 
     case FIT_UINT16: pixFmt = PixelFormat::PIX_MONO16; break;
     case FIT_FLOAT:  pixFmt = PixelFormat::PIX_MONO32F; break;
@@ -1238,54 +1262,31 @@ std::optional<c_Image> LoadImage(
         fif = FreeImage_GetFIFFromFilename(fname.c_str());
     }
 
-    if (fif != FIF_UNKNOWN && FreeImage_FIFSupportsReading(fif))
+    if (fif == FIF_UNKNOWN || !FreeImage_FIFSupportsReading(fif))
     {
-        c_FreeImageHandleWrapper fibmp(FreeImage_Load(fif, fname.c_str()));
-        if (!fibmp)
-            return std::nullopt;
+        return std::nullopt;
+    }
 
-        c_FreeImageHandleWrapper fibmpConv{nullptr};
+    c_FreeImageHandleWrapper fibmp(FreeImage_Load(fif, fname.c_str()));
+    if (!fibmp) { return std::nullopt; }
 
-        if (destFmt.has_value())
-        {
-            switch (destFmt.value())
-            {
-            case PixelFormat::PIX_MONO8:
-                {
-                    // currently this it the only universal way in FreeImage to convert ANY bitmap type to grayscale
-                    c_FreeImageHandleWrapper fiBmpFloat(FreeImage_ConvertToFloat(fibmp.get()));
-                    fibmpConv = FreeImage_ConvertToStandardType(fiBmpFloat.get());
-                }
-                break;
+    auto buf = c_FreeImageBuffer::Create(std::move(fibmp));
+    if (!buf) { return std::nullopt; }
 
-            case PixelFormat::PIX_MONO32F: fibmpConv.reset(FreeImage_ConvertToFloat(fibmp.get())); break;
-            default: IMPPG_ABORT();
-            }
+    auto image = c_Image(std::move(buf.value()));
 
-            if (!fibmpConv)
-                return std::nullopt;
-        }
-        else
-        {
-            fibmpConv = std::move(fibmp);
-        }
-
-        auto img = c_Image(
-            FreeImage_GetWidth(fibmpConv.get()),
-            FreeImage_GetHeight(fibmpConv.get()),
-            destFmt.value() //FIXME: support destFmt == std::nullopt
-        );
-        for (unsigned row = 0; row < img.GetHeight(); row++)
-            memcpy(
-                img.GetRow(img.GetHeight() - 1 - row),
-                FreeImage_GetScanLine(fibmpConv.get(), row),
-                img.GetWidth() * BytesPerPixel[static_cast<size_t>(destFmt.value())]
-            );
-
-        return img;
+    if (destFmt.has_value())
+    {
+        image = image.ConvertPixelFormat(destFmt.value());
     }
     else
-        return std::nullopt;
+    {
+        // Makes a copy backed by `c_SimpleBuffer`; there had been performance issues with `c_FreeImageBuffer` due to it
+        // using FreeImage calls internally (TODO: are there still?).
+        image = image.ConvertPixelFormat(image.GetPixelFormat());
+    }
+
+    return image;
 
 #else // if USE_FREEIMAGE
 

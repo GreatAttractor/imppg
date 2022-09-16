@@ -23,6 +23,7 @@ File description:
 
 #pragma once
 
+#include "common/formats.h"
 #include "common/proc_settings.h"
 #include "image/image.h"
 #include "scripting/script_exceptions.h"
@@ -57,6 +58,7 @@ struct ProcessImageFile
     std::string imagePath;
     std::string settingsPath;
     std::string outputImagePath;
+    OutputFormat outputFormat;
 };
 
 struct ProcessImage
