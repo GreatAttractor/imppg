@@ -6,5 +6,6 @@ for file in imppg.filesystem.list_files("/home/filip/Pictures/astrofoto/2022-08-
         string.format("/home/filip/Documents/temp/%04d_out.png", counter),
         imppg.PNG_8
     )
+    imppg.progress(counter)
     counter = counter + 1
 end

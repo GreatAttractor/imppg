@@ -48,6 +48,7 @@ struct NotifyInteger { int value; };
 struct NotifyNumber { double number; };
 struct NotifySettings { ProcessingSettings settings; };
 struct NotifyString { std::string s; };
+struct Progress { int percentage; };
 
 struct ProcessImageFile
 {
@@ -66,17 +67,18 @@ struct ProcessImage
 }
 
 using MessageContents = std::variant<
-    contents::None,
-    contents::ScriptFinished,
     contents::Error,
+    contents::None,
     contents::NotifyBoolean,
     contents::NotifyImage,
     contents::NotifyInteger,
+    contents::NotifyNumber,
     contents::NotifySettings,
     contents::NotifyString,
-    contents::NotifyNumber,
     contents::ProcessImage,
-    contents::ProcessImageFile
+    contents::ProcessImageFile,
+    contents::Progress,
+    contents::ScriptFinished
 >;
 
 namespace call_result
@@ -103,8 +105,8 @@ public:
     : m_Contents(contents::None{})
     {}
 
-    ScriptMessagePayload(MessageContents call, std::promise<FunctionCallResult>&& completion = {})
-    : m_Contents(call), m_Completion(std::move(completion))
+    ScriptMessagePayload(MessageContents&& contents, std::promise<FunctionCallResult>&& completion = {})
+    : m_Contents(std::move(contents)), m_Completion(std::move(completion))
     {}
 
     ScriptMessagePayload(const ScriptMessagePayload& other)
@@ -133,6 +135,8 @@ public:
 
 private:
     MessageContents m_Contents;
+
+    /// Empty for certain kinds of `MessageContents`; the receiver must then not call `SignalCompletion`.
     std::promise<FunctionCallResult> m_Completion;
 };
 

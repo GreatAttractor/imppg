@@ -69,6 +69,13 @@ const luaL_Reg functions[] = {
         return 1;
     }},
 
+    {"progress", [](lua_State* lua) -> int {
+        CheckNumArgs(lua, "progress", 1);
+        const int percentage = GetInteger(lua, 1);
+        scripting::g_State->SendMessage(scripting::contents::Progress{percentage});
+        return 0;
+    }},
+
     {nullptr, nullptr} // end-of-data marker
 };
 

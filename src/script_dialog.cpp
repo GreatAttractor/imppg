@@ -48,6 +48,8 @@ namespace
 
 constexpr int BORDER = 5; ///< Border size (in pixels) between controls.
 
+constexpr int PROGRESS_PULSE_INTERVAL_MS = 500;
+
 template<typename ... Ts>
 struct Overload : Ts ... {
     using Ts::operator() ...;
@@ -145,6 +147,11 @@ void c_ScriptDialog::DoInitControls()
 
     szTop->Add(szRunControls, 0, wxALIGN_LEFT | wxALL, BORDER);
 
+    m_Progress = new wxGauge(GetContainer(), wxID_ANY, 100);
+    szTop->Add(m_Progress, 0, wxEXPAND, BORDER);
+
+    m_ProgressTimer.Bind(wxEVT_TIMER, [this](wxTimerEvent&) { m_Progress->Pulse(); });
+
     m_Console = new wxRichTextCtrl(GetContainer());
     m_Console->SetEditable(false);
     m_Console->SetScale(GetContentScaleFactor(), true); //FIXME: text still too small on Linux/GTK3 with 185% global scale
@@ -167,6 +174,7 @@ void c_ScriptDialog::OnScriptFileSelected(wxFileDirPickerEvent& event)
     m_ScriptFilePath->SetLabel(event.GetPath());
     m_BtnRun->Enable();
     Configuration::ScriptOpenPath = wxFileName(event.GetPath()).GetPath();
+    m_Progress->SetValue(0);
 }
 
 void c_ScriptDialog::OnRunScript(wxCommandEvent&)
@@ -184,6 +192,8 @@ void c_ScriptDialog::OnRunScript(wxCommandEvent&)
     m_BtnRun->Disable();
     m_BtnStop->Enable();
     m_BtnTogglePause->Enable();
+    m_Progress->Pulse();
+    m_ProgressTimer.Start(PROGRESS_PULSE_INTERVAL_MS);
 }
 
 bool c_ScriptDialog::IsRunnerActive() const
@@ -267,6 +277,13 @@ void c_ScriptDialog::OnRunnerMessage(wxThreadEvent& event)
             m_BtnRun->Enable();
             m_BtnStop->Disable();
             m_BtnTogglePause->Disable();
+            m_Progress->SetValue(100);
+            m_ProgressTimer.Stop();
+        },
+
+        [&](const contents::Progress& contents) {
+            m_ProgressTimer.Stop();
+            m_Progress->SetValue(contents.percentage);
         },
 
         [&](const auto& contents) {
