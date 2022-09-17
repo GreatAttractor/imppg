@@ -26,6 +26,7 @@ File description:
 #include "common/proc_settings.h"
 #include "ctrl_ids.h"
 #include "imppg_assert.h"
+#include "progress_bar.h"
 #include "scripting/interop.h"
 #include "script_dialog.h"
 
@@ -148,6 +149,11 @@ void c_ScriptDialog::DoInitControls()
     szTop->Add(szRunControls, 0, wxALIGN_LEFT | wxALL, BORDER);
 
     m_Progress = new wxGauge(GetContainer(), wxID_ANY, 100);
+    //TESTING ################
+    auto* pbar = new c_ProgressBar(GetContainer());
+    pbar->SetMinClientSize({-1, static_cast<int>(1.5 * pbar->GetTextExtent("M").GetHeight())});
+    szTop->Add(pbar, 0, wxEXPAND, BORDER);
+    //END TESTING ############
     szTop->Add(m_Progress, 0, wxEXPAND, BORDER);
 
     m_ProgressTimer.Bind(wxEVT_TIMER, [this](wxTimerEvent&) { m_Progress->Pulse(); });
