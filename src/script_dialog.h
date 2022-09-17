@@ -24,6 +24,7 @@ File description:
 #pragma once
 
 #include "backend/backend.h"
+#include "scripting/script_image_processor.h"
 #include "scripting/script_runner.h"
 #include "scrollable_dlg.h"
 
@@ -66,7 +67,7 @@ private:
 
     bool m_CloseAfterRunnerEnds{false};
     std::unique_ptr<std::promise<void>> m_StopScript;
-    std::unique_ptr<imppg::backend::IProcessingBackEnd> m_Processor;
+    std::unique_ptr<scripting::ScriptImageProcessor> m_Processor;
 };
 
 }

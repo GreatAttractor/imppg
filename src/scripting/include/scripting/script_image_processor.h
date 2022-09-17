@@ -39,7 +39,7 @@ class ScriptImageProcessor
 {
 public:
     ScriptImageProcessor(
-        std::unique_ptr<imppg::backend::IProcessingBackEnd> processor,
+        std::unique_ptr<imppg::backend::IProcessingBackEnd>&& processor,
         bool normalizeFitsValues
     );
 

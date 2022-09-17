@@ -64,12 +64,23 @@ c_ScriptDialog::c_ScriptDialog(wxWindow* parent)
     SetSize(r.GetSize());
     FixWindowPosition(*this);
 
-    //TODO:
+    const bool nfv = Configuration::NormalizeFITSValues;
     switch (Configuration::ProcessingBackEnd)
     {
-    case BackEnd::CPU_AND_BITMAPS: m_Processor = imppg::backend::CreateCpuBmpProcessingBackend(); break;
+    case BackEnd::CPU_AND_BITMAPS:
+        m_Processor = std::make_unique<scripting::ScriptImageProcessor>(
+            std::move(imppg::backend::CreateCpuBmpProcessingBackend()),
+            nfv
+        );
+        break;
+
 #if USE_OPENGL_BACKEND
-    case BackEnd::GPU_OPENGL: m_Processor = imppg::backend::CreateOpenGLProcessingBackend(Configuration::LRCmdBatchSizeMpixIters); break;
+    case BackEnd::GPU_OPENGL:
+        m_Processor = std::make_unique<scripting::ScriptImageProcessor>(
+            std::move(imppg::backend::CreateOpenGLProcessingBackend(Configuration::LRCmdBatchSizeMpixIters)),
+            nfv
+        );
+        break;
 #endif
     default: IMPPG_ABORT();
     }
@@ -230,7 +241,7 @@ void c_ScriptDialog::OnIdle(wxIdleEvent& event)
         Close();
     }
 
-    if (m_Processor) { m_Processor->OnIdle(event); }
+    m_Processor->OnIdle(event);
 }
 
 void c_ScriptDialog::OnRunnerMessage(wxThreadEvent& event)
@@ -253,75 +264,76 @@ void c_ScriptDialog::OnRunnerMessage(wxThreadEvent& event)
         break;
 
     case scripting::MessageId::ScriptFunctionCall:
-        OnScriptFunctionCall(event);
+        //OnScriptFunctionCall(event);
+        static_assert(false, "implement this");
         break;
 
     default: break;
     }
 }
 
-void c_ScriptDialog::OnScriptFunctionCall(wxThreadEvent& event)
-{
-    auto payload = event.GetPayload<ScriptMessagePayload>();
+// void c_ScriptDialog::OnScriptFunctionCall(wxThreadEvent& event)
+// {
+//     auto payload = event.GetPayload<ScriptMessagePayload>();
 
-    const auto& call = payload.GetCall();
-    if (std::get_if<call::Dummy>(&call))
-    {
-        std::cout << "Main thread: simulating long operation..." << std::endl;
-        std::this_thread::sleep_for(1s);
-        payload.SignalCompletion(call_result::Success{});
-    }
-    else if (const auto* processImageFile = std::get_if<call::ProcessImageFile>(&call))
-    {
-        //temporary experimental code for RGB processing
-        const c_Image image = [processImageFile]() {
-            auto result = LoadImage(processImageFile->imagePath, PixelFormat::PIX_RGB32F, nullptr, false);
-            if (!result) { throw std::runtime_error("failed to load image"); }
-            return *result;
-        }();
+//     const auto& call = payload.GetCall();
+//     if (std::get_if<call::Dummy>(&call))
+//     {
+//         std::cout << "Main thread: simulating long operation..." << std::endl;
+//         std::this_thread::sleep_for(1s);
+//         payload.SignalCompletion(call_result::Success{});
+//     }
+//     else if (const auto* processImageFile = std::get_if<call::ProcessImageFile>(&call))
+//     {
+//         //temporary experimental code for RGB processing
+//         const c_Image image = [processImageFile]() {
+//             auto result = LoadImage(processImageFile->imagePath, PixelFormat::PIX_RGB32F, nullptr, false);
+//             if (!result) { throw std::runtime_error("failed to load image"); }
+//             return *result;
+//         }();
 
-        ProcessingSettings settings;
-        IMPPG_ASSERT(LoadSettings(processImageFile->settingsPath, settings, nullptr, nullptr, nullptr));
+//         ProcessingSettings settings;
+//         IMPPG_ASSERT(LoadSettings(processImageFile->settingsPath, settings, nullptr, nullptr, nullptr));
 
-        const bool isRGB = (NumChannels[static_cast<std::size_t>(image.GetPixelFormat())] == 3);
-        if (!isRGB) { throw std::runtime_error("not yet supported"); }
+//         const bool isRGB = (NumChannels[static_cast<std::size_t>(image.GetPixelFormat())] == 3);
+//         if (!isRGB) { throw std::runtime_error("not yet supported"); }
 
-        auto input = image.SplitRGB();
+//         auto input = image.SplitRGB();
 
-        //FIXME: add proper OnIdle interaction; for now just a blocking approach (legal only for the CPU backend)
-        m_Processor->SetProcessingCompletedHandler([processor = m_Processor.get(), input, settings, callData = *processImageFile, payload = std::move(payload)](imppg::backend::CompletionStatus) {
-            c_Image resultR = processor->GetProcessedOutput();
+//         //FIXME: add proper OnIdle interaction; for now just a blocking approach (legal only for the CPU backend)
+//         m_Processor->SetProcessingCompletedHandler([processor = m_Processor.get(), input, settings, callData = *processImageFile, payload = std::move(payload)](imppg::backend::CompletionStatus) {
+//             c_Image resultR = processor->GetProcessedOutput();
 
-            // need to copy these for later use - the lambda we're currently executing has been assigned as the completion hander of processor,
-            // and calling `SetProcessingCompletedHandler` below with a different lambda will immediately destroy our state variables
-            const auto input2 = input;
-            const auto settings2 = settings;
-            const auto processor2 = processor;
+//             // need to copy these for later use - the lambda we're currently executing has been assigned as the completion hander of processor,
+//             // and calling `SetProcessingCompletedHandler` below with a different lambda will immediately destroy our state variables
+//             const auto input2 = input;
+//             const auto settings2 = settings;
+//             const auto processor2 = processor;
 
-            processor->SetProcessingCompletedHandler([processor, input, settings, callData, payload = std::move(payload), resultR = std::move(resultR)](imppg::backend::CompletionStatus) {
-                c_Image resultG = processor->GetProcessedOutput();
+//             processor->SetProcessingCompletedHandler([processor, input, settings, callData, payload = std::move(payload), resultR = std::move(resultR)](imppg::backend::CompletionStatus) {
+//                 c_Image resultG = processor->GetProcessedOutput();
 
-                const auto input2 = input;
-                const auto settings2 = settings;
-                const auto processor2 = processor;
+//                 const auto input2 = input;
+//                 const auto settings2 = settings;
+//                 const auto processor2 = processor;
 
-                processor->SetProcessingCompletedHandler([processor, input, settings, callData, payload = std::move(payload), resultR = std::move(resultR), resultG = std::move(resultG)](imppg::backend::CompletionStatus) mutable {
-                    c_Image resultB = processor->GetProcessedOutput();
+//                 processor->SetProcessingCompletedHandler([processor, input, settings, callData, payload = std::move(payload), resultR = std::move(resultR), resultG = std::move(resultG)](imppg::backend::CompletionStatus) mutable {
+//                     c_Image resultB = processor->GetProcessedOutput();
 
-                    c_Image resultRGB = c_Image::CombineRGB(resultR, resultG, resultB);
-                    IMPPG_ASSERT(resultRGB.SaveToFile(callData.outputImagePath, OutputFormat::BMP_8));
+//                     c_Image resultRGB = c_Image::CombineRGB(resultR, resultG, resultB);
+//                     IMPPG_ASSERT(resultRGB.SaveToFile(callData.outputImagePath, OutputFormat::BMP_8));
 
-                    payload.SignalCompletion(call_result::Success{});
-                });
+//                     payload.SignalCompletion(call_result::Success{});
+//                 });
 
-                processor2->StartProcessing(std::make_shared<const c_Image>(std::get<2>(input2)), settings2);
-            });
+//                 processor2->StartProcessing(std::make_shared<const c_Image>(std::get<2>(input2)), settings2);
+//             });
 
-            processor2->StartProcessing(std::make_shared<const c_Image>(std::get<1>(input2)), settings2);
-        });
+//             processor2->StartProcessing(std::make_shared<const c_Image>(std::get<1>(input2)), settings2);
+//         });
 
-        m_Processor->StartProcessing(std::make_shared<const c_Image>(std::get<0>(input)), settings);
-    }
-}
+//         m_Processor->StartProcessing(std::make_shared<const c_Image>(std::get<0>(input)), settings);
+//     }
+// }
 
 }

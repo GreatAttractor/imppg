@@ -43,7 +43,7 @@ namespace scripting
 {
 
 ScriptImageProcessor::ScriptImageProcessor(
-    std::unique_ptr<imppg::backend::IProcessingBackEnd> processor,
+    std::unique_ptr<imppg::backend::IProcessingBackEnd>&& processor,
     bool normalizeFitsValues
 )
 : m_Processor(std::move(processor))
