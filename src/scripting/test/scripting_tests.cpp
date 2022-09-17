@@ -9,14 +9,26 @@
 
 namespace fs = std::filesystem;
 
-BOOST_AUTO_TEST_SUITE(Dummy);
-
-BOOST_AUTO_TEST_CASE(Dummy1)
+// private definitions
+namespace
 {
-    BOOST_CHECK_EQUAL(1, 1);
+
+template<typename T>
+bool CheckAllPixelValues(const c_Image& image, T value)
+{
+    for (unsigned y = 0; y < image.GetHeight(); ++y)
+    {
+        const T* row = image.GetRowAs<T>(y);
+        for (unsigned x = 0; x < image.GetWidth(); ++x)
+        {
+            if (row[x] != value) { return false; }
+        }
+    }
+
+    return true;
 }
 
-BOOST_AUTO_TEST_SUITE_END();
+}
 
 BOOST_FIXTURE_TEST_CASE(CallModuleAndSubmoduleFunctions, ScriptTestFixture)
 {
@@ -64,10 +76,9 @@ settings = imppg.new_settings()
 settings:tc_set_point(0, 0.0, 0.5)
 settings:tc_set_point(1, 1.0, 0.5)
 image = imppg.load_image("$ROOT/image.bmp")
-
 processed_image = imppg.process_image(image, settings)
-
 imppg.test.notify_image(processed_image)
+processed_image:save("$ROOT/output.tif", imppg.TIFF_16)
 
     )"};
     const auto root = fs::temp_directory_path();
@@ -81,14 +92,11 @@ imppg.test.notify_image(processed_image)
 
     const auto& processedImg = GetImageNotification();
     BOOST_REQUIRE(PixelFormat::PIX_MONO32F == processedImg.GetPixelFormat());
-    for (unsigned y = 0; y < processedImg.GetHeight(); ++y)
-    {
-        const float* row = processedImg.GetRowAs<float>(y);
-        for (unsigned x = 0; x < processedImg.GetWidth(); ++x)
-        {
-            BOOST_REQUIRE(0.5 == row[x]);
-        }
-    }
+    BOOST_CHECK(CheckAllPixelValues(processedImg, 0.5f));
+
+    const auto loadedProcessedImg = LoadImage(root / "output.tif");
+    BOOST_REQUIRE(loadedProcessedImg.value().GetPixelFormat() == PixelFormat::PIX_MONO16);
+    BOOST_CHECK(CheckAllPixelValues<std::uint16_t>(loadedProcessedImg.value(), 0xFFFF / 2));
 }
 
 BOOST_FIXTURE_TEST_CASE(ProcessImageFile, ScriptTestFixture)
@@ -116,12 +124,5 @@ imppg.process_image_file("$ROOT/image.bmp", "$ROOT/settings.xml", "$ROOT/output.
 
     auto processedImg = LoadImage(root / "output.tif").value();
     BOOST_REQUIRE(PixelFormat::PIX_MONO16 == processedImg.GetPixelFormat());
-    for (unsigned y = 0; y < processedImg.GetHeight(); ++y)
-    {
-        const auto* row = processedImg.GetRowAs<std::uint16_t>(y);
-        for (unsigned x = 0; x < processedImg.GetWidth(); ++x)
-        {
-            BOOST_REQUIRE(0xFFFF / 2 == row[x]);
-        }
-    }
+    BOOST_CHECK(CheckAllPixelValues<std::uint16_t>(processedImg, 0xFFFF / 2));
 }

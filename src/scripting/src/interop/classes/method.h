@@ -110,4 +110,12 @@ int MethodIntDoubleDoubleArg(lua_State* lua, void (T::* method)(int, double, dou
     return 0;
 }
 
+template<typename T>
+int ConstMethodStringIntArg(lua_State* lua, void (T::* method)(const std::string&, int) const)
+{
+    const auto* object = GetConstObject<T>(lua);
+    (object->*method)(GetString(lua, 2), GetInteger(lua, 3));
+    return 0;
+}
+
 }
