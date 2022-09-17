@@ -48,6 +48,12 @@ namespace
 
 constexpr int BORDER = 5; ///< Border size (in pixels) between controls.
 
+template<typename ... Ts>
+struct Overload : Ts ... {
+    using Ts::operator() ...;
+};
+template<class... Ts> Overload(Ts...) -> Overload<Ts...>;
+
 }
 
 c_ScriptDialog::c_ScriptDialog(wxWindow* parent)
@@ -246,41 +252,54 @@ void c_ScriptDialog::OnIdle(wxIdleEvent& event)
 
 void c_ScriptDialog::OnRunnerMessage(wxThreadEvent& event)
 {
-    switch (event.GetId())
-    {
-    case scripting::MessageId::ScriptError:
-    {
-        auto payload = event.GetPayload<ScriptMessagePayload>();
-        m_Console->AppendText(_("Script execution error: ") + payload.GetMessage() + ".\n");
-        break;
-    }
+    auto payload = event.GetPayload<ScriptMessagePayload>();
 
-    case scripting::MessageId::ScriptFinished:
-        m_Console->AppendText(_("Script execution finished.") + "\n");
-        m_Runner->Wait();
-        m_BtnRun->Enable();
-        m_BtnStop->Disable();
-        m_BtnTogglePause->Disable();
-        break;
+    const auto handler = Overload{
+        [&](const contents::None&) {},
 
-    case scripting::MessageId::ScriptFunctionCall:
-    {
-        auto payload = event.GetPayload<ScriptMessagePayload>();
-        // we need to make a copy first, because in `StartProcessing` invocation we also move from `payload`,
-        // and function argument evaluation order is unspecified
-        scripting::FunctionCall callCopy = payload.GetCall();
-        m_Processor->StartProcessing(
-            callCopy,
-            [payload = std::move(payload)](scripting::FunctionCallResult result) mutable {
-                payload.SignalCompletion(std::move(result));
-            }
-        );
+        [&](const contents::Error& contents) {
+            m_Console->AppendText(_("Script execution error: ") + contents.message + ".\n");
+        },
 
-        break;
-    }
+        [&](const auto&) {
+            IMPPG_ABORT_MSG("unexpected script message contents");
+        }
+    };
 
-    default: break;
-    }
+    std::visit(handler, payload.GetContents());
+
+    // if (const auto* contents = std::get_if<contents::Error>(&payload.GetContents())
+    // {
+
+    // }
+    // else if (const auto* contents = std::get_if<contents::ScriptFinished>(&payload.GetContents())
+    // {
+    //     m_Console->AppendText(_("Script execution finished.") + "\n");
+    //     m_Runner->Wait();
+    //     m_BtnRun->Enable();
+    //     m_BtnStop->Disable();
+    //     m_BtnTogglePause->Disable();
+    // }
+    // else if (const auto* contents = std::get_if<contents::Func>(&payload.GetContents())
+
+    // case scripting::MessageId::ScriptMessageContents:
+    // {
+    //     auto payload = event.GetPayload<ScriptMessagePayload>();
+    //     // we need to make a copy first, because in `StartProcessing` invocation we also move from `payload`,
+    //     // and function argument evaluation order is unspecified
+    //     scripting::MessageContents callCopy = payload.GetCall();
+    //     m_Processor->StartProcessing(
+    //         callCopy,
+    //         [payload = std::move(payload)](scripting::FunctionCallResult result) mutable {
+    //             payload.SignalCompletion(std::move(result));
+    //         }
+    //     );
+
+    //     break;
+    // }
+
+    // default: break;
+    // }
 }
 
 }

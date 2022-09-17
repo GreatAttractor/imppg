@@ -51,7 +51,7 @@ public:
 private:
     void OnIdle(wxIdleEvent& event);
     void OnRunnerMessage(wxThreadEvent& event);
-    void OnScriptFunctionCall(scripting::ScriptMessagePayload& payload);
+    void OnScriptMessageContents(scripting::ScriptMessagePayload& payload);
 
     std::unique_ptr<scripting::ScriptImageProcessor> m_Processor;
     std::unique_ptr<wxAppConsole> m_App;

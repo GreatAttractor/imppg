@@ -10,32 +10,32 @@ namespace
 
 void NotifyString(std::string s)
 {
-    scripting::g_State->CallFunctionAndAwaitCompletion(scripting::call::NotifyString{std::move(s)});
+    scripting::g_State->CallFunctionAndAwaitCompletion(scripting::contents::NotifyString{std::move(s)});
 }
 
 void NotifySettings(const scripting::SettingsWrapper& s)
 {
-    scripting::g_State->CallFunctionAndAwaitCompletion(scripting::call::NotifySettings{s.GetSettings()});
+    scripting::g_State->CallFunctionAndAwaitCompletion(scripting::contents::NotifySettings{s.GetSettings()});
 }
 
 void NotifyImage(const scripting::ImageWrapper& img)
 {
-    scripting::g_State->CallFunctionAndAwaitCompletion(scripting::call::NotifyImage{img.GetImage()});
+    scripting::g_State->CallFunctionAndAwaitCompletion(scripting::contents::NotifyImage{img.GetImage()});
 }
 
 void NotifyNumber(double number)
 {
-    scripting::g_State->CallFunctionAndAwaitCompletion(scripting::call::NotifyNumber{number});
+    scripting::g_State->CallFunctionAndAwaitCompletion(scripting::contents::NotifyNumber{number});
 }
 
 void NotifyBoolean(bool value)
 {
-    scripting::g_State->CallFunctionAndAwaitCompletion(scripting::call::NotifyBoolean{value});
+    scripting::g_State->CallFunctionAndAwaitCompletion(scripting::contents::NotifyBoolean{value});
 }
 
 void NotifyInteger(int value)
 {
-    scripting::g_State->CallFunctionAndAwaitCompletion(scripting::call::NotifyInteger{value});
+    scripting::g_State->CallFunctionAndAwaitCompletion(scripting::contents::NotifyInteger{value});
 }
 
 } // end of private definitions

@@ -9,12 +9,12 @@ namespace scripting
 
 std::unique_ptr<State> g_State;
 
-FunctionCallResult State::CallFunctionAndAwaitCompletion(FunctionCall functionCall)
+FunctionCallResult State::CallFunctionAndAwaitCompletion(MessageContents functionCall)
 {
-    auto* event = new wxThreadEvent(wxEVT_THREAD, MessageId::ScriptFunctionCall);
+    auto* event = new wxThreadEvent(wxEVT_THREAD);
     std::promise<FunctionCallResult> completionSend;
     std::future<FunctionCallResult> completionRecv = completionSend.get_future();
-    event->SetPayload(ScriptMessagePayload(functionCall, std::move(completionSend)));
+    event->SetPayload(ScriptMessagePayload{functionCall, std::move(completionSend)});
     m_Parent.QueueEvent(event);
     const FunctionCallResult result = completionRecv.get();
     if (auto* error = std::get_if<call_result::Error>(&result))

@@ -7,23 +7,10 @@
 #include "interop/modules/imppg.h"
 #include "interop/state.h"
 
-// private definitions
-namespace
-{
-
-void Dummy()
-{
-    scripting::g_State->CallFunctionAndAwaitCompletion(scripting::call::Dummy{});
-}
-
-} // end of private definitions
-
 namespace scripting::modules::imppg
 {
 
 const luaL_Reg functions[] = {
-    {"handler1", [](lua_State*) -> int { Dummy(); return 0; }},
-
     {"create_dummy1", [](lua_State* lua) -> int {
         /*DummyObject1* object =*/ new(PrepareObject<DummyObject1>(lua)) DummyObject1();
         return 1;
@@ -60,7 +47,7 @@ const luaL_Reg functions[] = {
             throw ScriptExecutionError{"invalid output format"};
         }
 
-        scripting::g_State->CallFunctionAndAwaitCompletion(scripting::call::ProcessImageFile{imagePath, settingsPath,
+        scripting::g_State->CallFunctionAndAwaitCompletion(scripting::contents::ProcessImageFile{imagePath, settingsPath,
             outputImagePath, static_cast<OutputFormat>(ofVal)});
 
         return 0; //TODO: return processing result
@@ -72,7 +59,7 @@ const luaL_Reg functions[] = {
         const auto settings = GetObject<SettingsWrapper>(lua, 2);
 
         const auto result = scripting::g_State->CallFunctionAndAwaitCompletion(
-            scripting::call::ProcessImage{image.GetImage(), settings.GetSettings()}
+            scripting::contents::ProcessImage{image.GetImage(), settings.GetSettings()}
         );
         const auto* processedImg = std::get_if<call_result::ImageProcessed>(&result);
         IMPPG_ASSERT(processedImg != nullptr);

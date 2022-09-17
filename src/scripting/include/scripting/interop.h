@@ -37,15 +37,11 @@ File description:
 namespace scripting
 {
 
-namespace MessageId
-{
-    enum { ScriptFunctionCall, ScriptError, ScriptFinished };
-}
-
-namespace call
+namespace contents
 {
 struct None {};
-struct Dummy {};
+struct ScriptFinished {};
+struct Error{ std::string message; };
 struct NotifyBoolean { bool value; };
 struct NotifyImage { std::shared_ptr<const c_Image> image; };
 struct NotifyInteger { int value; };
@@ -69,17 +65,18 @@ struct ProcessImage
 
 }
 
-using FunctionCall = std::variant<
-    call::None,
-    call::Dummy,
-    call::NotifyBoolean,
-    call::NotifyImage,
-    call::NotifyInteger,
-    call::NotifySettings,
-    call::NotifyString,
-    call::NotifyNumber,
-    call::ProcessImage,
-    call::ProcessImageFile
+using MessageContents = std::variant<
+    contents::None,
+    contents::ScriptFinished,
+    contents::Error,
+    contents::NotifyBoolean,
+    contents::NotifyImage,
+    contents::NotifyInteger,
+    contents::NotifySettings,
+    contents::NotifyString,
+    contents::NotifyNumber,
+    contents::ProcessImage,
+    contents::ProcessImageFile
 >;
 
 namespace call_result
@@ -103,15 +100,11 @@ class ScriptMessagePayload
 {
 public:
     ScriptMessagePayload()
-    : m_Call(call::None{})
+    : m_Contents(contents::None{})
     {}
 
-    ScriptMessagePayload(FunctionCall call, std::promise<FunctionCallResult>&& completion)
-    : m_Call(call), m_Completion(std::move(completion))
-    {}
-
-    ScriptMessagePayload(std::string message)
-    : m_Message(std::move(message))
+    ScriptMessagePayload(MessageContents call, std::promise<FunctionCallResult>&& completion = {})
+    : m_Contents(call), m_Completion(std::move(completion))
     {}
 
     ScriptMessagePayload(const ScriptMessagePayload& other)
@@ -134,16 +127,13 @@ public:
     ScriptMessagePayload(ScriptMessagePayload&& other) = default;
     ScriptMessagePayload& operator=(ScriptMessagePayload&& other) = default;
 
-    const FunctionCall& GetCall() const { return m_Call; }
+    const MessageContents& GetContents() const { return m_Contents; }
 
     void SignalCompletion(FunctionCallResult&& result) { m_Completion.set_value(std::move(result)); }
 
-    const std::string& GetMessage() const { return m_Message; }
-
 private:
-    FunctionCall m_Call;
+    MessageContents m_Contents;
     std::promise<FunctionCallResult> m_Completion;
-    std::string m_Message;
 };
 
 /// Prepares interop for script execution.

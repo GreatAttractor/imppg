@@ -52,7 +52,7 @@ private:
     void OnIdle(wxIdleEvent& event);
     void OnRunScript(wxCommandEvent&);
     void OnScriptFileSelected(wxFileDirPickerEvent& event);
-    void OnScriptFunctionCall(wxThreadEvent& event);
+    void OnScriptMessageContents(wxThreadEvent& event);
     void OnStopScript(wxCommandEvent&);
     void OnRunnerMessage(wxThreadEvent& event);
     void OnTogglePause(wxCommandEvent&);

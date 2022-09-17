@@ -44,7 +44,7 @@ public:
     );
 
     void StartProcessing(
-        FunctionCall request,
+        MessageContents request,
         std::function<void(FunctionCallResult)> onCompletion ///< Receives error message on error.
     );
 

@@ -8,9 +8,20 @@
 #include <filesystem>
 #include <fstream>
 #include <sstream>
-#include <thread> //TESTING ##############
 #include <wx/app.h>
 #include <wx/init.h>
+
+// private definitions
+namespace
+{
+
+template<typename ... Ts>
+struct Overload : Ts ... {
+    using Ts::operator() ...;
+};
+template<class... Ts> Overload(Ts...) -> Overload<Ts...>;
+
+}
 
 ScriptTestFixture::ScriptTestFixture()
 {
@@ -53,85 +64,78 @@ void ScriptTestFixture::CreateFile(const std::filesystem::path& path)
 
 void ScriptTestFixture::OnRunnerMessage(wxThreadEvent& event)
 {
-    switch (event.GetId())
-    {
-    case scripting::MessageId::ScriptFunctionCall:
-    {
-        auto payload = event.GetPayload<scripting::ScriptMessagePayload>();
-        OnScriptFunctionCall(payload);
-        break;
-    }
+    auto payload = event.GetPayload<scripting::ScriptMessagePayload>();
 
-    case scripting::MessageId::ScriptError:
-    {
-        auto payload = event.GetPayload<scripting::ScriptMessagePayload>();
-        BOOST_TEST_MESSAGE("Script execution error: " << payload.GetMessage() << ".");
-        m_ScriptExecutionFailure = true;
-        break;
-    }
+    const auto handler = Overload{
+        [&](const scripting::contents::None&) {},
 
-    case scripting::MessageId::ScriptFinished:
-        m_App->ExitMainLoop();
-        break;
+        [&](const scripting::contents::ScriptFinished&) {
+            m_App->ExitMainLoop();
+        },
 
-    default: break;
-    }
+        [&](const scripting::contents::Error& contents) {
+            auto payload = event.GetPayload<scripting::ScriptMessagePayload>();
+            BOOST_TEST_MESSAGE("Script execution error: " << contents.message << ".");
+            m_ScriptExecutionFailure = true;
+        },
+
+        [&](const auto& contents) {
+            OnScriptMessageContents(payload);
+        }
+    };
+
+    std::visit(handler, payload.GetContents());
 }
 
-void ScriptTestFixture::OnScriptFunctionCall(scripting::ScriptMessagePayload& payload)
+void ScriptTestFixture::OnScriptMessageContents(scripting::ScriptMessagePayload& payload)
 {
-    auto& callVariant = payload.GetCall();
-
     const auto returnOk = [&]() { payload.SignalCompletion(scripting::call_result::Success{}); };
 
-    if (const auto* call = std::get_if<scripting::call::None>(&callVariant))
-    {
-        returnOk();
-    }
-    else if (const auto* call = std::get_if<scripting::call::Dummy>(&callVariant))
-    {
-        returnOk();
-    }
-    else if (const auto* call = std::get_if<scripting::call::NotifyString>(&callVariant))
-    {
-        m_StringNotifications[call->s] += 1;
-        returnOk();
-    }
-    else if (auto* call = std::get_if<scripting::call::NotifySettings>(&callVariant))
-    {
-        m_SettingsNotification = call->settings;
-        returnOk();
-    }
-    else if (auto* call = std::get_if<scripting::call::NotifyImage>(&callVariant))
-    {
-        m_ImageNotification = call->image;
-        returnOk();
-    }
-    else if (auto* call = std::get_if<scripting::call::NotifyNumber>(&callVariant))
-    {
-        m_NumberNotifications.push_back(call->number);
-        returnOk();
-    }
-    else if (auto* call = std::get_if<scripting::call::NotifyBoolean>(&callVariant))
-    {
-        m_BooleanNotifications.push_back(call->value);
-        returnOk();
-    }
-    else if (auto* call = std::get_if<scripting::call::NotifyInteger>(&callVariant))
-    {
-        m_IntegerNotifications.push_back(call->value);
-        returnOk();
-    }
-    else
-    {
-        scripting::FunctionCall callCopy = callVariant;
-        m_Processor->StartProcessing(
-            std::move(callCopy),
-            [payload = std::move(payload)](scripting::FunctionCallResult result) mutable {
-                payload.SignalCompletion(std::move(result));
-            }
-        );
-    }
+    const auto handler = Overload{
+        [&](const scripting::contents::None&) {},
+
+        [&](const scripting::contents::NotifyString& contents) {
+            m_StringNotifications[contents.s] += 1;
+            returnOk();
+        },
+
+        [&](const scripting::contents::NotifySettings& contents) {
+            m_SettingsNotification = contents.settings;
+            returnOk();
+        },
+
+        [&](const scripting::contents::NotifyImage& contents) {
+            m_ImageNotification = contents.image;
+            returnOk();
+        },
+
+        [&](const scripting::contents::NotifyNumber& contents) {
+            m_NumberNotifications.push_back(contents.number);
+            returnOk();
+        },
+
+        [&](const scripting::contents::NotifyBoolean& contents) {
+            m_BooleanNotifications.push_back(contents.value);
+            returnOk();
+        },
+
+        [&](const scripting::contents::NotifyInteger& contents) {
+            m_IntegerNotifications.push_back(contents.value);
+            returnOk();
+        },
+
+        [&, this](const auto&) {
+            scripting::MessageContents callCopy = payload.GetContents();
+            m_Processor->StartProcessing(
+                std::move(callCopy),
+                [payload = std::move(payload)](scripting::FunctionCallResult result) mutable {
+                    payload.SignalCompletion(std::move(result));
+                }
+            );
+        }
+    };
+
+    std::visit(handler, payload.GetContents());
 }
 
 void ScriptTestFixture::CheckStringNotifications(std::initializer_list<std::string> expected) const

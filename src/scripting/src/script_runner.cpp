@@ -112,12 +112,13 @@ wxThread::ExitCode ScriptRunner::Entry()
     }
     catch (const ScriptExecutionError& exc)
     {
-        auto* event = new wxThreadEvent(wxEVT_THREAD, MessageId::ScriptError);
-        event->SetPayload(ScriptMessagePayload(exc.what()));
+        auto* event = new wxThreadEvent(wxEVT_THREAD);
+        event->SetPayload(ScriptMessagePayload{contents::Error{exc.what()}});
         m_Parent.QueueEvent(event);
     }
 
-    auto* event = new wxThreadEvent(wxEVT_THREAD, MessageId::ScriptFinished);
+    auto* event = new wxThreadEvent(wxEVT_THREAD);
+    event->SetPayload(ScriptMessagePayload{contents::ScriptFinished{}});
     m_Parent.QueueEvent(event);
 
     return static_cast<wxThread::ExitCode>(0);

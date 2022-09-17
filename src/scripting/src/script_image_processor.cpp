@@ -52,14 +52,14 @@ ScriptImageProcessor::ScriptImageProcessor(
 }
 
 void ScriptImageProcessor::StartProcessing(
-    FunctionCall request,
+    MessageContents request,
     std::function<void(FunctionCallResult)> onCompletion
 )
 {
     std::optional<wxString> errorMsg = std::nullopt;
 
     const auto handler = Overload{
-        [&, this](const call::ProcessImageFile& call) {
+        [&, this](const contents::ProcessImageFile& call) {
             std::string loadErrorMsg;
             auto loadResult = LoadImageFileAsMono32f(call.imagePath, m_NormalizeFitsValues, &loadErrorMsg);
             if (!loadResult)
@@ -99,7 +99,7 @@ void ScriptImageProcessor::StartProcessing(
             m_Processor->StartProcessing(image, settings);
         },
 
-        [&](const call::ProcessImage& call) {
+        [&](const contents::ProcessImage& call) {
 
             m_Processor->SetProcessingCompletedHandler(
                 [onCompletion = std::move(onCompletion), this](imppg::backend::CompletionStatus) {
