@@ -261,45 +261,28 @@ void c_ScriptDialog::OnRunnerMessage(wxThreadEvent& event)
             m_Console->AppendText(_("Script execution error: ") + contents.message + ".\n");
         },
 
-        [&](const auto&) {
-            IMPPG_ABORT_MSG("unexpected script message contents");
+        [&](const contents::ScriptFinished&) {
+            m_Console->AppendText(_("Script execution finished.") + "\n");
+            m_Runner->Wait();
+            m_BtnRun->Enable();
+            m_BtnStop->Disable();
+            m_BtnTogglePause->Disable();
+        },
+
+        [&](const auto& contents) {
+            // we need to make a copy first, because in `StartProcessing` invocation we also move from `payload`,
+            // and function argument evaluation order is unspecified
+            scripting::MessageContents contentsCopy = contents;
+            m_Processor->StartProcessing(
+                contentsCopy,
+                [payload = std::move(payload)](scripting::FunctionCallResult result) mutable {
+                    payload.SignalCompletion(std::move(result));
+                }
+            );
         }
     };
 
     std::visit(handler, payload.GetContents());
-
-    // if (const auto* contents = std::get_if<contents::Error>(&payload.GetContents())
-    // {
-
-    // }
-    // else if (const auto* contents = std::get_if<contents::ScriptFinished>(&payload.GetContents())
-    // {
-    //     m_Console->AppendText(_("Script execution finished.") + "\n");
-    //     m_Runner->Wait();
-    //     m_BtnRun->Enable();
-    //     m_BtnStop->Disable();
-    //     m_BtnTogglePause->Disable();
-    // }
-    // else if (const auto* contents = std::get_if<contents::Func>(&payload.GetContents())
-
-    // case scripting::MessageId::ScriptMessageContents:
-    // {
-    //     auto payload = event.GetPayload<ScriptMessagePayload>();
-    //     // we need to make a copy first, because in `StartProcessing` invocation we also move from `payload`,
-    //     // and function argument evaluation order is unspecified
-    //     scripting::MessageContents callCopy = payload.GetCall();
-    //     m_Processor->StartProcessing(
-    //         callCopy,
-    //         [payload = std::move(payload)](scripting::FunctionCallResult result) mutable {
-    //             payload.SignalCompletion(std::move(result));
-    //         }
-    //     );
-
-    //     break;
-    // }
-
-    // default: break;
-    // }
 }
 
 }

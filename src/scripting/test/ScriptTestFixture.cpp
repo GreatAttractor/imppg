@@ -125,9 +125,11 @@ void ScriptTestFixture::OnScriptMessageContents(scripting::ScriptMessagePayload&
         },
 
         [&, this](const auto&) {
-            scripting::MessageContents callCopy = payload.GetContents();
+            // we need to make a copy first, because in `StartProcessing` invocation we also move from `payload`,
+            // and function argument evaluation order is unspecified
+            scripting::MessageContents contentsCopy = payload.GetContents();
             m_Processor->StartProcessing(
-                std::move(callCopy),
+                std::move(contentsCopy),
                 [payload = std::move(payload)](scripting::FunctionCallResult result) mutable {
                     payload.SignalCompletion(std::move(result));
                 }
