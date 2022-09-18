@@ -26,7 +26,7 @@ public:
     bool RunScript(const char* scriptText);
 
     /// Creates file which is deleted on ScriptTestFixture destruction.
-    void CreateFile(const std::filesystem::path& path);
+    void CreateEmptyFile(const std::filesystem::path& path);
 
     //const std::vector<std::string>& GetStringNotifications() const;
 

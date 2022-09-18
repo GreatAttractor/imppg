@@ -77,7 +77,7 @@ bool IsMachineBigEndian()
 
 static std::string GetExtension(const std::string& filePath)
 {
-    const std::string extension = std::filesystem::path(filePath).extension();
+    const auto extension = std::filesystem::path(filePath).extension().string();
     if (extension.size() >= 1 && extension[0] == '.')
     {
         return extension.substr(1);

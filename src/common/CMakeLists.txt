@@ -16,7 +16,7 @@ target_compile_definitions(common PRIVATE
 
 target_include_directories(common PUBLIC include)
 
-target_link_libraries(common PRIVATE image math_utils)
+target_link_libraries(common PRIVATE image math_utils ${wxWidgets_LIBRARIES})
 
 if(USE_FREEIMAGE EQUAL 1)
     target_compile_definitions(common PRIVATE USE_FREEIMAGE=1)

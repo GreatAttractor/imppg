@@ -17,9 +17,9 @@ end
     )"};
     const auto root = fs::temp_directory_path();
     boost::algorithm::replace_all(script, "$ROOT", root.generic_string());
-    CreateFile(root / "file1.tif");
-    CreateFile(root / "file2.tif");
-    CreateFile(root / "file3.zip");
+    CreateEmptyFile(root / "file1.tif");
+    CreateEmptyFile(root / "file2.tif");
+    CreateEmptyFile(root / "file3.zip");
 
     RunScript(script.c_str());
 
@@ -40,8 +40,8 @@ end
     )"};
     const auto root = fs::temp_directory_path();
     boost::algorithm::replace_all(script, "$ROOT", root.generic_string());
-    CreateFile(root / "file1.tif");
-    CreateFile(root / "file2");
+    CreateEmptyFile(root / "file1.tif");
+    CreateEmptyFile(root / "file2");
 
     RunScript(script.c_str());
 
@@ -63,8 +63,8 @@ end
     const auto root = fs::temp_directory_path();
     boost::algorithm::replace_all(script, "$ROOT", root.generic_string());
     fs::create_directory(root / "subdir");
-    CreateFile(root / "subdir" / "file1");
-    CreateFile(root / "subdir" / "file2");
+    CreateEmptyFile(root / "subdir" / "file1");
+    CreateEmptyFile(root / "subdir" / "file2");
 
     RunScript(script.c_str());
 
@@ -85,10 +85,10 @@ end
     )"};
     const auto root = fs::temp_directory_path();
     boost::algorithm::replace_all(script, "$ROOT", root.generic_string());
-    CreateFile(root / "file1_suffix.tif");
-    CreateFile(root / "file20suffix.tif");
-    CreateFile(root / "file300suffix");
-    CreateFile(root / "buzz");
+    CreateEmptyFile(root / "file1_suffix.tif");
+    CreateEmptyFile(root / "file20suffix.tif");
+    CreateEmptyFile(root / "file300suffix");
+    CreateEmptyFile(root / "buzz");
 
     RunScript(script.c_str());
 

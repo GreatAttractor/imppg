@@ -56,7 +56,7 @@ imppg.test.notify_image(image)
 
     c_Image image{128, 64, PixelFormat::PIX_MONO8};
     image.ClearToZero();
-    image.SaveToFile(root / "image.tif", OutputFormat::TIFF_16);
+    image.SaveToFile((root / "image.tif").string(), OutputFormat::TIFF_16);
 
     BOOST_REQUIRE(RunScript(script.c_str()));
 
@@ -86,7 +86,7 @@ processed_image:save("$ROOT/output.tif", imppg.TIFF_16)
 
     c_Image image{128, 64, PixelFormat::PIX_MONO8};
     image.ClearToZero();
-    image.SaveToFile(root / "image.bmp", OutputFormat::BMP_8);
+    image.SaveToFile((root / "image.bmp").string(), OutputFormat::BMP_8);
 
     BOOST_REQUIRE(RunScript(script.c_str()));
 
@@ -94,7 +94,7 @@ processed_image:save("$ROOT/output.tif", imppg.TIFF_16)
     BOOST_REQUIRE(PixelFormat::PIX_MONO32F == processedImg.GetPixelFormat());
     BOOST_CHECK(CheckAllPixelValues(processedImg, 0.5f));
 
-    const auto loadedProcessedImg = LoadImage(root / "output.tif");
+    const auto loadedProcessedImg = LoadImage((root / "output.tif").string());
     BOOST_REQUIRE(loadedProcessedImg.value().GetPixelFormat() == PixelFormat::PIX_MONO16);
     BOOST_CHECK(CheckAllPixelValues<std::uint16_t>(loadedProcessedImg.value(), 0xFFFF / 2));
 }
@@ -112,17 +112,17 @@ imppg.process_image_file("$ROOT/image.bmp", "$ROOT/settings.xml", "$ROOT/output.
 
     c_Image image{128, 64, PixelFormat::PIX_MONO8};
     image.ClearToZero();
-    image.SaveToFile(root / "image.bmp", OutputFormat::BMP_8);
+    image.SaveToFile((root / "image.bmp").string(), OutputFormat::BMP_8);
 
     ProcessingSettings settings{};
     // horizontal tone curve mapping everything to 0.5 brightness
     settings.toneCurve.UpdatePoint(0, 0.0, 0.5);
     settings.toneCurve.UpdatePoint(1, 1.0, 0.5);
-    SaveSettings(root / "settings.xml", settings);
+    SaveSettings((root / "settings.xml").string(), settings);
 
     BOOST_REQUIRE(RunScript(script.c_str()));
 
-    auto processedImg = LoadImage(root / "output.tif").value();
+    auto processedImg = LoadImage((root / "output.tif").string()).value();
     BOOST_REQUIRE(PixelFormat::PIX_MONO16 == processedImg.GetPixelFormat());
     BOOST_CHECK(CheckAllPixelValues<std::uint16_t>(processedImg, 0xFFFF / 2));
 }

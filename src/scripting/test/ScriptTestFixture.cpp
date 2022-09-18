@@ -56,9 +56,9 @@ bool ScriptTestFixture::RunScript(const char* scriptText)
     return !m_ScriptExecutionFailure;
 }
 
-void ScriptTestFixture::CreateFile(const std::filesystem::path& path)
+void ScriptTestFixture::CreateEmptyFile(const std::filesystem::path& path)
 {
-    std::ofstream{path};
+    std::ofstream{path.string().c_str()};
     m_TemporaryFiles.push_back(path);
 }
 

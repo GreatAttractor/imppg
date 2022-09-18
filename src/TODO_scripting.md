@@ -1,3 +1,4 @@
 - Add some "print-to-imppg's console" functionality. Consider io.output() (with ImPPG providing a file descriptor). Then use it in all API examples instead of just `print`.
 - CPU&bmp backend processor does not apply precise tone curve values?
 - translate all scripting error messages
+- add lua package info to READMEs
