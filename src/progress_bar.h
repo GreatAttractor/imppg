@@ -28,8 +28,22 @@ File description:
 class c_ProgressBar: public wxWindow
 {
 public:
-    c_ProgressBar(wxWindow* parent);
+    c_ProgressBar(wxWindow* parent, unsigned range);
+
+    void SetValue(unsigned value);
+
+    void Pulse();
 
 private:
     void OnPaint(wxPaintEvent& event);
+
+    unsigned m_Range{100};
+
+    unsigned m_Value{0};
+
+    unsigned m_PulsePhase{0};
+
+    int m_PulseDirection{1};
+
+    bool m_Pulsing{false};
 };

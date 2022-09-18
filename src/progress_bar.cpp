@@ -21,15 +21,54 @@ File description:
     Progress bar widget implementation.
 */
 
+#include "imppg_assert.h"
 #include "progress_bar.h"
 
 #include <wx/dcclient.h>
 #include <wx/settings.h>
 
-c_ProgressBar::c_ProgressBar(wxWindow* parent)
-: wxWindow(parent, wxID_ANY)
+// private definitions
+namespace
+{
+
+constexpr unsigned NUM_PULSE_PHASES = 10;
+
+}
+
+c_ProgressBar::c_ProgressBar(wxWindow* parent, unsigned range)
+: wxWindow(parent, wxID_ANY), m_Range(range)
 {
     Bind(wxEVT_PAINT, &c_ProgressBar::OnPaint, this);
+}
+
+void c_ProgressBar::SetValue(unsigned value)
+{
+    m_Value = value;
+    m_Pulsing = false;
+    Refresh();
+}
+
+void c_ProgressBar::Pulse()
+{
+    if (!m_Pulsing)
+    {
+        m_Pulsing = true;
+        m_PulsePhase = 0;
+    }
+    else
+    {
+        m_PulsePhase += m_PulseDirection;
+        if (m_PulsePhase >= NUM_PULSE_PHASES - 1)
+        {
+            m_PulseDirection = -1;
+        }
+        else if (0 == m_PulsePhase)
+        {
+            m_PulseDirection = 1;
+        }
+    }
+
+    Refresh();
 }
 
 void c_ProgressBar::OnPaint(wxPaintEvent&)
@@ -37,11 +76,20 @@ void c_ProgressBar::OnPaint(wxPaintEvent&)
     wxPaintDC dc(this);
 
     const auto size = GetClientSize();
+    dc.SetBrush(wxBrush(wxSystemSettings::GetColour(wxSYS_COLOUR_HIGHLIGHT)));
 
-    dc.SetBrush(wxBrush(wxSystemSettings::GetColour(/*wxSYS_COLOUR_BTNFACE*/wxSYS_COLOUR_HIGHLIGHT)));
-    dc.DrawRectangle(0, 0, size.x / 2, size.y);
-    dc.SetTextForeground(wxSystemSettings::GetColour(wxSYS_COLOUR_CAPTIONTEXT));
-    const auto text = wxString::Format("%d%%", 47);
-    const wxSize textExtent = GetTextExtent(text);
-    dc.DrawText(text, (size.x - textExtent.x) / 2, (size.y - textExtent.y) / 2);
+    if (m_Pulsing)
+    {
+        dc.DrawRectangle(
+            (m_PulsePhase % NUM_PULSE_PHASES) * size.x / NUM_PULSE_PHASES, 0, size.x / NUM_PULSE_PHASES, size.y
+        );
+    }
+    else
+    {
+        dc.DrawRectangle(0, 0, size.x * m_Value / m_Range, size.y);
+        dc.SetTextForeground(wxSystemSettings::GetColour(wxSYS_COLOUR_CAPTIONTEXT));
+        const auto text = wxString::Format("%d%%", 100 * m_Value / m_Range);
+        const wxSize textExtent = GetTextExtent(text);
+        dc.DrawText(text, (size.x - textExtent.x) / 2, (size.y - textExtent.y) / 2);
+    }
 }

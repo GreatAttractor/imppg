@@ -30,13 +30,16 @@ File description:
 
 #include <future>
 #include <memory>
-#include <wx/button.h>
+
 #include <wx/dialog.h>
-#include <wx/filepicker.h>
-#include <wx/gauge.h>
-#include <wx/richtext/richtextctrl.h>
-#include <wx/stattext.h>
 #include <wx/timer.h>
+
+class c_ProgressBar;
+class wxButton;
+class wxFilePickerCtrl;
+class wxFileDirPickerEvent;
+class wxRichTextCtrl;
+class wxStaticText;
 
 namespace scripting
 {
@@ -66,7 +69,7 @@ private:
     wxButton* m_BtnTogglePause{nullptr};
     std::unique_ptr<ScriptRunner> m_Runner;
     wxRichTextCtrl* m_Console{nullptr};
-    wxGauge* m_Progress{nullptr};
+    c_ProgressBar* m_Progress{nullptr};
     wxTimer m_ProgressTimer;
 
     bool m_CloseAfterRunnerEnds{false};

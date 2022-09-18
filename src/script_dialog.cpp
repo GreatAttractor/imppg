@@ -34,9 +34,13 @@ File description:
 #include <fstream>
 #include <iostream> //TESTING ###########
 #include <thread> //TESTING ###########
+#include <wx/button.h>
 #include <wx/filename.h>
+#include <wx/filepicker.h>
 #include <wx/msgdlg.h>
+#include <wx/richtext/richtextctrl.h>
 #include <wx/statline.h>
+#include <wx/stattext.h>
 
 using namespace std::chrono_literals; // TESTING ############
 
@@ -49,7 +53,7 @@ namespace
 
 constexpr int BORDER = 5; ///< Border size (in pixels) between controls.
 
-constexpr int PROGRESS_PULSE_INTERVAL_MS = 500;
+constexpr int PROGRESS_PULSE_INTERVAL_MS = 250;
 
 template<typename ... Ts>
 struct Overload : Ts ... {
@@ -148,19 +152,14 @@ void c_ScriptDialog::DoInitControls()
 
     szTop->Add(szRunControls, 0, wxALIGN_LEFT | wxALL, BORDER);
 
-    m_Progress = new wxGauge(GetContainer(), wxID_ANY, 100);
-    //TESTING ################
-    auto* pbar = new c_ProgressBar(GetContainer());
-    pbar->SetMinClientSize({-1, static_cast<int>(1.5 * pbar->GetTextExtent("M").GetHeight())});
-    szTop->Add(pbar, 0, wxEXPAND, BORDER);
-    //END TESTING ############
+    m_Progress = new c_ProgressBar(GetContainer(), 100);
+    m_Progress->SetMinClientSize({-1, static_cast<int>(1.5 * m_Progress->GetTextExtent("M").GetHeight())});
     szTop->Add(m_Progress, 0, wxEXPAND, BORDER);
 
     m_ProgressTimer.Bind(wxEVT_TIMER, [this](wxTimerEvent&) { m_Progress->Pulse(); });
 
     m_Console = new wxRichTextCtrl(GetContainer());
     m_Console->SetEditable(false);
-    m_Console->SetScale(GetContentScaleFactor(), true); //FIXME: text still too small on Linux/GTK3 with 185% global scale
     m_Console->SetMinSize(wxSize(0, 2 * m_Console->GetTextExtent("M").y));
     szTop->Add(m_Console, 1, wxALIGN_CENTER | wxEXPAND, BORDER);
 
