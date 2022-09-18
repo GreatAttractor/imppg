@@ -101,7 +101,7 @@ wxThread::ExitCode ScriptRunner::Entry()
             return 0;
         });
 
-        scripting::Prepare(lua, m_Parent);
+        scripting::Prepare(lua, m_Parent, std::move(m_StopRequested));
 
         auto readerState = StreamReaderState{std::move(m_Script)};
         CHECKED_CALL(lua_load(lua, &StreamReader, &readerState, "script", nullptr));

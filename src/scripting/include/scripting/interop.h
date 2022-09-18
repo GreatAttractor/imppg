@@ -141,7 +141,7 @@ private:
 };
 
 /// Prepares interop for script execution.
-void Prepare(lua_State* lua, wxEvtHandler& parent);
+void Prepare(lua_State* lua, wxEvtHandler& parent, std::future<void>&& stopRequested);
 
 /// Cleans up interop state.
 void Finish();

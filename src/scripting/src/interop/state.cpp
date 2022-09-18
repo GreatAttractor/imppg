@@ -3,11 +3,28 @@
 
 #include <boost/lexical_cast.hpp>
 #include <wx/event.h>
+#include <wx/intl.h>
 
 namespace scripting
 {
 
 std::unique_ptr<State> g_State;
+
+bool State::CheckStopRequested(lua_State* lua)
+{
+    if (m_StopRequested.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+    {
+        lua_getglobal(lua, "error");
+        lua_pushstring(lua, _("script interrupted by user").ToStdString().c_str());
+        lua_call(lua, 1, 0);
+
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
 
 void State::SendMessage(MessageContents&& message)
 {

@@ -2,6 +2,7 @@
 
 #include "scripting/interop.h"
 
+#include <lua.hpp>
 #include <future>
 #include <memory>
 #include <string>
@@ -16,7 +17,10 @@ namespace scripting
 class State
 {
 public:
-    State(wxEvtHandler& parent): m_Parent(parent) {}
+    State(wxEvtHandler& parent, std::future<void>&& stopRequested)
+    : m_Parent(parent)
+    , m_StopRequested(std::move(stopRequested))
+    {}
 
     void SendMessage(MessageContents&& message);
 
@@ -37,12 +41,16 @@ public:
 
     void VerifyAllObjectsRemoved() const;
 
+    bool CheckStopRequested(lua_State* lua);
+
 private:
     void OnObjectCreatedImpl(const char* typeName);
 
     void OnObjectDestroyedImpl(const char* typeName);
 
     wxEvtHandler& m_Parent;
+
+    std::future<void> m_StopRequested;
 
     // key: typeid name
     std::unordered_map<std::string, std::size_t> m_ObjectCounts;

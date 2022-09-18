@@ -36,6 +36,8 @@ const luaL_Reg functions[] = {
     }},
 
     {"process_image_file", [](lua_State* lua) -> int {
+        if (scripting::g_State->CheckStopRequested(lua)) { return 0; }
+
         CheckNumArgs(lua, "process_image_file", 4);
         const std::string imagePath = GetString(lua, 1);
         const std::string settingsPath = GetString(lua, 2);
@@ -54,6 +56,8 @@ const luaL_Reg functions[] = {
     }},
 
     {"process_image", [](lua_State* lua) -> int {
+        if (scripting::g_State->CheckStopRequested(lua)) { return 0; }
+
         CheckNumArgs(lua, "process_image", 2);
         const auto image = GetObject<ImageWrapper>(lua, 1);
         const auto settings = GetObject<SettingsWrapper>(lua, 2);

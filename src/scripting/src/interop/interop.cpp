@@ -154,9 +154,9 @@ public:
 
 } // end of private definitions
 
-void Prepare(lua_State* lua, wxEvtHandler& parent)
+void Prepare(lua_State* lua, wxEvtHandler& parent, std::future<void>&& stopRequested)
 {
-    g_State = std::make_unique<State>(parent);
+    g_State = std::make_unique<State>(parent, std::move(stopRequested));
 
     BEGIN_MODULE("imppg", scripting::modules::imppg);
         BEGIN_SUBMODULE("filesystem", scripting::modules::imppg::filesystem);
