@@ -5,6 +5,7 @@
 
 #include <lua.hpp>
 #include <memory>
+#include <string>
 
 namespace scripting
 {
@@ -12,6 +13,10 @@ namespace scripting
 class SettingsWrapper
 {
 public:
+    SettingsWrapper() = default;
+
+    SettingsWrapper(const std::string& path);
+
     bool get_normalization_enabled() const;
     void normalization_enabled(bool enabled);
 

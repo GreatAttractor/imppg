@@ -80,6 +80,13 @@ void ScriptImageProcessor::StartProcessing(
                 return;
             }
 
+            if (settings.normalization.enabled)
+            {
+                auto normalized = c_Image(*image);
+                NormalizeFpImage(normalized, settings.normalization.min, settings.normalization.max);
+                image = std::make_shared<c_Image>(std::move(normalized));
+            }
+
             m_Processor->SetProcessingCompletedHandler(
                 [this, onCompletion = std::move(onCompletion), outPath = call.outputImagePath, outFmt = call.outputFormat]
                     (imppg::backend::CompletionStatus) {
@@ -100,6 +107,13 @@ void ScriptImageProcessor::StartProcessing(
         },
 
         [&](const contents::ProcessImage& call) {
+            auto image = call.image;
+            if (call.settings.normalization.enabled)
+            {
+                auto normalized = c_Image(*image);
+                NormalizeFpImage(normalized, call.settings.normalization.min, call.settings.normalization.max);
+                image = std::make_shared<c_Image>(std::move(normalized));
+            }
 
             m_Processor->SetProcessingCompletedHandler(
                 [onCompletion = std::move(onCompletion), this](imppg::backend::CompletionStatus) {
@@ -108,7 +122,7 @@ void ScriptImageProcessor::StartProcessing(
                     });
                 }
             );
-            m_Processor->StartProcessing(call.image, call.settings);
+            m_Processor->StartProcessing(image, call.settings);
         },
 
         [](auto) { IMPPG_ABORT_MSG("invalid message passed to ScriptImageProcessor"); },

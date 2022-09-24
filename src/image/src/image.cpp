@@ -1058,6 +1058,7 @@ void c_Image::ResizeAndTranslate(
 
 void NormalizeFpImage(c_Image& img, float minLevel, float maxLevel)
 {
+    IMPPG_ASSERT(img.GetPixelFormat() == PixelFormat::PIX_MONO32F);
     float lmin = FLT_MAX, lmax = -FLT_MAX; // min and max brightness in the input image
     for (unsigned row = 0; row < img.GetHeight(); row++)
         for (unsigned col = 0; col < img.GetWidth(); col++)

@@ -15,6 +15,14 @@ std::string blc(const T& t) { return boost::lexical_cast<std::string>(t); }
 
 }
 
+SettingsWrapper::SettingsWrapper(const std::string& path)
+{
+    if (!LoadSettings(path, m_Settings))
+    {
+        throw ScriptExecutionError(wxString::Format("failed to load settings from %s", path).ToStdString());
+    }
+}
+
 const ProcessingSettings& SettingsWrapper::GetSettings() const
 {
     return m_Settings;

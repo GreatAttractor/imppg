@@ -28,6 +28,13 @@ const luaL_Reg functions[] = {
         return 1;
     }},
 
+    {"load_settings", [](lua_State* lua) -> int {
+        CheckNumArgs(lua, "load_settings", 1);
+        const std::string path = GetString(lua, 1);
+        new(PrepareObject<SettingsWrapper>(lua)) SettingsWrapper(path);
+        return 1;
+    }},
+
     {"load_image", [](lua_State* lua) -> int {
         CheckNumArgs(lua, "load_image", 1);
         const std::string imagePath = GetString(lua, 1);
