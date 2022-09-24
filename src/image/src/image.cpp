@@ -322,6 +322,8 @@ static bool SaveAsFreeImage(const IImageBuffer& buf, const std::string& fname, O
     default: IMPPG_ABORT();
     }
 
+    static_assert(false, "FIXME: wrong channel order when saving RGB after Combine");
+
     c_FreeImageHandleWrapper outputFiBmp = FreeImage_AllocateT(
         fiType, buf.GetWidth(), buf.GetHeight(), fiBpp, 0x0000FF, 0x00FF00, 0xFF0000
     );

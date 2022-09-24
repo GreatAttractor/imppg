@@ -42,6 +42,33 @@ const luaL_Reg functions[] = {
         return 1;
     }},
 
+    //TODO: rename?
+    {"load_image_split_rgb", [](lua_State* lua) -> int {
+        CheckNumArgs(lua, "load_image_split_rgb", 1);
+
+        const std::string imagePath = GetString(lua, 1);
+        std::string internalErrorMsg;
+        const auto image = LoadImage(imagePath, std::nullopt, &internalErrorMsg);
+        if (!image.has_value())
+        {
+            auto message = std::string{"failed to load image from "} + imagePath;
+            if (!internalErrorMsg.empty()) { message += "; " + internalErrorMsg; }
+            throw ScriptExecutionError(message);
+        }
+
+        auto [red, green, blue] = image->SplitRGB();
+
+        for (c_Image* channel: {&red, &green, &blue})
+        {
+            *channel = channel->ConvertPixelFormat(PixelFormat::PIX_MONO32F);
+        }
+
+        new(PrepareObject<ImageWrapper>(lua)) ImageWrapper(std::move(red));
+        new(PrepareObject<ImageWrapper>(lua)) ImageWrapper(std::move(green));
+        new(PrepareObject<ImageWrapper>(lua)) ImageWrapper(std::move(blue));
+        return 3;
+    }},
+
     {"process_image_file", [](lua_State* lua) -> int {
         if (scripting::g_State->CheckStopRequested(lua)) { return 0; }
 
@@ -85,6 +112,17 @@ const luaL_Reg functions[] = {
         const int percentage = GetInteger(lua, 1);
         scripting::g_State->SendMessage(scripting::contents::Progress{percentage});
         return 0;
+    }},
+
+    {"combine_rgb", [](lua_State* lua) -> int {
+        CheckNumArgs(lua, "combine_rgb", 3);
+        const auto red = GetObject<ImageWrapper>(lua, 1);
+        const auto green = GetObject<ImageWrapper>(lua, 2);
+        const auto blue = GetObject<ImageWrapper>(lua, 3);
+        new(PrepareObject<ImageWrapper>(lua)) ImageWrapper(
+            c_Image::CombineRGB(*red.GetImage(), *green.GetImage(), *blue.GetImage())
+        );
+        return 1;
     }},
 
     {nullptr, nullptr} // end-of-data marker

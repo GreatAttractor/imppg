@@ -3,3 +3,5 @@
 - CPU&bmp backend processor does not apply precise tone curve values?
 - translate all scripting error messages
 - add lua package info to READMEs
+- fix histogram calculation; currently can overblow green in case of split/process/recombine
+- `save`: assume some default output format from just the extension (e.g., BMP i 8 bpp, TIFF is 16 bpp, FITS 32f etc.)

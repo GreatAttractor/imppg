@@ -25,6 +25,11 @@ ImageWrapper::ImageWrapper(const std::string& imagePath)
     m_Image = std::make_shared<c_Image>(std::move(image.value()));
 }
 
+ImageWrapper::ImageWrapper(c_Image&& image)
+{
+    m_Image = std::make_shared<c_Image>(std::move(image));
+}
+
 const std::shared_ptr<const c_Image>& ImageWrapper::GetImage() const
 {
     return m_Image;
