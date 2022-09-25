@@ -9,7 +9,7 @@ add_library(alignment STATIC
 )
 
 include(../../utils.cmake)
-set_cpp_standard(alignment)
+set_compiler_options(alignment)
 
 target_include_directories(alignment PUBLIC include)
 target_include_directories(alignment PRIVATE src ${Boost_INCLUDE_DIRS})

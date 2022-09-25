@@ -60,7 +60,7 @@ void c_ImageAlignmentWorkerThread::PhaseCorrImgTranslationCallback(int imgIdx, f
 }
 
 /// Returns (input image loaded from `inputFileName`, output image ready to be filled); returns `nullopt` on error.
-std::optional<std::tuple<c_Image, c_Image>> PrepareInputAndOutputImages(wxString inputFileName, int outputWidth, int outputHeight, std::string& errorMsg)
+std::optional<std::tuple<c_Image, c_Image>> PrepareInputAndOutputImages(wxString inputFileName, int outputWidth, int outputHeight, std::string& errorMsg, bool normalizeFitsValues)
 {
 #if USE_FREEIMAGE
     // Used by FreeImage_AllocateExT as "black" to initially fill a bitmap
@@ -71,7 +71,7 @@ std::optional<std::tuple<c_Image, c_Image>> PrepareInputAndOutputImages(wxString
     wxString extension = wxFileName(inputFileName).GetExt().Lower();
     if (extension == "fit" || extension == "fits")
     {
-        auto srcImg = LoadFitsImage(inputFileName.ToStdString(), m_Parameters.normalizeFitsValues);
+        auto srcImg = LoadFitsImage(inputFileName.ToStdString(), normalizeFitsValues);
         if (!srcImg)
         {
             errorMsg = wxString::Format(_("Could not read %s."), inputFileName);
@@ -189,7 +189,7 @@ bool c_ImageAlignmentWorkerThread::SaveTranslatedOutputImage(wxString inputFileN
 {
     Log::Print(wxString::Format("Loading %s... ", inputFileName));
 
-    auto result = PrepareInputAndOutputImages(inputFileName, outputWidth, outputHeight, m_CompletionMessage);
+    auto result = PrepareInputAndOutputImages(inputFileName, outputWidth, outputHeight, m_CompletionMessage, m_Parameters.normalizeFitsValues);
     if (!result)
         return false;
 
