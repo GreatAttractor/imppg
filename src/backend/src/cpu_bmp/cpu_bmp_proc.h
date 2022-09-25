@@ -26,7 +26,6 @@ File description:
 
 #include "backend/backend.h"
 #include "cpu_bmp/worker.h"
-#include "../../exclusive_access.h"
 
 #include <functional>
 

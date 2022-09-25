@@ -20,6 +20,7 @@ along with ImPPG.  If not, see <http://www.gnu.org/licenses/>.
 File description:
     Image alignment worker thread header.
 */
+
 #ifndef IMPPG_IMAGE_ALIGNMENT_THREAD_HEADER
 #define IMPPG_IMAGE_ALIGNMENT_THREAD_HEADER
 
@@ -28,9 +29,63 @@ File description:
 #include <wx/window.h>
 #include <wx/arrstr.h>
 
-#include "align.h"
 #include "common/common.h"
 #include "exclusive_access.h"
+
+enum class CropMode: int
+{
+    CROP_TO_INTERSECTION = 0,
+    PAD_TO_BOUNDING_BOX = 1,
+
+    NUM // this has to be the last element
+};
+
+enum class AlignmentMethod: int
+{
+    PHASE_CORRELATION = 0,
+    LIMB = 1,
+
+    NUM // this has to be the last element
+};
+
+typedef struct
+{
+    wxArrayString inputFiles;
+    AlignmentMethod alignmentMethod;
+    bool subpixelAlignment;
+    CropMode cropMode;
+    wxString outputDir;
+    bool normalizeFitsValues;
+} AlignmentParameters_t;
+
+enum class AlignmentAbortReason
+{
+    USER_REQUESTED, ///< Abort requested by user
+    PROC_ERROR ///< Abort due to processing error
+};
+
+typedef struct
+{
+    float radius;
+    struct
+    {
+        float x, y;
+    } translation;
+} AlignmentEventPayload_t;
+
+/// IDs of events sent from the alignment worker thread
+enum
+{
+    /// Phase correlation method: determined translation of an image relative to its predecessor. Image number: event.GetInt(), also contains a AlignmentEventPayload_t payload
+    EID_PHASECORR_IMG_TRANSLATION = wxID_HIGHEST,
+    EID_LIMB_FOUND_DISC_RADIUS, ///< Image index: event.GetInt()
+    EID_LIMB_USING_RADIUS,
+    EID_LIMB_STABILIZATION_PROGRESS,
+    EID_LIMB_STABILIZATION_FAILURE,
+    EID_SAVED_OUTPUT_IMAGE,     ///< Image index: event.GetInt()
+    EID_COMPLETED,              ///< Processing completed
+    EID_ABORTED                 ///< Processing aborted; abort reason (AlignmentAbortReason_t): event.getId(); abort message: event.GetString()
+};
 
 class c_ImageAlignmentWorkerThread: public wxThread
 {
@@ -76,7 +131,7 @@ class c_ImageAlignmentWorkerThread: public wxThread
         int intrWidth, ///< Images' intersection width
         int intrHeight, ///< Images' intersection height
         wxString& errorMsg ///< Receives error message (if any)
-        );
+    );
 
 
 public:

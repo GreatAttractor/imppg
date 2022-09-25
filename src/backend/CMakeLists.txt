@@ -1,6 +1,5 @@
 add_library(backend STATIC
-
-src/cpu_bmp/cpu_bmp_core.cpp
+    src/cpu_bmp/cpu_bmp_core.cpp
     src/cpu_bmp/cpu_bmp_proc.cpp
     src/cpu_bmp/cpu_bmp_proc.h
     src/cpu_bmp/lrdeconv.cpp

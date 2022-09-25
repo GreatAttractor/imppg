@@ -22,16 +22,12 @@ include(GNUInstallDirs)
 add_executable(imppg WIN32
     src/about.cpp
     src/adv_settings_wnd.cpp
-    src/align_disc.cpp
     src/align_params.cpp
-    src/align_phasecorr.cpp
-    src/align_proc.cpp
     src/align_progress.cpp
     src/appconfig.cpp
     src/batch_params.cpp
     src/batch.cpp
     src/cursors.cpp
-    src/fft.cpp
     src/main_window.cpp
     src/main.cpp
     src/normalize.cpp
@@ -132,13 +128,14 @@ if(USE_CFITSIO EQUAL 1)
     target_link_libraries(imppg PRIVATE ${CFITSIO_LIBRARIES})
 endif()
 
-add_subdirectory(src/math_utils)
-add_subdirectory(src/image)
-add_subdirectory(src/common)
+add_subdirectory(src/alignment)
 add_subdirectory(src/backend)
+add_subdirectory(src/common)
+add_subdirectory(src/image)
 add_subdirectory(src/logging)
+add_subdirectory(src/math_utils)
 
-target_link_libraries(imppg PRIVATE common math_utils backend image logging)
+target_link_libraries(imppg PRIVATE alignment common math_utils backend image logging)
 
 
 # Installation -------------------------------------

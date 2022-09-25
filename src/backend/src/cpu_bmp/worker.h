@@ -30,7 +30,7 @@ File description:
 #include <wx/gdicmn.h>
 
 #include "backend/backend.h"
-#include "../../exclusive_access.h"
+//#include "../../exclusive_access.h"
 #include "image/image.h"
 
 namespace imppg::backend {

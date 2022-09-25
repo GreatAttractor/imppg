@@ -51,7 +51,8 @@ bool DetermineTranslationVectors(
         /// Called after determining an image's translation; argument: index of the current image
         bool subpixelAlignment,
         std::function<void (int, float, float)> progressCallback, ///< Called after determining translation of an image; arguments: image index, trans. vector
-        std::function<bool ()> checkAbort ///< Called periodically to check if there was an "abort processing" request
+        std::function<bool ()> checkAbort, ///< Called periodically to check if there was an "abort processing" request
+        bool normalizeFitsValues
 );
 
 /// Returns the set-theoretic intersection, i.e. the largest shared area, of specified images

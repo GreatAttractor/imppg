@@ -29,12 +29,11 @@ File description:
 #include <wx/filename.h>
 
 #include "align_phasecorr.h"
-#include "appconfig.h"
 #include "common/common.h"
 #include "fft.h"
 #include "image/image.h"
-#include "imppg_assert.h"
-#include "logging.h"
+#include "../../imppg_assert.h"
+#include "logging/logging.h"
 #include "math_utils/math_utils.h"
 
 /// Returns 0 for x=0, 1 for x=1
@@ -246,7 +245,8 @@ bool DetermineTranslationVectors(
         /// Called after determining an image's translation; argument: index of the current image
         bool subpixelAlignment,
         std::function<void (int, float, float)> progressCallback, ///< Called after determining translation of an image; arguments: image index, trans. vector
-        std::function<bool ()> checkAbort ///< Called periodically to check if there was an "abort processing" request
+        std::function<bool ()> checkAbort, ///< Called periodically to check if there was an "abort processing" request
+        bool normalizeFitsValues
 )
 {
     bool result = true;
@@ -278,7 +278,7 @@ bool DetermineTranslationVectors(
     std::string localErrorMsg;
     const auto loadResult = LoadImageFileAsMono32f(
         inputFiles[0].ToStdString(),
-        Configuration::NormalizeFITSValues,
+        normalizeFitsValues,
         &localErrorMsg
     );
     Log::Print("done.\n");
@@ -327,7 +327,7 @@ bool DetermineTranslationVectors(
         std::string localErrorMsg;
         const auto loadResult = LoadImageFileAsMono32f(
             inputFiles[i].ToStdString(),
-            Configuration::NormalizeFITSValues,
+            normalizeFitsValues,
             &localErrorMsg
         );
         Log::Print("done.\n");
