@@ -979,9 +979,6 @@ c_ImageAlignmentWorkerThread::~c_ImageAlignmentWorkerThread()
             m_ThreadAborted ? static_cast<int>(AlignmentAbortReason::USER_REQUESTED)
                             : static_cast<int>(AlignmentAbortReason::PROC_ERROR),
             m_CompletionMessage);
-    { auto lock = m_InstancePtr.Lock();
-        lock.Get() = nullptr;
-    }
 }
 
 bool c_ImageAlignmentWorkerThread::IsAbortRequested()

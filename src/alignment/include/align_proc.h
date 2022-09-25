@@ -30,7 +30,6 @@ File description:
 #include <wx/arrstr.h>
 
 #include "common/common.h"
-#include "exclusive_access.h"
 
 enum class CropMode: int
 {
@@ -90,7 +89,6 @@ enum
 class c_ImageAlignmentWorkerThread: public wxThread
 {
     wxWindow& m_Parent;
-    ExclusiveAccessObject<c_ImageAlignmentWorkerThread*>& m_InstancePtr;
 
     /// The parent can perform Post() on this semaphore (via AbortProcessing())
     wxSemaphore m_AbortReq;
@@ -137,15 +135,13 @@ class c_ImageAlignmentWorkerThread: public wxThread
 public:
     c_ImageAlignmentWorkerThread(
         wxWindow& parent,         ///< Object to receive notification messages from this worker thread
-        ExclusiveAccessObject<c_ImageAlignmentWorkerThread*>& instancePtr, ///< Pointer to this thread, set to nullptr when execution finishes
         const AlignmentParameters_t& params ///< Copied internally and not accessed later
-        )
-        : wxThread(wxTHREAD_DETACHED),
-        m_Parent(parent),
-        m_InstancePtr(instancePtr),
-        m_ProcessingCompleted(false),
-        m_ThreadAborted(false),
-        m_Parameters(params)
+    )
+    : wxThread(wxTHREAD_JOINABLE),
+    m_Parent(parent),
+    m_ProcessingCompleted(false),
+    m_ThreadAborted(false),
+    m_Parameters(params)
     { }
 
     ExitCode Entry() override;
