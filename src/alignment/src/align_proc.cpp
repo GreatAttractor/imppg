@@ -36,11 +36,10 @@ File description:
 #include "align_disc.h"
 #include "align_phasecorr.h"
 #include "align_proc.h"
-#include "appconfig.h"
 #include "common/common.h"
 #include "image/image.h"
-#include "imppg_assert.h"
-#include "logging.h"
+#include "../../imppg_assert.h"
+#include "logging/logging.h"
 #include "math_utils/convolution.h"
 #include "math_utils/math_utils.h"
 #if USE_FREEIMAGE
@@ -72,7 +71,7 @@ std::optional<std::tuple<c_Image, c_Image>> PrepareInputAndOutputImages(wxString
     wxString extension = wxFileName(inputFileName).GetExt().Lower();
     if (extension == "fit" || extension == "fits")
     {
-        auto srcImg = LoadFitsImage(inputFileName.ToStdString(), Configuration::NormalizeFITSValues);
+        auto srcImg = LoadFitsImage(inputFileName.ToStdString(), m_Parameters.normalizeFitsValues);
         if (!srcImg)
         {
             errorMsg = wxString::Format(_("Could not read %s."), inputFileName);
@@ -271,7 +270,9 @@ void c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment()
     if (!DetermineTranslationVectors(Nwidth, Nheight, m_Parameters.inputFiles,
         translation, bbox, &m_CompletionMessage, m_Parameters.subpixelAlignment,
         [this](int imgIdx, float tX, float tY) { PhaseCorrImgTranslationCallback(imgIdx, tX, tY); },
-        [this]() { return IsAbortRequested(); }))
+        [this]() { return IsAbortRequested(); },
+        m_Parameters.normalizeFitsValues
+    ))
     {
         return;
     }
@@ -360,7 +361,7 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
     int intrWidth, ///< Images' intersection width
     int intrHeight, ///< Images' intersection height
     wxString& errorMsg ///< Receives error message (if any)
-    )
+)
 {
     // Simply finding the disc and overlapping it on subsequent images is often
     // not reliable and insufficient to achieve a smooth movement between frames.
@@ -398,7 +399,7 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
         // Scan the first image's intersection portion for the highest-contrast area
         const auto loadResult = LoadImageFileAsMono32f(
             m_Parameters.inputFiles[0].ToStdString(),
-            Configuration::NormalizeFITSValues
+            m_Parameters.normalizeFitsValues
         );
         if (!loadResult)
         {
@@ -456,7 +457,7 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
 
             const auto loadResult = LoadImageFileAsMono32f(
                 m_Parameters.inputFiles[i].ToStdString(),
-                Configuration::NormalizeFITSValues
+                m_Parameters.normalizeFitsValues
             );
             if (!loadResult)
             {
@@ -641,7 +642,7 @@ bool c_ImageAlignmentWorkerThread::FindRadii(
 
         const auto loadResult = LoadImageFileAsMono8(
             m_Parameters.inputFiles[i].ToStdString(),
-            Configuration::NormalizeFITSValues
+            m_Parameters.normalizeFitsValues
         );
         if (!loadResult)
         {
@@ -978,9 +979,6 @@ c_ImageAlignmentWorkerThread::~c_ImageAlignmentWorkerThread()
             m_ThreadAborted ? static_cast<int>(AlignmentAbortReason::USER_REQUESTED)
                             : static_cast<int>(AlignmentAbortReason::PROC_ERROR),
             m_CompletionMessage);
-    { auto lock = m_InstancePtr.Lock();
-        lock.Get() = nullptr;
-    }
 }
 
 bool c_ImageAlignmentWorkerThread::IsAbortRequested()

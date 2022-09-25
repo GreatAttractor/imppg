@@ -24,16 +24,12 @@ include(GNUInstallDirs)
 add_executable(imppg WIN32
     src/about.cpp
     src/adv_settings_wnd.cpp
-    src/align_disc.cpp
     src/align_params.cpp
-    src/align_phasecorr.cpp
-    src/align_proc.cpp
     src/align_progress.cpp
     src/appconfig.cpp
     src/batch_params.cpp
     src/batch.cpp
     src/cursors.cpp
-    src/fft.cpp
     src/main_window.cpp
     src/main.cpp
     src/normalize.cpp
@@ -133,20 +129,20 @@ if(ENABLE_SCRIPTING EQUAL 1)
     target_sources(imppg PRIVATE src/script_dialog.cpp)
 endif()
 
+add_subdirectory(src/alignment)
 add_subdirectory(src/math_utils)
-add_subdirectory(src/image)
 add_subdirectory(src/common)
 add_subdirectory(src/backend)
+add_subdirectory(src/image)
 add_subdirectory(src/logging)
 if(ENABLE_SCRIPTING)
     add_subdirectory(src/scripting)
 endif()
 
-target_link_libraries(imppg PRIVATE common math_utils backend image logging)
+target_link_libraries(imppg PRIVATE alignment common math_utils backend image logging)
 if(ENABLE_SCRIPTING EQUAL 1)
     target_link_libraries(imppg PRIVATE scripting)
 endif()
-
 
 # Installation -------------------------------------
 

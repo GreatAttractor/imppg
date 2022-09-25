@@ -22,7 +22,7 @@ File description:
 */
 
 #include "align_disc.h"
-#include "imppg_assert.h"
+#include "../../imppg_assert.h"
 #include "math_utils/math_utils.h"
 
 #include <cstdint>

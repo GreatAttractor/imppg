@@ -24,63 +24,11 @@ File description:
 #ifndef IMPPG_IMAGE_ALIGNMENT_HEADER
 #define IMPPG_IMAGE_ALIGNMENT_HEADER
 
+#include "align_proc.h"
+
 #include <wx/window.h>
 #include <wx/string.h>
 #include <wx/arrstr.h>
-
-enum class CropMode: int
-{
-    CROP_TO_INTERSECTION = 0,
-    PAD_TO_BOUNDING_BOX = 1,
-
-    NUM // this has to be the last element
-};
-
-enum class AlignmentMethod: int
-{
-    PHASE_CORRELATION = 0,
-    LIMB = 1,
-
-    NUM // this has to be the last element
-};
-
-typedef struct
-{
-    wxArrayString inputFiles;
-    AlignmentMethod alignmentMethod;
-    bool subpixelAlignment;
-    CropMode cropMode;
-    wxString outputDir;
-} AlignmentParameters_t;
-
-enum class AlignmentAbortReason
-{
-    USER_REQUESTED, ///< Abort requested by user
-    PROC_ERROR ///< Abort due to processing error
-};
-
-typedef struct
-{
-    float radius;
-    struct
-    {
-        float x, y;
-    } translation;
-} AlignmentEventPayload_t;
-
-/// IDs of events sent from the alignment worker thread
-enum
-{
-    /// Phase correlation method: determined translation of an image relative to its predecessor. Image number: event.GetInt(), also contains a AlignmentEventPayload_t payload
-    EID_PHASECORR_IMG_TRANSLATION = wxID_HIGHEST,
-    EID_LIMB_FOUND_DISC_RADIUS, ///< Image index: event.GetInt()
-    EID_LIMB_USING_RADIUS,
-    EID_LIMB_STABILIZATION_PROGRESS,
-    EID_LIMB_STABILIZATION_FAILURE,
-    EID_SAVED_OUTPUT_IMAGE,     ///< Image index: event.GetInt()
-    EID_COMPLETED,              ///< Processing completed
-    EID_ABORTED                 ///< Processing aborted; abort reason (AlignmentAbortReason_t): event.getId(); abort message: event.GetString()
-};
 
 /// Displays the image alignment parameters dialog and receives parameters' values. Returns 'true' if the user clicks "Start processing".
 bool GetAlignmentParameters(

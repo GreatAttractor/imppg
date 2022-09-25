@@ -21,6 +21,11 @@ File description:
     Image alignment progress dialog.
 */
 
+#include "align.h"
+#include "align_proc.h"
+#include "appconfig.h"
+
+#include <memory>
 #include <wx/arrstr.h>
 #include <wx/dialog.h>
 #include <wx/window.h>
@@ -33,10 +38,6 @@ File description:
 #include <wx/settings.h>
 #include <wx/version.h>
 
-#include "align.h"
-#include "align_proc.h"
-#include "appconfig.h"
-
 const int BORDER = 5; ///< Border size (in pixels) between controls
 
 class c_ImageAlignmentProgress: public wxDialog
@@ -47,7 +48,7 @@ class c_ImageAlignmentProgress: public wxDialog
     void EndModal(int retCode) override;
 
 
-    ExclusiveAccessObject<c_ImageAlignmentWorkerThread*> m_WorkerThread{nullptr};
+    std::unique_ptr<c_ImageAlignmentWorkerThread> m_Worker;
     wxGauge m_ProgressGauge;
     wxStaticText m_InfoText;
     wxTextCtrl m_InfoLog;
@@ -201,39 +202,34 @@ void c_ImageAlignmentProgress::OnThreadEvent(wxThreadEvent& event)
 
 bool c_ImageAlignmentProgress::IsProcessingInProgress()
 {
-    { auto lock = m_WorkerThread.Lock();
-        return lock.Get() != nullptr;
-    }
+    return m_Worker && m_Worker->IsAlive();
 }
 
 c_ImageAlignmentProgress::c_ImageAlignmentProgress(wxWindow* parent, wxWindowID id, AlignmentParameters_t& params)
 : wxDialog(parent, id, _("Image alignment progress"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER),
 m_Parameters(params)
 {
-    m_WorkerThread = 0;
+    m_Worker = 0;
 
     InitControls();
 }
 
 void c_ImageAlignmentProgress::OnInit(wxInitDialogEvent&)
 {
-    auto lock = m_WorkerThread.Lock();
-    lock.Get() = new c_ImageAlignmentWorkerThread(*this, m_WorkerThread, m_Parameters);
-    lock.Get()->Run();
+    m_Worker = std::make_unique<c_ImageAlignmentWorkerThread>(*this, m_Parameters);
+    m_Worker->Run();
 }
 
 void c_ImageAlignmentProgress::EndModal(int retCode)
 {
     if (IsProcessingInProgress())
     {
-        { auto lock = m_WorkerThread.Lock();
-            if (lock.Get())
-                lock.Get()->AbortProcessing();
+        // Signal the worker thread to finish ASAP.
+        if (m_Worker)
+        {
+            m_Worker->Delete();
+            m_Worker->Wait();
         }
-
-        // If it was running, the worker thread will destroy itself any moment; keep polling
-        while (IsProcessingInProgress())
-            wxThread::Yield();
     }
 
     wxDialog::EndModal(retCode);

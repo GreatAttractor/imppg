@@ -227,6 +227,7 @@ void c_ImageAlignmentParams::DoInitControls()
     m_Parameters.cropMode = CropMode::CROP_TO_INTERSECTION;
     m_Parameters.subpixelAlignment = true;
     m_Parameters.alignmentMethod = AlignmentMethod::PHASE_CORRELATION;
+    m_Parameters.normalizeFitsValues = Configuration::NormalizeFITSValues;
 
     m_CropBitmaps[static_cast<size_t>(CropMode::CROP_TO_INTERSECTION)] = LoadBitmap("crop");
     m_CropBitmaps[static_cast<size_t>(CropMode::PAD_TO_BOUNDING_BOX)] = LoadBitmap("pad");
