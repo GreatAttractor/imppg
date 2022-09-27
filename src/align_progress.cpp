@@ -22,7 +22,7 @@ File description:
 */
 
 #include "align.h"
-#include "align_proc.h"
+#include "alignment/align_proc.h"
 #include "appconfig.h"
 
 #include <memory>
@@ -99,7 +99,7 @@ void c_ImageAlignmentProgress::InitControls()
     m_ProgressGauge.Create(this, wxID_ANY, 100, wxDefaultPosition, wxDefaultSize, style);
     // Initially set the range to 1 less than image count, because first we show
     // the completed translations (starting with the second image).
-    m_ProgressGauge.SetRange(m_Parameters.inputFiles.Count() - 1);
+    m_ProgressGauge.SetRange(m_Parameters.GetNumInputs() - 1);
     szTop->Add(&m_ProgressGauge, 0, wxALIGN_CENTER | wxGROW | wxALL, BORDER);
 
     m_InfoLog.Create(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxTE_DONTWRAP);
@@ -139,7 +139,7 @@ void c_ImageAlignmentProgress::OnThreadEvent(wxThreadEvent& event)
         payload = event.GetPayload<AlignmentEventPayload_t>();
         m_InfoLog.AppendText(wxString::Format(_("Image %d/%d: translated by %.2f, %.2f."),
             event.GetInt()+1,
-            static_cast<int>(m_Parameters.inputFiles.Count()),
+            static_cast<int>(m_Parameters.GetNumInputs()),
             payload.translation.x, payload.translation.y) + "\n");
 
         break;
@@ -149,14 +149,14 @@ void c_ImageAlignmentProgress::OnThreadEvent(wxThreadEvent& event)
         {
             m_InfoText.SetLabel(_("Translating and saving output images..."));
 
-            m_ProgressGauge.SetRange(m_Parameters.inputFiles.Count());
+            m_ProgressGauge.SetRange(m_Parameters.GetNumInputs());
             m_InfoLog.AppendText("\n");
         }
 
         m_ProgressGauge.SetValue(event.GetInt() + 1);
 
         m_InfoLog.AppendText(wxString::Format(_("Translated and saved image %d/%d.\n"),
-            event.GetInt()+1, static_cast<int>(m_Parameters.inputFiles.Count())));
+            event.GetInt()+1, static_cast<int>(m_Parameters.GetNumInputs())));
 
         break;
 
@@ -170,7 +170,7 @@ void c_ImageAlignmentProgress::OnThreadEvent(wxThreadEvent& event)
         {
             m_InfoText.SetLabel(_("Performing final stabilization..."));
 
-            m_ProgressGauge.SetRange(m_Parameters.inputFiles.Count());
+            m_ProgressGauge.SetRange(m_Parameters.GetNumInputs());
         }
 
         m_ProgressGauge.SetValue(event.GetInt() + 1);
@@ -186,13 +186,13 @@ void c_ImageAlignmentProgress::OnThreadEvent(wxThreadEvent& event)
         {
             m_InfoText.SetLabel(_("Determining disc radius in images..."));
 
-            m_ProgressGauge.SetRange(m_Parameters.inputFiles.Count());
+            m_ProgressGauge.SetRange(m_Parameters.GetNumInputs());
             m_InfoLog.AppendText("\n");
         }
 
         m_InfoLog.AppendText(wxString::Format(_("Image %d/%d: disc radius = %.2f"),
             event.GetInt()+1,
-            static_cast<int>(m_Parameters.inputFiles.Count()),
+            static_cast<int>(m_Parameters.GetNumInputs()),
             payload.radius) + "\n");
         m_ProgressGauge.SetValue(event.GetInt() + 1);
 

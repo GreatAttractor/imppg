@@ -5,3 +5,4 @@
 - add lua package info to READMEs
 - fix histogram calculation; currently can overblow green in case of split/process/recombine
 - `save`: assume some default output format from just the extension (e.g., BMP i 8 bpp, TIFF is 16 bpp, FITS 32f etc.)
+- FIXME: if there's an error in `c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment` when checking file sizes, user gets on indication

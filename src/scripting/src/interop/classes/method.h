@@ -24,7 +24,7 @@ template<typename T>
 int MethodNoResult(lua_State* lua, void (T::* method)())
 {
     auto* object = GetObject<T>(lua);
-    (object.*method)();
+    (object->*method)();
     return 0;
 }
 

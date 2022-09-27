@@ -1,4 +1,5 @@
 add_library(alignment STATIC
+    src/align_common.h
     src/align_disc.cpp
     src/align_disc.h
     src/align_phasecorr.cpp

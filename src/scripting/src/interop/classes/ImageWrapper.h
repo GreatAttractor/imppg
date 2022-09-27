@@ -27,6 +27,10 @@ public:
                 return ConstMethodStringIntArg<ImageWrapper>(lua, &ImageWrapper::save);
             }},
 
+            {"align_rgb", [](lua_State* lua) -> int {
+                return MethodNoResult<ImageWrapper>(lua, &ImageWrapper::align_rgb);
+            }},
+
             {nullptr, nullptr} // end-of-data marker
         };
 
@@ -36,6 +40,8 @@ public:
     const std::shared_ptr<const c_Image>& GetImage() const;
 
     void save(const std::string& path, int outputFormat) const;
+
+    void align_rgb();
 
 private:
     std::shared_ptr<const c_Image> m_Image;

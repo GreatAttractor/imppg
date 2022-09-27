@@ -1,3 +1,5 @@
+#include "../../imppg_assert.h"
+#include "alignment/align_proc.h"
 #include "interop/classes/ImageWrapper.h"
 #include "scripting/script_exceptions.h"
 
@@ -46,6 +48,20 @@ void ImageWrapper::save(const std::string& path, int outputFormat) const
     {
         throw ScriptExecutionError{wxString::Format(_("failed to save image as %s"), path).ToStdString()};
     }
+}
+
+void ImageWrapper::align_rgb()
+{
+    auto [red, green, blue] = m_Image->SplitRGB();
+
+    const auto result = scripting::g_State->CallFunctionAndAwaitCompletion(
+        std::move(scripting::contents::AlignRGB{std::move(red), std::move(green), std::move(blue)})
+    );
+
+    const auto* alignedImg = std::get_if<call_result::ImageProcessed>(&result);
+    IMPPG_ASSERT(alignedImg != nullptr);
+
+    m_Image = alignedImg->image;
 }
 
 }

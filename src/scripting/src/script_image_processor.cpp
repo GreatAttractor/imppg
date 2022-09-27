@@ -22,9 +22,11 @@ File description:
 */
 
 #include "../../imppg_assert.h"
+#include "alignment/align_proc.h"
 #include "common/proc_settings.h"
 #include "scripting/script_image_processor.h"
 
+#include <wx/event.h>
 #include <wx/intl.h>
 
 // private definitions
@@ -59,71 +61,11 @@ void ScriptImageProcessor::StartProcessing(
     std::optional<wxString> errorMsg = std::nullopt;
 
     const auto handler = Overload{
-        [&, this](const contents::ProcessImageFile& call) {
-            std::string loadErrorMsg;
-            auto loadResult = LoadImageFileAsMono32f(call.imagePath, m_NormalizeFitsValues, &loadErrorMsg);
-            if (!loadResult)
-            {
-                onCompletion(call_result::Error{
-                    wxString::Format(_("failed to load image from %s; %s"), call.imagePath, loadErrorMsg).ToStdString()
-                });
-                return;
-            }
-            auto image = std::make_shared<const c_Image>(std::move(loadResult.value()));
+        [&](const contents::ProcessImageFile& call) { OnProcessImageFile(call, onCompletion); },
 
-            ProcessingSettings settings{};
-            if (!LoadSettings(call.settingsPath, settings))
-            {
-                onCompletion(call_result::Error{
-                    wxString::Format(_("failed to load processing settings from %s"), call.settingsPath).ToStdString()
-                });
-                return;
-            }
+        [&](const contents::ProcessImage& call) { OnProcessImage(call, onCompletion); },
 
-            if (settings.normalization.enabled)
-            {
-                auto normalized = c_Image(*image);
-                NormalizeFpImage(normalized, settings.normalization.min, settings.normalization.max);
-                image = std::make_shared<c_Image>(std::move(normalized));
-            }
-
-            m_Processor->SetProcessingCompletedHandler(
-                [this, onCompletion = std::move(onCompletion), outPath = call.outputImagePath, outFmt = call.outputFormat]
-                    (imppg::backend::CompletionStatus) {
-
-                        if (!m_Processor->GetProcessedOutput().SaveToFile(outPath, outFmt))
-                        {
-                            onCompletion(call_result::Error{
-                                wxString::Format(_("failed to save output file %s"), outPath).ToStdString()
-                            });
-                        }
-                        else
-                        {
-                            onCompletion(call_result::Success{});
-                        }
-                }
-            );
-            m_Processor->StartProcessing(image, settings);
-        },
-
-        [&](const contents::ProcessImage& call) {
-            auto image = call.image;
-            if (call.settings.normalization.enabled)
-            {
-                auto normalized = c_Image(*image);
-                NormalizeFpImage(normalized, call.settings.normalization.min, call.settings.normalization.max);
-                image = std::make_shared<c_Image>(std::move(normalized));
-            }
-
-            m_Processor->SetProcessingCompletedHandler(
-                [onCompletion = std::move(onCompletion), this](imppg::backend::CompletionStatus) {
-                    onCompletion(call_result::ImageProcessed{
-                        std::make_shared<const c_Image>(m_Processor->GetProcessedOutput())
-                    });
-                }
-            );
-            m_Processor->StartProcessing(image, call.settings);
-        },
+        [&](const contents::AlignRGB& call) { OnAlignRGB(call, onCompletion); },
 
         [](auto) { IMPPG_ABORT_MSG("invalid message passed to ScriptImageProcessor"); },
     };
@@ -134,6 +76,92 @@ void ScriptImageProcessor::StartProcessing(
 void ScriptImageProcessor::OnIdle(wxIdleEvent& event)
 {
     m_Processor->OnIdle(event);
+}
+
+void ScriptImageProcessor::OnProcessImageFile(const contents::ProcessImageFile& call, CompletionFunc onCompletion)
+{
+    std::string loadErrorMsg;
+    auto loadResult = LoadImageFileAsMono32f(call.imagePath, m_NormalizeFitsValues, &loadErrorMsg);
+    if (!loadResult)
+    {
+        onCompletion(call_result::Error{
+            wxString::Format(_("failed to load image from %s; %s"), call.imagePath, loadErrorMsg).ToStdString()
+        });
+        return;
+    }
+    auto image = std::make_shared<const c_Image>(std::move(loadResult.value()));
+
+    ProcessingSettings settings{};
+    if (!LoadSettings(call.settingsPath, settings))
+    {
+        onCompletion(call_result::Error{
+            wxString::Format(_("failed to load processing settings from %s"), call.settingsPath).ToStdString()
+        });
+        return;
+    }
+
+    if (settings.normalization.enabled)
+    {
+        auto normalized = c_Image(*image);
+        NormalizeFpImage(normalized, settings.normalization.min, settings.normalization.max);
+        image = std::make_shared<c_Image>(std::move(normalized));
+    }
+
+    m_Processor->SetProcessingCompletedHandler(
+        [this, onCompletion = std::move(onCompletion), outPath = call.outputImagePath, outFmt = call.outputFormat]
+            (imppg::backend::CompletionStatus) {
+
+                if (!m_Processor->GetProcessedOutput().SaveToFile(outPath, outFmt))
+                {
+                    onCompletion(call_result::Error{
+                        wxString::Format(_("failed to save output file %s"), outPath).ToStdString()
+                    });
+                }
+                else
+                {
+                    onCompletion(call_result::Success{});
+                }
+        }
+    );
+    m_Processor->StartProcessing(image, settings);
+}
+
+void ScriptImageProcessor::OnProcessImage(const contents::ProcessImage& call, CompletionFunc onCompletion)
+{
+    auto image = call.image;
+    if (call.settings.normalization.enabled)
+    {
+        auto normalized = c_Image(*image);
+        NormalizeFpImage(normalized, call.settings.normalization.min, call.settings.normalization.max);
+        image = std::make_shared<c_Image>(std::move(normalized));
+    }
+
+    m_Processor->SetProcessingCompletedHandler(
+        [onCompletion = std::move(onCompletion), this](imppg::backend::CompletionStatus) {
+            onCompletion(call_result::ImageProcessed{
+                std::make_shared<const c_Image>(m_Processor->GetProcessedOutput())
+            });
+        }
+    );
+    m_Processor->StartProcessing(image, call.settings);
+}
+
+void ScriptImageProcessor::OnAlignRGB(const contents::AlignRGB& call, CompletionFunc onCompletion)
+{
+    //auto image = call.image;
+
+    // wxEvtHandler evtHandler;
+
+    // AlignmentParameters_t alignParams{};
+    // alignParams.alignmentMethod = AlignmentMethod::PHASE_CORRELATION;
+    // alignParams.cropMode = CropMode::CROP_TO_INTERSECTION;
+    // alignParams.inputFiles = {};//TODO
+    // alignParams.normalizeFitsValues = false; //TODO: assign something here
+    // //alignParams.
+
+    // c_ImageAlignmentWorkerThread worker{evtHandler,
+
+    onCompletion(call_result::Success{}); //TESTING ######
 }
 
 }

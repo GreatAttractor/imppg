@@ -322,7 +322,7 @@ static bool SaveAsFreeImage(const IImageBuffer& buf, const std::string& fname, O
     default: IMPPG_ABORT();
     }
 
-    static_assert(false, "FIXME: wrong channel order when saving RGB after Combine");
+    //FIXME! static_assert(false, "FIXME: wrong channel order when saving RGB after Combine");
 
     c_FreeImageHandleWrapper outputFiBmp = FreeImage_AllocateT(
         fiType, buf.GetWidth(), buf.GetHeight(), fiBpp, 0x0000FF, 0x00FF00, 0xFF0000
@@ -807,7 +807,7 @@ static c_SimpleBuffer GetConvertedPixelFormatCopy(const IImageBuffer& srcBuf, Pi
 
 /** Converts 'srcImage' to 'destPixFmt'; ; result uses c_SimpleBuffer for storage.
     If 'destPixFmt' is the same as source image's pixel format, returns a copy of 'srcImg'. */
-c_Image c_Image::ConvertPixelFormat(PixelFormat destPixFmt)
+c_Image c_Image::ConvertPixelFormat(PixelFormat destPixFmt) const
 {
     return GetConvertedPixelFormatSubImage(destPixFmt, 0, 0, GetWidth(), GetHeight());
 }

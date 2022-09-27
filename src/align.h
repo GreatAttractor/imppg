@@ -24,7 +24,7 @@ File description:
 #ifndef IMPPG_IMAGE_ALIGNMENT_HEADER
 #define IMPPG_IMAGE_ALIGNMENT_HEADER
 
-#include "align_proc.h"
+#include "alignment/align_proc.h"
 
 #include <wx/window.h>
 #include <wx/string.h>

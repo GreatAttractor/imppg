@@ -33,12 +33,13 @@ File description:
 #include <vector>
 #include <wx/filename.h>
 
+#include "../../imppg_assert.h"
+#include "align_common.h"
 #include "align_disc.h"
 #include "align_phasecorr.h"
-#include "align_proc.h"
+#include "alignment/align_proc.h"
 #include "common/common.h"
 #include "image/image.h"
-#include "../../imppg_assert.h"
 #include "logging/logging.h"
 #include "math_utils/convolution.h"
 #include "math_utils/math_utils.h"
@@ -48,6 +49,66 @@ File description:
    #undef _WINDOWS_
 #endif
 #endif
+
+// private definitions
+namespace
+{
+
+c_Image CreateTranslatedOutput(const c_Image& source, unsigned outWidth, unsigned outHeight, float tx, float ty)
+{
+    std::optional<c_Image> converted;
+    const auto* actualSource = &source;
+
+    // subpixel translation of palettised images is not supported, so convert to RGB8
+    if (source.GetPixelFormat() == PixelFormat::PIX_PAL8)
+    {
+        converted = source.ConvertPixelFormat(PixelFormat::PIX_RGB8);
+        actualSource = &converted.value();
+    }
+
+    c_Image output{outWidth, outHeight, actualSource->GetPixelFormat()};
+    c_Image::ResizeAndTranslate(
+        actualSource->GetBuffer(),
+        output.GetBuffer(),
+        0, 0,
+        actualSource->GetWidth() - 1,
+        actualSource->GetHeight() - 1,
+        tx, ty,
+        true
+    );
+
+    return output;
+}
+
+ImageAccessor GetInputImageByIndex(
+    const AlignmentInputs& inputs,
+    std::size_t index,
+    std::string* fileLoadErrorMsg
+)
+{
+    return std::visit(Overload{
+        [&](const wxArrayString& fnames) {
+            auto loadResult = LoadImage(fnames[index].ToStdString(), std::nullopt, fileLoadErrorMsg, false);
+            if (!loadResult) { return ImageAccessor{}; }
+            c_Image srcImage{std::move(loadResult.value())};
+            return ImageAccessor{std::move(srcImage)};
+        },
+
+        [&](const InputImageList& images) {
+            return ImageAccessor{&images[index]};
+        }
+    }, inputs);
+}
+
+std::size_t GetNumInputs(const AlignmentInputs& inputs)
+{
+    return std::visit(Overload{
+        [&](const wxArrayString& fnames) { return fnames.Count(); },
+        [&](const InputImageList& images) { return images.size(); }
+    }, inputs);
+}
+
+}
 
 /// Arguments: image index and its determined translation vector.
 void c_ImageAlignmentWorkerThread::PhaseCorrImgTranslationCallback(int imgIdx, float Tx, float Ty)
@@ -60,146 +121,31 @@ void c_ImageAlignmentWorkerThread::PhaseCorrImgTranslationCallback(int imgIdx, f
 }
 
 /// Returns (input image loaded from `inputFileName`, output image ready to be filled); returns `nullopt` on error.
-std::optional<std::tuple<c_Image, c_Image>> PrepareInputAndOutputImages(wxString inputFileName, int outputWidth, int outputHeight, std::string& errorMsg, bool normalizeFitsValues)
+std::optional<std::tuple<c_Image, c_Image>> PrepareInputAndOutputImages(
+    wxString inputFileName,
+    unsigned outputWidth,
+    unsigned outputHeight,
+    std::string& errorMsg,
+    bool normalizeFitsValues
+)
 {
-#if USE_FREEIMAGE
-    // Used by FreeImage_AllocateExT as "black" to initially fill a bitmap
-    uint8_t zeros[4*sizeof(float)] = { 0 }; // works also for floating-point (pattern of all zero bits represents 0.0f)
-#endif
-
-#if USE_CFITSIO
-    wxString extension = wxFileName(inputFileName).GetExt().Lower();
-    if (extension == "fit" || extension == "fits")
+    auto loadResult = LoadImage(inputFileName.ToStdString(), std::nullopt, &errorMsg, normalizeFitsValues);
+    if (!loadResult) { return std::nullopt; }
+    c_Image srcImage{std::move(loadResult.value())};
+    // subpixel translation of palettised images is not supported, so convert to RGB8
+    if (srcImage.GetPixelFormat() == PixelFormat::PIX_PAL8)
     {
-        auto srcImg = LoadFitsImage(inputFileName.ToStdString(), normalizeFitsValues);
-        if (!srcImg)
-        {
-            errorMsg = wxString::Format(_("Could not read %s."), inputFileName);
-            return std::nullopt;
-        }
-        else
-        {
-            auto outputImg = c_Image(outputWidth, outputHeight, srcImg.value().GetPixelFormat());
-            return std::make_tuple(std::move(srcImg.value()), std::move(outputImg));
-        }
+        srcImage = srcImage.ConvertPixelFormat(PixelFormat::PIX_RGB8);
     }
-    else
-#endif
-    {
-#if USE_FREEIMAGE
-        FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;
-        fif = FreeImage_GetFileType(inputFileName.c_str());
-        if (FIF_UNKNOWN == fif)
-            fif = FreeImage_GetFIFFromFilename(inputFileName.c_str());
 
-        c_FreeImageHandleWrapper fiSrcBmp{nullptr};
+    c_Image destImage{outputWidth, outputHeight, srcImage.GetPixelFormat()};
 
-        if (fif != FIF_UNKNOWN && FreeImage_FIFSupportsReading(fif))
-        {
-            fiSrcBmp.reset(FreeImage_Load(fif, inputFileName.c_str()));
-            if (!fiSrcBmp)
-            {
-                errorMsg = wxString::Format(_("Could not read %s."), inputFileName);
-                return std::nullopt;
-            }
-        }
-        else
-        {
-            errorMsg = wxString::Format(_("Unsupported file or image type: %s"), inputFileName);
-            return std::nullopt;
-        }
-
-        // subpixel translation of palettised images is not supported, so convert to RGB8
-        if (FreeImage_GetPalette(fiSrcBmp.get()))
-        {
-            fiSrcBmp = c_FreeImageHandleWrapper(FreeImage_ConvertTo24Bits(fiSrcBmp.get()));
-        }
-
-        const auto fiSrcImgType = FreeImage_GetImageType(fiSrcBmp.get());
-        const auto fiSrcBpp = FreeImage_GetBPP(fiSrcBmp.get());
-        const auto fiSrcRedMask = FreeImage_GetRedMask(fiSrcBmp.get());
-        const auto fiSrcGreenMask = FreeImage_GetGreenMask(fiSrcBmp.get());
-        const auto fiSrcBlueMask = FreeImage_GetBlueMask(fiSrcBmp.get());
-
-        auto fiBufferUniquePtrOpt = c_FreeImageBuffer::Create(std::move(fiSrcBmp));
-        if (!fiBufferUniquePtrOpt)
-        {
-            errorMsg = wxString::Format(_("Unsupported pixel format: %s"), inputFileName);
-            return std::nullopt;
-        }
-
-        auto srcImg = c_Image(std::move(fiBufferUniquePtrOpt.value()));
-
-        auto fiOutpBmp = c_FreeImageHandleWrapper(
-            FreeImage_AllocateExT(
-                fiSrcImgType,
-                outputWidth,
-                outputHeight,
-                fiSrcBpp,
-                zeros,
-                0,
-                0,
-                fiSrcRedMask,
-                fiSrcGreenMask,
-                fiSrcBlueMask
-            )
-        );
-        if (!fiOutpBmp)
-        {
-            errorMsg = _("FreeImage_AllocateExT failed to allocate an output bitmap.");
-            return std::nullopt;
-        }
-
-        auto outputImg = c_Image(std::move(c_FreeImageBuffer::Create(std::move(fiOutpBmp)).value()));
-
-        return std::make_tuple(std::move(srcImg), std::move(outputImg));
-
-#else
-        std::optional<c_Image> loadResult;
-
-        wxString ext = wxFileName(inputFileName).GetExt().Lower();
-        loadResult = LoadImage(inputFileName.ToStdString(), std::nullopt, nullptr, false);
-
-        if (!loadResult)
-        {
-            errorMsg = wxString::Format(_("Could not read %s."), inputFileName);
-            return std::nullopt;
-        }
-
-        c_Image srcImg = std::move(loadResult.value());
-
-        // subpixel translation of palettised images is not supported, so convert to RGB8
-        if (srcImg.GetPixelFormat() == PixelFormat::PIX_PAL8)
-        {
-            srcImg = srcImg.ConvertPixelFormat(PixelFormat::PIX_RGB8);
-        }
-
-        c_Image outpImg(outputWidth, outputHeight, srcImg.GetPixelFormat());
-
-        return std::make_tuple(std::move(srcImg), std::move(outpImg));
-#endif
-    }
+    return std::make_tuple(std::move(srcImage), std::move(destImage));
 }
 
-/// Loads the specified input image, translates it and saves using the specified size and translation vector
-bool c_ImageAlignmentWorkerThread::SaveTranslatedOutputImage(wxString inputFileName, int outputWidth, int outputHeight,
-    float Tx, ///< X offset within the input image
-    float Ty  ///< Y offset within the input image
-    )
+bool c_ImageAlignmentWorkerThread::SaveTranslatedOutputImage(const wxString& inputFileName, const c_Image& image)
 {
-    Log::Print(wxString::Format("Loading %s... ", inputFileName));
-
-    auto result = PrepareInputAndOutputImages(inputFileName, outputWidth, outputHeight, m_CompletionMessage, m_Parameters.normalizeFitsValues);
-    if (!result)
-        return false;
-
-    auto [srcImg, outputImg] = std::move(result.value());
-
-    Log::Print("done. Allocated output image.\n");
-
-    c_Image::ResizeAndTranslate(srcImg.GetBuffer(), outputImg.GetBuffer(), 0, 0, srcImg.GetWidth()-1, srcImg.GetHeight()-1, Tx, Ty, true);
-
-    Log::Print("Created output image.\n");
+    //-----------------------
 
     wxFileName fnInput(inputFileName);
     wxFileName outputFileName(m_Parameters.outputDir, fnInput.GetName() + "_aligned", fnInput.GetExt());
@@ -210,13 +156,13 @@ bool c_ImageAlignmentWorkerThread::SaveTranslatedOutputImage(wxString inputFileN
     if (extension == "fit" || extension == "fits")
     {
         outputFileName.SetExt("fit");
-        saved = outputImg.SaveToFile(outputFileName.GetFullPath().ToStdString(), OutputBitDepth::Unchanged, OutputFileType::FITS);
+        saved = image.SaveToFile(outputFileName.GetFullPath().ToStdString(), OutputBitDepth::Unchanged, OutputFileType::FITS);
     }
     else
 #endif
     {
         outputFileName.SetExt("tif");
-        saved = outputImg.SaveToFile(outputFileName.GetFullPath().ToStdString(), OutputBitDepth::Unchanged, OutputFileType::TIFF/* TODO: make it configurable */);
+        saved = image.SaveToFile(outputFileName.GetFullPath().ToStdString(), OutputBitDepth::Unchanged, OutputFileType::TIFF/* TODO: make it configurable */);
     }
 
     Log::Print("Saved output image.\n");
@@ -240,25 +186,48 @@ void c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment()
 
     std::vector<Point_t> imgSize; // Image sizes
 
-    for (size_t i = 0; i < m_Parameters.inputFiles.Count(); i++)
-    {
-        const auto result = GetImageSize(m_Parameters.inputFiles[i].ToStdString());
+    const bool getSizesResult = std::visit(Overload{
+        [&](const wxArrayString& fnames) {
+            for (const auto& fname: fnames)
+            {
+                const auto result = GetImageSize(fname.ToStdString());
 
-        if (!result)
-        {
-            m_CompletionMessage = wxString::Format(_("Failed to obtain image dimensions from %s."), m_Parameters.inputFiles[i]);
-            return;
-        }
+                if (!result)
+                {
+                    m_CompletionMessage = wxString::Format(_("Failed to obtain image dimensions from %s."), fname);
+                    return false;
+                }
 
-        const auto [width, height] = result.value();
+                const auto [width, height] = result.value();
 
-        imgSize.push_back(Point_t(width, height));
+                imgSize.push_back(Point_t(width, height));
 
-        if (width > maxWidth)
-            maxWidth = width;
-        if (height > maxHeight)
-            maxHeight = height;
-    }
+                if (width > maxWidth)
+                    maxWidth = width;
+                if (height > maxHeight)
+                    maxHeight = height;
+            }
+            return true;
+        },
+
+        [&](const InputImageList& images) {
+            for (const auto& image: images)
+            {
+                const auto width = image.GetWidth();
+                const auto height = image.GetHeight();
+
+                imgSize.push_back(Point_t(width, height));
+
+                if (width > maxWidth)
+                    maxWidth = width;
+                if (height > maxHeight)
+                    maxHeight = height;
+            }
+            return true;
+        },
+    }, m_Parameters.inputs);
+
+    if (!getSizesResult) { return; }
 
     // Width and height of FFT arrays and the translation working buffer
     unsigned Nwidth = GetClosestGPowerOf2(maxWidth),
@@ -267,7 +236,7 @@ void c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment()
     std::vector<FloatPoint_t> translation;
     Rectangle_t bbox; // bounding box of all images after alignment
 
-    if (!DetermineTranslationVectors(Nwidth, Nheight, m_Parameters.inputFiles,
+    if (!DetermineTranslationVectors(Nwidth, Nheight, m_Parameters.inputs,
         translation, bbox, &m_CompletionMessage, m_Parameters.subpixelAlignment,
         [this](int imgIdx, float tX, float tY) { PhaseCorrImgTranslationCallback(imgIdx, tX, tY); },
         [this]() { return IsAbortRequested(); },
@@ -285,7 +254,7 @@ void c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment()
     int outputHeight = m_Parameters.cropMode == CropMode::CROP_TO_INTERSECTION ? imgIntersection.height : bbox.height;
 
 
-    for (size_t i = 0; i < m_Parameters.inputFiles.Count(); i++)
+    for (size_t i = 0; i < GetNumInputs(m_Parameters.inputs); i++)
     {
         if (IsAbortRequested())
             return;
@@ -302,12 +271,34 @@ void c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment()
             translationOrigin.y = bbox.y;
         }
 
-        if (!SaveTranslatedOutputImage(m_Parameters.inputFiles[i], outputWidth, outputHeight,
+        const auto source = GetInputImageByIndex(m_Parameters.inputs, i, &m_CompletionMessage);
+        if (source.Empty()) { return; }
+
+        const auto output = CreateTranslatedOutput(
+            *source.Get(),
+            outputWidth,
+            outputHeight,
             (Nwidth - imgSize[i].x)/2 - translation[i].x - translationOrigin.x,
-            (Nheight - imgSize[i].y)/2 - translation[i].y - translationOrigin.y))
-        {
-            return;
-        }
+            (Nheight - imgSize[i].y)/2 - translation[i].y - translationOrigin.y
+        );
+
+        std::visit(Overload{
+            [&](const wxArrayString& fnames) {
+                SaveTranslatedOutputImage(fnames[i], output);
+            },
+
+            [&](const InputImageList& images) {
+                //TODO
+            }
+        }, m_Parameters.inputs);
+
+
+        // if (!SaveTranslatedOutputImage(m_Parameters.inputs[i], outputWidth, outputHeight,
+        //     (Nwidth - imgSize[i].x)/2 - translation[i].x - translationOrigin.x,
+        //     (Nheight - imgSize[i].y)/2 - translation[i].y - translationOrigin.y))
+        // {
+        //     return;
+        // }
 
         SendMessageToParent(EID_SAVED_OUTPUT_IMAGE, i);
     }
@@ -380,6 +371,9 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
     // would be a circular or elliptical arc. With field rotation present the shape
     // would be more complicated.
 
+    const auto* fnames = std::get_if<wxArrayString>(&m_Parameters.inputs);
+    IMPPG_ASSERT(fnames != nullptr); // the other variant alternative of `inputs` is not supported for limb alignment
+
     // 1. Select a high-contrast feature
 
     //TODO: (optional) display the first image and ask the user to select a feature that is
@@ -397,13 +391,14 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
         Point_t stabilizationPos;
 
         // Scan the first image's intersection portion for the highest-contrast area
+        IMPPG_ASSERT(!fnames->IsEmpty());
         const auto loadResult = LoadImageFileAsMono32f(
-            m_Parameters.inputFiles[0].ToStdString(),
+            (*fnames)[0].ToStdString(),
             m_Parameters.normalizeFitsValues
         );
         if (!loadResult)
         {
-            errorMsg = wxString::Format(_("Could not read %s."), m_Parameters.inputFiles[0]);
+            errorMsg = wxString::Format(_("Could not read %s."), (*fnames)[0]);
             return false;
         }
         c_Image firstImg = std::move(loadResult.value());
@@ -448,7 +443,7 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
 
         SendMessageToParent(EID_LIMB_STABILIZATION_PROGRESS, 0);
 
-        for (size_t i = 1; i < m_Parameters.inputFiles.Count(); i++)
+        for (size_t i = 1; i < fnames->Count(); i++)
         {
             if (IsAbortRequested())
                 return false;
@@ -456,12 +451,12 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
             SendMessageToParent(EID_LIMB_STABILIZATION_PROGRESS, i);
 
             const auto loadResult = LoadImageFileAsMono32f(
-                m_Parameters.inputFiles[i].ToStdString(),
+                (*fnames)[i].ToStdString(),
                 m_Parameters.normalizeFitsValues
             );
             if (!loadResult)
             {
-                errorMsg = wxString::Format(_("Could not read %s."), m_Parameters.inputFiles[i]);
+                errorMsg = wxString::Format(_("Could not read %s."), (*fnames)[i]);
                 return false;
             }
             const c_Image& currImg = loadResult.value();
@@ -627,6 +622,7 @@ void CountNeighborsAboveThreshold(
 
 /// Finds disc radii in input images; returns 'true' on success
 bool c_ImageAlignmentWorkerThread::FindRadii(
+    const wxArrayString& fnames,
     std::vector<std::vector<FloatPoint_t>>& limbPoints, ///< Receives limb points found in n-th image
     std::vector<float>& radii, ///< Receives disc radii determined for each image
     std::vector<Point_t>& imgSizes, ///< Receives input image sizes
@@ -635,18 +631,18 @@ bool c_ImageAlignmentWorkerThread::FindRadii(
 {
     AlignmentEventPayload_t payload;
 
-    for (size_t i = 0; i < m_Parameters.inputFiles.Count(); i++)
+    for (size_t i = 0; i < fnames.Count(); i++)
     {
         if (IsAbortRequested())
             return false;
 
         const auto loadResult = LoadImageFileAsMono8(
-            m_Parameters.inputFiles[i].ToStdString(),
+            fnames[i].ToStdString(),
             m_Parameters.normalizeFitsValues
         );
         if (!loadResult)
         {
-            m_CompletionMessage = wxString::Format(_("Could not read %s."), m_Parameters.inputFiles[i]);
+            m_CompletionMessage = wxString::Format(_("Could not read %s."), fnames[i]);
             return false;
         }
         const c_Image img = loadResult.value();
@@ -752,7 +748,7 @@ bool c_ImageAlignmentWorkerThread::FindRadii(
 
         if (limbPoints[i].size() < 3)
         {
-            m_CompletionMessage = wxString::Format(_("Could not find the limb in %s."), m_Parameters.inputFiles[i]);
+            m_CompletionMessage = wxString::Format(_("Could not find the limb in %s."), fnames[i]);
             return false;
         }
 
@@ -762,7 +758,7 @@ bool c_ImageAlignmentWorkerThread::FindRadii(
         float radius, cx = centroid.x, cy = centroid.y;
         if (!FitCircleToPoints(limbPoints[i], &cx, &cy, &radius, 0.0f, true))
         {
-            m_CompletionMessage = wxString::Format(_("Could not find the limb in %s."), m_Parameters.inputFiles[i]);
+            m_CompletionMessage = wxString::Format(_("Could not find the limb in %s."), fnames[i]);
             return false;
         }
         radii.push_back(radius);
@@ -778,23 +774,21 @@ bool c_ImageAlignmentWorkerThread::FindRadii(
 /// Aligns the images by keeping the limb stationary
 void c_ImageAlignmentWorkerThread::LimbAlignment()
 {
-    // NOTE: all 'c_Image' and 'FIBITMAP' objects used in this method are wrapped
-    // in "scoped pointer" objects, which destroy automatically (on leaving scope)
-    // or by a reset()/Reset() call.
-    // Therefore there's no need to clean them up when doing an early return.
-
     Log::Print("Started image alignment using the limb as anchor.\n");
+
+    const auto* fnames = std::get_if<wxArrayString>(&m_Parameters.inputs);
+    IMPPG_ASSERT(fnames != nullptr); // the other variant alternative of `inputs` is not supported for limb alignment
 
     AlignmentEventPayload_t payload;
 
-    std::vector<std::vector<FloatPoint_t> > limbPoints(m_Parameters.inputFiles.Count()); // n-th element is a list of limb points found in n-th image
+    std::vector<std::vector<FloatPoint_t> > limbPoints(fnames->Count()); // n-th element is a list of limb points found in n-th image
     std::vector<float> radii; // disc radius determined for each image
     std::vector<Point_t> imgSizes;
     std::vector<Point_t> centroids;
 
     // 1. Determine disc radius in each image
 
-    if (!FindRadii(limbPoints, radii, imgSizes, centroids))
+    if (!FindRadii(*fnames, limbPoints, radii, imgSizes, centroids))
         return;
 
     // 2. Calculate average radius and use it to fit discs to the limb points again
@@ -833,7 +827,7 @@ void c_ImageAlignmentWorkerThread::LimbAlignment()
         float cx = centroids[i].x, cy = centroids[i].y;
         if (!FitCircleToPoints(limbPoints[i], &cx, &cy, 0, avgRadius, true))
         {
-            m_CompletionMessage = wxString::Format(_("Could not find the limb with forced radius in %s."), m_Parameters.inputFiles[i]);
+            m_CompletionMessage = wxString::Format(_("Could not find the limb with forced radius in %s."), (*fnames)[i]);
             return;
         }
         if (i == 0)
@@ -908,7 +902,7 @@ void c_ImageAlignmentWorkerThread::LimbAlignment()
         outputHeight = intersection.ymax - intersection.ymin + 1;
     }
 
-    for (size_t i = 0; i < m_Parameters.inputFiles.Count(); i++)
+    for (size_t i = 0; i < fnames->Count(); i++)
     {
         if (IsAbortRequested())
             return;
@@ -931,8 +925,15 @@ void c_ImageAlignmentWorkerThread::LimbAlignment()
             Ty = boost::math::round(Ty);
         }
 
-        if (!SaveTranslatedOutputImage(m_Parameters.inputFiles[i], outputWidth, outputHeight, Tx, Ty))
-            return;
+        auto loadResult = LoadImage((*fnames)[i].ToStdString(), std::nullopt, &m_CompletionMessage, false);
+        if (!loadResult) { return; }
+
+        const c_Image output = CreateTranslatedOutput(loadResult.value(), outputWidth, outputHeight, Tx, Ty);
+
+        if (!SaveTranslatedOutputImage((*fnames)[i], output))
+        {
+             return;
+        }
 
         SendMessageToParent(EID_SAVED_OUTPUT_IMAGE, i);
     }
@@ -960,7 +961,7 @@ void c_ImageAlignmentWorkerThread::SendMessageToParent(int id, int value, wxStri
     if (payload)
         event->SetPayload<AlignmentEventPayload_t>(*payload);
 
-    m_Parent.GetEventHandler()->QueueEvent(event);
+    m_Parent.QueueEvent(event);
 }
 
 /// Signals the thread to finish processing ASAP

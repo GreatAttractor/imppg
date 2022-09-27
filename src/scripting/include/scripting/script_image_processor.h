@@ -51,6 +51,12 @@ public:
     void OnIdle(wxIdleEvent& event);
 
 private:
+    using CompletionFunc = std::function<void(FunctionCallResult)>;
+
+    void OnProcessImageFile(const contents::ProcessImageFile& call, CompletionFunc onCompletion);
+    void OnProcessImage(const contents::ProcessImage& call, CompletionFunc onCompletion);
+    void OnAlignRGB(const contents::AlignRGB& call, CompletionFunc onCompletion);
+
     std::unique_ptr<imppg::backend::IProcessingBackEnd> m_Processor;
     bool m_NormalizeFitsValues{false};
 };

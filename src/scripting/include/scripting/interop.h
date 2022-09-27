@@ -50,6 +50,12 @@ struct NotifySettings { ProcessingSettings settings; };
 struct NotifyString { std::string s; };
 struct Progress { int percentage; };
 
+struct AlignRGB
+{
+    // the fields are always filled; `optional` is required for default-constructability (wxThreadEvent requires it)
+    std::optional<c_Image> red, green, blue;
+};
+
 struct ProcessImageFile
 {
     std::string imagePath;
@@ -67,6 +73,7 @@ struct ProcessImage
 }
 
 using MessageContents = std::variant<
+    contents::AlignRGB,
     contents::Error,
     contents::None,
     contents::NotifyBoolean,

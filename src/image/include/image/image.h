@@ -182,7 +182,7 @@ public:
     );
 
     /// Returns image copy converted to `destPixFmt`; result uses `c_SimpleBuffer` for storage.
-    c_Image ConvertPixelFormat(PixelFormat destPixFmt);
+    c_Image ConvertPixelFormat(PixelFormat destPixFmt) const;
 
     /// Returns copy of image fragment converted to `destPixFmt`; result uses `c_SimpleBuffer` for storage.
     c_Image GetConvertedPixelFormatSubImage(

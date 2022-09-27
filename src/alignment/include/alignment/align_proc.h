@@ -24,12 +24,14 @@ File description:
 #ifndef IMPPG_IMAGE_ALIGNMENT_THREAD_HEADER
 #define IMPPG_IMAGE_ALIGNMENT_THREAD_HEADER
 
+#include <memory>
+#include <variant>
 #include <vector>
-#include <wx/thread.h>
-#include <wx/window.h>
 #include <wx/arrstr.h>
+#include <wx/thread.h>
 
 #include "common/common.h"
+#include "image/image.h"
 
 enum class CropMode: int
 {
@@ -47,14 +49,24 @@ enum class AlignmentMethod: int
     NUM // this has to be the last element
 };
 
+using InputImageList = std::vector<c_Image>;
+using AlignmentInputs = std::variant<wxArrayString, InputImageList>;
+
 typedef struct
 {
-    wxArrayString inputFiles;
+    AlignmentInputs inputs; //TODO: rename type and member
     AlignmentMethod alignmentMethod;
     bool subpixelAlignment;
     CropMode cropMode;
     wxString outputDir;
     bool normalizeFitsValues;
+
+    std::size_t GetNumInputs() const
+    {
+        if (const auto* fnames = std::get_if<wxArrayString>(&inputs)) { return fnames->Count(); }
+        else if (const auto* images = std::get_if<InputImageList>(&inputs)) { return images->size(); }
+        else { IMPPG_ABORT(); }
+    }
 } AlignmentParameters_t;
 
 enum class AlignmentAbortReason
@@ -86,9 +98,11 @@ enum
     EID_ABORTED                 ///< Processing aborted; abort reason (AlignmentAbortReason_t): event.getId(); abort message: event.GetString()
 };
 
+class wxEvtHandler;
+
 class c_ImageAlignmentWorkerThread: public wxThread
 {
-    wxWindow& m_Parent;
+    wxEvtHandler& m_Parent;
 
     /// The parent can perform Post() on this semaphore (via AbortProcessing())
     wxSemaphore m_AbortReq;
@@ -103,17 +117,14 @@ class c_ImageAlignmentWorkerThread: public wxThread
     bool IsAbortRequested();
     void SendMessageToParent(int id, int value = 0, wxString msg = wxEmptyString, AlignmentEventPayload_t* payload = nullptr);
 
-    /// Loads the specified input image, translates it and saves using the specified size and translation vector
-    bool SaveTranslatedOutputImage(wxString inputFileName, int outputWidth, int outputHeight,
-        float Tx, ///< X offset within the input image
-        float Ty  ///< Y offset within the input image
-        );
+    bool SaveTranslatedOutputImage(const wxString& inputFileName, const c_Image& image);
 
     void PhaseCorrelationAlignment(); ///< Aligns the images by keeping the high-contrast features stationary
     void LimbAlignment(); ///< Aligns the images by keeping the limb stationary
 
     /// Finds disc radii in input images; returns 'true' on success
     bool FindRadii(
+        const wxArrayString& fnames,
         std::vector<std::vector<FloatPoint_t>>& limbPoints, ///< Receives limb points found in n-th image
         std::vector<float>& radii, ///< Receives disc radii determined for each image
         std::vector<Point_t>& imgSizes, ///< Receives input image sizes
@@ -134,14 +145,14 @@ class c_ImageAlignmentWorkerThread: public wxThread
 
 public:
     c_ImageAlignmentWorkerThread(
-        wxWindow& parent,         ///< Object to receive notification messages from this worker thread
-        const AlignmentParameters_t& params ///< Copied internally and not accessed later
+        wxEvtHandler& parent,         ///< Object to receive notification messages from this worker thread
+        AlignmentParameters_t params
     )
     : wxThread(wxTHREAD_JOINABLE),
     m_Parent(parent),
     m_ProcessingCompleted(false),
     m_ThreadAborted(false),
-    m_Parameters(params)
+    m_Parameters(std::move(params))
     { }
 
     ExitCode Entry() override;
