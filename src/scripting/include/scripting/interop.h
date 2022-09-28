@@ -91,7 +91,7 @@ using MessageContents = std::variant<
 namespace call_result
 {
 struct Success {};
-struct ImageProcessed { std::shared_ptr<const c_Image> image; };
+struct ImageProcessed { std::shared_ptr<c_Image> image; };
 struct Error { std::string message; };
 }
 

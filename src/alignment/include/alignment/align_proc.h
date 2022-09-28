@@ -94,6 +94,8 @@ enum
     EID_LIMB_STABILIZATION_PROGRESS,
     EID_LIMB_STABILIZATION_FAILURE,
     EID_SAVED_OUTPUT_IMAGE,     ///< Image index: event.GetInt()
+    /// Sent before `EID_COMPLETED` if `AlignmentParameters_t::inputs` was `InputImageList`; event payload contains `std::shared_ptr<std::vector<c_Image>>`.
+    EID_OUTPUT_IMAGES,
     EID_COMPLETED,              ///< Processing completed
     EID_ABORTED                 ///< Processing aborted; abort reason (AlignmentAbortReason_t): event.getId(); abort message: event.GetString()
 };
@@ -159,8 +161,6 @@ public:
 
     /// Signals the thread to finish processing ASAP
     void AbortProcessing();
-
-    ~c_ImageAlignmentWorkerThread() override;
 };
 
 #endif // IMPPG_IMAGE_ALIGNMENT_THREAD_HEADER

@@ -26,7 +26,7 @@ File description:
 #include "common/proc_settings.h"
 #include "scripting/script_image_processor.h"
 
-#include <wx/event.h>
+#include <memory>
 #include <wx/intl.h>
 
 // private definitions
@@ -52,6 +52,9 @@ ScriptImageProcessor::ScriptImageProcessor(
 , m_NormalizeFitsValues(normalizeFitsValues)
 {
 }
+
+ScriptImageProcessor::~ScriptImageProcessor()
+{}
 
 void ScriptImageProcessor::StartProcessing(
     MessageContents request,
@@ -139,7 +142,7 @@ void ScriptImageProcessor::OnProcessImage(const contents::ProcessImage& call, Co
     m_Processor->SetProcessingCompletedHandler(
         [onCompletion = std::move(onCompletion), this](imppg::backend::CompletionStatus) {
             onCompletion(call_result::ImageProcessed{
-                std::make_shared<const c_Image>(m_Processor->GetProcessedOutput())
+                std::make_shared<c_Image>(m_Processor->GetProcessedOutput())
             });
         }
     );
@@ -148,20 +151,42 @@ void ScriptImageProcessor::OnProcessImage(const contents::ProcessImage& call, Co
 
 void ScriptImageProcessor::OnAlignRGB(const contents::AlignRGB& call, CompletionFunc onCompletion)
 {
-    //auto image = call.image;
+    if (m_AlignmentWorker)
+    {
+        m_AlignmentWorker->Wait();
+    }
 
-    // wxEvtHandler evtHandler;
+    m_AlignmentEvtHandler = std::make_unique<wxEvtHandler>(); //TODO: do it in a more elegant way
+    m_AlignmentEvtHandler->Bind(wxEVT_THREAD, [onCompletion = std::move(onCompletion)](wxThreadEvent& event) {
+        const auto eid = event.GetId();
+        if (eid == EID_OUTPUT_IMAGES)
+        {
+            auto alignedChannels = event.GetPayload<std::shared_ptr<std::vector<c_Image>>>();
+            IMPPG_ASSERT(alignedChannels && alignedChannels->size() == 3);
 
-    // AlignmentParameters_t alignParams{};
-    // alignParams.alignmentMethod = AlignmentMethod::PHASE_CORRELATION;
-    // alignParams.cropMode = CropMode::CROP_TO_INTERSECTION;
-    // alignParams.inputFiles = {};//TODO
-    // alignParams.normalizeFitsValues = false; //TODO: assign something here
-    // //alignParams.
+            c_Image combined = c_Image::CombineRGB((*alignedChannels)[0], (*alignedChannels)[1], (*alignedChannels)[2]);
 
-    // c_ImageAlignmentWorkerThread worker{evtHandler,
+            onCompletion(call_result::ImageProcessed{std::make_shared<c_Image>(std::move(combined))});
+        }
+        else if (eid == EID_ABORTED)
+        {
+            onCompletion(call_result::Error{_("RGB alignment aborted").ToStdString()});
+        }
+    });
 
-    onCompletion(call_result::Success{}); //TESTING ######
+    AlignmentParameters_t alignParams{};
+    alignParams.alignmentMethod = AlignmentMethod::PHASE_CORRELATION;
+    alignParams.subpixelAlignment = true;
+    alignParams.cropMode = CropMode::PAD_TO_BOUNDING_BOX;
+    alignParams.inputs = InputImageList{
+        std::move(call.red.value()),
+        std::move(call.green.value()),
+        std::move(call.blue.value())
+    };
+    alignParams.normalizeFitsValues = false;
+
+    m_AlignmentWorker = std::make_unique<c_ImageAlignmentWorkerThread>(*m_AlignmentEvtHandler, std::move(alignParams));
+    m_AlignmentWorker->Run();
 }
 
 }

@@ -8,7 +8,7 @@
 set(USE_CFITSIO 1)
 
 # To disable FreeImage (multiple image formats support), change 1 to 0 below:
-set(USE_FREEIMAGE 1)
+set(USE_FREEIMAGE 0)
 
 # To disable OpenGL back end (processing on the GPU), change 1 to 0 below:
 set(USE_OPENGL_BACKEND 1)

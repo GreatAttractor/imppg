@@ -58,10 +58,12 @@ void ImageWrapper::align_rgb()
         std::move(scripting::contents::AlignRGB{std::move(red), std::move(green), std::move(blue)})
     );
 
-    const auto* alignedImg = std::get_if<call_result::ImageProcessed>(&result);
+    auto* alignedImg = std::get_if<call_result::ImageProcessed>(&result);
     IMPPG_ASSERT(alignedImg != nullptr);
 
-    m_Image = alignedImg->image;
+    m_Image = std::make_shared<const c_Image>(std::move(alignedImg->image->GetConvertedPixelFormatSubImage(
+        m_Image->GetPixelFormat(), 0, 0, m_Image->GetWidth(), m_Image->GetHeight()
+    )));
 }
 
 }

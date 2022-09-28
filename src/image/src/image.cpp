@@ -517,8 +517,8 @@ static c_SimpleBuffer GetConvertedPixelFormatFragment(
 
             auto bpp = result.GetBytesPerPixel();
             for (unsigned j = 0; j < height; j++)
-                for (unsigned i = 0; i < height; i++)
-                    memcpy(result.GetRowAs<uint8_t>(j) + i * bpp,
+                for (unsigned i = 0; i < width; i++)
+                    memcpy(result.GetRowAs<uint8_t>(j),
                            srcBuf.GetRowAs<uint8_t>(j + y0) + (i + x0) * bpp,
                            width * bpp);
 

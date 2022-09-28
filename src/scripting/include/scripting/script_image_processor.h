@@ -31,6 +31,8 @@ File description:
 #include <optional>
 #include <wx/event.h>
 
+class c_ImageAlignmentWorkerThread;
+
 namespace scripting
 {
 
@@ -42,6 +44,8 @@ public:
         std::unique_ptr<imppg::backend::IProcessingBackEnd>&& processor,
         bool normalizeFitsValues
     );
+
+    ~ScriptImageProcessor();
 
     void StartProcessing(
         MessageContents request,
@@ -59,6 +63,8 @@ private:
 
     std::unique_ptr<imppg::backend::IProcessingBackEnd> m_Processor;
     bool m_NormalizeFitsValues{false};
+    std::unique_ptr<c_ImageAlignmentWorkerThread> m_AlignmentWorker;
+    std::unique_ptr<wxEvtHandler> m_AlignmentEvtHandler;
 };
 
 }

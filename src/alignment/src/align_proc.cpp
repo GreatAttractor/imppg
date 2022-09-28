@@ -253,6 +253,7 @@ void c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment()
     int outputWidth = m_Parameters.cropMode == CropMode::CROP_TO_INTERSECTION ? imgIntersection.width : bbox.width;
     int outputHeight = m_Parameters.cropMode == CropMode::CROP_TO_INTERSECTION ? imgIntersection.height : bbox.height;
 
+    auto outputs = std::make_shared<std::vector<c_Image>>();
 
     for (size_t i = 0; i < GetNumInputs(m_Parameters.inputs); i++)
     {
@@ -274,7 +275,7 @@ void c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment()
         const auto source = GetInputImageByIndex(m_Parameters.inputs, i, &m_CompletionMessage);
         if (source.Empty()) { return; }
 
-        const auto output = CreateTranslatedOutput(
+        auto output = CreateTranslatedOutput(
             *source.Get(),
             outputWidth,
             outputHeight,
@@ -287,20 +288,19 @@ void c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment()
                 SaveTranslatedOutputImage(fnames[i], output);
             },
 
-            [&](const InputImageList& images) {
-                //TODO
+            [&](const InputImageList&) {
+                outputs->push_back(std::move(output));
             }
         }, m_Parameters.inputs);
 
-
-        // if (!SaveTranslatedOutputImage(m_Parameters.inputs[i], outputWidth, outputHeight,
-        //     (Nwidth - imgSize[i].x)/2 - translation[i].x - translationOrigin.x,
-        //     (Nheight - imgSize[i].y)/2 - translation[i].y - translationOrigin.y))
-        // {
-        //     return;
-        // }
-
         SendMessageToParent(EID_SAVED_OUTPUT_IMAGE, i);
+    }
+
+    if (!outputs->empty())
+    {
+        wxThreadEvent* event = new wxThreadEvent(wxEVT_THREAD, EID_OUTPUT_IMAGES);
+        event->SetPayload(outputs); //TODO: make sure this won't create some undestroyed `std::shared_ptr` instances
+        m_Parent.QueueEvent(event);
     }
 
     m_ProcessingCompleted = true;
@@ -950,6 +950,20 @@ wxThread::ExitCode c_ImageAlignmentWorkerThread::Entry()
     default: IMPPG_ABORT();
     }
 
+    if (m_ProcessingCompleted)
+    {
+        SendMessageToParent(EID_COMPLETED);
+    }
+    else
+    {
+        SendMessageToParent(
+            EID_ABORTED,
+            m_ThreadAborted ? static_cast<int>(AlignmentAbortReason::USER_REQUESTED)
+                            : static_cast<int>(AlignmentAbortReason::PROC_ERROR),
+            m_CompletionMessage
+        );
+    }
+
     return 0;
 }
 
@@ -968,18 +982,6 @@ void c_ImageAlignmentWorkerThread::SendMessageToParent(int id, int value, wxStri
 void c_ImageAlignmentWorkerThread::AbortProcessing()
 {
     m_AbortReq.Post();
-}
-
-c_ImageAlignmentWorkerThread::~c_ImageAlignmentWorkerThread()
-{
-    if (m_ProcessingCompleted)
-        SendMessageToParent(EID_COMPLETED);
-    else
-        SendMessageToParent(
-            EID_ABORTED,
-            m_ThreadAborted ? static_cast<int>(AlignmentAbortReason::USER_REQUESTED)
-                            : static_cast<int>(AlignmentAbortReason::PROC_ERROR),
-            m_CompletionMessage);
 }
 
 bool c_ImageAlignmentWorkerThread::IsAbortRequested()
