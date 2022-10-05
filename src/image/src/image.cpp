@@ -821,6 +821,7 @@ c_Image c_Image::GetConvertedPixelFormatSubImage(PixelFormat destPixFmt, unsigne
 /// Copies a rectangular area from 'src' to 'dest'. Pixel formats of 'src' and 'dest' have to be the same.
 void c_Image::Copy(const c_Image& src, c_Image& dest, unsigned srcX, unsigned srcY, unsigned width, unsigned height, unsigned destX, unsigned destY)
 {
+    //FIXME: triggered when opening a new image where old selection is out of bounds
     IMPPG_ASSERT(src.GetPixelFormat() == dest.GetPixelFormat());
     IMPPG_ASSERT(srcX + width <= src.GetWidth());
     IMPPG_ASSERT(srcY + height <= src.GetHeight());
