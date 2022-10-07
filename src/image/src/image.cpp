@@ -821,20 +821,50 @@ c_Image c_Image::GetConvertedPixelFormatSubImage(PixelFormat destPixFmt, unsigne
 /// Copies a rectangular area from 'src' to 'dest'. Pixel formats of 'src' and 'dest' have to be the same.
 void c_Image::Copy(const c_Image& src, c_Image& dest, unsigned srcX, unsigned srcY, unsigned width, unsigned height, unsigned destX, unsigned destY)
 {
-    //FIXME: triggered when opening a new image where old selection is out of bounds
     IMPPG_ASSERT(src.GetPixelFormat() == dest.GetPixelFormat());
-    IMPPG_ASSERT(srcX + width <= src.GetWidth());
-    IMPPG_ASSERT(srcY + height <= src.GetHeight());
-    IMPPG_ASSERT(destX + width <= dest.GetWidth());
-    IMPPG_ASSERT(destY + height <= dest.GetHeight());
 
+    if (srcX >= src.GetWidth())
+    {
+        return;
+    }
+    if (srcX + width >= src.GetWidth())
+    {
+        width = src.GetWidth() - srcX;
+    }
+    if (srcY >= src.GetHeight())
+    {
+        return;
+    }
+    if (srcY + height >= src.GetHeight())
+    {
+        height = src.GetHeight() - srcY;
+    }
+
+    if (destX >= dest.GetWidth())
+    {
+        return;
+    }
+    if (destX + width >= dest.GetWidth())
+    {
+        width = dest.GetWidth() - destX;
+    }
+    if (destY >= dest.GetHeight())
+    {
+        return;
+    }
+    if (destY + height >= dest.GetHeight())
+    {
+        height = dest.GetHeight() - destY;
+    }
 
     int bpp = src.GetBuffer().GetBytesPerPixel();
 
     for (unsigned y = 0; y < height; y++)
+    {
         memcpy(dest.GetRowAs<uint8_t>(destY + y) + destX * bpp,
                src.GetRowAs<uint8_t>(srcY + y) + srcX * bpp,
                width * bpp);
+    }
 }
 
 inline float ClampLuminance(float val, float maxVal)
