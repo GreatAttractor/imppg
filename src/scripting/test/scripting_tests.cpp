@@ -126,3 +126,4 @@ imppg.process_image_file("$ROOT/image.bmp", "$ROOT/settings.xml", "$ROOT/output.
     BOOST_REQUIRE(PixelFormat::PIX_MONO16 == processedImg.GetPixelFormat());
     BOOST_CHECK(CheckAllPixelValues<std::uint16_t>(processedImg, 0xFFFF / 2));
 }
+

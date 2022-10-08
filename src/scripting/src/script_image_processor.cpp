@@ -157,15 +157,58 @@ void ScriptImageProcessor::OnAlignRGB(const contents::AlignRGB& call, Completion
     }
 
     m_AlignmentEvtHandler = std::make_unique<wxEvtHandler>(); //TODO: do it in a more elegant way
-    m_AlignmentEvtHandler->Bind(wxEVT_THREAD, [onCompletion = std::move(onCompletion)](wxThreadEvent& event) {
+    m_AlignmentEvtHandler->Bind(wxEVT_THREAD, [
+        onCompletion = std::move(onCompletion),
+        red = call.red,
+        green = call.green,
+        blue = call.blue
+    ](wxThreadEvent& event) {
         const auto eid = event.GetId();
-        if (eid == EID_OUTPUT_IMAGES)
+        if (eid == EID_TRANSLATIONS)
         {
-            auto alignedChannels = event.GetPayload<std::shared_ptr<std::vector<c_Image>>>();
-            IMPPG_ASSERT(alignedChannels && alignedChannels->size() == 3);
+            auto translations = event.GetPayload<std::shared_ptr<std::vector<FloatPoint_t>>>();
+            IMPPG_ASSERT(translations && translations->size() == 3);
 
-            c_Image combined = c_Image::CombineRGB((*alignedChannels)[0], (*alignedChannels)[1], (*alignedChannels)[2]);
+            const auto& tR = (*translations)[0];
+            const auto& tG = (*translations)[1];
+            const auto& tB = (*translations)[2];
+            const auto mid = FloatPoint_t{ (tR.x + tG.x + tB.x) / 3.0f, (tR.y + tB.y + tB.y) / 3.0f };
 
+            const auto width = red->GetWidth();
+            const auto height = red->GetHeight();
+            const auto pixFmt = red->GetPixelFormat();
+            c_Image alignedR(width, height, pixFmt);
+            c_Image alignedG(width, height, pixFmt);
+            c_Image alignedB(width, height, pixFmt);
+
+            c_Image::ResizeAndTranslate(
+                red->GetBuffer(),
+                alignedR.GetBuffer(),
+                0, 0,
+                width - 1, height - 1,
+                mid.x - tR.x, mid.y - tR.y,
+                true
+            );
+
+            c_Image::ResizeAndTranslate(
+                green->GetBuffer(),
+                alignedG.GetBuffer(),
+                0, 0,
+                width - 1, height - 1,
+                mid.x - tG.x, mid.y - tG.y,
+                true
+            );
+
+            c_Image::ResizeAndTranslate(
+                blue->GetBuffer(),
+                alignedB.GetBuffer(),
+                0, 0,
+                width - 1, height - 1,
+                mid.x - tB.x, mid.y - tB.y,
+                true
+            );
+
+            c_Image combined = c_Image::CombineRGB(alignedR, alignedG, alignedB);
             onCompletion(call_result::ImageProcessed{std::make_shared<c_Image>(std::move(combined))});
         }
         else if (eid == EID_ABORTED)
@@ -179,9 +222,9 @@ void ScriptImageProcessor::OnAlignRGB(const contents::AlignRGB& call, Completion
     alignParams.subpixelAlignment = true;
     alignParams.cropMode = CropMode::PAD_TO_BOUNDING_BOX;
     alignParams.inputs = InputImageList{
-        std::move(call.red.value()),
-        std::move(call.green.value()),
-        std::move(call.blue.value())
+        std::make_shared<const c_Image>(std::move(call.red.value())),
+        std::make_shared<const c_Image>(std::move(call.green.value())),
+        std::make_shared<const c_Image>(std::move(call.blue.value()))
     };
     alignParams.normalizeFitsValues = false;
 

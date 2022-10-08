@@ -309,7 +309,7 @@ bool DetermineTranslationVectors(
             }
         },
 
-        [](const InputImageList& images) -> std::optional<ImageAccessor> { return ImageAccessor{&images.at(0)}; },
+        [](const InputImageList& images) -> std::optional<ImageAccessor> { return ImageAccessor{images.at(0).get()}; },
     }, inputFiles);
 
     if (!src.has_value()) { return false; }
@@ -362,7 +362,7 @@ bool DetermineTranslationVectors(
                 }
             },
 
-            [&](const InputImageList& images) -> std::optional<ImageAccessor> { return ImageAccessor{&images[idx]}; }
+            [&](const InputImageList& images) -> std::optional<ImageAccessor> { return ImageAccessor{images[idx].get()}; }
         }, inputs);
     };
 

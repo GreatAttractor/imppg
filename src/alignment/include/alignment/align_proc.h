@@ -49,7 +49,7 @@ enum class AlignmentMethod: int
     NUM // this has to be the last element
 };
 
-using InputImageList = std::vector<c_Image>;
+using InputImageList = std::vector<std::shared_ptr<const c_Image>>;
 using AlignmentInputs = std::variant<wxArrayString, InputImageList>;
 
 typedef struct
@@ -94,8 +94,9 @@ enum
     EID_LIMB_STABILIZATION_PROGRESS,
     EID_LIMB_STABILIZATION_FAILURE,
     EID_SAVED_OUTPUT_IMAGE,     ///< Image index: event.GetInt()
-    /// Sent before `EID_COMPLETED` if `AlignmentParameters_t::inputs` was `InputImageList`; event payload contains `std::shared_ptr<std::vector<c_Image>>`.
-    EID_OUTPUT_IMAGES,
+    /// Sent before `EID_COMPLETED` if `AlignmentParameters_t::inputs` was `InputImageList`.
+    /// Event payload contains `std::shared_ptr<std::vector<FloatPoint_t>>`, one value for each image (the first is (0.0, 0.0)).
+    EID_TRANSLATIONS,
     EID_COMPLETED,              ///< Processing completed
     EID_ABORTED                 ///< Processing aborted; abort reason (AlignmentAbortReason_t): event.getId(); abort message: event.GetString()
 };

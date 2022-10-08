@@ -95,7 +95,7 @@ ImageAccessor GetInputImageByIndex(
         },
 
         [&](const InputImageList& images) {
-            return ImageAccessor{&images[index]};
+            return ImageAccessor{images[index].get()};
         }
     }, inputs);
 }
@@ -213,8 +213,8 @@ void c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment()
         [&](const InputImageList& images) {
             for (const auto& image: images)
             {
-                const auto width = image.GetWidth();
-                const auto height = image.GetHeight();
+                const auto width = image->GetWidth();
+                const auto height = image->GetHeight();
 
                 imgSize.push_back(Point_t(width, height));
 
@@ -246,14 +246,21 @@ void c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment()
         return;
     }
 
+    if (std::holds_alternative<InputImageList>(m_Parameters.inputs))
+    {
+        wxThreadEvent* event = new wxThreadEvent(wxEVT_THREAD, EID_TRANSLATIONS);
+        event->SetPayload(std::make_shared<std::vector<FloatPoint_t>>(std::move(translation)));
+        m_Parent.QueueEvent(event);
+        m_ProcessingCompleted = true;
+        return;
+    }
+
     Rectangle_t imgIntersection = DetermineImageIntersection(Nwidth, Nheight, translation, imgSize);
 
     // Iterate again over all images, load, pad to the bounding box size or crop to intersection, translate and save
 
     int outputWidth = m_Parameters.cropMode == CropMode::CROP_TO_INTERSECTION ? imgIntersection.width : bbox.width;
     int outputHeight = m_Parameters.cropMode == CropMode::CROP_TO_INTERSECTION ? imgIntersection.height : bbox.height;
-
-    auto outputs = std::make_shared<std::vector<c_Image>>();
 
     for (size_t i = 0; i < GetNumInputs(m_Parameters.inputs); i++)
     {
@@ -283,24 +290,12 @@ void c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment()
             (Nheight - imgSize[i].y)/2 - translation[i].y - translationOrigin.y
         );
 
-        std::visit(Overload{
-            [&](const wxArrayString& fnames) {
-                SaveTranslatedOutputImage(fnames[i], output);
-            },
-
-            [&](const InputImageList&) {
-                outputs->push_back(std::move(output));
-            }
-        }, m_Parameters.inputs);
+        if (const auto* fnames = std::get_if<wxArrayString>(&m_Parameters.inputs))
+        {
+            SaveTranslatedOutputImage((*fnames)[i], output);
+        }
 
         SendMessageToParent(EID_SAVED_OUTPUT_IMAGE, i);
-    }
-
-    if (!outputs->empty())
-    {
-        wxThreadEvent* event = new wxThreadEvent(wxEVT_THREAD, EID_OUTPUT_IMAGES);
-        event->SetPayload(outputs); //TODO: make sure this won't create some undestroyed `std::shared_ptr` instances
-        m_Parent.QueueEvent(event);
     }
 
     m_ProcessingCompleted = true;
