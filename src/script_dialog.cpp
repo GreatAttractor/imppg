@@ -197,6 +197,7 @@ void c_ScriptDialog::OnRunScript(wxCommandEvent&)
     m_BtnRun->Disable();
     m_BtnStop->Enable();
     m_BtnTogglePause->Enable();
+    m_ScriptFileCtrl->Disable();
     m_Progress->Pulse();
     m_ProgressTimer.Start(PROGRESS_PULSE_INTERVAL_MS);
 }
@@ -282,6 +283,7 @@ void c_ScriptDialog::OnRunnerMessage(wxThreadEvent& event)
             m_BtnRun->Enable();
             m_BtnStop->Disable();
             m_BtnTogglePause->Disable();
+            m_ScriptFileCtrl->Enable();
             m_Progress->SetValue(100);
             m_ProgressTimer.Stop();
         },
