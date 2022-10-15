@@ -29,6 +29,7 @@ File description:
 #include <memory>
 #include <optional>
 #include <string>
+#include <tuple>
 #include <type_traits>
 #include <wx/gdicmn.h>
 
@@ -181,7 +182,7 @@ public:
     );
 
     /// Returns image copy converted to `destPixFmt`; result uses `c_SimpleBuffer` for storage.
-    c_Image ConvertPixelFormat(PixelFormat destPixFmt);
+    c_Image ConvertPixelFormat(PixelFormat destPixFmt) const;
 
     /// Returns copy of image fragment converted to `destPixFmt`; result uses `c_SimpleBuffer` for storage.
     c_Image GetConvertedPixelFormatSubImage(
@@ -219,6 +220,11 @@ public:
         const std::string& fname, ///< Full destination path
         OutputFormat outpFormat
     ) const;
+
+    /// Splits RGB image into mono images (same bit depth as original) representing each channel.
+    std::tuple<c_Image, c_Image, c_Image> SplitRGB() const;
+
+    static c_Image CombineRGB(const c_Image& red, const c_Image& green, const c_Image& blue);
 };
 
 /// Lightweight wrapper of a fragment of an image buffer; does not allocate any pixels memory itself.
@@ -372,12 +378,15 @@ std::optional<c_Image> LoadImageFileAsMono8(
     std::string* errorMsg = nullptr ///< If not null, may receive an error message (if any)
 );
 
-std::optional<c_Image> LoadImageAs(
-    const std::string& fname,     ///< Full path (including file name and extension).
-    std::optional<PixelFormat> destFmt, ///< Pixel format to convert to; can be one of PIX_MONO8, PIX_MONO32F.
-    std::string* errorMsg,        ///< If not null, may receive an error message (if any).
+std::optional<c_Image> LoadImage(
+    /// Full path (including file name and extension).
+    const std::string& fname,
+    /// Pixel format to convert to; can be one of PIX_MONO8, PIX_MONO32F.
+    std::optional<PixelFormat> destFmt = std::nullopt,
+    ///If not null, may receive an error message (if any).
+    std::string* errorMsg = nullptr,
     /// If true, floating-points values read from a FITS file are normalized, so that the highest becomes 1.0.
-    bool normalizeFITSvalues
+    bool normalizeFITSvalues = false
 );
 
 #if USE_CFITSIO
