@@ -678,7 +678,8 @@ static c_SimpleBuffer GetConvertedPixelFormatFragment(
             }
         } break;
 
-        case PixelFormat::PIX_RGB8: {
+        case PixelFormat::PIX_RGB8:
+        case PixelFormat::PIX_RGBA8: {
             switch (destPixFmt)
             {
             case PixelFormat::PIX_MONO8: ConvertWholeLine<uint8_t, uint8_t>([](const uint8_t* src, uint8_t* dest) {
