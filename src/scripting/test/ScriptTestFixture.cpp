@@ -147,6 +147,17 @@ void ScriptTestFixture::OnScriptMessageContents(scripting::ScriptMessagePayload&
     std::visit(handler, payload.GetContents());
 }
 
+void ScriptTestFixture::CheckStringNotifications(std::initializer_list<std::string> expected) const
+{
+    BOOST_REQUIRE(expected.size() == m_StringNotifications.size());
+    std::size_t idx{0};
+    for (const auto& expectedStr: expected)
+    {
+        BOOST_CHECK_EQUAL(expectedStr, m_StringNotifications[idx]);
+        ++idx;
+    }
+}
+
 void ScriptTestFixture::CheckUnorderedStringNotifications(std::initializer_list<std::string> expected) const
 {
     for (const auto& expectedStr: expected)

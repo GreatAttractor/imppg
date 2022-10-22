@@ -8,3 +8,4 @@
 - FIXME: if there's an error in `c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment` when checking file sizes, user gets on indication
 - `imppg.progress` shall also accept real numbers
 - for automatic RGB alignment of planets, check if just matching channels' centroids works
+- support `?` wildcard in file path masks

@@ -3,6 +3,7 @@
 #include "interop/modules/imppg_filesystem.h"
 #include "interop/state.h"
 
+#include <algorithm>
 #include <filesystem>
 
 namespace scripting::modules::imppg::filesystem
@@ -29,6 +30,34 @@ const luaL_Reg functions[] = {
         }, 1);
 
         return 1;
+    }},
+
+    {"list_files_sorted", [](lua_State* lua) -> int {
+        CheckNumArgs(lua, "list_files_sorted", 1);
+        const auto fileNamePattern = scripting::GetString(lua, 1);
+
+        DirectoryIterator dirIter{std::move(fileNamePattern)};
+
+        std::vector<std::string> files;
+        while (const auto file = dirIter.Next())
+        {
+            files.emplace_back(std::move(file.value()));
+        }
+        std::sort(files.begin(), files.end());
+
+        lua_newtable(lua);
+        std::size_t index{0};
+        for (const auto& file: files)
+        {
+            lua_pushinteger(lua, index + 1);
+            lua_pushstring(lua, file.c_str());
+            lua_settable(lua, 2); // returned table is at 2 (1 contains the argument (file name pattern))
+            ++index;
+        }
+
+        lua_pushinteger(lua, index);
+
+        return 2;
     }},
 
     {nullptr, nullptr} // end-of-data marker

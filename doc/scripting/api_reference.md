@@ -69,7 +69,7 @@
 
 - `list_files`
 
-  Creates an iterator over all files matching the file path mask. The iteration is performed in an unspecified order.
+  Returns an iterator over all files matching the file path mask. The iteration is performed in an unspecified order.
 
   *Parameters:*
   - file path mask (wildcards are supported)
@@ -94,6 +94,15 @@
     print(f)
   end
   ```
+
+- `list_files_sorted`
+
+  Returns a sorted table (and its length) of files matching the file path mask (see `list_files` examples of masks).
+
+  *Parameters:*
+  - file path mask (wildcards are supported)
+
+
 
 ## Classes
 

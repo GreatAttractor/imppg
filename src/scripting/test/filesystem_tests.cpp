@@ -4,6 +4,7 @@
 #include <boost/format.hpp>
 #include <boost/test/unit_test.hpp>
 #include <filesystem>
+#include <random>
 
 namespace fs = std::filesystem;
 
@@ -114,7 +115,7 @@ BOOST_FIXTURE_TEST_CASE(ListFilesSortedFilteredByExtension, ScriptTestFixture)
 {
     std::string script{R"(
 
-for f in imppg.filesystem.list_files_sorted("$ROOT/*.tif") do
+for idx, f in ipairs(imppg.filesystem.list_files_sorted("$ROOT/*.tif")) do
     imppg.test.notify_string_unordered(f)
 end
 
@@ -137,7 +138,7 @@ BOOST_FIXTURE_TEST_CASE(ListAllFilesSorted, ScriptTestFixture)
 {
     std::string script{R"(
 
-for f in imppg.filesystem.list_files_sorted("$ROOT/*") do
+for idx, f in ipairs(imppg.filesystem.list_files_sorted("$ROOT/*")) do
     imppg.test.notify_string_unordered(f)
 end
 
@@ -159,7 +160,7 @@ BOOST_FIXTURE_TEST_CASE(ListFilesSortedInDirectory, ScriptTestFixture)
 {
     std::string script{R"(
 
-for f in imppg.filesystem.list_files_sorted("$ROOT/subdir") do
+for idx, f in ipairs(imppg.filesystem.list_files_sorted("$ROOT/subdir")) do
     imppg.test.notify_string_unordered(f)
 end
 
@@ -182,7 +183,7 @@ BOOST_FIXTURE_TEST_CASE(ListFilesSortedByNameMask, ScriptTestFixture)
 {
     std::string script{R"(
 
-for f in imppg.filesystem.list_files_sorted("$ROOT/file*suffix.tif") do
+for idx, f in ipairs(imppg.filesystem.list_files_sorted("$ROOT/file*suffix.tif")) do
     imppg.test.notify_string_unordered(f)
 end
 
@@ -206,7 +207,7 @@ BOOST_FIXTURE_TEST_CASE(NonExistentDirectory_ListFilesSorted_ExecutionFails, Scr
 {
     std::string script{R"(
 
-imppg.filesystem.list_files_sorted("/985849872632452/non-existent-dir")
+files, count = imppg.filesystem.list_files_sorted("/985849872632452/non-existent-dir")
 
     )"};
 
@@ -217,16 +218,21 @@ BOOST_FIXTURE_TEST_CASE(ListFilesSorted_ResultsSorted, ScriptTestFixture)
 {
     std::string script{R"(
 
-for f in imppg.filesystem.list_files_sorted("$ROOT/*.tif") do
-    imppg.test.notify_string(f)
+files, count = imppg.filesystem.list_files_sorted("$ROOT/*.tif")
+for idx, file in ipairs(files) do
+    imppg.test.notify_string(file)
 end
+imppg.test.notify_integer(count)
 
     )"};
     const auto root = fs::temp_directory_path();
     boost::algorithm::replace_all(script, "$ROOT", root.generic_string());
-    for (int i = 0; i < 100; ++i)
+    std::default_random_engine rng{1234};
+    std::uniform_int_distribution<int> distribution(0, 99999);
+    constexpr int NUM_FILES = 32;
+    for (int i = 0; i < NUM_FILES; ++i)
     {
-        CreateEmptyFile(root / boost::str(boost::format("file1_%05d.tif") % i));
+        CreateEmptyFile(root / boost::str(boost::format("file1_%05d.tif") % distribution(rng)));
     }
 
     BOOST_REQUIRE(RunScript(script.c_str()));
@@ -236,4 +242,6 @@ end
     {
         BOOST_CHECK(strings[i - 1] <= strings[i]);
     }
+
+    CheckIntegerNotifications({NUM_FILES});
 }

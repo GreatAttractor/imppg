@@ -60,6 +60,8 @@ imppg.test.notify_image(image)
 
     BOOST_REQUIRE(RunScript(script.c_str()));
 
+    fs::remove(root / "image.tif");
+
     const auto& loadedImage = GetImageNotification();
     BOOST_CHECK_EQUAL(image.GetWidth(), loadedImage.GetWidth());
     BOOST_CHECK_EQUAL(image.GetHeight(), loadedImage.GetHeight());
@@ -89,6 +91,8 @@ processed_image:save("$ROOT/output.tif", imppg.TIFF_16)
     image.SaveToFile((root / "image.bmp").string(), OutputFormat::BMP_8);
 
     BOOST_REQUIRE(RunScript(script.c_str()));
+
+    fs::remove(root / "image.bmp");
 
     const auto& processedImg = GetImageNotification();
     BOOST_REQUIRE(PixelFormat::PIX_MONO32F == processedImg.GetPixelFormat());
@@ -122,7 +126,10 @@ imppg.process_image_file("$ROOT/image.bmp", "$ROOT/settings.xml", "$ROOT/output.
 
     BOOST_REQUIRE(RunScript(script.c_str()));
 
+    fs::remove(root / "image.bmp");
+
     auto processedImg = LoadImage((root / "output.tif").string()).value();
+    fs::remove(root / "output.tif");
     BOOST_REQUIRE(PixelFormat::PIX_MONO16 == processedImg.GetPixelFormat());
     BOOST_CHECK(CheckAllPixelValues<std::uint16_t>(processedImg, 0xFFFF / 2));
 }

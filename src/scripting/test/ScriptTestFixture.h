@@ -28,7 +28,7 @@ public:
     /// Creates file which is deleted on ScriptTestFixture destruction.
     void CreateEmptyFile(const std::filesystem::path& path);
 
-    //const std::vector<std::string>& GetStringNotifications() const;
+    void CheckStringNotifications(std::initializer_list<std::string> expected) const;
 
     void CheckUnorderedStringNotifications(std::initializer_list<std::string> expected) const;
 
