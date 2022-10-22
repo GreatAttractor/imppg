@@ -95,7 +95,14 @@ void ScriptTestFixture::OnScriptMessageContents(scripting::ScriptMessagePayload&
         [&](const scripting::contents::None&) {},
 
         [&](const scripting::contents::NotifyString& contents) {
-            m_StringNotifications[contents.s] += 1;
+            if (contents.ordered)
+            {
+                m_StringNotifications.push_back(contents.s);
+            }
+            else
+            {
+                m_StringNotificationsUnordered[contents.s] += 1;
+            }
             returnOk();
         },
 
@@ -140,13 +147,13 @@ void ScriptTestFixture::OnScriptMessageContents(scripting::ScriptMessagePayload&
     std::visit(handler, payload.GetContents());
 }
 
-void ScriptTestFixture::CheckStringNotifications(std::initializer_list<std::string> expected) const
+void ScriptTestFixture::CheckUnorderedStringNotifications(std::initializer_list<std::string> expected) const
 {
     for (const auto& expectedStr: expected)
     {
         BOOST_TEST_INFO("checking: " << expectedStr);
-        const auto iter = m_StringNotifications.find(expectedStr);
-        if (iter == m_StringNotifications.end())
+        const auto iter = m_StringNotificationsUnordered.find(expectedStr);
+        if (iter == m_StringNotificationsUnordered.end())
         {
             BOOST_ERROR("not found");
         }

@@ -34,13 +34,13 @@ BOOST_FIXTURE_TEST_CASE(CallModuleAndSubmoduleFunctions, ScriptTestFixture)
 {
     const char* script = R"(
 
-imppg.test.notify_string("s1")
-imppg.test.test.notify_string("s2")
+imppg.test.notify_string_unordered("s1")
+imppg.test.test.notify_string_unordered("s2")
 
     )";
 
     BOOST_REQUIRE(RunScript(script));
-    CheckStringNotifications({"s1", "s2"});
+    CheckUnorderedStringNotifications({"s1", "s2"});
 }
 
 BOOST_FIXTURE_TEST_CASE(LoadAndCheckImage, ScriptTestFixture)
@@ -126,4 +126,3 @@ imppg.process_image_file("$ROOT/image.bmp", "$ROOT/settings.xml", "$ROOT/output.
     BOOST_REQUIRE(PixelFormat::PIX_MONO16 == processedImg.GetPixelFormat());
     BOOST_CHECK(CheckAllPixelValues<std::uint16_t>(processedImg, 0xFFFF / 2));
 }
-

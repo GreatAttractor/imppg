@@ -8,9 +8,9 @@
 namespace
 {
 
-void NotifyString(std::string s)
+void NotifyString(std::string s, bool ordered)
 {
-    scripting::g_State->CallFunctionAndAwaitCompletion(scripting::contents::NotifyString{std::move(s)});
+    scripting::g_State->CallFunctionAndAwaitCompletion(scripting::contents::NotifyString{std::move(s), ordered});
 }
 
 void NotifySettings(const scripting::SettingsWrapper& s)
@@ -47,7 +47,8 @@ const luaL_Reg functions[] = {
     {"notify_boolean", [](lua_State* lua) -> int { NotifyBoolean(scripting::GetBoolean(lua, 1)); return 0; }},
     {"notify_integer", [](lua_State* lua) -> int { NotifyInteger(scripting::GetInteger(lua, 1)); return 0; }},
     {"notify_number", [](lua_State* lua) -> int { NotifyNumber(scripting::GetNumber(lua, 1)); return 0; }},
-    {"notify_string", [](lua_State* lua) -> int { NotifyString(scripting::GetString(lua, 1)); return 0; }},
+    {"notify_string", [](lua_State* lua) -> int { NotifyString(scripting::GetString(lua, 1), true); return 0; }},
+    {"notify_string_unordered", [](lua_State* lua) -> int { NotifyString(scripting::GetString(lua, 1), false); return 0; }},
     {"notify_settings", [](lua_State* lua) -> int { NotifySettings(scripting::GetObject<SettingsWrapper>(lua, 1)); return 0; }},
     {"notify_image", [](lua_State* lua) -> int { NotifyImage(scripting::GetObject<ImageWrapper>(lua, 1)); return 0; }},
 

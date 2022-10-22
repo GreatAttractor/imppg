@@ -30,7 +30,7 @@ public:
 
     //const std::vector<std::string>& GetStringNotifications() const;
 
-    void CheckStringNotifications(std::initializer_list<std::string> expected) const;
+    void CheckUnorderedStringNotifications(std::initializer_list<std::string> expected) const;
 
     const ProcessingSettings& GetSettingsNotification() const;
 
@@ -48,6 +48,8 @@ public:
         //
     }
 
+    const std::vector<std::string>& GetStringNotifications() const { return m_StringNotifications; }
+
 private:
     void OnIdle(wxIdleEvent& event);
     void OnRunnerMessage(wxThreadEvent& event);
@@ -58,7 +60,8 @@ private:
     std::promise<void> m_StopScript;
     std::vector<std::filesystem::path> m_TemporaryFiles;
     // value: occurrence count
-    std::unordered_map<std::string, std::size_t> m_StringNotifications;
+    std::unordered_map<std::string, std::size_t> m_StringNotificationsUnordered;
+    std::vector<std::string> m_StringNotifications;
     std::optional<ProcessingSettings> m_SettingsNotification;
     std::shared_ptr<const c_Image> m_ImageNotification;
     std::vector<double> m_NumberNotifications;

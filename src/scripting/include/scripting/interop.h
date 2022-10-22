@@ -47,7 +47,7 @@ struct NotifyImage { std::shared_ptr<const c_Image> image; };
 struct NotifyInteger { int value; };
 struct NotifyNumber { double number; };
 struct NotifySettings { ProcessingSettings settings; };
-struct NotifyString { std::string s; };
+struct NotifyString { std::string s; bool ordered; };
 struct Progress { int percentage; };
 
 struct AlignRGB
