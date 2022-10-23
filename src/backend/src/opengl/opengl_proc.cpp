@@ -163,14 +163,14 @@ c_OpenGLProcessing::c_OpenGLProcessing(unsigned lRCmdBatchSizeMpixIters)
           &m_GLShaders.vert.passthrough },
         { uniforms::Image,
           uniforms::BlurredImage,
-          //TODO: implement this     uniforms::InputImageBlurred,
-          //TODO: implement this     uniforms::SelectionPos,
-          //TODO: implement this     uniforms::Adaptive,
-          //TODO: implement this     uniforms::AmountMin,
+          uniforms::InputImageBlurred,
+          uniforms::SelectionPos,
+          uniforms::Adaptive,
+          uniforms::AmountMin,
           uniforms::AmountMax,
-          //TODO: implement this     uniforms::Threshold,
-          //TODO: implement this     uniforms::Width,
-          //TODO: implement this     uniforms::TransitionCurve
+          uniforms::Threshold,
+          uniforms::Width,
+          uniforms::TransitionCurve
           },
         {},
         "unsharpMask"
@@ -452,21 +452,21 @@ void c_OpenGLProcessing::StartUnsharpMasking()
     gl::BindProgramTextures(prog, {
         {&m_TexFBOs.lrSharpened.tex, uniforms::Image},
         {&m_TexFBOs.gaussianBlur.tex, uniforms::BlurredImage},
-        //{&m_TexFBOs.inputBlurred.tex, uniforms::InputImageBlurred}
+        {&m_TexFBOs.inputBlurred.tex, uniforms::InputImageBlurred}
     });
-    //prog.SetUniform1i(uniforms::Adaptive, m_ProcessingSettings.unsharpMasking.adaptive);
-    //prog.SetUniform1f(uniforms::AmountMin, m_ProcessingSettings.unsharpMasking.amountMin);
+    prog.SetUniform1i(uniforms::Adaptive, m_ProcessingSettings.unsharpMasking.adaptive);
+    prog.SetUniform1f(uniforms::AmountMin, m_ProcessingSettings.unsharpMasking.amountMin);
     prog.SetUniform1f(uniforms::AmountMax, m_ProcessingSettings.unsharpMasking.amountMax);
-    //prog.SetUniform1f(uniforms::Threshold, m_ProcessingSettings.unsharpMasking.threshold);
-    //prog.SetUniform1f(uniforms::Width, m_ProcessingSettings.unsharpMasking.width);
-    //prog.SetUniform2i(uniforms::SelectionPos, m_Selection.GetLeft(), m_Selection.GetTop());
-    // prog.SetUniform4f(
-    //     uniforms::TransitionCurve,
-    //     m_TransitionCurve[0],
-    //     m_TransitionCurve[1],
-    //     m_TransitionCurve[2],
-    //     m_TransitionCurve[3]
-    // );
+    prog.SetUniform1f(uniforms::Threshold, m_ProcessingSettings.unsharpMasking.threshold);
+    prog.SetUniform1f(uniforms::Width, m_ProcessingSettings.unsharpMasking.width);
+    prog.SetUniform2i(uniforms::SelectionPos, m_Selection.GetLeft(), m_Selection.GetTop());
+    prog.SetUniform4f(
+        uniforms::TransitionCurve,
+        m_TransitionCurve[0],
+        m_TransitionCurve[1],
+        m_TransitionCurve[2],
+        m_TransitionCurve[3]
+    );
 
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 

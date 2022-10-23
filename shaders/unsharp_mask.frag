@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2016-2019 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2016-2022 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -54,22 +54,19 @@ void main()
     }
     else
     {
-        amount = AmountMax; // TESTING
+        vec3 inputRGB = texture(InputImageBlurred, TexCoord + vec2(SelectionPos)).rgb;
+        float l = (inputRGB.r + inputRGB.g + inputRGB.b) / 3.0;
+        float a = TransitionCurve.x;
+        float b = TransitionCurve.y;
+        float c = TransitionCurve.z;
+        float d = TransitionCurve.w;
 
-        // TODO: implement this
-
-        // vec3 l = texture(InputImageBlurred, TexCoord + vec2(SelectionPos)).rgb;
-        // float a = TransitionCurve.x;
-        // float b = TransitionCurve.y;
-        // float c = TransitionCurve.z;
-        // float d = TransitionCurve.w;
-
-        // if (l < Threshold - Width)
-        //     amount = AmountMin;
-        // else if (l > Threshold + Width)
-        //     amount = AmountMax;
-        // else
-        //     amount = l * (l * (a * l + b) + c) + d;
+        if (l < Threshold - Width)
+            amount = AmountMin;
+        else if (l > Threshold + Width)
+            amount = AmountMax;
+        else
+            amount = l * (l * (a * l + b) + c) + d;
     }
 
     vec3 outputValue = amount * texture(Image, TexCoord).rgb +
