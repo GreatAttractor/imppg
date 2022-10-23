@@ -26,6 +26,8 @@ File description:
 in vec2 TexCoord;
 out vec4 Color;
 
+uniform bool IsMono;
+
 uniform sampler2DRect Image;
 uniform sampler2DRect BlurredImage;
 
@@ -55,7 +57,7 @@ void main()
     else
     {
         vec3 inputRGB = texture(InputImageBlurred, TexCoord + vec2(SelectionPos)).rgb;
-        float l = (inputRGB.r + inputRGB.g + inputRGB.b) / 3.0;
+        float l = IsMono ? inputRGB.r : (inputRGB.r + inputRGB.g + inputRGB.b) / 3.0;
         float a = TransitionCurve.x;
         float b = TransitionCurve.y;
         float c = TransitionCurve.z;
@@ -69,9 +71,20 @@ void main()
             amount = l * (l * (a * l + b) + c) + d;
     }
 
-    vec3 outputValue = amount * texture(Image, TexCoord).rgb +
-        (1.0 - amount) * texture(BlurredImage, TexCoord).rgb;
+    if (IsMono)
+    {
+        float outputValue = amount * texture(Image, TexCoord).r +
+            (1.0 - amount) * texture(BlurredImage, TexCoord).r;
 
-    outputValue = clamp(outputValue, 0.0, 1.0);
-    Color = vec4(outputValue, 1.0);
+        outputValue = clamp(outputValue, 0.0, 1.0);
+        Color = vec4(vec3(outputValue), 1.0);
+    }
+    else
+    {
+        vec3 outputValue = amount * texture(Image, TexCoord).rgb +
+            (1.0 - amount) * texture(BlurredImage, TexCoord).rgb;
+
+        outputValue = clamp(outputValue, 0.0, 1.0);
+        Color = vec4(outputValue, 1.0);
+    }
 }

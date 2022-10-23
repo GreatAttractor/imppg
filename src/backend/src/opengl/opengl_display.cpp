@@ -117,7 +117,8 @@ c_OpenGLDisplay::c_OpenGLDisplay(c_ScrolledView& imgView, unsigned lRCmdBatchSiz
     m_GLPrograms.monoOutput = gl::c_Program(
         { &m_GLShaders.frag.monoOutput,
           &m_GLShaders.vert.vertex },
-        { uniforms::Image,
+        { uniforms::IsMono,
+          uniforms::Image,
           uniforms::ViewportSize,
           uniforms::ScrollPos },
         {},
@@ -127,7 +128,8 @@ c_OpenGLDisplay::c_OpenGLDisplay(c_ScrolledView& imgView, unsigned lRCmdBatchSiz
     m_GLPrograms.monoOutputCubic = gl::c_Program(
         { &m_GLShaders.frag.monoOutputCubic,
           &m_GLShaders.vert.vertex },
-        { uniforms::Image,
+        { uniforms::IsMono,
+          uniforms::Image,
           uniforms::ViewportSize,
           uniforms::ScrollPos },
         {},
@@ -208,7 +210,7 @@ void c_OpenGLDisplay::OnPaint(wxPaintEvent&)
     {
         auto& prog = (m_ScalingMethod == ScalingMethod::CUBIC) ? m_GLPrograms.monoOutputCubic : m_GLPrograms.monoOutput;
         prog.Use();
-
+        prog.SetUniform1i(uniforms::IsMono, IsMono(m_Img.value().GetPixelFormat()));
         gl::BindProgramTextures(prog, { {&m_Processor->GetOriginalImg(), uniforms::Image} });
 
         const auto scrollPos = m_ImgView.GetScrollPosition();
@@ -239,7 +241,7 @@ void c_OpenGLDisplay::RenderProcessingResults()
 
     auto& prog = (m_ScalingMethod == ScalingMethod::CUBIC) ? m_GLPrograms.monoOutputCubic : m_GLPrograms.monoOutput;
     prog.Use();
-
+    prog.SetUniform1i(uniforms::IsMono, IsMono(m_Img.value().GetPixelFormat()));
     gl::BindProgramTextures(prog, { {renderingResults, uniforms::Image} });
 
     const auto scrollPos = m_ImgView.GetScrollPosition();

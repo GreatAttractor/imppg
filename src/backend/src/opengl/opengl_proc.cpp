@@ -127,7 +127,8 @@ c_OpenGLProcessing::c_OpenGLProcessing(unsigned lRCmdBatchSizeMpixIters)
     m_GLPrograms.toneCurve = gl::c_Program(
         { &m_GLShaders.frag.toneCurve,
           &m_GLShaders.vert.passthrough },
-        { uniforms::Image,
+        { uniforms::IsMono,
+          uniforms::Image,
           uniforms::NumPoints,
           uniforms::CurvePoints,
           uniforms::Splines,
@@ -141,7 +142,8 @@ c_OpenGLProcessing::c_OpenGLProcessing(unsigned lRCmdBatchSizeMpixIters)
     m_GLPrograms.gaussianHorz = gl::c_Program(
         { &m_GLShaders.frag.gaussianHorz,
           &m_GLShaders.vert.passthrough },
-        { uniforms::Image,
+        { uniforms::IsMono,
+          uniforms::Image,
           uniforms::KernelRadius,
           uniforms::GaussianKernel },
         {},
@@ -161,7 +163,8 @@ c_OpenGLProcessing::c_OpenGLProcessing(unsigned lRCmdBatchSizeMpixIters)
     m_GLPrograms.unsharpMask = gl::c_Program(
         { &m_GLShaders.frag.unsharpMask,
           &m_GLShaders.vert.passthrough },
-        { uniforms::Image,
+        { uniforms::IsMono,
+          uniforms::Image,
           uniforms::BlurredImage,
           uniforms::InputImageBlurred,
           uniforms::SelectionPos,
@@ -179,7 +182,8 @@ c_OpenGLProcessing::c_OpenGLProcessing(unsigned lRCmdBatchSizeMpixIters)
     m_GLPrograms.multiply = gl::c_Program(
         { &m_GLShaders.frag.multiply,
           &m_GLShaders.vert.passthrough },
-        { uniforms::InputArray1,
+        { uniforms::IsMono,
+          uniforms::InputArray1,
           uniforms::InputArray2 },
         {},
         "multiply"
@@ -188,7 +192,8 @@ c_OpenGLProcessing::c_OpenGLProcessing(unsigned lRCmdBatchSizeMpixIters)
     m_GLPrograms.divide = gl::c_Program(
         { &m_GLShaders.frag.divide,
           &m_GLShaders.vert.passthrough },
-        { uniforms::InputArray1,
+        { uniforms::IsMono,
+          uniforms::InputArray1,
           uniforms::InputArray2 },
         {},
         "divide"
@@ -391,6 +396,7 @@ void c_OpenGLProcessing::MultiplyTextures(gl::c_Texture& tex1, gl::c_Texture& te
     dest.Bind();
     auto& prog = m_GLPrograms.multiply;
     prog.Use();
+    prog.SetUniform1i(uniforms::IsMono, IsMono(m_Img->GetPixelFormat()));
     gl::BindProgramTextures(prog, { {&tex1, uniforms::InputArray1}, {&tex2, uniforms::InputArray2} });
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
@@ -400,6 +406,7 @@ void c_OpenGLProcessing::DivideTextures(gl::c_Texture& tex1, gl::c_Texture& tex2
     dest.Bind();
     auto& prog = m_GLPrograms.divide;
     prog.Use();
+    prog.SetUniform1i(uniforms::IsMono, IsMono(m_Img->GetPixelFormat()));
     gl::BindProgramTextures(prog, { {&tex1, uniforms::InputArray1}, {&tex2, uniforms::InputArray2} });
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
@@ -414,6 +421,7 @@ void c_OpenGLProcessing::GaussianConvolution(gl::c_Texture& src, gl::c_Framebuff
         auto& prog = m_GLPrograms.gaussianHorz;
         prog.Use();
         gl::BindProgramTextures(prog, { {&src, uniforms::Image} });
+        prog.SetUniform1i(uniforms::IsMono, IsMono(m_Img->GetPixelFormat()));
         prog.SetUniform1i(uniforms::KernelRadius, gaussian.size());
         glUniform1fv(prog.GetUniform(uniforms::GaussianKernel), gaussian.size(), gaussian.data());
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
@@ -449,6 +457,7 @@ void c_OpenGLProcessing::StartUnsharpMasking()
 
     auto& prog = m_GLPrograms.unsharpMask;
     prog.Use();
+    prog.SetUniform1i(uniforms::IsMono, IsMono(m_Img->GetPixelFormat()));
     gl::BindProgramTextures(prog, {
         {&m_TexFBOs.lrSharpened.tex, uniforms::Image},
         {&m_TexFBOs.gaussianBlur.tex, uniforms::BlurredImage},
@@ -487,6 +496,7 @@ void c_OpenGLProcessing::StartToneMapping()
     auto& prog = m_GLPrograms.toneCurve;
     prog.Use();
     gl::BindProgramTextures(prog, { {&m_TexFBOs.unsharpMask.tex, uniforms::Image} });
+    prog.SetUniform1i(uniforms::IsMono, IsMono(m_Img->GetPixelFormat()));
 
     const auto& tcurve = m_ProcessingSettings.toneCurve;
     prog.SetUniform1i(uniforms::NumPoints, tcurve.GetNumPoints());

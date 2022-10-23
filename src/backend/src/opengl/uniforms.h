@@ -43,6 +43,7 @@ namespace imppg::backend::uniforms
     extern const char* SelectionPos;
     extern const char* AmountMin;
     extern const char* AmountMax;
+    extern const char* IsMono;
     extern const char* InputArray1;
     extern const char* InputArray2;
     extern const char* InputImageBlurred;
