@@ -1,2 +1,3 @@
 - verify deringing works
 - make separate mono and RGB shaders?
+- commit `27bae32` appears to work, but once it hanged at some point when manipulating L-R sigma (just the rendering part; not refreshing the screen... shader inf. loop or sth.?)
