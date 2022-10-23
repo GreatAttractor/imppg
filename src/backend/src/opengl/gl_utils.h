@@ -158,7 +158,7 @@ public:
         // using RGBA instead of just RGB, because Intel HD Graphics 5500 (Broadwell GT2) + Mesa 11.1.0 (git-525f3c2)
         // cannot create a framebuffer with RGB32F color attachments
         GLenum format = mono ? GL_RED : GL_RGB;
-        GLenum internalFormat = mono ? GL_R32F : GL_RGB32F; //TODO!!
+        GLenum internalFormat = mono ? GL_R32F : GL_RGBA32F;
 
         return c_Texture(internalFormat, width, height, format, GL_FLOAT, data, linearInterpolation);
     }
