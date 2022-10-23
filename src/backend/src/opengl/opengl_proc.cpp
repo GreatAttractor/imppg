@@ -43,6 +43,7 @@ static std::vector<float> GetGaussianKernel(float sigma)
 
 void c_OpenGLProcessing::StartProcessing(c_Image img, ProcessingSettings procSettings)
 {
+    IMPPG_ASSERT(img.GetPixelFormat() == PixelFormat::PIX_MONO32F);
     m_OwnedImg = std::move(img);
     SetSelection(m_OwnedImg.value().GetImageRect());
     SetImage(m_OwnedImg.value(), false);
@@ -560,6 +561,8 @@ void c_OpenGLProcessing::SetSelection(wxRect selection)
 
 void c_OpenGLProcessing::SetImage(const c_Image& img, bool linearInterpolation)
 {
+    IMPPG_ASSERT(img.GetPixelFormat() == PixelFormat::PIX_MONO32F);
+
     m_Img = &img;
 
     m_ProcessedOutput = std::nullopt;

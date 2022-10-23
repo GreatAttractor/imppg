@@ -38,6 +38,7 @@ std::unique_ptr<IProcessingBackEnd> CreateCpuBmpProcessingBackend()
 
 void c_CpuAndBitmapsProcessing::StartProcessing(c_Image img, ProcessingSettings procSettings)
 {
+    IMPPG_ASSERT(img.GetPixelFormat() == PixelFormat::PIX_MONO32F);
     m_OwnedImg = std::move(img);
     m_Img = &m_OwnedImg.value();
     SetSelection(m_OwnedImg.value().GetImageRect());
