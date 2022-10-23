@@ -426,7 +426,7 @@ void c_CpuAndBitmapsProcessing::StartProcessing()
         StartToneCurve();
         break;
 
-        case ProcessingRequest::NONE: IMPPG_ABORT();
+    case ProcessingRequest::NONE: IMPPG_ABORT();
     }
 }
 
