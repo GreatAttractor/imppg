@@ -54,23 +54,27 @@ void main()
     }
     else
     {
-        float l = texture(InputImageBlurred, TexCoord + vec2(SelectionPos)).r;
-        float a = TransitionCurve.x;
-        float b = TransitionCurve.y;
-        float c = TransitionCurve.z;
-        float d = TransitionCurve.w;
+        amount = AmountMax; // TESTING
 
-        if (l < Threshold - Width)
-            amount = AmountMin;
-        else if (l > Threshold + Width)
-            amount = AmountMax;
-        else
-            amount = l * (l * (a * l + b) + c) + d;
+        // TODO: implement this
+
+        // vec3 l = texture(InputImageBlurred, TexCoord + vec2(SelectionPos)).rgb;
+        // float a = TransitionCurve.x;
+        // float b = TransitionCurve.y;
+        // float c = TransitionCurve.z;
+        // float d = TransitionCurve.w;
+
+        // if (l < Threshold - Width)
+        //     amount = AmountMin;
+        // else if (l > Threshold + Width)
+        //     amount = AmountMax;
+        // else
+        //     amount = l * (l * (a * l + b) + c) + d;
     }
 
-    float outputValue = amount * texture(Image, TexCoord).r +
-        (1.0 - amount) * texture(BlurredImage, TexCoord).r;
+    vec3 outputValue = amount * texture(Image, TexCoord).rgb +
+        (1.0 - amount) * texture(BlurredImage, TexCoord).rgb;
 
     outputValue = clamp(outputValue, 0.0, 1.0);
-    Color = vec4(outputValue, outputValue, outputValue, 1.0);
+    Color = vec4(outputValue, 1.0);
 }

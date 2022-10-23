@@ -31,6 +31,6 @@ uniform sampler2DRect InputArray2;
 
 void main()
 {
-    float outputValue = texture(InputArray1, TexCoord).r * texture(InputArray2, TexCoord).r;
-    Color = vec4(outputValue, outputValue, outputValue, 1.0);
+    vec3 outputValue = texture(InputArray1, TexCoord).rgb * texture(InputArray2, TexCoord).rgb;
+    Color = vec4(outputValue, 1.0);
 }

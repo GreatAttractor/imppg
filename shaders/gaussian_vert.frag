@@ -34,12 +34,12 @@ uniform float GaussianKernel[MAX_GAUSSIAN_RADIUS]; // only `KernelRadius` elemen
 
 void main()
 {
-    float outputValue = 0.0;
+    vec3 outputValue = vec3(0.0);
 
     for (int i = -(KernelRadius - 1); i < KernelRadius; i++)
     {
-        outputValue += GaussianKernel[abs(i)] * texture(Image, TexCoord + vec2(0, float(i))).r;
+        outputValue += GaussianKernel[abs(i)] * texture(Image, TexCoord + vec2(0, float(i))).rgb;
     }
 
-    Color = vec4(outputValue, outputValue, outputValue, 1.0);
+    Color = vec4(outputValue, 1.0);
 }

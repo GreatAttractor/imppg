@@ -152,10 +152,15 @@ public:
     c_Texture(c_Texture&&)                 = default;
     c_Texture& operator=(c_Texture&&)      = default;
 
-    /// Creates a mono rectangle texture.
-    static c_Texture CreateMono(GLsizei width, GLsizei height, const GLvoid* data, bool linearInterpolation = false)
+    /// Creates a rectangle texture.
+    static c_Texture Create(GLsizei width, GLsizei height, const GLvoid* data, bool linearInterpolation, bool mono)
     {
-        return c_Texture(GL_R32F, width, height, GL_RED, GL_FLOAT, data, linearInterpolation);
+        // using RGBA instead of just RGB, because Intel HD Graphics 5500 (Broadwell GT2) + Mesa 11.1.0 (git-525f3c2)
+        // cannot create a framebuffer with RGB32F color attachments
+        GLenum format = mono ? GL_RED : GL_RGB;
+        GLenum internalFormat = mono ? GL_R32F : GL_RGB32F; //TODO!!
+
+        return c_Texture(internalFormat, width, height, format, GL_FLOAT, data, linearInterpolation);
     }
 
     /// Creates a rectangle texture.

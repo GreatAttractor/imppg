@@ -139,7 +139,10 @@ void c_CpuAndBitmaps::ImageViewZoomChanged(float zoomFactor)
 
 void c_CpuAndBitmaps::SetImage(c_Image&& img, std::optional<wxRect> newSelection)
 {
-    IMPPG_ASSERT(img.GetPixelFormat() == PixelFormat::PIX_MONO32F);
+    IMPPG_ASSERT(
+        img.GetPixelFormat() == PixelFormat::PIX_MONO32F ||
+        img.GetPixelFormat() == PixelFormat::PIX_RGB32F
+    );
 
     m_Img = std::move(img);
     m_ImgBmp = ImageToRgbBitmap(

@@ -163,14 +163,15 @@ c_OpenGLProcessing::c_OpenGLProcessing(unsigned lRCmdBatchSizeMpixIters)
           &m_GLShaders.vert.passthrough },
         { uniforms::Image,
           uniforms::BlurredImage,
-          uniforms::InputImageBlurred,
-          uniforms::SelectionPos,
-          uniforms::Adaptive,
-          uniforms::AmountMin,
+          //TODO: implement this     uniforms::InputImageBlurred,
+          //TODO: implement this     uniforms::SelectionPos,
+          //TODO: implement this     uniforms::Adaptive,
+          //TODO: implement this     uniforms::AmountMin,
           uniforms::AmountMax,
-          uniforms::Threshold,
-          uniforms::Width,
-          uniforms::TransitionCurve },
+          //TODO: implement this     uniforms::Threshold,
+          //TODO: implement this     uniforms::Width,
+          //TODO: implement this     uniforms::TransitionCurve
+          },
         {},
         "unsharpMask"
     );
@@ -232,7 +233,7 @@ void c_OpenGLProcessing::InitTextureAndFBO(c_OpenGLProcessing::TexFbo& texFbo, c
 {
     if (!texFbo.tex || texFbo.tex.GetWidth() != size.GetWidth() || texFbo.tex.GetHeight() != size.GetHeight())
     {
-        texFbo.tex = gl::c_Texture::CreateMono(size.GetWidth(), size.GetHeight(), nullptr);
+        texFbo.tex = gl::c_Texture::Create(size.GetWidth(), size.GetHeight(), nullptr, false, IsMono(m_Img->GetPixelFormat()));
         texFbo.fbo = gl::c_Framebuffer({ &texFbo.tex });
     }
 }
@@ -334,11 +335,12 @@ void c_OpenGLProcessing::StartLRDeconvolution()
                 DERINGING_BRIGHTNESS_THRESHOLD,
                 m_ProcessingSettings.LucyRichardson.sigma
             );
-            m_BlurredForDeringing.texture = gl::c_Texture::CreateMono(
+            m_BlurredForDeringing.texture = gl::c_Texture::Create(
                 m_BlurredForDeringing.image.value().GetWidth(),
                 m_BlurredForDeringing.image.value().GetHeight(),
                 m_BlurredForDeringing.image.value().GetBuffer().GetRow(0),
-                false
+                false,
+                IsMono(m_Img->GetPixelFormat())
             );
         }
 
@@ -450,21 +452,21 @@ void c_OpenGLProcessing::StartUnsharpMasking()
     gl::BindProgramTextures(prog, {
         {&m_TexFBOs.lrSharpened.tex, uniforms::Image},
         {&m_TexFBOs.gaussianBlur.tex, uniforms::BlurredImage},
-        {&m_TexFBOs.inputBlurred.tex, uniforms::InputImageBlurred}
+        //{&m_TexFBOs.inputBlurred.tex, uniforms::InputImageBlurred}
     });
-    prog.SetUniform1i(uniforms::Adaptive, m_ProcessingSettings.unsharpMasking.adaptive);
-    prog.SetUniform1f(uniforms::AmountMin, m_ProcessingSettings.unsharpMasking.amountMin);
+    //prog.SetUniform1i(uniforms::Adaptive, m_ProcessingSettings.unsharpMasking.adaptive);
+    //prog.SetUniform1f(uniforms::AmountMin, m_ProcessingSettings.unsharpMasking.amountMin);
     prog.SetUniform1f(uniforms::AmountMax, m_ProcessingSettings.unsharpMasking.amountMax);
-    prog.SetUniform1f(uniforms::Threshold, m_ProcessingSettings.unsharpMasking.threshold);
-    prog.SetUniform1f(uniforms::Width, m_ProcessingSettings.unsharpMasking.width);
-    prog.SetUniform2i(uniforms::SelectionPos, m_Selection.GetLeft(), m_Selection.GetTop());
-    prog.SetUniform4f(
-        uniforms::TransitionCurve,
-        m_TransitionCurve[0],
-        m_TransitionCurve[1],
-        m_TransitionCurve[2],
-        m_TransitionCurve[3]
-    );
+    //prog.SetUniform1f(uniforms::Threshold, m_ProcessingSettings.unsharpMasking.threshold);
+    //prog.SetUniform1f(uniforms::Width, m_ProcessingSettings.unsharpMasking.width);
+    //prog.SetUniform2i(uniforms::SelectionPos, m_Selection.GetLeft(), m_Selection.GetTop());
+    // prog.SetUniform4f(
+    //     uniforms::TransitionCurve,
+    //     m_TransitionCurve[0],
+    //     m_TransitionCurve[1],
+    //     m_TransitionCurve[2],
+    //     m_TransitionCurve[3]
+    // );
 
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
@@ -543,9 +545,15 @@ void c_OpenGLProcessing::SetSelection(wxRect selection)
     FillSelectionVBOs();
 
     m_BlurredForDeringing.workBuf.resize(m_Selection.width * m_Selection.height);
-    m_BlurredForDeringing.image = c_Image(m_Selection.width, m_Selection.height, PixelFormat::PIX_MONO32F);
+
     if (m_Img)
     {
+        m_BlurredForDeringing.image = c_Image(
+            m_Selection.width,
+            m_Selection.height,
+            IsMono(m_Img->GetPixelFormat()) ? PixelFormat::PIX_MONO32F : PixelFormat::PIX_RGB32F
+        );
+
         c_Image::Copy(
             *m_Img,
             m_BlurredForDeringing.image.value(),
@@ -561,7 +569,10 @@ void c_OpenGLProcessing::SetSelection(wxRect selection)
 
 void c_OpenGLProcessing::SetImage(const c_Image& img, bool linearInterpolation)
 {
-    IMPPG_ASSERT(img.GetPixelFormat() == PixelFormat::PIX_MONO32F);
+    IMPPG_ASSERT(
+        img.GetPixelFormat() == PixelFormat::PIX_MONO32F ||
+        img.GetPixelFormat() == PixelFormat::PIX_RGB32F
+    );
 
     m_Img = &img;
 
@@ -582,13 +593,15 @@ void c_OpenGLProcessing::SetImage(const c_Image& img, bool linearInterpolation)
     ///
     /// To change it, use appropriate glPixelStore* calls in `c_Texture` constructor
     /// before calling `glTexImage2D`.
-    IMPPG_ASSERT(m_Img->GetBuffer().GetBytesPerRow() == m_Img->GetWidth() * sizeof(float));
+    IMPPG_ASSERT(m_Img->GetBuffer().GetBytesPerRow() ==
+        m_Img->GetWidth() * NumChannels[static_cast<std::size_t>(m_Img->GetPixelFormat())] * sizeof(float));
 
-    m_OriginalImg = gl::c_Texture::CreateMono(
+    m_OriginalImg = gl::c_Texture::Create(
         m_Img->GetWidth(),
         m_Img->GetHeight(),
         m_Img->GetBuffer().GetRow(0),
-        linearInterpolation
+        linearInterpolation,
+        IsMono(m_Img->GetPixelFormat())
     );
 
     InitTextureAndFBO(m_TexFBOs.inputBlurred, m_Img->GetImageRect().GetSize());
@@ -596,6 +609,15 @@ void c_OpenGLProcessing::SetImage(const c_Image& img, bool linearInterpolation)
     wholeImageVBO.Bind();
     gl::SpecifyVertexAttribPointers();
     GaussianConvolution(m_OriginalImg, m_TexFBOs.inputBlurred.fbo, gaussian);
+
+    if (!m_BlurredForDeringing.image || m_BlurredForDeringing.image->GetPixelFormat() != m_Img->GetPixelFormat())
+    {
+        m_BlurredForDeringing.image = c_Image(
+            m_Selection.width,
+            m_Selection.height,
+            IsMono(m_Img->GetPixelFormat()) ? PixelFormat::PIX_MONO32F : PixelFormat::PIX_RGB32F
+        );
+    }
 
     c_Image::Copy(
         *m_Img,

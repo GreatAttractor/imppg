@@ -31,8 +31,8 @@ uniform sampler2DRect InputArray2;
 
 void main()
 {
-    // add a small epsilon to prevent division by 0 and possible propagation of NaNs across output pixels
-    const float EPSILON = 1.0e-8f;
-    float outputValue = texture(InputArray1, TexCoord).r / (texture(InputArray2, TexCoord).r + EPSILON);
-    Color = vec4(outputValue, outputValue, outputValue, 1.0);
+    // add a small epsilon to prevent division by 0 and possible propagation of Infs across output pixels
+    const vec3 EPSILON = vec3(1.0e-8f, 1.0e-8f, 1.0e-8f);
+    vec3 outputValue = texture(InputArray1, TexCoord).rgb / (texture(InputArray2, TexCoord).rgb + EPSILON);
+    Color = vec4(outputValue, 1.0);
 }

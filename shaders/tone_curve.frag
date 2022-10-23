@@ -37,9 +37,8 @@ uniform vec4 Splines[MAX_CURVE_POINTS]; // only `NumPoints-1` elements are valid
 uniform bool IsGamma;
 uniform float Gamma;
 
-void main()
+float map_component(float inputValue)
 {
-    float inputValue = texture(Image, TexCoord).r;
     float outputValue = 0;
 
     if (IsGamma)
@@ -91,6 +90,16 @@ void main()
         }
     }
 
-    outputValue = clamp(outputValue, 0.0, 1.0);
-    Color = vec4(outputValue, outputValue, outputValue, 1.0);
+    return clamp(outputValue, 0.0, 1.0);
+}
+
+void main()
+{
+    vec3 inValue = texture(Image, TexCoord).rgb;
+    Color = vec4(
+        map_component(inValue.r),
+        map_component(inValue.g),
+        map_component(inValue.b),
+        1.0
+    );
 }

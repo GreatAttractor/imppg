@@ -76,7 +76,7 @@ const size_t BytesPerPixel[static_cast<size_t>(PixelFormat::PIX_NUM_FORMATS)] =
 };
 
 /// Elements correspond to those from PixelFormat
-const size_t NumChannels[static_cast<size_t>(PixelFormat::PIX_NUM_FORMATS)] =
+constexpr size_t NumChannels[static_cast<size_t>(PixelFormat::PIX_NUM_FORMATS)] =
 {
     1,    // PIX_PAL8
     1,    // PIX_MONO8
@@ -89,6 +89,11 @@ const size_t NumChannels[static_cast<size_t>(PixelFormat::PIX_NUM_FORMATS)] =
     3,    // PIX_RGB32F
     4,    // PIX_RGBA32F
 };
+
+constexpr bool IsMono(PixelFormat pixFmt)
+{
+    return 1 == NumChannels[static_cast<std::size_t>(pixFmt)];
+}
 
 class IImageBuffer
 {

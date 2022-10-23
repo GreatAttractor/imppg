@@ -30,6 +30,6 @@ uniform sampler2DRect Image;
 
 void main()
 {
-    float value = texture(Image, TexCoord).r;
-    Color = vec4(value, value, value, 1.0);
+    vec3 value = texture(Image, TexCoord).rgb;
+    Color = vec4(value, 1.0);
 }

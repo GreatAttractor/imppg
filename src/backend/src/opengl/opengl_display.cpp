@@ -349,6 +349,11 @@ void c_OpenGLDisplay::FillWholeImgVBO()
 
 void c_OpenGLDisplay::SetImage(c_Image&& img, std::optional<wxRect> newSelection)
 {
+    IMPPG_ASSERT(
+        img.GetPixelFormat() == PixelFormat::PIX_MONO32F ||
+        img.GetPixelFormat() == PixelFormat::PIX_RGB32F
+    );
+
     m_Img = std::move(img);
 
     if (newSelection.has_value())

@@ -1,0 +1,2 @@
+- verify deringing works
+- make separate mono and RGB shaders?
