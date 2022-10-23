@@ -1346,11 +1346,29 @@ std::optional<c_Image> LoadImage(
 #endif
 }
 
-std::optional<c_Image> LoadImageFileAsMono32f(
-    const std::string& fname,     ///< Full path (including file name and extension).
-    /// If true, floating-points values read from a FITS file are normalized, so that the highest becomes 1.0.
+std::optional<c_Image> LoadImageFileAs32f(
+    const std::string& fname,
     bool normalizeFITSvalues,
-    std::string* errorMsg         ///< If not null, may receive an error message (if any).
+    std::string* errorMsg
+)
+{
+    const auto image = LoadImage(fname, std::nullopt, errorMsg, normalizeFITSvalues);
+    if (!image) { return std::nullopt; }
+
+    if (NumChannels[static_cast<std::size_t>(image->GetPixelFormat())] == 1)
+    {
+        return image->ConvertPixelFormat(PixelFormat::PIX_MONO32F);
+    }
+    else
+    {
+        return image->ConvertPixelFormat(PixelFormat::PIX_RGB32F);
+    }
+}
+
+std::optional<c_Image> LoadImageFileAsMono32f(
+    const std::string& fname,
+    bool normalizeFITSvalues,
+    std::string* errorMsg
 )
 {
     return LoadImage(fname, PixelFormat::PIX_MONO32F, errorMsg, normalizeFITSvalues);

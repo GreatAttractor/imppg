@@ -364,6 +364,13 @@ private:
 
 void NormalizeFpImage(c_Image& img, float minLevel, float maxLevel);
 
+/// Loads image and converts it to PIX_MONO32F or PIX_RGB32F.
+std::optional<c_Image> LoadImageFileAs32f(
+    const std::string& fname,
+    bool normalizeFITSvalues,
+    std::string* errorMsg = nullptr  ///< If not null, may receive an error message (if any).
+);
+
 /// Loads the specified image file and converts it to PIX_MONO32F.
 std::optional<c_Image> LoadImageFileAsMono32f(
     const std::string& fname,        ///< Full path (including file name and extension)

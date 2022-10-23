@@ -924,7 +924,7 @@ void c_MainWindow::OpenFile(wxFileName path, bool resetSelection)
 
     std::string errorMsg;
 
-    const auto loadResult = LoadImageFileAsMono32f(
+    const auto loadResult = LoadImageFileAs32f(
         path.GetFullPath().ToStdString(),
         Configuration::NormalizeFITSValues,
         &errorMsg
