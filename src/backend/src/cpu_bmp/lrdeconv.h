@@ -35,26 +35,23 @@ void Clamp(c_View<IImageBuffer>& buf);
 
 /// Calculates convolution of 'input' with a Gaussian kernel
 void ConvolveSeparable(
-        c_PaddedArrayPtr<const float> input, ///< Input array
-        c_PaddedArrayPtr<float> output,      ///< Output array having as much rows and columns as 'input' does
-        float sigma                           ///< Gaussian sigma
+    c_PaddedArrayPtr<const float> input, ///< Input array.
+    c_PaddedArrayPtr<float> output,      ///< Output array having as much rows and columns as `input` does.
+    float sigma,                         ///< Gaussian sigma.
+    std::size_t numChannels
 );
 
-/// Reproduces original image from image in 'input' convolved with Gaussian kernel and writes it to 'output'.
+/// Reproduces original image from image in `input` convolved with Gaussian kernel and writes it to `output`.
 void LucyRichardsonGaussian(
-        c_View<const IImageBuffer>& input, ///< Contains a single 'float' value per pixel; size the same as 'output'
-        c_View<IImageBuffer>& output, ///< Contains a single 'float' value per pixel; size the same as 'input'
-        int numIters,  ///< Number of iterations
-        float sigma,   ///< sigma of the Gaussian kernel
-        ConvolutionMethod convMethod,
-
-        /// Called after every iteration; arguments: current iteration, total iterations
-        //boost::function<void(int, int)> progressCallback,
-        std::function<void (int, int)> progressCallback,
-
-        /// Called periodically to check if there was an "abort processing" request
-        //boost::function<bool()> checkAbort
-        std::function<bool ()> checkAbort
+    c_View<const IImageBuffer>& input, ///< Mono or RGB image; same size the same as `output`.
+    c_View<IImageBuffer>& output, ///< Mono or RGB image; same size the same as `input`.
+    int numIters,  ///< Number of iterations.
+    float sigma,   ///< Sigma (std. dev.) of the Gaussian kernel.
+    ConvolutionMethod convMethod,
+    /// Called after every iteration; arguments: current iteration, total iterations.
+    std::function<void (int, int)> progressCallback,
+    /// Called periodically to check if there was an "abort processing" request.
+    std::function<bool ()> checkAbort
 );
 
 // c_Image GetTresholdVicinityMask(

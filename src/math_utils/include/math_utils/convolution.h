@@ -57,9 +57,9 @@ public:
         return reinterpret_cast<T*>(reinterpret_cast<std::uint8_t*>(m_Array) + row * m_BytesPerRow);
     }
 
-    T* row_const(int row) const
+    const T* row_const(int row) const
     {
-        return reinterpret_cast<T*>(reinterpret_cast<const std::uint8_t*>(m_Array) + row * m_BytesPerRow);
+        return reinterpret_cast<const T*>(reinterpret_cast<const std::uint8_t*>(m_Array) + row * m_BytesPerRow);
     }
 
     int width() const { return m_Width; }
@@ -71,80 +71,105 @@ public:
 void ConvolveSeparable(
     c_PaddedArrayPtr<const float> input, ///< Input array.
     c_PaddedArrayPtr<float> output,      ///< Output array having as much rows and columns as 'input' does.
-    float sigma                          ///< Gaussian sigma.
+    float sigma,                         ///< Gaussian sigma.
+    std::size_t numChannels
 );
 
-/// Calculates convolution of 'input' with a rotationally symmetric and separable (i.e. Gaussian) 'kernel' and writes it in transposed form to 'output'
+/// Calculates convolution of `input` with a rotationally symmetric and separable (i.e., Gaussian) `kernel`
+/// and writes it in transposed form to `output`.
 void ConvolveSeparableTranspose(
-    c_PaddedArrayPtr<const float> input,  ///< Input array
-    c_PaddedArrayPtr<float> output, ///< Transposed output array; contains as many rows as 'input' does columns and as many columns as 'input' does rows
-    const float kernel[], ///< Contains convolution kernel's projection (horizontal/vertical); element [kernelRadius] is the middle
-    int kernelRadius, ///< 'kernel' contains 2*kernelRadius-1 elements
-    float tempBuf1[], ///< Temporary buffer 1, as many elements as 'input'
-    float tempBuf2[] ///< Temporary buffer 2, as many elements as 'input'
+    c_PaddedArrayPtr<const float> input,  ///< Input array.
+    /// Transposed output array; contains as many rows as `input` does columns and as many columns as `input` does rows.
+    c_PaddedArrayPtr<float> output,
+    /// Contains convolution kernel's projection (horizontal/vertical); element `[kernelRadius]` is the middle.
+    const float kernel[],
+    int kernelRadius, ///< `kernel` contains 2*kernelRadius-1 elements.
+    float tempBuf1[], ///< Temporary buffer 1, as many elements as `input`.
+    float tempBuf2[], ///< Temporary buffer 2, as many elements as `input`.
+    std::size_t numChannels
 );
 
-/// Calculates convolution of 'input' with an approximated Gaussian kernel (Young & van Vliet recursive method) and writes it in transposed form to 'output'
+/// Calculates convolution of `input` with an approximated Gaussian kernel (Young & van Vliet recursive method)
+/// and writes it in transposed form to `output`.
 void ConvolveGaussianRecursiveTranspose(
-    c_PaddedArrayPtr<const float> input,  ///< Input array
-    c_PaddedArrayPtr<float> output,       ///< Transposed output array; contains as many rows as 'input' does columns and as many columns as 'input' does rows
-    float sigma,                          ///< Gaussian sigma
-    float tempBuf1[],                     ///< width*height elements
-    float tempBuf2[]                      ///< width*height elements
+    /// Input array.
+    c_PaddedArrayPtr<const float> input,
+    /// Transposed output array; contains as many rows as `input` does columns and as many columns as `input` does rows.
+    c_PaddedArrayPtr<float> output,
+    float sigma,      ///< Gaussian sigma.
+    float tempBuf1[], ///< Contains width*height elements.
+    float tempBuf2[], ///< Contains width*height elements.
+    std::size_t numChannels
 );
 
 /// Matrices are transposed in square blocks of this length to a side
-constexpr int TRANSPOSITION_BLOCK_SIZE = 16;
+constexpr int TRANSPOSITION_BLOCK_SIZE = 18;
+static_assert(TRANSPOSITION_BLOCK_SIZE % 3 == 0, "block size must be divisible by 3 for RGB processing");
 
-/// Transposes matrix 'input' and writes it to 'output'
-template<typename T>
-void Transpose(const T* input, T* output,
-    int width, ///< Number of columns in 'input', rows in 'output'
-    int height, ///< Number of rows in 'input', columns in 'output'
-    int inputBytesPerRow, int outputBytesPerRow, int blockSize)
+/// Transposes matrix `input` and writes it to `output`.
+template<typename T, std::size_t NumChannels>
+void Transpose(
+    const T* input,
+    T* output,
+    int width, ///< Number of columns in `input`, rows in `output`.
+    int height, ///< Number of rows in `input`, columns in `output`.
+    std::size_t inputValuesPerRow,
+    std::size_t outputValuesPerRow,
+    int blockSize
+)
 {
-    // Transpose blocks
+    static_assert(false, "write unit tests for this");
+    // Transpose blocks.
 
     // i, j - indices of the current block
     for (int j = 0; j < height / blockSize; j++)
+    {
         for (int i = 0; i < width / blockSize; i++)
         {
-            // Addresses of current input and output blocks
-            const T* inBlk = reinterpret_cast<const T*>(reinterpret_cast<const uint8_t*>(input) + (i*sizeof(T) + j*inputBytesPerRow) * blockSize);
-            T* outBlk = reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(output) + (j*sizeof(T) + i*outputBytesPerRow) * blockSize);
+            const T* inBlk = input + (i * NumChannels + j * inputValuesPerRow) * blockSize;
+            T* outBlk = output + (j * NumChannels + i * outputValuesPerRow) * blockSize;
 
             // x, y - indices of the current element within the current block
             for (int y = 0; y < blockSize; y++)
+            {
                 for (int x = 0; x < blockSize; x++)
                 {
-                    *reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(outBlk) + y*sizeof(T) + x*outputBytesPerRow) =
-                        *reinterpret_cast<const T*>(reinterpret_cast<const uint8_t*>(inBlk) + x*sizeof(T) + y*inputBytesPerRow);
+                    for (std::size_t ch = 0; ch < NumChannels; ++ch)
+                    {
+                        outBlk[y * NumChannels + ch + x * outputValuesPerRow] = inBlk[x * NumChannels + ch + y * inputValuesPerRow];
+                    }
                 }
+            }
         }
+    }
 
-    // Transpose the remaining elements outside the whole blocks
+    // Transpose the remaining elements outside the whole blocks.
 
     // rightmost remaining elements
     for (int j = 0; j < height - (height % blockSize); j++)
         for (int i = width - (width % blockSize); i < width; i++)
         {
-            *reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(output) + j*sizeof(T) + i*outputBytesPerRow) =
-                *reinterpret_cast<const T*>(reinterpret_cast<const uint8_t*>(input) + i*sizeof(T) + j*inputBytesPerRow);
+            for (std::size_t ch = 0; ch < NumChannels; ++ch)
+            {
+                output[j * NumChannels + ch + i * outputValuesPerRow] = input[i * NumChannels + ch + j * inputValuesPerRow];
+            }
         }
 
     // bottommost remaining elements
     for (int j = 0; j < width - (width % blockSize); j++)
         for (int i = height - (height % blockSize); i < height; i++)
         {
-            *reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(output) + i*sizeof(T) + j*outputBytesPerRow) =
-                *reinterpret_cast<const T*>(reinterpret_cast<const uint8_t*>(input) + j*sizeof(T) + i*inputBytesPerRow);
+            //TODO
+            // *reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(output) + i*sizeof(T) + j*outputBytesPerRow) =
+            //     *reinterpret_cast<const T*>(reinterpret_cast<const uint8_t*>(input) + j*sizeof(T) + i*inputBytesPerRow);
         }
 
     // bottom-right residual rectangle
     for (int j = height - (height % blockSize); j < height; j++)
         for (int i = width - (width % blockSize); i < width; i++)
         {
-            *reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(output) + j*sizeof(T) + i*outputBytesPerRow) =
-                *reinterpret_cast<const T*>(reinterpret_cast<const uint8_t*>(input) + i*sizeof(T) + j*inputBytesPerRow);
+            //TODO
+            // *reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(output) + j*sizeof(T) + i*outputBytesPerRow) =
+            //     *reinterpret_cast<const T*>(reinterpret_cast<const uint8_t*>(input) + i*sizeof(T) + j*inputBytesPerRow);
         }
 }

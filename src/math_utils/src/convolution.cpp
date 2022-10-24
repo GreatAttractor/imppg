@@ -30,24 +30,30 @@ File description:
 
 #include "../../imppg_assert.h"
 
-/// Performs a single step of 1D convolution using the middle kernel value 'kernelVal'
-inline void Convolve1Dstep_OfsZero(const float input[], float output[], int len, float kernelVal)
+/// Performs a single step of 1D convolution using the middle kernel value 'kernelVal'.
+void Convolve1Dstep_OfsZero(const float input[], float output[], int len, float kernelVal, std::size_t numChannels)
 {
     for (int i = 0; i < len; i++)
     {
-        float influence = input[i] * kernelVal;
-        output[i] += influence;
+        for (std::size_t ch = 0; ch < numChannels; ++ch)
+        {
+            float influence = input[i * numChannels + ch] * kernelVal;
+            output[i * numChannels + ch] += influence;
+        }
     }
 }
 
-/// Performs a single step of 1D convolution using the kernel value 'kernelVal', offset by 'kernelOfs' elements from kernel's middle
-inline void Convolve1Dstep_OfsNonZero(const float input[], float output[], int len, float kernelVal, int kernelOfs)
+/// Performs a single step of 1D convolution using the kernel value 'kernelVal', offset by 'kernelOfs' elements from kernel's middle.
+void Convolve1Dstep_OfsNonZero(const float input[], float output[], int len, float kernelVal, int kernelOfs, std::size_t numChannels)
 {
     for (int i = 0; i < len; i++)
     {
-        float influence = input[i] * kernelVal;
-        output[i + kernelOfs] += influence;
-        output[i - kernelOfs] += influence;
+        for (std::size_t ch = 0; ch < numChannels; ++ch)
+        {
+            float influence = input[i * numChannels + ch] * kernelVal;
+            output[(i + kernelOfs) * numChannels + ch] += influence;
+            output[(i - kernelOfs) * numChannels + ch] += influence;
+        }
     }
 }
 
@@ -59,7 +65,8 @@ inline void YvVFilterValues(
     int length, ///< Number of elements in 'input', 'output'
     int direction, ///< 1: filter forward, -1: filter backward; if -1, processing starts at the last element
     // YvV coefficients
-    float b0inv, float b1, float b2, float b3, float B
+    float b0inv, float b1, float b2, float b3, float B,
+    std::size_t numChannels
 )
 {
     int startIdx; // Starting index to process (inclusive)
@@ -116,10 +123,12 @@ void ConvolveGaussianRecursiveTranspose(
     c_PaddedArrayPtr<float> output,
     float sigma,
     float tempBuf1[],
-    float tempBuf2[]
+    float tempBuf2[],
+    std::size_t numChannels
 )
 {
-    int width = input.width(), height = input.height();
+    const unsigned width = input.width();
+    const unsigned height = input.height();
     IMPPG_ASSERT(sigma >= 0.5f);
 
     float b0inv, b1, b2, b3, B;
@@ -127,28 +136,52 @@ void ConvolveGaussianRecursiveTranspose(
 
     float* convRows = tempBuf1;
 
-    // Convolve rows
+    // convolve rows
     #pragma omp parallel for
     for (int y = 0; y < height; y++)
     {
-        // Perform forward filtering
-        YvVFilterValues(input.row_const(y), &convRows[y*width], width, 1, b0inv, b1, b2, b3, B);
+        // perform forward filtering
+        YvVFilterValues(input.row_const(y), &convRows[y * width * numChannels], width, 1, b0inv, b1, b2, b3, B, numChannels);
 
-        // Perform backward filtering
-        YvVFilterValues(&convRows[y*width], &convRows[y*width], width, -1, b0inv, b1, b2, b3, B);
+        // perform backward filtering
+        YvVFilterValues(&convRows[y*width], &convRows[y * width * numChannels], width, -1, b0inv, b1, b2, b3, B, numChannels);
     }
 
     float* convRowsT = tempBuf2;
-    Transpose<float>(convRows, convRowsT, width, height, width*sizeof(float), height*sizeof(float), TRANSPOSITION_BLOCK_SIZE);
+    if (1 == numChannels)
+    {
+        Transpose<float, 1>(
+            convRows,
+            convRowsT,
+            width,
+            height,
+            width * numChannels * sizeof(float),
+            height * numChannels * sizeof(float),
+            TRANSPOSITION_BLOCK_SIZE
+        );
+    }
+    else if (3 == numChannels)
+    {
+        Transpose<float, 3>(
+            convRows,
+            convRowsT,
+            width,
+            height,
+            width * numChannels * sizeof(float),
+            height * numChannels * sizeof(float),
+            TRANSPOSITION_BLOCK_SIZE
+        );
+    }
+    else { IMPPG_ABORT(); }
 
-    // Convolve columns (now: rows, since we are using 'convRowsT' as source)
+    // convolve columns (now: rows, since we are using 'convRowsT' as source)
     #pragma omp parallel for
     for (int y = 0; y < width; y++)
     {
-        // Perform forward filtering
-        YvVFilterValues(&convRowsT[y*height], output.row(y), height, 1, b0inv, b1, b2, b3, B);
-        // Perform backward filtering
-        YvVFilterValues(output.row(y), output.row(y), height, -1, b0inv, b1, b2, b3, B);
+        // perform forward filtering
+        YvVFilterValues(&convRowsT[y*height], output.row(y), height, 1, b0inv, b1, b2, b3, B, numChannels);
+        // perform backward filtering
+        YvVFilterValues(output.row(y), output.row(y), height, -1, b0inv, b1, b2, b3, B, numChannels);
     }
 }
 
@@ -158,69 +191,97 @@ void ConvolveSeparableTranspose(
     const float kernel[],
     int kernelRadius,
     float tempBuf1[],
-    float tempBuf2[]
+    float tempBuf2[],
+    std::size_t numChannels
 )
 {
     // NOTE: The function uses only half of 'kernel' (it is symmetrical), but passing the whole array may simplify vectorization in the future.
 
-    int width = input.width(), height = input.height();
+    const int width = input.width();
+    const int height = input.height();
 
     float* convRows = tempBuf1;
 
-    // All zero bits represents 0.0f
+    // all zero bits represents 0.0f
     for (int i = 0; i < output.height(); i++)
-        memset(output.row(i), 0, output.GetBytesPerRow());
-
-    memset(convRows, 0, width*height*sizeof(float));
-
-    if (width > 2*(kernelRadius-1))
     {
-        // Convolve each row
+        memset(output.row(i), 0, output.GetBytesPerRow());
+    }
+
+    memset(convRows, 0, width * height * numChannels * sizeof(float));
+
+    if (width > 2 * (kernelRadius - 1))
+    {
+        // convolve each row
         #pragma omp parallel for
         for (int y = 0; y < height; y++)
         {
-            Convolve1Dstep_OfsZero(input.row_const(y) + kernelRadius - 1,
-                    convRows + kernelRadius - 1 + y*width,
-                    width - 2 * (kernelRadius - 1),
-                    kernel[kernelRadius - 1]);
+            Convolve1Dstep_OfsZero(
+                input.row_const(y) + numChannels * (kernelRadius - 1),
+                convRows + numChannels * (kernelRadius - 1) + y * width * numChannels,
+                numChannels * (width - 2 * (kernelRadius - 1)),
+                kernel[kernelRadius - 1],
+                numChannels
+            );
 
             for (int i = 1; i <= kernelRadius - 1; i++)
             {
-                Convolve1Dstep_OfsNonZero(input.row_const(y) + kernelRadius - 1,
-                    convRows + kernelRadius - 1 + y*width,
-                    width - 2 * (kernelRadius - 1),
-                    kernel[i + kernelRadius - 1], i);
+                Convolve1Dstep_OfsNonZero(
+                    input.row_const(y) + numChannels * (kernelRadius - 1),
+                    convRows + numChannels * (kernelRadius - 1) + y * width * numChannels,
+                    numChannels * (width - 2 * (kernelRadius - 1)),
+                    kernel[i + kernelRadius - 1],
+                    i,
+                    numChannels
+                );
             }
         }
     }
 
-    // For near-border elements assume the border values are replicated outside of array
+    const auto idx_x = [=](int x, int channel) { return x * numChannels + channel; };
+    const auto idx = [=](int x, int y, int channel) { return x * numChannels + channel + y * numChannels * width; };
+
+    // for near-border elements assume the border values are replicated outside of array
     for (int y = 0; y < height; y++)
     {
-        //Left border
+        // left border
         for (int x = -kernelRadius + 1; x <= kernelRadius - 2; x++)
         {
             for (int i = 0; i < kernelRadius; i++)
             {
-                float influence = input.row_const(y)[std::max(x - i, 0)] * kernel[i + (kernelRadius - 1)];
+                for (int ch = 0; ch < numChannels; ++ch)
+                {
+                    const float influence = input.row_const(y)[idx_x(std::max(x - i, 0), ch)] * kernel[i + (kernelRadius - 1)];
 
-                if (x + i >= 0 && x + i < width)
-                    convRows[(x + i) + y*width] += influence;
-                if (x - i >= 0 && x - i < width && i != 0)
-                    convRows[(x - i) + y*width] += influence;
+                    if (x + i >= 0 && x + i < width)
+                    {
+                        convRows[idx(x + i, y, ch)] += influence;
+                    }
+                    if (x - i >= 0 && x - i < width && i != 0)
+                    {
+                        convRows[idx(x - i, y, ch)] += influence;
+                    }
+                }
             }
         }
 
-        // Right border
+        // right border
         for (int x = width - (kernelRadius - 1); x <= width + kernelRadius - 1; x++)
         {
             for (int i = 0; i < kernelRadius; i++)
             {
-                float influence = input.row_const(y)[std::min(x + i, width - 1)] * kernel[i + (kernelRadius - 1)];
-                if (x + i < width && x + i >= 0)
-                    convRows[(x + i) + y*width] += influence;
-                if (x - i < width && x - i >= 0 && i != 0)
-                    convRows[(x - i) + y*width] += influence;
+                for (int ch = 0; ch < numChannels; ++ch)
+                {
+                    const float influence = input.row_const(y)[idx_x(std::min(x + i, width - 1), ch)] * kernel[i + (kernelRadius - 1)];
+                    if (x + i < width && x + i >= 0)
+                    {
+                        convRows[idx(x + i, y, ch)] += influence;
+                    }
+                    if (x - i < width && x - i >= 0 && i != 0)
+                    {
+                        convRows[idx(x - i, y, ch)] += influence;
+                    }
+                }
             }
         }
     }
@@ -235,12 +296,19 @@ void ConvolveSeparableTranspose(
         {
             for (int i = 0; i < kernelRadius; i++)
             {
-                float influence = convRows[x + std::max(y - i, 0) * width] * kernel[i + (kernelRadius - 1)];
+                for (int ch = 0; ch < numChannels; ++ch)
+                {
+                    const float influence = convRows[idx(x, std::max(y - i, 0), ch)] * kernel[i + (kernelRadius - 1)];
 
-                if (y + i >= 0 && y + i < height)
-                    output.row(x)[(y + i)] += influence; // 'output' is a transposed array
-                if (y - i >= 0 && y - i < height && i != 0)
-                    output.row(x)[(y - i)] += influence; // 'output' is a transposed array
+                    if (y + i >= 0 && y + i < height)
+                    {
+                        output.row(x)[idx_x(y + i, ch)] += influence; // `output` is a transposed array
+                    }
+                    if (y - i >= 0 && y - i < height && i != 0)
+                    {
+                        output.row(x)[idx_x(y - i, ch)] += influence; // `output` is a transposed array
+                    }
+                }
             }
         }
 
@@ -249,11 +317,18 @@ void ConvolveSeparableTranspose(
         {
             for (int i = 0; i < kernelRadius; i++)
             {
-                float influence = convRows[x + std::min(y + i, height - 1)*width] * kernel[i + (kernelRadius - 1)];
-                if (y + i < height && y + i >= 0)
-                    output.row(x)[(y + i)] += influence; // 'output' is a transposed array
-                if (y - i < height && y - i >= 0 && i != 0)
-                    output.row(x)[(y - i)] += influence; // 'output' is a transposed array
+                for (int ch = 0; ch < numChannels; ++ch)
+                {
+                    const float influence = convRows[idx(x, std::min(y + i, height - 1), ch)] * kernel[i + (kernelRadius - 1)];
+                    if (y + i < height && y + i >= 0)
+                    {
+                        output.row(x)[idx_x(y + i, ch)] += influence; // `output` is a transposed array
+                    }
+                    if (y - i < height && y - i >= 0 && i != 0)
+                    {
+                        output.row(x)[idx_x(y - i, ch)] += influence; // `output` is a transposed array
+                    }
+                }
             }
         }
     }
@@ -261,7 +336,31 @@ void ConvolveSeparableTranspose(
     // Before convolving rest of the columns, perform a transposition so we can convolve rows instead (faster due to sequential memory access)
 
     float* convRowsT = tempBuf2;
-    Transpose<float>(convRows, convRowsT, width, height, width * sizeof(float), height * sizeof(float), TRANSPOSITION_BLOCK_SIZE);
+    if (1 == numChannels)
+    {
+        Transpose<float, 1>(
+            convRows,
+            convRowsT,
+            width,
+            height,
+            width * numChannels * sizeof(float),
+            height * numChannels * sizeof(float),
+            TRANSPOSITION_BLOCK_SIZE
+        );
+    }
+    else if (3 == numChannels)
+    {
+        Transpose<float, 3>(
+            convRows,
+            convRowsT,
+            width,
+            height,
+            width * numChannels * sizeof(float),
+            height * numChannels * sizeof(float),
+            TRANSPOSITION_BLOCK_SIZE
+        );
+    }
+    else { IMPPG_ABORT(); }
 
     if (height > 2*(kernelRadius-1))
     {
@@ -269,17 +368,24 @@ void ConvolveSeparableTranspose(
         #pragma omp parallel for
         for (int y = 0; y < width; y++)
         {
-            Convolve1Dstep_OfsZero(convRowsT + kernelRadius - 1 + y*height,
+            Convolve1Dstep_OfsZero(
+                convRowsT + kernelRadius - 1 + y*height,
                 output.row(y) + kernelRadius - 1,
                 height - 2 * (kernelRadius - 1),
-                kernel[kernelRadius - 1]);
+                kernel[kernelRadius - 1],
+                numChannels
+            );
 
             for (int i = 1; i <= kernelRadius - 1; i++)
             {
-                Convolve1Dstep_OfsNonZero(convRowsT + kernelRadius - 1 + y*height,
+                Convolve1Dstep_OfsNonZero(
+                    convRowsT + kernelRadius - 1 + y*height,
                     output.row(y) + kernelRadius - 1,
                     height - 2 * (kernelRadius - 1),
-                    kernel[i + kernelRadius - 1], i);
+                    kernel[i + kernelRadius - 1],
+                    i,
+                    numChannels
+                );
             }
         }
     }
@@ -291,15 +397,16 @@ void ConvolveSeparableTranspose(
 void ConvolveSeparable(
     c_PaddedArrayPtr<const float> input,
     c_PaddedArrayPtr<float> output,
-    float sigma
+    float sigma,
+    std::size_t numChannels
 )
 {
     int width = input.width(), height = input.height();
     int kernelRadius = static_cast<int>(ceil(sigma * 3.0f));
 
-    std::unique_ptr<float[]> outputT(new float[input.height() * input.width()]); // transposed output
-    std::unique_ptr<float[]> temp1(new float[input.width() * input.height()]);
-    std::unique_ptr<float[]> temp2(new float[input.width() * input.height()]);
+    std::unique_ptr<float[]> outputT(new float[height * width]); // transposed output
+    std::unique_ptr<float[]> temp1(new float[width * height]);
+    std::unique_ptr<float[]> temp2(new float[width * height]);
 
     if (kernelRadius < YOUNG_VAN_VLIET_MIN_KERNEL_RADIUS)
     {
@@ -307,17 +414,50 @@ void ConvolveSeparable(
         CalculateGaussianKernelProjection(kernel.get(), kernelRadius, sigma, true);
 
         ConvolveSeparableTranspose(
-                input,
-                c_PaddedArrayPtr<float>(outputT.get(), height, width),
-                kernel.get(), kernelRadius, temp1.get(), temp2.get());
+            input,
+            c_PaddedArrayPtr<float>(outputT.get(), height, width),
+            kernel.get(),
+            kernelRadius,
+            temp1.get(),
+            temp2.get(),
+            numChannels
+        );
     }
     else
     {
         ConvolveGaussianRecursiveTranspose(
-                input,
-                c_PaddedArrayPtr<float>(outputT.get(), height, width),
-                sigma, temp1.get(), temp2.get());
+            input,
+            c_PaddedArrayPtr<float>(outputT.get(), height, width),
+            sigma,
+            temp1.get(),
+            temp2.get(),
+            numChannels
+        );
     }
 
-    Transpose(outputT.get(), output.row(0), height, width, height*sizeof(float), output.GetBytesPerRow(), TRANSPOSITION_BLOCK_SIZE);
+    if (1 == numChannels)
+    {
+        Transpose<float, 1>(
+            outputT.get(),
+            output.row(0),
+            height,
+            width,
+            height * numChannels * sizeof(float),
+            output.GetBytesPerRow(),
+            TRANSPOSITION_BLOCK_SIZE
+        );
+    }
+    else if (3 == numChannels)
+    {
+        Transpose<float, 3>(
+            outputT.get(),
+            output.row(0),
+            height,
+            width,
+            height * numChannels * sizeof(float),
+            output.GetBytesPerRow(),
+            TRANSPOSITION_BLOCK_SIZE
+        );
+    }
+    else { IMPPG_ABORT(); }
 }
