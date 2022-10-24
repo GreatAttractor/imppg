@@ -60,16 +60,23 @@ Histogram DetermineHistogram(const c_Image& img, const wxRect& selection)
 {
     constexpr int NUM_HISTOGRAM_BINS = 1024;
 
+    IMPPG_ASSERT(
+        img.GetPixelFormat() == PixelFormat::PIX_MONO32F ||
+        img.GetPixelFormat() == PixelFormat::PIX_RGB32F
+    );
+
     Histogram histogram{};
 
     histogram.values.insert(histogram.values.begin(), NUM_HISTOGRAM_BINS, 0);
     histogram.minValue = FLT_MAX;
     histogram.maxValue = -FLT_MAX;
 
+    const std::size_t numChannels = NumChannels[static_cast<std::size_t>(img.GetPixelFormat())];
+
     for (int y = 0; y < selection.height; y++)
     {
         const float* row = img.GetRowAs<float>(selection.y + y) + selection.x;
-        for (int x = 0; x < selection.width; x++)
+        for (int x = 0; x < selection.width * numChannels; x++)
         {
             if (row[x] < histogram.minValue)
                 histogram.minValue = row[x];

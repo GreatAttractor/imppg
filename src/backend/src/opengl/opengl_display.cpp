@@ -374,18 +374,25 @@ void c_OpenGLDisplay::SetImage(c_Image&& img, std::optional<wxRect> newSelection
 
 Histogram c_OpenGLDisplay::GetHistogram()
 {
-    if (const gl::c_Texture* unshMaskOutput = m_Processor->GetUsharpMaskOutput())
+    const gl::c_Texture* unshMaskOutput = m_Processor->GetUsharpMaskOutput();
+
+    if (m_Img.has_value() && unshMaskOutput != nullptr)
     {
-        c_Image img(unshMaskOutput->GetWidth(), unshMaskOutput->GetHeight(), PixelFormat::PIX_MONO32F);
+        const auto pixFmt = m_Img->GetPixelFormat();
+        c_Image img(unshMaskOutput->GetWidth(), unshMaskOutput->GetHeight(), pixFmt);
         glBindTexture(GL_TEXTURE_RECTANGLE, unshMaskOutput->Get());
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glGetTexImage(GL_TEXTURE_RECTANGLE, 0, GL_RED, GL_FLOAT, img.GetRow(0));
+        glGetTexImage(GL_TEXTURE_RECTANGLE, 0, IsMono(pixFmt) ? GL_RED : GL_RGB, GL_FLOAT, img.GetRow(0));
         return DetermineHistogram(img, img.GetImageRect());
     }
-    else if (m_Img)
+    else if (m_Img.has_value())
+    {
         return DetermineHistogram(m_Img.value(), m_Selection);
+    }
     else
+    {
         return Histogram{};
+    }
 }
 
 void c_OpenGLDisplay::NewSelection(const wxRect& selection, const wxRect&)
