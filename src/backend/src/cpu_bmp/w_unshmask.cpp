@@ -55,17 +55,13 @@ c_UnsharpMaskingThread::c_UnsharpMaskingThread(
 void c_UnsharpMaskingThread::DoWork()
 {
     // Width and height of all images (input, raw input, output) are the same
-    const unsigned width = m_Params.input.GetWidth();
-    const unsigned height = m_Params.input.GetHeight();
-    const std::size_t numChannels = NumChannels[static_cast<std::size_t>(m_Params.input.GetPixelFormat())];
+    int width = m_Params.input.GetWidth(), height = m_Params.input.GetHeight();
 
     auto gaussianImg = std::make_unique<float[]>(width * height);
 
     ConvolveSeparable(
         c_PaddedArrayPtr(m_Params.input.GetRowAs<const float>(0), width, height, m_Params.input.GetBytesPerRow()),
-        c_PaddedArrayPtr(gaussianImg.get(), width, height),
-        m_Sigma,
-        numChannels
+        c_PaddedArrayPtr(gaussianImg.get(), width, height), m_Sigma
     );
 
     if (!m_Adaptive)
@@ -93,8 +89,7 @@ void c_UnsharpMaskingThread::DoWork()
         ConvolveSeparable(
             c_PaddedArrayPtr(m_RawInput.GetRowAs<const float>(0), width, height, m_RawInput.GetBytesPerRow()),
             c_PaddedArrayPtr(imgL.get(), width, height),
-            RAW_IMAGE_BLUR_SIGMA_FOR_ADAPTIVE_UNSHARP_MASK,
-            numChannels
+            RAW_IMAGE_BLUR_SIGMA_FOR_ADAPTIVE_UNSHARP_MASK
         );
 
         const auto& [a, b, c, d] = GetAdaptiveUnshMaskTransitionCurve(m_AmountMin, m_AmountMax, m_Threshold, m_Width);
