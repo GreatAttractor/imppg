@@ -61,7 +61,7 @@ public:
 
     ~c_CpuAndBitmapsProcessing() override;
 
-    void SetImage(c_Image& img) { m_Img = &img; }
+    void SetImage(c_Image img) { m_Img = std::move(img); }
 
     void SetSelection(wxRect selection);
 
@@ -107,9 +107,7 @@ private:
 
     void OnThreadEvent(wxThreadEvent& event);
 
-    std::optional<c_Image> m_OwnedImg; ///< Image provided via `StartProcessing` (when in batch processing mode).
-
-    c_Image* m_Img{nullptr}; ///< Image being processed.
+    std::optional<c_Image> m_Img; ///< Image being processed.
 
     wxRect m_Selection; ///< Fragment of `m_Img` selected for processing (in logical image coords).
 

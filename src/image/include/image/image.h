@@ -297,9 +297,9 @@ public:
 
     c_FreeImageHandleWrapper& operator=(const c_FreeImageHandleWrapper& rhs) = delete;
 
-    c_FreeImageHandleWrapper(c_FreeImageHandleWrapper&& rhs);
+    c_FreeImageHandleWrapper(c_FreeImageHandleWrapper&& rhs) noexcept;
 
-    c_FreeImageHandleWrapper& operator=(c_FreeImageHandleWrapper&& rhs);
+    c_FreeImageHandleWrapper& operator=(c_FreeImageHandleWrapper&& rhs) noexcept;
 
     ~c_FreeImageHandleWrapper();
 

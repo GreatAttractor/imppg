@@ -141,12 +141,12 @@ static bool SaveAsFits(const IImageBuffer& buf, const std::string& fname)
 
 #if USE_FREEIMAGE
 
-c_FreeImageHandleWrapper::c_FreeImageHandleWrapper(c_FreeImageHandleWrapper&& rhs)
+c_FreeImageHandleWrapper::c_FreeImageHandleWrapper(c_FreeImageHandleWrapper&& rhs) noexcept
 {
     *this = std::move(rhs);
 }
 
-c_FreeImageHandleWrapper& c_FreeImageHandleWrapper::operator=(c_FreeImageHandleWrapper&& rhs)
+c_FreeImageHandleWrapper& c_FreeImageHandleWrapper::operator=(c_FreeImageHandleWrapper&& rhs) noexcept
 {
     m_FiBmp = rhs.m_FiBmp;
     rhs.m_FiBmp = nullptr;
