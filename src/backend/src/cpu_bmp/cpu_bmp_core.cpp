@@ -429,7 +429,7 @@ void c_CpuAndBitmaps::UpdateSelectionAfterProcessing()
 {
     Log::Print("Updating selection after processing\n");
 
-    const c_Image& toneMappingOutput = m_Processor.GetToneMappingOutput();
+    const c_Image& toneMappingOutput = m_Processor.GetProcessedOutput();
     wxBitmap updatedArea = ImageToRgbBitmap(toneMappingOutput, 0, 0,
         toneMappingOutput.GetWidth(),
         toneMappingOutput.GetHeight());
@@ -523,7 +523,7 @@ c_Image c_CpuAndBitmaps::GetProcessedSelection()
     AbortProcessing();
 
     m_Processor.ApplyPreciseToneCurveValues();
-    return m_Processor.GetToneMappingOutput();
+    return m_Processor.GetProcessedOutput();
 }
 
 bool c_CpuAndBitmaps::ProcessingInProgress()
