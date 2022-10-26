@@ -28,6 +28,8 @@ File description:
 #include "cpu_bmp/worker.h"
 
 #include <functional>
+#include <optional>
+#include <vector>
 
 namespace imppg::backend {
 
@@ -61,7 +63,7 @@ public:
 
     ~c_CpuAndBitmapsProcessing() override;
 
-    void SetImage(c_Image img) { m_Img = std::move(img); }
+    void SetImage(c_Image img);
 
     void SetSelection(wxRect selection);
 
@@ -73,9 +75,9 @@ public:
     /// Returns unsharp masking result if it is valid; returns `nullptr` otherwise.
     const c_Image* GetUnshMaskOutput() const
     {
-        if (m_Output.unsharpMasking.img.has_value() && m_Output.unsharpMasking.valid)
+        if (!m_Output.unsharpMasking.img.empty() && m_Output.unsharpMasking.valid)
         {
-            return &m_Output.unsharpMasking.img.value();
+            return &m_Output.unsharpMasking.img.at(0);
         }
         else
         {
@@ -83,7 +85,7 @@ public:
         }
     }
 
-    const c_Image& GetToneMappingOutput() const { return m_Output.toneCurve.img.value(); }
+    const c_Image& GetToneMappingOutput() const { return m_Output.toneCurve.img.at(0); }
 
     /// Applies precise tone curve values to unsharp masking output if it is valid; otherwise,
     /// applies them to (fragment of) original image.
@@ -107,7 +109,8 @@ private:
 
     void OnThreadEvent(wxThreadEvent& event);
 
-    std::optional<c_Image> m_Img; ///< Image being processed.
+    /// Image being processed; if not empty, contains 1 element (mono luminance) or 3 (R, G, B channels).
+    std::vector<c_Image> m_Img;
 
     wxRect m_Selection; ///< Fragment of `m_Img` selected for processing (in logical image coords).
 
@@ -149,21 +152,21 @@ private:
         /// Results of sharpening.
         struct
         {
-            std::optional<c_Image> img;
+            std::vector<c_Image> img;
             bool valid{false}; ///< `true` if the last sharpening request completed.
         } sharpening;
 
         /// Results of sharpening and unsharp masking.
         struct
         {
-            std::optional<c_Image> img;
+            std::vector<c_Image> img;
             bool valid{false}; ///< `true` if the last unsharp masking request completed.
         } unsharpMasking;
 
         /// Results of sharpening, unsharp masking and applying of tone curve.
         struct
         {
-            std::optional<c_Image> img;
+            std::vector<c_Image> img;
             bool valid{false}; ///< `true` if the last tone curve application request completed.
             bool preciseValuesApplied{false}; ///< 'true' if precise values of tone curve have been applied; happens only when saving output file.
         } toneCurve;
