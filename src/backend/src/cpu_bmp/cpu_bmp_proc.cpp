@@ -275,18 +275,21 @@ void c_CpuAndBitmapsProcessing::StartLRDeconvolution()
 
         // Sharpening thread takes the currently selected fragment of the original image as input
         m_ProcRequestInProgress = ProcessingRequest::SHARPENING;
+
+        std::vector<c_View<const IImageBuffer>> input;
+        std::vector<c_View<IImageBuffer>> output;
+        for (std::size_t i = 0; i < m_Img.size(); ++i)
+        {
+            input.emplace_back(m_Img.at(0).GetBuffer(), m_Selection.x, m_Selection.y, m_Selection.width, m_Selection.height);
+            output.emplace_back(m_Output.sharpening.img.at(0).GetBuffer());
+        }
+
         m_Worker = std::make_unique<c_LucyRichardsonThread>(
             WorkerParameters{
                 m_EvtHandler,
                 0, // in the future we will pass the index of the currently open image
-                c_View<const IImageBuffer>(
-                    m_Img.at(0).GetBuffer(),
-                    m_Selection.x,
-                    m_Selection.y,
-                    m_Selection.width,
-                    m_Selection.height
-                ),
-                m_Output.sharpening.img.at(0).GetBuffer(),
+                std::move(input),
+                std::move(output),
                 m_CurrentThreadId
             },
             m_ProcSettings.LucyRichardson.sigma,
@@ -339,12 +342,21 @@ void c_CpuAndBitmapsProcessing::StartUnsharpMasking()
 
         // unsharp masking thread takes the output of sharpening as input
         m_ProcRequestInProgress = ProcessingRequest::UNSHARP_MASKING;
+
+        std::vector<c_View<const IImageBuffer>> input;
+        std::vector<c_View<IImageBuffer>> output;
+        for (std::size_t i = 0; i < m_Img.size(); ++i)
+        {
+            input.emplace_back(m_Output.sharpening.img.at(0).GetBuffer());
+            output.emplace_back(m_Output.unsharpMasking.img.at(0).GetBuffer());
+        }
+
         m_Worker = std::make_unique<c_UnsharpMaskingThread>(
             WorkerParameters{
                 m_EvtHandler,
                 0, // in the future we will pass the index of currently open image
-                m_Output.sharpening.img.at(0).GetBuffer(),
-                m_Output.unsharpMasking.img.at(0).GetBuffer(),
+                std::move(input),
+                std::move(output),
                 m_CurrentThreadId
             },
             c_View<const IImageBuffer>(m_Img.at(0).GetBuffer(), m_Selection),
@@ -408,12 +420,21 @@ void c_CpuAndBitmapsProcessing::StartToneCurve()
 
         // tone curve thread takes the output of unsharp masking as input
         m_ProcRequestInProgress = ProcessingRequest::TONE_CURVE;
+
+        std::vector<c_View<const IImageBuffer>> input;
+        std::vector<c_View<IImageBuffer>> output;
+        for (std::size_t i = 0; i < m_Img.size(); ++i)
+        {
+            input.emplace_back(m_Output.unsharpMasking.img.at(0).GetBuffer());
+            output.emplace_back(m_Output.toneCurve.img.at(0).GetBuffer());
+        }
+
         m_Worker = std::make_unique<c_ToneCurveThread>(
             WorkerParameters{
                 m_EvtHandler,
                 0, // in the future we will pass the index of currently open image
-                m_Output.unsharpMasking.img.at(0).GetBuffer(),
-                m_Output.toneCurve.img.at(0).GetBuffer(),
+                std::move(input),
+                std::move(output),
                 m_CurrentThreadId
             },
             m_ProcSettings.toneCurve,

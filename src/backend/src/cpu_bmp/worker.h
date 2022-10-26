@@ -24,7 +24,7 @@ File description:
 #ifndef IMPPG_WORKER_H
 #define IMPPG_WORKER_H
 
-#include <atomic>
+#include <vector>
 #include <wx/frame.h>
 #include <wx/thread.h>
 #include <wx/gdicmn.h>
@@ -53,8 +53,8 @@ struct WorkerParameters
 {
     wxEvtHandler& parent; ///< Object to receive notification messages from this worker thread.
     int taskId; ///< Id of task (will be included in every message).
-    c_View<const IImageBuffer> input; ///< Image fragment to process.
-    c_View<IImageBuffer> output; ///< Output image.
+    std::vector<c_View<const IImageBuffer>> input; ///< Image fragment to process (luminance or R, G, B channels).
+    std::vector<c_View<IImageBuffer>> output; ///< Output image (luminance or R, G, B channels).
     int threadId; ///< Unique thread id (not reused by new threads).
 };
 
@@ -78,10 +78,13 @@ protected:
 public:
     IWorkerThread(WorkerParameters&& params): wxThread(wxTHREAD_JOINABLE), m_Params(std::move(params))
     {
-        IMPPG_ASSERT(
-            m_Params.input.GetWidth() == m_Params.output.GetWidth() &&
-            m_Params.input.GetHeight() == m_Params.output.GetHeight()
-        );
+        for (std::size_t i = 0; i < m_Params.input.size(); ++i)
+        {
+            IMPPG_ASSERT(
+                m_Params.input.at(i).GetWidth() == m_Params.output.at(i).GetWidth() &&
+                m_Params.input.at(i).GetHeight() == m_Params.output.at(i).GetHeight()
+            );
+        }
     }
 
     ExitCode Entry() override;

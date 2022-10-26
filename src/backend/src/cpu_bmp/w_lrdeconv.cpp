@@ -55,23 +55,23 @@ void c_LucyRichardsonThread::DoWork()
 {
     wxDateTime tstart = wxDateTime::UNow();
 
-    c_View preprocessedInput = m_Params.input;
+    c_View preprocessedInput = m_Params.input.at(0);
 
     std::unique_ptr<c_Image> preprocessedInputImg;
     if (m_Deringing.enabled)
     {
-        preprocessedInputImg = std::make_unique<c_Image>(m_Params.input.GetWidth(), m_Params.input.GetHeight(), PixelFormat::PIX_MONO32F);
+        preprocessedInputImg = std::make_unique<c_Image>(m_Params.input.at(0).GetWidth(), m_Params.input.at(0).GetHeight(), PixelFormat::PIX_MONO32F);
         auto preprocView = c_View(preprocessedInputImg->GetBuffer());
-        BlurThresholdVicinity(m_Params.input, preprocView, m_Deringing.workBuf, m_Deringing.threshold, m_Deringing.sigma);
+        BlurThresholdVicinity(m_Params.input.at(0), preprocView, m_Deringing.workBuf, m_Deringing.threshold, m_Deringing.sigma);
         preprocessedInput = c_View<const IImageBuffer>(preprocessedInputImg->GetBuffer());
     }
 
-    LucyRichardsonGaussian(preprocessedInput, m_Params.output, numIterations, lrSigma, ConvolutionMethod::AUTO,
+    LucyRichardsonGaussian(preprocessedInput, m_Params.output.at(0), numIterations, lrSigma, ConvolutionMethod::AUTO,
         [this](int currentIter, int totalIters) { IterationNotification(currentIter, totalIters); },
         [this]() { return IsAbortRequested(); }
     );
     Log::Print(wxString::Format("L-R deconvolution finished in %s s\n", (wxDateTime::UNow() - tstart).Format("%S.%l")));
-    Clamp(m_Params.output);
+    Clamp(m_Params.output.at(0));
 }
 
 } // namespace imppg::backend

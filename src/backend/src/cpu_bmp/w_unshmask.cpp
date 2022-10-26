@@ -28,7 +28,7 @@ namespace imppg::backend {
 
 c_UnsharpMaskingThread::c_UnsharpMaskingThread(
     WorkerParameters&& params,
-    c_View<const IImageBuffer>&& rawInput, ///< Raw/original image fragment without any processing performed
+    c_View<const IImageBuffer>&& rawInput, ///< Raw/original image fragment (always mono) without any processing performed
     bool adaptive,   ///< If true, adaptive algorithm is used
     float sigma,     ///< Unsharp mask Gaussian sigma
     float amountMin, ///< Unsharp masking amount min
@@ -45,22 +45,26 @@ c_UnsharpMaskingThread::c_UnsharpMaskingThread(
   m_Threshold(threshold),
   m_Width(width)
 {
-    IMPPG_ASSERT(m_Params.input.GetWidth() == rawInput.GetWidth());
-    IMPPG_ASSERT(m_Params.output.GetWidth() == rawInput.GetWidth());
-
-    IMPPG_ASSERT(m_Params.input.GetHeight() == rawInput.GetHeight());
-    IMPPG_ASSERT(m_Params.output.GetHeight() == rawInput.GetHeight());
+    IMPPG_ASSERT(m_RawInput.GetPixelFormat() == PixelFormat::PIX_MONO32F);
+    for (std::size_t i = 0; i < m_Params.input.size(); ++i)
+    {
+        IMPPG_ASSERT(m_Params.input.at(i).GetWidth() == rawInput.GetWidth());
+        IMPPG_ASSERT(m_Params.input.at(i).GetHeight() == rawInput.GetHeight());
+        IMPPG_ASSERT(m_Params.output.at(i).GetWidth() == rawInput.GetWidth());
+        IMPPG_ASSERT(m_Params.output.at(i).GetHeight() == rawInput.GetHeight());
+    }
 }
 
 void c_UnsharpMaskingThread::DoWork()
 {
     // Width and height of all images (input, raw input, output) are the same
-    int width = m_Params.input.GetWidth(), height = m_Params.input.GetHeight();
+    const int width = m_Params.input.at(0).GetWidth();
+    const int height = m_Params.input.at(0).GetHeight();
 
     auto gaussianImg = std::make_unique<float[]>(width * height);
 
     ConvolveSeparable(
-        c_PaddedArrayPtr(m_Params.input.GetRowAs<const float>(0), width, height, m_Params.input.GetBytesPerRow()),
+        c_PaddedArrayPtr(m_Params.input.at(0).GetRowAs<const float>(0), width, height, m_Params.input.at(0).GetBytesPerRow()),
         c_PaddedArrayPtr(gaussianImg.get(), width, height), m_Sigma
     );
 
@@ -69,9 +73,14 @@ void c_UnsharpMaskingThread::DoWork()
         // Standard unsharp masking - the amount (taken from 'm_AmountMax') is constant for the whole image.
 
         for (int row = 0; row < height; row++)
+        {
             for (int col = 0; col < width; col++)
-                m_Params.output.GetRowAs<float>(row)[col] =
-                    m_AmountMax * m_Params.input.GetRowAs<const float>(row)[col] + (1.0f - m_AmountMax) * gaussianImg[row * width + col];
+            {
+                m_Params.output.at(0).GetRowAs<float>(row)[col] =
+                    m_AmountMax * m_Params.input.at(0).GetRowAs<const float>(row)[col]
+                    + (1.0f - m_AmountMax) * gaussianImg[row * width + col];
+            }
+        }
     }
     else
     {
@@ -95,6 +104,7 @@ void c_UnsharpMaskingThread::DoWork()
         const auto& [a, b, c, d] = GetAdaptiveUnshMaskTransitionCurve(m_AmountMin, m_AmountMax, m_Threshold, m_Width);
 
         for (int row = 0; row < height; row++)
+        {
             for (int col = 0; col < width; col++)
             {
                 float amount = 1.0f;
@@ -107,13 +117,14 @@ void c_UnsharpMaskingThread::DoWork()
                 else
                     amount = l * (l * (a * l + b) + c) + d;
 
-                m_Params.output.GetRowAs<float>(row)[col] =
-                    amount * m_Params.input.GetRowAs<const float>(row)[col] +
-                    (1.0f - amount) * gaussianImg[row*m_Params.input.GetWidth() + col];
+                m_Params.output.at(0).GetRowAs<float>(row)[col] =
+                    amount * m_Params.input.at(0).GetRowAs<const float>(row)[col] +
+                    (1.0f - amount) * gaussianImg[row*m_Params.input.at(0).GetWidth() + col];
             }
+        }
     }
 
-    Clamp(m_Params.output);
+    Clamp(m_Params.output.at(0));
 }
 
 } // namespace imppg::backend
