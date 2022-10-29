@@ -255,14 +255,14 @@ public:
         : m_Buf(&buf), m_X0(rect.x), m_Y0(rect.y), m_Width(rect.width), m_Height(rect.height)
     { }
 
-    unsigned GetWidth() { return m_Width; }
+    unsigned GetWidth() const { return m_Width; }
 
-    unsigned GetHeight() { return m_Height; }
+    unsigned GetHeight() const { return m_Height; }
 
     /// Returns number of bytes per row (including padding, if any).
-    size_t GetBytesPerRow() { return m_Buf->GetBytesPerRow(); }
+    size_t GetBytesPerRow() const { return m_Buf->GetBytesPerRow(); }
 
-    size_t GetBytesPerPixel() { return m_Buf->GetBytesPerPixel(); }
+    size_t GetBytesPerPixel() const { return m_Buf->GetBytesPerPixel(); }
 
     typename std::conditional<std::is_const<Buf>::value, const void*, void*>::type GetRow(size_t row)
     {
