@@ -632,4 +632,16 @@ void c_CpuAndBitmapsProcessing::SetImage(c_Image img)
     }
 }
 
+std::optional<const std::vector<c_Image>*> c_CpuAndBitmapsProcessing::GetUnshMaskOutput() const
+{
+    if (!m_Output.unsharpMasking.img.empty() && m_Output.unsharpMasking.valid)
+    {
+        return &m_Output.unsharpMasking.img;
+    }
+    else
+    {
+        return std::nullopt;
+    }
+}
+
 } // namespace imppg::backend

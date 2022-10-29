@@ -298,9 +298,9 @@ Histogram c_CpuAndBitmaps::GetHistogram()
     if (!m_Img)
         return Histogram{};
 
-    if (const c_Image* unshMaskResult = m_Processor.GetUnshMaskOutput())
+    if (const auto unshMaskResult = m_Processor.GetUnshMaskOutput())
     {
-        return DetermineHistogram(*unshMaskResult, unshMaskResult->GetImageRect());
+        return DetermineHistogramFromChannels(*unshMaskResult.value(), unshMaskResult.value()->at(0).GetImageRect());
     }
     else
     {

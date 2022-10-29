@@ -72,18 +72,8 @@ public:
     /// Aborts processing and schedules new processing to start ASAP (as soon as worker thread is not running).
     void ScheduleProcessing(ProcessingRequest request);
 
-    /// Returns unsharp masking result if it is valid; returns `nullptr` otherwise.
-    const c_Image* GetUnshMaskOutput() const
-    {
-        if (!m_Output.unsharpMasking.img.empty() && m_Output.unsharpMasking.valid)
-        {
-            return &m_Output.unsharpMasking.img.at(0);
-        }
-        else
-        {
-            return nullptr;
-        }
-    }
+    /// Returns unsharp masking result if it is valid.
+    std::optional<const std::vector<c_Image>*> GetUnshMaskOutput() const;
 
     /// Applies precise tone curve values to unsharp masking output if it is valid; otherwise,
     /// applies them to (fragment of) original image.
