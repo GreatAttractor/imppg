@@ -78,11 +78,15 @@ protected:
 public:
     IWorkerThread(WorkerParameters&& params): wxThread(wxTHREAD_JOINABLE), m_Params(std::move(params))
     {
-        for (std::size_t i = 0; i < m_Params.input.size(); ++i)
+        for (std::size_t ch = 0; ch < m_Params.input.size(); ++ch)
         {
             IMPPG_ASSERT(
-                m_Params.input.at(i).GetWidth() == m_Params.output.at(i).GetWidth() &&
-                m_Params.input.at(i).GetHeight() == m_Params.output.at(i).GetHeight()
+                m_Params.input.at(ch).GetWidth() == m_Params.output.at(ch).GetWidth() &&
+                m_Params.input.at(ch).GetHeight() == m_Params.output.at(ch).GetHeight()
+            );
+            IMPPG_ASSERT(
+                m_Params.input.at(ch).GetPixelFormat() == PixelFormat::PIX_MONO32F &&
+                m_Params.output.at(ch).GetPixelFormat() == PixelFormat::PIX_MONO32F
             );
         }
     }

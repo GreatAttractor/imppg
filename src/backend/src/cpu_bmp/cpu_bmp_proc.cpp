@@ -296,10 +296,10 @@ void c_CpuAndBitmapsProcessing::StartLRDeconvolution()
 
         std::vector<c_View<const IImageBuffer>> input;
         std::vector<c_View<IImageBuffer>> output;
-        for (std::size_t i = 0; i < m_Img.size(); ++i)
+        for (std::size_t ch = 0; ch < m_Img.size(); ++ch)
         {
-            input.emplace_back(m_Img.at(0).GetBuffer(), m_Selection.x, m_Selection.y, m_Selection.width, m_Selection.height);
-            output.emplace_back(m_Output.sharpening.img.at(0).GetBuffer());
+            input.emplace_back(m_Img.at(ch).GetBuffer(), m_Selection.x, m_Selection.y, m_Selection.width, m_Selection.height);
+            output.emplace_back(m_Output.sharpening.img.at(ch).GetBuffer());
         }
 
         m_Worker = std::make_unique<c_LucyRichardsonThread>(
@@ -334,7 +334,7 @@ void c_CpuAndBitmapsProcessing::StartUnsharpMasking()
         static_cast<int>(img.at(0).GetHeight()) != m_Selection.height)
     {
         img.clear();
-        for (std::size_t i = 0; i < m_Img.size(); ++i)
+        for (std::size_t ch = 0; ch < m_Img.size(); ++ch)
         {
             img.emplace_back(m_Selection.width, m_Selection.height, PixelFormat::PIX_MONO32F);
         }
@@ -366,10 +366,10 @@ void c_CpuAndBitmapsProcessing::StartUnsharpMasking()
 
         std::vector<c_View<const IImageBuffer>> input;
         std::vector<c_View<IImageBuffer>> output;
-        for (std::size_t i = 0; i < m_Img.size(); ++i)
+        for (std::size_t ch = 0; ch < m_Img.size(); ++ch)
         {
-            input.emplace_back(m_Output.sharpening.img.at(0).GetBuffer());
-            output.emplace_back(m_Output.unsharpMasking.img.at(0).GetBuffer());
+            input.emplace_back(m_Output.sharpening.img.at(ch).GetBuffer());
+            output.emplace_back(m_Output.unsharpMasking.img.at(ch).GetBuffer());
         }
 
         m_Worker = std::make_unique<c_UnsharpMaskingThread>(
