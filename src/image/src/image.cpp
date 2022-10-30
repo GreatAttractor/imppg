@@ -1112,12 +1112,20 @@ void c_Image::ResizeAndTranslate(
 
 void NormalizeFpImage(c_Image& img, float minLevel, float maxLevel)
 {
-    IMPPG_ASSERT(img.GetPixelFormat() == PixelFormat::PIX_MONO32F);
-    float lmin = FLT_MAX, lmax = -FLT_MAX; // min and max brightness in the input image
+    IMPPG_ASSERT(
+        img.GetPixelFormat() == PixelFormat::PIX_MONO32F ||
+        img.GetPixelFormat() == PixelFormat::PIX_RGB32F
+    );
+
+    const std::size_t numChannels = NumChannels[static_cast<std::size_t>(img.GetPixelFormat())];
+
+    // min and max brightness in the input image
+    float lmin = FLT_MAX;
+    float lmax = -FLT_MAX;
     for (unsigned row = 0; row < img.GetHeight(); row++)
-        for (unsigned col = 0; col < img.GetWidth(); col++)
+        for (unsigned col = 0; col < img.GetWidth() * numChannels; col++)
         {
-            float val = img.GetRowAs<float>(row)[col];
+            const float val = img.GetRowAs<float>(row)[col];
             if (val < lmin)
                 lmin = val;
             if (val > lmax)
@@ -1125,13 +1133,13 @@ void NormalizeFpImage(c_Image& img, float minLevel, float maxLevel)
         }
 
     // Determine coefficients 'a' and 'b' which satisfy: new_luminance := a * old_luminance + b
-    float a = (maxLevel - minLevel) / (lmax - lmin);
-    float b = maxLevel - a*lmax;
+    const float a = (maxLevel - minLevel) / (lmax - lmin);
+    const float b = maxLevel - a * lmax;
 
     // Pixels with brightness 'minLevel' become black and those of 'maxLevel' become white.
 
     for (unsigned row = 0; row < img.GetHeight(); row++)
-        for (unsigned col = 0; col < img.GetWidth(); col++)
+        for (unsigned col = 0; col < img.GetWidth() * numChannels; col++)
         {
             float& val = img.GetRowAs<float>(row)[col];
             val = a * val + b;

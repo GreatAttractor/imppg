@@ -41,11 +41,12 @@
   - image file path
   - settings file path
   - processed image file path
+  - output format
 
   ----
   *Example*
   ```Lua
-  imppg.process_image_file("/path/to/image.tif", "/path/to/settings.xml", "/path/to/output.tif")
+  imppg.process_image_file("/path/to/image.tif", "/path/to/settings.xml", "/path/to/output.tif", imppg.PNG_8)
   ```
 
 - `process_image`

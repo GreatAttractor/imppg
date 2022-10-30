@@ -7,6 +7,8 @@
 #include "interop/modules/imppg.h"
 #include "interop/state.h"
 
+#include <boost/format.hpp>
+
 namespace scripting::modules::imppg
 {
 
@@ -54,6 +56,11 @@ const luaL_Reg functions[] = {
             auto message = std::string{"failed to load image from "} + imagePath;
             if (!internalErrorMsg.empty()) { message += "; " + internalErrorMsg; }
             throw ScriptExecutionError(message);
+        }
+
+        if (NumChannels[static_cast<int>(image->GetPixelFormat())] != 3)
+        {
+            throw ScriptExecutionError(boost::str(boost::format("\"%s\" is not an RGB image") % imagePath));
         }
 
         auto [red, green, blue] = image->SplitRGB();

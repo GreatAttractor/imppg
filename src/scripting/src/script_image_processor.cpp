@@ -84,7 +84,7 @@ void ScriptImageProcessor::OnIdle(wxIdleEvent& event)
 void ScriptImageProcessor::OnProcessImageFile(const contents::ProcessImageFile& call, CompletionFunc onCompletion)
 {
     std::string loadErrorMsg;
-    auto loadResult = LoadImageFileAsMono32f(call.imagePath, m_NormalizeFitsValues, &loadErrorMsg);
+    auto loadResult = LoadImageFileAs32f(call.imagePath, m_NormalizeFitsValues, &loadErrorMsg);
     if (!loadResult)
     {
         onCompletion(call_result::Error{
@@ -92,7 +92,7 @@ void ScriptImageProcessor::OnProcessImageFile(const contents::ProcessImageFile& 
         });
         return;
     }
-    auto image = std::make_shared<const c_Image>(std::move(loadResult.value()));
+    c_Image image = std::move(loadResult.value());
 
     ProcessingSettings settings{};
     if (!LoadSettings(call.settingsPath, settings))
@@ -105,9 +105,7 @@ void ScriptImageProcessor::OnProcessImageFile(const contents::ProcessImageFile& 
 
     if (settings.normalization.enabled)
     {
-        auto normalized = c_Image(*image);
-        NormalizeFpImage(normalized, settings.normalization.min, settings.normalization.max);
-        image = std::make_shared<c_Image>(std::move(normalized));
+        NormalizeFpImage(image, settings.normalization.min, settings.normalization.max);
     }
 
     m_Processor->SetProcessingCompletedHandler(
@@ -126,17 +124,15 @@ void ScriptImageProcessor::OnProcessImageFile(const contents::ProcessImageFile& 
                 }
         }
     );
-    m_Processor->StartProcessing(*image, settings);
+    m_Processor->StartProcessing(std::move(image), settings);
 }
 
 void ScriptImageProcessor::OnProcessImage(const contents::ProcessImage& call, CompletionFunc onCompletion)
 {
-    auto image = call.image;
+    c_Image image = *call.image;
     if (call.settings.normalization.enabled)
     {
-        auto normalized = c_Image(*image);
-        NormalizeFpImage(normalized, call.settings.normalization.min, call.settings.normalization.max);
-        image = std::make_shared<c_Image>(std::move(normalized));
+        NormalizeFpImage(image, call.settings.normalization.min, call.settings.normalization.max);
     }
 
     m_Processor->SetProcessingCompletedHandler(
@@ -146,7 +142,7 @@ void ScriptImageProcessor::OnProcessImage(const contents::ProcessImage& call, Co
             });
         }
     );
-    m_Processor->StartProcessing(*image, call.settings);
+    m_Processor->StartProcessing(std::move(image), call.settings);
 }
 
 void ScriptImageProcessor::OnAlignRGB(const contents::AlignRGB& call, CompletionFunc onCompletion)
