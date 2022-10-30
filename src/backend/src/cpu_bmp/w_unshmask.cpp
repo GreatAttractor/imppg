@@ -71,9 +71,9 @@ void c_UnsharpMaskingThread::DoWork()
 
         for (std::size_t ch = 0; ch < m_Params.input.size(); ++ch)
         {
-            for (int row = 0; row < height; row++)
+            for (unsigned row = 0; row < height; row++)
             {
-                for (int col = 0; col < width; col++)
+                for (unsigned col = 0; col < width; col++)
                 {
                     m_Params.output.at(ch).GetRowAs<float>(row)[col] =
                         m_AmountMax * m_Params.input.at(ch).GetRowAs<const float>(row)[col]
@@ -105,9 +105,9 @@ void c_UnsharpMaskingThread::DoWork()
 
         for (std::size_t ch = 0; ch < m_Params.input.size(); ++ch)
         {
-            for (int row = 0; row < height; row++)
+            for (unsigned row = 0; row < height; row++)
             {
-                for (int col = 0; col < width; col++)
+                for (unsigned col = 0; col < width; col++)
                 {
                     float amount = 1.0f;
                     float l = imgL[row * width + col];

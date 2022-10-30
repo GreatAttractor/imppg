@@ -78,7 +78,7 @@ Histogram DetermineHistogram(const c_Image& img, const wxRect& selection)
     for (int y = 0; y < selection.height; y++)
     {
         const float* row = img.GetRowAs<float>(selection.y + y) + selection.x;
-        for (int x = 0; x < selection.width * numChannels; x++)
+        for (unsigned x = 0; x < selection.width * numChannels; x++)
         {
             if (row[x] < histogram.minValue)
                 histogram.minValue = row[x];

@@ -337,7 +337,7 @@ static bool SaveAsFreeImage(const IImageBuffer& buf, const std::string& fname, O
         {
             const auto* srcRow = static_cast<const std::uint8_t*>(buf.GetRow(buf.GetHeight() - 1 - row));
             std::uint8_t* destRow = FreeImage_GetScanLine(outputFiBmp.get(), row);
-            for (int x = 0; x < buf.GetWidth(); ++x)
+            for (unsigned x = 0; x < buf.GetWidth(); ++x)
             {
                 destRow[3 * x + 0] = srcRow[3 * x + 2];
                 destRow[3 * x + 1] = srcRow[3 * x + 1];
