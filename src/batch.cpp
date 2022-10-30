@@ -236,7 +236,7 @@ void c_BatchDialog::ProcessNextFile()
     wxString ext = path.GetExt().Lower();
     std::string errorMsg;
 
-    auto img = LoadImageFileAsMono32f(
+    auto img = LoadImageFileAs32f(
         path.GetFullPath().ToStdString(),
         Configuration::NormalizeFITSValues,
         &errorMsg
@@ -255,7 +255,7 @@ void c_BatchDialog::ProcessNextFile()
         NormalizeFpImage(img.value(), proc.normalization.min, proc.normalization.max);
     }
 
-    m_Processor->StartProcessing(std::make_shared<const c_Image>(std::move(img.value())), proc);
+    m_Processor->StartProcessing(std::move(img.value()), proc);
 }
 
 void c_BatchDialog::OnCommandEvent(wxCommandEvent& event)

@@ -141,12 +141,12 @@ static bool SaveAsFits(const IImageBuffer& buf, const std::string& fname)
 
 #if USE_FREEIMAGE
 
-c_FreeImageHandleWrapper::c_FreeImageHandleWrapper(c_FreeImageHandleWrapper&& rhs)
+c_FreeImageHandleWrapper::c_FreeImageHandleWrapper(c_FreeImageHandleWrapper&& rhs) noexcept
 {
     *this = std::move(rhs);
 }
 
-c_FreeImageHandleWrapper& c_FreeImageHandleWrapper::operator=(c_FreeImageHandleWrapper&& rhs)
+c_FreeImageHandleWrapper& c_FreeImageHandleWrapper::operator=(c_FreeImageHandleWrapper&& rhs) noexcept
 {
     m_FiBmp = rhs.m_FiBmp;
     rhs.m_FiBmp = nullptr;
@@ -325,18 +325,37 @@ static bool SaveAsFreeImage(const IImageBuffer& buf, const std::string& fname, O
     //FIXME! static_assert(false, "FIXME: wrong channel order when saving RGB after Combine");
 
     c_FreeImageHandleWrapper outputFiBmp = FreeImage_AllocateT(
-        fiType, buf.GetWidth(), buf.GetHeight(), fiBpp, 0x0000FF, 0x00FF00, 0xFF0000
+        fiType, buf.GetWidth(), buf.GetHeight(), fiBpp
     );
 
     if (!outputFiBmp)
         return false;
 
-    for (unsigned row = 0; row < buf.GetHeight(); row++)
-        memcpy(
-            FreeImage_GetScanLine(outputFiBmp.get(), row),
-            buf.GetRow(buf.GetHeight() - 1 - row),
-            buf.GetWidth() * buf.GetBytesPerPixel()
-        );
+    if (FIT_BITMAP == fiType && 24 == fiBpp)
+    {
+        for (unsigned row = 0; row < buf.GetHeight(); row++)
+        {
+            const auto* srcRow = static_cast<const std::uint8_t*>(buf.GetRow(buf.GetHeight() - 1 - row));
+            std::uint8_t* destRow = FreeImage_GetScanLine(outputFiBmp.get(), row);
+            for (int x = 0; x < buf.GetWidth(); ++x)
+            {
+                destRow[3 * x + 0] = srcRow[3 * x + 2];
+                destRow[3 * x + 1] = srcRow[3 * x + 1];
+                destRow[3 * x + 2] = srcRow[3 * x + 0];
+            }
+        }
+    }
+    else
+    {
+        for (unsigned row = 0; row < buf.GetHeight(); row++)
+        {
+            memcpy(
+                FreeImage_GetScanLine(outputFiBmp.get(), row),
+                buf.GetRow(buf.GetHeight() - 1 - row),
+                buf.GetWidth() * buf.GetBytesPerPixel()
+            );
+        }
+    }
 
     const auto [fiFmt, fiFlags] = GetFiFormatAndFlags(outpFileType);
     result = FreeImage_Save(fiFmt, outputFiBmp.get(), fname.c_str(), fiFlags);
@@ -497,7 +516,8 @@ static c_SimpleBuffer GetConvertedPixelFormatFragment(
     unsigned x0,
     unsigned y0,
     unsigned width,
-    unsigned height)
+    unsigned height
+)
 {
     IMPPG_ASSERT(!(destPixFmt == PixelFormat::PIX_PAL8 && srcBuf.GetPixelFormat() != PixelFormat::PIX_PAL8));
     IMPPG_ASSERT(x0 < srcBuf.GetWidth());
@@ -1346,11 +1366,29 @@ std::optional<c_Image> LoadImage(
 #endif
 }
 
-std::optional<c_Image> LoadImageFileAsMono32f(
-    const std::string& fname,     ///< Full path (including file name and extension).
-    /// If true, floating-points values read from a FITS file are normalized, so that the highest becomes 1.0.
+std::optional<c_Image> LoadImageFileAs32f(
+    const std::string& fname,
     bool normalizeFITSvalues,
-    std::string* errorMsg         ///< If not null, may receive an error message (if any).
+    std::string* errorMsg
+)
+{
+    const auto image = LoadImage(fname, std::nullopt, errorMsg, normalizeFITSvalues);
+    if (!image) { return std::nullopt; }
+
+    if (NumChannels[static_cast<std::size_t>(image->GetPixelFormat())] == 1)
+    {
+        return image->ConvertPixelFormat(PixelFormat::PIX_MONO32F);
+    }
+    else
+    {
+        return image->ConvertPixelFormat(PixelFormat::PIX_RGB32F);
+    }
+}
+
+std::optional<c_Image> LoadImageFileAsMono32f(
+    const std::string& fname,
+    bool normalizeFITSvalues,
+    std::string* errorMsg
 )
 {
     return LoadImage(fname, PixelFormat::PIX_MONO32F, errorMsg, normalizeFITSvalues);

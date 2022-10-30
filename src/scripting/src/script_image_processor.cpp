@@ -126,7 +126,7 @@ void ScriptImageProcessor::OnProcessImageFile(const contents::ProcessImageFile& 
                 }
         }
     );
-    m_Processor->StartProcessing(image, settings);
+    m_Processor->StartProcessing(*image, settings);
 }
 
 void ScriptImageProcessor::OnProcessImage(const contents::ProcessImage& call, CompletionFunc onCompletion)
@@ -146,7 +146,7 @@ void ScriptImageProcessor::OnProcessImage(const contents::ProcessImage& call, Co
             });
         }
     );
-    m_Processor->StartProcessing(image, call.settings);
+    m_Processor->StartProcessing(*image, call.settings);
 }
 
 void ScriptImageProcessor::OnAlignRGB(const contents::AlignRGB& call, CompletionFunc onCompletion)

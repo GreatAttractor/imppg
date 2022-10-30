@@ -37,10 +37,6 @@ c_ToneCurveThread::c_ToneCurveThread(
    toneCurve(toneCurve),
    m_UsePreciseValues(usePreciseValues)
 {
-    IMPPG_ASSERT(
-        m_Params.input.GetPixelFormat() == PixelFormat::PIX_MONO32F &&
-        m_Params.input.GetPixelFormat() == m_Params.output.GetPixelFormat()
-    );
 }
 
 void c_ToneCurveThread::DoWork()
@@ -48,26 +44,46 @@ void c_ToneCurveThread::DoWork()
     wxDateTime tstart = wxDateTime::UNow();
     toneCurve.RefreshLut();
 
+    const std::size_t numChannels = m_Params.input.size();
+
+    const unsigned width = m_Params.output.at(0).GetWidth();
+    const unsigned height = m_Params.output.at(0).GetHeight();
+
     int lastPercentageReported = 0;
-    for (unsigned y = 0; y < m_Params.output.GetHeight(); y++)
+    for (std::size_t ch = 0; ch < numChannels; ++ch)
     {
-        if (m_UsePreciseValues)
-            toneCurve.ApplyPreciseToneCurve(m_Params.input.GetRowAs<const float>(y), m_Params.output.GetRowAs<float>(y), m_Params.output.GetWidth());
-        else
-            toneCurve.ApplyApproximatedToneCurve(m_Params.input.GetRowAs<const float>(y), m_Params.output.GetRowAs<float>(y), m_Params.output.GetWidth());
-
-        // Notify the main thread after every 5% of progress
-        int percentage = 100 * y / m_Params.output.GetHeight();
-        if (percentage > lastPercentageReported + 5)
+        for (unsigned y = 0; y < height; y++)
         {
-            WorkerEventPayload payload;
-            payload.percentageComplete = percentage;
-            SendMessageToParent(ID_PROCESSING_PROGRESS, payload);
-            lastPercentageReported = percentage;
-        }
+            if (m_UsePreciseValues)
+            {
+                toneCurve.ApplyPreciseToneCurve(
+                    m_Params.input.at(ch).GetRowAs<const float>(y),
+                    m_Params.output.at(ch).GetRowAs<float>(y),
+                    width
+                );
+            }
+            else
+            {
+                toneCurve.ApplyApproximatedToneCurve(
+                    m_Params.input.at(ch).GetRowAs<const float>(y),
+                    m_Params.output.at(ch).GetRowAs<float>(y),
+                    width
+                );
+            }
 
-        if (IsAbortRequested())
-            break;
+            // Notify the main thread after every 5% of progress
+            int percentage = 100 * (y + ch * height) / (numChannels * height);
+            if (percentage > lastPercentageReported + 5)
+            {
+                WorkerEventPayload payload;
+                payload.percentageComplete = percentage;
+                SendMessageToParent(ID_PROCESSING_PROGRESS, payload);
+                lastPercentageReported = percentage;
+            }
+
+            if (IsAbortRequested())
+                break;
+        }
     }
     Log::Print(wxString::Format("Applying of tone curve finished in %s s\n", (wxDateTime::UNow() - tstart).Format("%S.%l")));
 }

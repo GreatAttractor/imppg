@@ -60,16 +60,25 @@ Histogram DetermineHistogram(const c_Image& img, const wxRect& selection)
 {
     constexpr int NUM_HISTOGRAM_BINS = 1024;
 
+    IMPPG_ASSERT(
+        img.GetPixelFormat() == PixelFormat::PIX_MONO32F ||
+        img.GetPixelFormat() == PixelFormat::PIX_RGB32F
+    );
+
+    IMPPG_ASSERT(img.GetImageRect().Contains(selection));
+
     Histogram histogram{};
 
     histogram.values.insert(histogram.values.begin(), NUM_HISTOGRAM_BINS, 0);
     histogram.minValue = FLT_MAX;
     histogram.maxValue = -FLT_MAX;
 
+    const std::size_t numChannels = NumChannels[static_cast<std::size_t>(img.GetPixelFormat())];
+
     for (int y = 0; y < selection.height; y++)
     {
         const float* row = img.GetRowAs<float>(selection.y + y) + selection.x;
-        for (int x = 0; x < selection.width; x++)
+        for (int x = 0; x < selection.width * numChannels; x++)
         {
             if (row[x] < histogram.minValue)
                 histogram.minValue = row[x];
@@ -86,6 +95,54 @@ Histogram DetermineHistogram(const c_Image& img, const wxRect& selection)
     for (unsigned i = 0; i < histogram.values.size(); i++)
         if (histogram.values[i] > histogram.maxCount)
             histogram.maxCount = histogram.values[i];
+
+    return histogram;
+}
+
+Histogram DetermineHistogramFromChannels(const std::vector<c_Image>& channels, const wxRect& selection)
+{
+    constexpr int NUM_HISTOGRAM_BINS = 1024;
+
+    const unsigned width = channels.at(0).GetWidth();
+    IMPPG_ASSERT(channels.at(0).GetImageRect().Contains(selection));
+    for (std::size_t i = 1; i < channels.size(); ++i)
+    {
+        IMPPG_ASSERT(channels[i].GetWidth() == width && channels[i].GetImageRect().Contains(selection));
+    }
+
+    Histogram histogram{};
+
+    histogram.values.insert(histogram.values.begin(), NUM_HISTOGRAM_BINS, 0);
+    histogram.minValue = FLT_MAX;
+    histogram.maxValue = -FLT_MAX;
+
+    for (const c_Image& channel: channels)
+    {
+        for (int y = 0; y < selection.height; y++)
+        {
+            const float* row = channel.GetRowAs<float>(selection.y + y) + selection.x;
+            for (int x = 0; x < selection.width; x++)
+            {
+                if (row[x] < histogram.minValue)
+                    histogram.minValue = row[x];
+                else if (row[x] > histogram.maxValue)
+                    histogram.maxValue = row[x];
+
+                const unsigned hbin = static_cast<unsigned>(row[x] * (NUM_HISTOGRAM_BINS - 1));
+                IMPPG_ASSERT(hbin < NUM_HISTOGRAM_BINS);
+                histogram.values[hbin] += 1;
+            }
+        }
+    }
+
+    histogram.maxCount = 0;
+    for (unsigned i = 0; i < histogram.values.size(); i++)
+    {
+        if (histogram.values[i] > histogram.maxCount)
+        {
+            histogram.maxCount = histogram.values[i];
+        }
+    }
 
     return histogram;
 }

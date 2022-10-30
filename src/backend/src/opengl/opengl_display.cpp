@@ -111,7 +111,8 @@ c_OpenGLDisplay::c_OpenGLDisplay(c_ScrolledView& imgView, unsigned lRCmdBatchSiz
     m_GLPrograms.monoOutput = gl::c_Program(
         { &m_GLShaders.frag.monoOutput,
           &m_GLShaders.vert.vertex },
-        { uniforms::Image,
+        { uniforms::IsMono,
+          uniforms::Image,
           uniforms::ViewportSize,
           uniforms::ScrollPos },
         {},
@@ -121,7 +122,8 @@ c_OpenGLDisplay::c_OpenGLDisplay(c_ScrolledView& imgView, unsigned lRCmdBatchSiz
     m_GLPrograms.monoOutputCubic = gl::c_Program(
         { &m_GLShaders.frag.monoOutputCubic,
           &m_GLShaders.vert.vertex },
-        { uniforms::Image,
+        { uniforms::IsMono,
+          uniforms::Image,
           uniforms::ViewportSize,
           uniforms::ScrollPos },
         {},
@@ -202,7 +204,7 @@ void c_OpenGLDisplay::OnPaint(wxPaintEvent&)
     {
         auto& prog = (m_ScalingMethod == ScalingMethod::CUBIC) ? m_GLPrograms.monoOutputCubic : m_GLPrograms.monoOutput;
         prog.Use();
-
+        prog.SetUniform1i(uniforms::IsMono, IsMono(m_Img.value().GetPixelFormat()));
         gl::BindProgramTextures(prog, { {&m_Processor->GetOriginalImg(), uniforms::Image} });
 
         const auto scrollPos = m_ImgView.GetScrollPosition();
@@ -233,7 +235,7 @@ void c_OpenGLDisplay::RenderProcessingResults()
 
     auto& prog = (m_ScalingMethod == ScalingMethod::CUBIC) ? m_GLPrograms.monoOutputCubic : m_GLPrograms.monoOutput;
     prog.Use();
-
+    prog.SetUniform1i(uniforms::IsMono, IsMono(m_Img.value().GetPixelFormat()));
     gl::BindProgramTextures(prog, { {renderingResults, uniforms::Image} });
 
     const auto scrollPos = m_ImgView.GetScrollPosition();
@@ -343,7 +345,12 @@ void c_OpenGLDisplay::FillWholeImgVBO()
 
 void c_OpenGLDisplay::SetImage(c_Image&& img, std::optional<wxRect> newSelection)
 {
-    m_Img = std::make_shared<const c_Image>(std::move(img));
+    IMPPG_ASSERT(
+        img.GetPixelFormat() == PixelFormat::PIX_MONO32F ||
+        img.GetPixelFormat() == PixelFormat::PIX_RGB32F
+    );
+
+    m_Img = std::move(img);
 
     if (newSelection.has_value())
     {
@@ -351,7 +358,7 @@ void c_OpenGLDisplay::SetImage(c_Image&& img, std::optional<wxRect> newSelection
         m_Processor->SetSelection(m_Selection);
     }
 
-    m_Processor->SetImage(m_Img, ScalingMethod::LINEAR == m_ScalingMethod);
+    m_Processor->SetImage(m_Img.value(), ScalingMethod::LINEAR == m_ScalingMethod);
 
     FillWholeImgVBO();
     FillLastChosenSelectionScaledVBO();
@@ -361,18 +368,25 @@ void c_OpenGLDisplay::SetImage(c_Image&& img, std::optional<wxRect> newSelection
 
 Histogram c_OpenGLDisplay::GetHistogram()
 {
-    if (const gl::c_Texture* unshMaskOutput = m_Processor->GetUsharpMaskOutput())
+    const gl::c_Texture* unshMaskOutput = m_Processor->GetUsharpMaskOutput();
+
+    if (m_Img.has_value() && unshMaskOutput != nullptr)
     {
-        c_Image img(unshMaskOutput->GetWidth(), unshMaskOutput->GetHeight(), PixelFormat::PIX_MONO32F);
+        const auto pixFmt = m_Img->GetPixelFormat();
+        c_Image img(unshMaskOutput->GetWidth(), unshMaskOutput->GetHeight(), pixFmt);
         glBindTexture(GL_TEXTURE_RECTANGLE, unshMaskOutput->Get());
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glGetTexImage(GL_TEXTURE_RECTANGLE, 0, GL_RED, GL_FLOAT, img.GetRow(0));
+        glGetTexImage(GL_TEXTURE_RECTANGLE, 0, IsMono(pixFmt) ? GL_RED : GL_RGB, GL_FLOAT, img.GetRow(0));
         return DetermineHistogram(img, img.GetImageRect());
     }
-    else if (m_Img)
-        return DetermineHistogram(*m_Img, m_Selection);
+    else if (m_Img.has_value())
+    {
+        return DetermineHistogram(m_Img.value(), m_Selection);
+    }
     else
+    {
         return Histogram{};
+    }
 }
 
 void c_OpenGLDisplay::NewSelection(const wxRect& selection, const wxRect&)

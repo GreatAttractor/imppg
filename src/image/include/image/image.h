@@ -76,7 +76,7 @@ const size_t BytesPerPixel[static_cast<size_t>(PixelFormat::PIX_NUM_FORMATS)] =
 };
 
 /// Elements correspond to those from PixelFormat
-const size_t NumChannels[static_cast<size_t>(PixelFormat::PIX_NUM_FORMATS)] =
+constexpr size_t NumChannels[static_cast<size_t>(PixelFormat::PIX_NUM_FORMATS)] =
 {
     1,    // PIX_PAL8
     1,    // PIX_MONO8
@@ -89,6 +89,11 @@ const size_t NumChannels[static_cast<size_t>(PixelFormat::PIX_NUM_FORMATS)] =
     3,    // PIX_RGB32F
     4,    // PIX_RGBA32F
 };
+
+constexpr bool IsMono(PixelFormat pixFmt)
+{
+    return 1 == NumChannels[static_cast<std::size_t>(pixFmt)];
+}
 
 class IImageBuffer
 {
@@ -250,14 +255,14 @@ public:
         : m_Buf(&buf), m_X0(rect.x), m_Y0(rect.y), m_Width(rect.width), m_Height(rect.height)
     { }
 
-    unsigned GetWidth() { return m_Width; }
+    unsigned GetWidth() const { return m_Width; }
 
-    unsigned GetHeight() { return m_Height; }
+    unsigned GetHeight() const { return m_Height; }
 
     /// Returns number of bytes per row (including padding, if any).
-    size_t GetBytesPerRow() { return m_Buf->GetBytesPerRow(); }
+    size_t GetBytesPerRow() const { return m_Buf->GetBytesPerRow(); }
 
-    size_t GetBytesPerPixel() { return m_Buf->GetBytesPerPixel(); }
+    size_t GetBytesPerPixel() const { return m_Buf->GetBytesPerPixel(); }
 
     typename std::conditional<std::is_const<Buf>::value, const void*, void*>::type GetRow(size_t row)
     {
@@ -292,9 +297,9 @@ public:
 
     c_FreeImageHandleWrapper& operator=(const c_FreeImageHandleWrapper& rhs) = delete;
 
-    c_FreeImageHandleWrapper(c_FreeImageHandleWrapper&& rhs);
+    c_FreeImageHandleWrapper(c_FreeImageHandleWrapper&& rhs) noexcept;
 
-    c_FreeImageHandleWrapper& operator=(c_FreeImageHandleWrapper&& rhs);
+    c_FreeImageHandleWrapper& operator=(c_FreeImageHandleWrapper&& rhs) noexcept;
 
     ~c_FreeImageHandleWrapper();
 
@@ -363,6 +368,13 @@ private:
 #endif // USE_FREEIMAGE
 
 void NormalizeFpImage(c_Image& img, float minLevel, float maxLevel);
+
+/// Loads image and converts it to PIX_MONO32F or PIX_RGB32F.
+std::optional<c_Image> LoadImageFileAs32f(
+    const std::string& fname,
+    bool normalizeFITSvalues,
+    std::string* errorMsg = nullptr  ///< If not null, may receive an error message (if any).
+);
 
 /// Loads the specified image file and converts it to PIX_MONO32F.
 std::optional<c_Image> LoadImageFileAsMono32f(

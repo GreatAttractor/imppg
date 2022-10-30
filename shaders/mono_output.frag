@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2016-2019 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2016-2022 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -26,10 +26,19 @@ File description:
 in vec2 TexCoord;
 out vec4 Color;
 
+uniform bool IsMono;
 uniform sampler2DRect Image;
 
 void main()
 {
-    float value = texture(Image, TexCoord).r;
-    Color = vec4(value, value, value, 1.0);
+    if (IsMono)
+    {
+        float value = texture(Image, TexCoord).r;
+        Color = vec4(vec3(value), 1.0);
+    }
+    else
+    {
+        vec3 value = texture(Image, TexCoord).rgb;
+        Color = vec4(value, 1.0);
+    }
 }

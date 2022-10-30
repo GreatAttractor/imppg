@@ -39,6 +39,7 @@ namespace imppg::backend::uniforms
     const char* SelectionPos = "SelectionPos";
     const char* AmountMin = "AmountMin";
     const char* AmountMax = "AmountMax";
+    const char* IsMono = "IsMono";
     const char* InputArray1 = "InputArray1";
     const char* InputArray2 = "InputArray2";
     const char* InputImageBlurred = "InputImageBlurred";

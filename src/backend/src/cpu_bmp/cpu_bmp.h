@@ -79,7 +79,7 @@ public:
 
     void SetScalingMethod(ScalingMethod scalingMethod) override;
 
-    const std::shared_ptr<const c_Image>& GetImage() const override { return m_Img; }
+    const std::optional<c_Image>& GetImage() const override { return m_Img; }
 
     void SetProgressTextHandler(std::function<void(wxString)> handler) override { m_Processor.SetProgressTextHandler(handler); }
 
@@ -96,7 +96,7 @@ private:
 
     c_ScrolledView& m_ImgView;
 
-    std::shared_ptr<const c_Image> m_Img;
+    std::optional<c_Image> m_Img;
 
     std::optional<wxBitmap> m_ImgBmp; ///< Bitmap which wraps `m_Img` for displaying on `m_ImgView`.
 

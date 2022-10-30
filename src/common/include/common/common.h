@@ -177,6 +177,8 @@ struct Histogram
 
 Histogram DetermineHistogram(const c_Image& img, const wxRect& selection);
 
+Histogram DetermineHistogramFromChannels(const std::vector<c_Image>& channels, const wxRect& selection);
+
 inline wxString FromDir(const wxFileName& dir, wxString fname)
 {
     return wxFileName(dir.GetFullPath(), fname).GetFullPath();

@@ -368,8 +368,8 @@ void c_MainWindow::OnSaveFile()
     }
 
     auto& s = m_CurrentSettings;
-    const auto imgW = m_BackEnd->GetImage()->GetWidth();
-    const auto imgH = m_BackEnd->GetImage()->GetHeight();
+    const auto imgW = m_BackEnd->GetImage().value().GetWidth();
+    const auto imgH = m_BackEnd->GetImage().value().GetHeight();
     if (s.selection.x != 0 ||
         s.selection.y != 0 ||
         static_cast<unsigned>(s.selection.width) != imgW ||
@@ -928,7 +928,7 @@ void c_MainWindow::OpenFile(wxFileName path, bool resetSelection)
 
     std::string errorMsg;
 
-    const auto loadResult = LoadImageFileAsMono32f(
+    const auto loadResult = LoadImageFileAs32f(
         path.GetFullPath().ToStdString(),
         Configuration::NormalizeFITSValues,
         &errorMsg
@@ -1532,10 +1532,7 @@ void c_MainWindow::InitMenu()
     menuBackEnd->Bind(wxEVT_MENU,
         [this](wxCommandEvent&)
         {
-            std::shared_ptr<const c_Image> existingImg = m_BackEnd->GetImage();
-            auto img = [&]() -> std::optional<c_Image> {
-                if (existingImg) { return *existingImg; } else { return std::nullopt; }
-            }();
+            std::optional<c_Image> img = m_BackEnd->GetImage();
 
             InitializeBackEnd(imppg::backend::CreateCpuBmpDisplayBackend(*m_ImageView), img);
             Configuration::ProcessingBackEnd = BackEnd::CPU_AND_BITMAPS;
@@ -1551,10 +1548,7 @@ void c_MainWindow::InitMenu()
             Configuration::OpenGLInitIncomplete = true;
             Configuration::Flush();
 
-            std::shared_ptr<const c_Image> existingImg = m_BackEnd->GetImage();
-            auto img = [&]() -> std::optional<c_Image> {
-                if (existingImg) { return *existingImg; } else { return std::nullopt; }
-            }();
+            std::optional<c_Image> img = m_BackEnd->GetImage();
 
             auto gl_instance = imppg::backend::CreateOpenGLDisplayBackend(*m_ImageView, Configuration::LRCmdBatchSizeMpixIters);
             if (nullptr == gl_instance)

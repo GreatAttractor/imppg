@@ -42,10 +42,6 @@ c_LucyRichardsonThread::c_LucyRichardsonThread(
    numIterations(numIterations),
    m_Deringing{deringing, deringingThreshold, deringingSigma, deringingWorkBuf}
 {
-    IMPPG_ASSERT(
-        m_Params.input.GetPixelFormat() == PixelFormat::PIX_MONO32F &&
-        m_Params.input.GetPixelFormat() == m_Params.output.GetPixelFormat()
-    );
 }
 
 void c_LucyRichardsonThread::IterationNotification(int iter, int totalIters)
@@ -59,23 +55,38 @@ void c_LucyRichardsonThread::DoWork()
 {
     wxDateTime tstart = wxDateTime::UNow();
 
-    c_View preprocessedInput = m_Params.input;
-
-    std::unique_ptr<c_Image> preprocessedInputImg;
-    if (m_Deringing.enabled)
+    std::vector<c_View<const IImageBuffer>> preprocessedInput;
+    for (const auto& input: m_Params.input)
     {
-        preprocessedInputImg = std::make_unique<c_Image>(m_Params.input.GetWidth(), m_Params.input.GetHeight(), PixelFormat::PIX_MONO32F);
-        auto preprocView = c_View(preprocessedInputImg->GetBuffer());
-        BlurThresholdVicinity(m_Params.input, preprocView, m_Deringing.workBuf, m_Deringing.threshold, m_Deringing.sigma);
-        preprocessedInput = c_View<const IImageBuffer>(preprocessedInputImg->GetBuffer());
+        preprocessedInput.emplace_back(input);
     }
 
-    LucyRichardsonGaussian(preprocessedInput, m_Params.output, numIterations, lrSigma, ConvolutionMethod::AUTO,
-        [this](int currentIter, int totalIters) { IterationNotification(currentIter, totalIters); },
-        [this]() { return IsAbortRequested(); }
-    );
+    std::vector<c_Image> preprocessedInputImg;
+    if (m_Deringing.enabled)
+    {
+        for (const auto& input: m_Params.input)
+        {
+            preprocessedInputImg.emplace_back(input.GetWidth(), input.GetHeight(), PixelFormat::PIX_MONO32F);
+        }
+
+        for (std::size_t ch = 0; ch < m_Params.input.size(); ++ch)
+        {
+            auto preprocView = c_View(preprocessedInputImg.at(ch).GetBuffer());
+            BlurThresholdVicinity(m_Params.input.at(ch), preprocView, m_Deringing.workBuf, m_Deringing.threshold, m_Deringing.sigma);
+            preprocessedInput[ch] = c_View<const IImageBuffer>(preprocessedInputImg.at(ch).GetBuffer());
+        }
+    }
+
+    for (std::size_t ch = 0; ch < m_Params.input.size(); ++ch)
+    {
+        LucyRichardsonGaussian(preprocessedInput.at(ch), m_Params.output.at(ch), numIterations, lrSigma, ConvolutionMethod::AUTO,
+            [this](int currentIter, int totalIters) { IterationNotification(currentIter, totalIters); }, //FIXME
+            [this]() { return IsAbortRequested(); }
+        );
+    }
+
     Log::Print(wxString::Format("L-R deconvolution finished in %s s\n", (wxDateTime::UNow() - tstart).Format("%S.%l")));
-    Clamp(m_Params.output);
+    Clamp(m_Params.output.at(0));
 }
 
 } // namespace imppg::backend

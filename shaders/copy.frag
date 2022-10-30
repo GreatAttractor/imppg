@@ -30,5 +30,5 @@ uniform sampler2DRect Image;
 
 void main()
 {
-    Color = clamp(texture(Image, TexCoord), vec4(0.0, 0.0, 0.0, 0.0), vec4(1.0, 1.0, 1.0, 1.0));
+    Color = clamp(texture(Image, TexCoord), vec4(0.0), vec4(1.0));
 }

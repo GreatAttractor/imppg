@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2016-2019 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2016-2022 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -30,6 +30,7 @@ const int MAX_CURVE_POINTS = 64;
 
 uniform sampler2DRect Image;
 
+uniform bool IsMono;
 uniform int NumPoints;
 uniform bool Smooth;
 uniform vec2 CurvePoints[MAX_CURVE_POINTS]; // only `NumPoints` elements are valid
@@ -37,9 +38,8 @@ uniform vec4 Splines[MAX_CURVE_POINTS]; // only `NumPoints-1` elements are valid
 uniform bool IsGamma;
 uniform float Gamma;
 
-void main()
+float map_component(float inputValue)
 {
-    float inputValue = texture(Image, TexCoord).r;
     float outputValue = 0;
 
     if (IsGamma)
@@ -91,6 +91,24 @@ void main()
         }
     }
 
-    outputValue = clamp(outputValue, 0.0, 1.0);
-    Color = vec4(outputValue, outputValue, outputValue, 1.0);
+    return clamp(outputValue, 0.0, 1.0);
+}
+
+void main()
+{
+    if (IsMono)
+    {
+        float inValue = texture(Image, TexCoord).r;
+        Color = vec4(vec3(map_component(inValue)), 1.0);
+    }
+    else
+    {
+        vec3 inValue = texture(Image, TexCoord).rgb;
+        Color = vec4(
+            map_component(inValue.r),
+            map_component(inValue.g),
+            map_component(inValue.b),
+            1.0
+        );
+    }
 }
