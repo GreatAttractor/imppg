@@ -46,9 +46,15 @@ c_LucyRichardsonThread::c_LucyRichardsonThread(
 
 void c_LucyRichardsonThread::IterationNotification(int iter, int totalIters)
 {
-    WorkerEventPayload payload;
-    payload.percentageComplete = 100 * iter / totalIters;
-    SendMessageToParent(ID_PROCESSING_PROGRESS, payload);
+    const int percentage = 100 * iter / totalIters;
+
+    if (percentage >= m_LastReportedPercentage + 5)
+    {
+        WorkerEventPayload payload;
+        payload.percentageComplete = percentage;
+        SendMessageToParent(ID_PROCESSING_PROGRESS, payload);
+        m_LastReportedPercentage = percentage;
+    }
 }
 
 void c_LucyRichardsonThread::DoWork()
@@ -61,6 +67,8 @@ void c_LucyRichardsonThread::DoWork()
         preprocessedInput.emplace_back(input);
     }
 
+    const std::size_t numChannels = m_Params.input.size();
+
     std::vector<c_Image> preprocessedInputImg;
     if (m_Deringing.enabled)
     {
@@ -69,7 +77,7 @@ void c_LucyRichardsonThread::DoWork()
             preprocessedInputImg.emplace_back(input.GetWidth(), input.GetHeight(), PixelFormat::PIX_MONO32F);
         }
 
-        for (std::size_t ch = 0; ch < m_Params.input.size(); ++ch)
+        for (std::size_t ch = 0; ch < numChannels; ++ch)
         {
             auto preprocView = c_View(preprocessedInputImg.at(ch).GetBuffer());
             BlurThresholdVicinity(m_Params.input.at(ch), preprocView, m_Deringing.workBuf, m_Deringing.threshold, m_Deringing.sigma);
@@ -77,10 +85,12 @@ void c_LucyRichardsonThread::DoWork()
         }
     }
 
-    for (std::size_t ch = 0; ch < m_Params.input.size(); ++ch)
+    for (std::size_t ch = 0; ch < numChannels; ++ch)
     {
         LucyRichardsonGaussian(preprocessedInput.at(ch), m_Params.output.at(ch), numIterations, lrSigma, ConvolutionMethod::AUTO,
-            [this](int currentIter, int totalIters) { IterationNotification(currentIter, totalIters); }, //FIXME
+            [this, ch, numChannels](int currentIter, int totalIters) {
+                IterationNotification(ch * totalIters + currentIter, totalIters * numChannels);
+            },
             [this]() { return IsAbortRequested(); }
         );
     }
