@@ -237,7 +237,7 @@ void c_BatchDialog::ProcessNextFile()
     wxString ext = path.GetExt().Lower();
     std::string errorMsg;
 
-    auto img = LoadImageFileAsMono32f(
+    auto img = LoadImageFileAs32f(
         path.GetFullPath().ToStdString(),
         Configuration::NormalizeFITSValues,
         &errorMsg

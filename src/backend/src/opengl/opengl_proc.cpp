@@ -43,7 +43,10 @@ static std::vector<float> GetGaussianKernel(float sigma)
 
 void c_OpenGLProcessing::StartProcessing(c_Image img, ProcessingSettings procSettings)
 {
-    IMPPG_ASSERT(img.GetPixelFormat() == PixelFormat::PIX_MONO32F);
+    IMPPG_ASSERT(
+        img.GetPixelFormat() == PixelFormat::PIX_MONO32F ||
+        img.GetPixelFormat() == PixelFormat::PIX_RGB32F
+    );
     m_OwnedImg = std::move(img);
     SetSelection(m_OwnedImg.value().GetImageRect());
     SetImage(m_OwnedImg.value(), false);
@@ -68,10 +71,11 @@ const c_Image& c_OpenGLProcessing::GetProcessedOutput()
         IMPPG_ASSERT(m_ProcessingOutputValid.toneCurve);
 
         const gl::c_Texture& srcTex = m_TexFBOs.toneCurve.tex;
-        m_ProcessedOutput = c_Image(srcTex.GetWidth(), srcTex.GetHeight(), PixelFormat::PIX_MONO32F);
+        const auto pixFmt = m_Img->GetPixelFormat();
+        m_ProcessedOutput = c_Image(srcTex.GetWidth(), srcTex.GetHeight(), pixFmt);
         glBindTexture(GL_TEXTURE_RECTANGLE, srcTex.Get());
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glGetTexImage(GL_TEXTURE_RECTANGLE, 0, GL_RED, GL_FLOAT, m_ProcessedOutput.value().GetRow(0));
+        glGetTexImage(GL_TEXTURE_RECTANGLE, 0, IsMono(pixFmt) ? GL_RED : GL_RGB, GL_FLOAT, m_ProcessedOutput.value().GetRow(0));
     }
 
     return m_ProcessedOutput.value();
@@ -705,10 +709,11 @@ c_Image c_OpenGLProcessing::GetProcessedSelection()
         srcTex = &m_TexFBOs.toneCurve.tex;
     }
 
-    c_Image img(srcTex->GetWidth(), srcTex->GetHeight(), PixelFormat::PIX_MONO32F);
+    const auto pixFmt = m_Img->GetPixelFormat();
+    c_Image img(srcTex->GetWidth(), srcTex->GetHeight(), pixFmt);
     glBindTexture(GL_TEXTURE_RECTANGLE, srcTex->Get());
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glGetTexImage(GL_TEXTURE_RECTANGLE, 0, GL_RED, GL_FLOAT, img.GetRow(0));
+    glGetTexImage(GL_TEXTURE_RECTANGLE, 0, IsMono(pixFmt) ? GL_RED : GL_RGB, GL_FLOAT, img.GetRow(0));
 
     return img;
 }
