@@ -720,6 +720,14 @@ static c_SimpleBuffer GetConvertedPixelFormatFragment(
             width, inPtr, inPtrStep, outPtr, outPtrStep);
             break;
 
+            case PixelFormat::PIX_RGB32F: ConvertWholeLine<uint8_t, float>([](const uint8_t* src, float* dest) {
+                dest[0] = src[0] / static_cast<float>(0xFF);
+                dest[1] = src[1] / static_cast<float>(0xFF);
+                dest[2] = src[2] / static_cast<float>(0xFF);
+            },
+            width, inPtr, inPtrStep, outPtr, outPtrStep);
+            break;
+
             case PixelFormat::PIX_RGB16: ConvertWholeLine<uint8_t, uint16_t>([](const uint8_t* src, uint16_t* dest) {
                 dest[0] = src[0] << 8;
                 dest[1] = src[1] << 8;
