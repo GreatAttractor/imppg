@@ -7,7 +7,6 @@ add_library(common STATIC
     src/tcrv.cpp
 )
 
-include(../../utils.cmake)
 set_compiler_options(common)
 
 target_compile_definitions(common PRIVATE

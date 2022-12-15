@@ -18,6 +18,7 @@ cmake_minimum_required(VERSION 2.8)
 enable_testing()
 
 include(config.cmake)
+include(utils.cmake)
 include(FindPkgConfig)
 include(GNUInstallDirs)
 
@@ -55,7 +56,6 @@ target_compile_definitions(imppg PRIVATE
     IMPPG_VERSION_SUBMINOR=${IMPPG_VERSION_SUBMINOR}
 )
 
-include(utils.cmake)
 set_compiler_options(imppg)
 
 if(WIN32)

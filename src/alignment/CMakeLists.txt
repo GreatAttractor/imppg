@@ -9,8 +9,11 @@ add_library(alignment STATIC
     src/fft.h
 )
 
-include(../../utils.cmake)
 set_compiler_options(alignment)
+
+if(USE_FREEIMAGE EQUAL 1)
+    target_compile_definitions(alignment PRIVATE USE_FREEIMAGE=1)
+endif()
 
 target_include_directories(alignment PUBLIC include)
 target_include_directories(alignment PRIVATE src ${Boost_INCLUDE_DIRS})

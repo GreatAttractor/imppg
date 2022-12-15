@@ -24,7 +24,6 @@ if(USE_OPENGL_BACKEND)
     )
 endif()
 
-include(../../utils.cmake)
 set_compiler_options(backend)
 
 target_include_directories(backend PUBLIC include)
