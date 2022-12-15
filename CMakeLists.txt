@@ -16,6 +16,7 @@ project("imppg")
 cmake_minimum_required(VERSION 2.8)
 
 include(config.cmake)
+include(utils.cmake)
 include(FindPkgConfig)
 include(GNUInstallDirs)
 
@@ -55,7 +56,6 @@ target_compile_definitions(imppg PRIVATE
     IMPPG_VERSION_SUBMINOR=${IMPPG_VERSION_SUBMINOR}
 )
 
-include(utils.cmake)
 set_cpp_standard(imppg)
 
 if(WIN32)
