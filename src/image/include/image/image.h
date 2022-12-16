@@ -230,6 +230,9 @@ public:
     std::tuple<c_Image, c_Image, c_Image> SplitRGB() const;
 
     static c_Image CombineRGB(const c_Image& red, const c_Image& green, const c_Image& blue);
+
+    //TESTING ####
+    static c_Image Blend(const c_Image& img1, double weight1, const c_Image& img2, double weight2);
 };
 
 /// Lightweight wrapper of a fragment of an image buffer; does not allocate any pixels memory itself.

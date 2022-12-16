@@ -132,6 +132,26 @@ const luaL_Reg functions[] = {
         return 1;
     }},
 
+    //TODO: accept list of images and weights (tuples)
+    {"blend", [](lua_State* lua) -> int {
+        CheckNumArgs(lua, "blend", 4);
+        const auto img1 = GetObject<ImageWrapper>(lua, 1);
+        const auto weight1 = GetNumber(lua, 2);
+        const auto img2 = GetObject<ImageWrapper>(lua, 3);
+        const auto weight2 = GetNumber(lua, 4);
+
+        if (weight1 < 0.0 || weight1 > 1.0 || weight2 < 0.0 || weight2 > 1.0)
+        {
+            throw ScriptExecutionError{"invalid blend weight(s)"};
+        }
+        //TODO: check sizes, num. channels
+
+        new(PrepareObject<ImageWrapper>(lua)) ImageWrapper(
+            c_Image::Blend(*img1.GetImage(), weight1, *img2.GetImage(), weight2)
+        );
+        return 1;
+    }},
+
     {nullptr, nullptr} // end-of-data marker
 };
 

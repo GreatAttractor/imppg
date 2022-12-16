@@ -1721,3 +1721,46 @@ c_Image c_Image::CombineRGB(const c_Image& red, const c_Image& green, const c_Im
 
     return rgb;
 }
+
+c_Image c_Image::Blend(const c_Image& img1, double weight1, const c_Image& img2, double weight2)
+{
+    IMPPG_ASSERT(weight1 >= 0.0 && weight1 <= 1.0);
+    IMPPG_ASSERT(weight2 >= 0.0 && weight2 <= 1.0);
+    IMPPG_ASSERT(img1.GetWidth() == img2.GetWidth() && img1.GetHeight() == img2.GetHeight());
+    IMPPG_ASSERT(img1.GetPixelFormat() == PixelFormat::PIX_MONO32F ||
+                 img1.GetPixelFormat() == PixelFormat::PIX_RGB32F);
+    IMPPG_ASSERT(img1.GetPixelFormat() == img2.GetPixelFormat());
+
+    if (weight1 == 0.0 && weight2 == 0.0)
+    {
+        c_Image black(img1.GetWidth(), img1.GetHeight(), img1.GetPixelFormat());
+        black.ClearToZero();
+        return black;
+    }
+
+    const float actualW1 = weight1 / (weight1 + weight2);
+    const float actualW2 = weight2 / (weight1 + weight2);
+
+    c_Image blended(img1.GetWidth(), img1.GetHeight(), img1.GetPixelFormat());
+
+    const auto numChannels = NumChannels[static_cast<int>(img1.GetPixelFormat())];
+
+    for (unsigned y = 0; y < img1.GetHeight(); ++y)
+    {
+        const float* srcRow1 = img1.GetRowAs<float>(y);
+        const float* srcRow2 = img2.GetRowAs<float>(y);
+        float* destRow = blended.GetRowAs<float>(y);
+
+        for (unsigned x = 0; x < img1.GetWidth(); ++x)
+        {
+            for (std::size_t channel = 0; channel < numChannels; ++channel)
+            {
+                destRow[x * numChannels + channel] =
+                    actualW1 * srcRow1[x * numChannels + channel] + 
+                    actualW2 * srcRow2[x * numChannels + channel];
+            }
+        }
+    }
+
+    return blended;
+}
