@@ -55,7 +55,7 @@ struct ProcessingSettings
         float amountMin{1.0}; ///< Amount (weight) of the unsharped layer; <1.0 blurs, >1.0 sharpens; if adaptive=true, used as the min amount.
         float amountMax{1.0}; ///< Max amount.
         float threshold{0.1}; ///< Threshold of input image brightness where the min-max amount transition occurs.
-        float width{0.05}; ///< Width of the transition interval.
+        float width{0.10}; ///< Width of the transition interval.
 
         bool IsEffective() const
         {
