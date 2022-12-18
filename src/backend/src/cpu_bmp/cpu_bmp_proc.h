@@ -67,7 +67,7 @@ public:
 
     void SetSelection(wxRect selection);
 
-    void SetProcessingSettings(ProcessingSettings procSettings) { m_ProcSettings = procSettings; }
+    void SetProcessingSettings(ProcessingSettings procSettings);
 
     /// Aborts processing and schedules new processing to start ASAP (as soon as worker thread is not running).
     void ScheduleProcessing(ProcessingRequest request);
@@ -101,7 +101,7 @@ private:
     std::vector<c_Image> m_Img;
 
     /// Mono version of `m_Img` used for adaptive unsharp masking.
-    std::optional<c_Image> m_ImgMono;
+    std::optional<c_Image> m_ImgMonoBlurred;
 
     wxRect m_Selection; ///< Fragment of `m_Img` selected for processing (in logical image coords).
 

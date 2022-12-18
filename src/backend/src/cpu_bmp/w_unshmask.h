@@ -26,14 +26,16 @@ File description:
 
 #include "cpu_bmp/worker.h"
 
+#include <optional>
+
 namespace imppg::backend {
 
 class c_UnsharpMaskingThread: public IWorkerThread
 {
     virtual void DoWork();
 
-    c_View<const IImageBuffer> m_RawInput; ///< Raw/original image fragment without any processing performed.
-    // see comments in c_UnsharpMaskingThread::DoWork() for details
+    std::optional<c_View<const IImageBuffer>> m_BlurredRawInput; ///< Raw/original image fragment smoothed to alleviate noise.
+    // See comments in c_UnsharpMaskingThread::DoWork() for details
     bool m_Adaptive;
     float m_Sigma;
     float m_AmountMin, m_AmountMax;
@@ -42,7 +44,7 @@ class c_UnsharpMaskingThread: public IWorkerThread
 public:
     c_UnsharpMaskingThread(
         WorkerParameters&& params,
-        c_View<const IImageBuffer>&& rawInput, ///< Raw/original image fragment without any processing performed
+        std::optional<c_View<const IImageBuffer>>&& m_BlurredRawInput,
         bool adaptive, ///< If true, adaptive algorithm is used
         float sigma,  ///< Unsharp mask Gaussian sigma
         float amountMin, ///< Unsharp masking amount min

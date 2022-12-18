@@ -21,15 +21,33 @@ File description:
     CPU & bitmaps processing back end implementation.
 */
 
+#include "../../imppg_assert.h"
 #include "cpu_bmp_proc.h"
+#include "cpu_bmp/message_ids.h"
+#include "logging/logging.h"
+#include "math_utils/convolution.h"
 #include "w_lrdeconv.h"
 #include "w_tcurve.h"
 #include "w_unshmask.h"
-#include "cpu_bmp/message_ids.h"
-#include "../../imppg_assert.h"
-#include "logging/logging.h"
 
 namespace imppg::backend {
+
+c_Image CreateBlurredMonoImage(const c_Image& source)
+{
+    IMPPG_ASSERT(source.GetPixelFormat() == PixelFormat::PIX_MONO32F);
+
+    const unsigned width = source.GetWidth();
+    const unsigned height = source.GetHeight();
+    auto blurred = c_Image(width, height, source.GetPixelFormat());
+
+    ConvolveSeparable(
+        c_PaddedArrayPtr(source.GetRowAs<const float>(0), width, height, source.GetBuffer().GetBytesPerRow()),
+        c_PaddedArrayPtr(blurred.GetRowAs<float>(0), width, height, blurred.GetBuffer().GetBytesPerRow()),
+        RAW_IMAGE_BLUR_SIGMA_FOR_ADAPTIVE_UNSHARP_MASK
+    );
+
+    return blurred;
+}
 
 std::unique_ptr<IProcessingBackEnd> CreateCpuBmpProcessingBackend()
 {
@@ -47,12 +65,20 @@ void c_CpuAndBitmapsProcessing::StartProcessing(c_Image img, ProcessingSettings 
 
     if (img.GetPixelFormat() == PixelFormat::PIX_MONO32F)
     {
-        m_ImgMono = img;
+        if (procSettings.unsharpMasking.adaptive)
+        {
+            m_ImgMonoBlurred = CreateBlurredMonoImage(img);
+        }
         m_Img.emplace_back(std::move(img));
     }
     else
     {
-        m_ImgMono = img.ConvertPixelFormat(PixelFormat::PIX_MONO32F);
+        if (procSettings.unsharpMasking.adaptive)
+        {
+            const auto mono = img.ConvertPixelFormat(PixelFormat::PIX_MONO32F);
+            m_ImgMonoBlurred = CreateBlurredMonoImage(mono);
+        }
+
         auto [r, g, b] = img.SplitRGB();
         m_Img.emplace_back(std::move(r));
         m_Img.emplace_back(std::move(g));
@@ -372,6 +398,10 @@ void c_CpuAndBitmapsProcessing::StartUnsharpMasking()
             output.emplace_back(m_Output.unsharpMasking.img.at(ch).GetBuffer());
         }
 
+        auto blurred = m_ImgMonoBlurred.has_value()
+            ? std::make_optional(c_View<const IImageBuffer>(m_ImgMonoBlurred.value().GetBuffer(), m_Selection))
+            : std::nullopt;
+
         m_Worker = std::make_unique<c_UnsharpMaskingThread>(
             WorkerParameters{
                 m_EvtHandler,
@@ -380,7 +410,7 @@ void c_CpuAndBitmapsProcessing::StartUnsharpMasking()
                 std::move(output),
                 m_CurrentThreadId
             },
-            c_View<const IImageBuffer>(m_ImgMono.value().GetBuffer(), m_Selection),
+            std::move(blurred),
             m_ProcSettings.unsharpMasking.adaptive,
             m_ProcSettings.unsharpMasking.sigma,
             m_ProcSettings.unsharpMasking.amountMin,
@@ -619,12 +649,20 @@ void c_CpuAndBitmapsProcessing::SetImage(c_Image img)
 
     if (img.GetPixelFormat() == PixelFormat::PIX_MONO32F)
     {
-        m_ImgMono = img;
+        if (m_ProcSettings.unsharpMasking.adaptive)
+        {
+            m_ImgMonoBlurred = CreateBlurredMonoImage(img);
+        }
         m_Img.emplace_back(std::move(img));
     }
     else
     {
-        m_ImgMono = img.ConvertPixelFormat(PixelFormat::PIX_MONO32F);
+        if (m_ProcSettings.unsharpMasking.adaptive)
+        {
+            const auto mono = img.ConvertPixelFormat(PixelFormat::PIX_MONO32F);
+            m_ImgMonoBlurred = CreateBlurredMonoImage(mono);
+        }
+
         auto [r, g, b] = img.SplitRGB();
         m_Img.emplace_back(std::move(r));
         m_Img.emplace_back(std::move(g));
@@ -641,6 +679,27 @@ std::optional<const std::vector<c_Image>*> c_CpuAndBitmapsProcessing::GetUnshMas
     else
     {
         return std::nullopt;
+    }
+}
+
+void c_CpuAndBitmapsProcessing::SetProcessingSettings(ProcessingSettings procSettings)
+{
+    const bool adaptiveUnshMaskSwitchedOn =
+        (procSettings.unsharpMasking.adaptive && !m_ProcSettings.unsharpMasking.adaptive);
+
+    m_ProcSettings = std::move(procSettings);
+
+    if (adaptiveUnshMaskSwitchedOn && !m_Img.empty())
+    {
+        if (m_Img.at(0).GetPixelFormat() == PixelFormat::PIX_MONO32F)
+        {
+            m_ImgMonoBlurred = CreateBlurredMonoImage(m_Img.at(0));
+        }
+        else
+        {
+            const auto mono = c_Image::CombineRGB(m_Img.at(0), m_Img.at(1), m_Img.at(2));
+            m_ImgMonoBlurred = CreateBlurredMonoImage(mono);
+        }
     }
 }
 

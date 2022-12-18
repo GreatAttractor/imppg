@@ -96,7 +96,10 @@ void c_LucyRichardsonThread::DoWork()
     }
 
     Log::Print(wxString::Format("L-R deconvolution finished in %s s\n", (wxDateTime::UNow() - tstart).Format("%S.%l")));
-    Clamp(m_Params.output.at(0));
+    for (auto& channel: m_Params.output)
+    {
+        Clamp(channel);
+    }
 }
 
 } // namespace imppg::backend
