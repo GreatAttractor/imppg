@@ -103,16 +103,16 @@ wxXmlNode* CreateLucyRichardsonSettingsNode(float lrSigma, int lrIters, bool lrD
     return result;
 }
 
-wxXmlNode* CreateUnsharpMaskingSettingsNode(bool adaptive, float sigma, float amountMin, float amountMax, float threshold, float width)
+wxXmlNode* CreateUnsharpMaskingSettingsNode(const UnsharpMask& unsharpMask)
 {
     wxXmlNode* result = new wxXmlNode(wxXML_ELEMENT_NODE, XmlName::unshMask);
 
-    result->AddAttribute(XmlName::unshAdaptive, adaptive ? trueStr : falseStr);
-    result->AddAttribute(XmlName::unshSigma, NumFormatter::Format(sigma, FLOAT_PREC));
-    result->AddAttribute(XmlName::unshAmountMin, NumFormatter::Format(amountMin, FLOAT_PREC));
-    result->AddAttribute(XmlName::unshAmountMax, NumFormatter::Format(amountMax, FLOAT_PREC));
-    result->AddAttribute(XmlName::unshThreshold, NumFormatter::Format(threshold, FLOAT_PREC));
-    result->AddAttribute(XmlName::unshWidth, NumFormatter::Format(width, FLOAT_PREC));
+    result->AddAttribute(XmlName::unshAdaptive, unsharpMask.adaptive ? trueStr : falseStr);
+    result->AddAttribute(XmlName::unshSigma, NumFormatter::Format(unsharpMask.sigma, FLOAT_PREC));
+    result->AddAttribute(XmlName::unshAmountMin, NumFormatter::Format(unsharpMask.amountMin, FLOAT_PREC));
+    result->AddAttribute(XmlName::unshAmountMax, NumFormatter::Format(unsharpMask.amountMax, FLOAT_PREC));
+    result->AddAttribute(XmlName::unshThreshold, NumFormatter::Format(unsharpMask.threshold, FLOAT_PREC));
+    result->AddAttribute(XmlName::unshWidth, NumFormatter::Format(unsharpMask.width, FLOAT_PREC));
     return result;
 }
 
@@ -152,43 +152,51 @@ bool ParseLucyRichardsonSettings(const wxXmlNode* node, float& sigma, int& itera
     return true;
 }
 
-bool ParseUnsharpMaskingSettings(const wxXmlNode* node, bool& adaptive, float& sigma, float& amountMin, float& amountMax, float& threshold, float& width)
+std::optional<UnsharpMask> ParseUnsharpMaskingSettings(const wxXmlNode* node)
 {
     std::stringstream parser;
 
+    UnsharpMask result;
+
     if (node->GetAttribute(XmlName::unshAdaptive) == trueStr)
-        adaptive = true;
+    {
+        result.adaptive = true;
+    }
     else if (node->GetAttribute(XmlName::unshAdaptive) == falseStr)
-        adaptive = false;
+    {
+        result.adaptive = false;
+    }
     else
-        return false;
-
-    if (!NumFormatter::Parse(node->GetAttribute(XmlName::unshSigma), sigma))
     {
-        return false;
+        return std::nullopt;
     }
 
-    if (!NumFormatter::Parse(node->GetAttribute(XmlName::unshAmountMin), amountMin))
+    if (!NumFormatter::Parse(node->GetAttribute(XmlName::unshSigma), result.sigma))
     {
-        return false;
+        return std::nullopt;
     }
 
-    if (!NumFormatter::Parse(node->GetAttribute(XmlName::unshAmountMax), amountMax))
+    if (!NumFormatter::Parse(node->GetAttribute(XmlName::unshAmountMin), result.amountMin))
     {
-        return false;
+        return std::nullopt;
     }
 
-    if (!NumFormatter::Parse(node->GetAttribute(XmlName::unshThreshold), threshold))
+    if (!NumFormatter::Parse(node->GetAttribute(XmlName::unshAmountMax), result.amountMax))
     {
-        return false;
+        return std::nullopt;
     }
 
-    if (!NumFormatter::Parse(node->GetAttribute(XmlName::unshWidth), width))
+    if (!NumFormatter::Parse(node->GetAttribute(XmlName::unshThreshold), result.threshold))
     {
-        return false;
+        return std::nullopt;
     }
 
-    return true;
+    if (!NumFormatter::Parse(node->GetAttribute(XmlName::unshWidth), result.width))
+    {
+        return std::nullopt;
+    }
+
+    return result;
 }
 
 bool ParseNormalizationSetings(const wxXmlNode* node, bool& normalizationEnabled, float& normMin, float& normMax)
@@ -283,14 +291,7 @@ bool SaveSettings(const std::string& filePath, const ProcessingSettings& setting
         settings.LucyRichardson.iterations,
         settings.LucyRichardson.deringing.enabled
     ));
-    root->AddChild(CreateUnsharpMaskingSettingsNode(
-        settings.unsharpMasking.adaptive,
-        settings.unsharpMasking.sigma,
-        settings.unsharpMasking.amountMin,
-        settings.unsharpMasking.amountMax,
-        settings.unsharpMasking.threshold,
-        settings.unsharpMasking.width
-    ));
+    root->AddChild(CreateUnsharpMaskingSettingsNode(settings.unsharpMask.at(0)));
     root->AddChild(CreateToneCurveSettingsNode(settings.toneCurve));
     root->AddChild(CreateNormalizationSettingsNode(
         settings.normalization.enabled,
@@ -348,21 +349,12 @@ bool LoadSettings(
         }
         else if (child->GetName() == XmlName::unshMask)
         {
-            bool adaptive;
-            float sigma, amountMin, amountMax, threshold, width;
+            const auto unsharpMask = ParseUnsharpMaskingSettings(child);
+            if (!unsharpMask.has_value()) { return false; }
 
-            if (!ParseUnsharpMaskingSettings(child,adaptive, sigma, amountMin, amountMax, threshold, width))
-                return false;
+            settings.unsharpMask = { unsharpMask.value() };
 
-            settings.unsharpMasking.adaptive = adaptive;
-            settings.unsharpMasking.sigma = sigma;
-            settings.unsharpMasking.amountMin = amountMin;
-            settings.unsharpMasking.amountMax = amountMax;
-            settings.unsharpMasking.threshold = threshold;
-            settings.unsharpMasking.width = width;
-
-            if (loadedUnsh)
-                *loadedUnsh = true;
+            if (loadedUnsh) { *loadedUnsh = true; }
         }
         else if (child->GetName() == XmlName::tcurve)
         {
@@ -391,4 +383,17 @@ bool LoadSettings(
     }
 
     return true;
+}
+
+std::array<float, 4> GetAdaptiveUnshMaskTransitionCurve(const UnsharpMask& um)
+{
+    const float divisor = 4 * um.width * um.width * um.width;
+    const float a = (um.amountMin - um.amountMax) / divisor;
+    const float b = 3 * (um.amountMax - um.amountMin) * um.threshold / divisor;
+    const float c = 3 * (um.amountMax - um.amountMin) * (um.width - um.threshold) * (um.width + um.threshold) / divisor;
+    const float d = (2 * um.width * um.width * um.width * (um.amountMin + um.amountMax) +
+        3 * um.threshold * um.width * um.width * (um.amountMin - um.amountMax) +
+        um.threshold * um.threshold * um.threshold * (um.amountMax - um.amountMin)) / divisor;
+
+    return {a, b, c, d};
 }

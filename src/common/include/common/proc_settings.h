@@ -26,7 +26,26 @@ File description:
 
 #include "common/tcrv.h"
 
+#include <array>
 #include <string>
+#include <vector>
+
+/// Default-constructed value does not have any effect on image.
+struct UnsharpMask
+{
+    bool adaptive{false}; ///If true, adaptive unsharp masking is used.
+    float sigma{1.0}; ///< Gaussian kernel sigma.
+    float amountMin{1.0}; ///< Amount (weight) of the unsharped layer; <1.0 blurs, >1.0 sharpens; if adaptive=true, used as the min amount.
+    float amountMax{1.0}; ///< Max amount.
+    float threshold{0.1}; ///< Threshold of input image brightness where the min-max amount transition occurs.
+    float width{0.10}; ///< Width of the transition interval.
+
+    bool IsEffective() const
+    {
+        return !adaptive && amountMax != 1.0f ||
+            adaptive && (amountMin != 1.0f || amountMax != 1.0f);
+    }
+};
 
 /// Default-constructed settings do not have any effect on image.
 struct ProcessingSettings
@@ -48,21 +67,7 @@ struct ProcessingSettings
         } deringing;
     } LucyRichardson;
 
-    struct
-    {
-        bool adaptive{false}; ///If true, adaptive unsharp masking is used.
-        float sigma{1.0}; ///< Gaussian kernel sigma.
-        float amountMin{1.0}; ///< Amount (weight) of the unsharped layer; <1.0 blurs, >1.0 sharpens; if adaptive=true, used as the min amount.
-        float amountMax{1.0}; ///< Max amount.
-        float threshold{0.1}; ///< Threshold of input image brightness where the min-max amount transition occurs.
-        float width{0.10}; ///< Width of the transition interval.
-
-        bool IsEffective() const
-        {
-            return !adaptive && amountMax != 1.0f ||
-                adaptive && (amountMin != 1.0f || amountMax != 1.0f);
-        }
-    } unsharpMasking;
+    std::vector<UnsharpMask> unsharpMask{UnsharpMask{}};
 
     c_ToneCurve toneCurve;
 };
@@ -79,5 +84,21 @@ bool LoadSettings(
     bool* loadedUnsh = nullptr,
     bool* loadedTCurve = nullptr
 );
+
+/// Returns the coefficients a, b, c, d of the cubic curve defining the "amount" value
+/// for adaptive unsharp masking. The amount is a function of local brightness
+/// (of the raw input image) as follows:
+///
+///   - if brightness < threshold - width, amount is amountMin
+///   - if brightness > threshold + width, amount is amountMax
+///   - transition region: if threshold - width <= brightness <= threshold - width,
+///     amount changes smoothly from amounMin to amountMax following a cubic function:
+///
+///     amount = a*brightness^3 + b*brightness^2 + c*brightness + d
+///
+///  such that its derivatives are zero at (threshold - width) and (threshold + width)
+///  and there is an inflection point at the threshold.
+///
+std::array<float, 4> GetAdaptiveUnshMaskTransitionCurve(const UnsharpMask& um);
 
 #endif // IMPGG_PROCESSING_SETTINGS_HEADER

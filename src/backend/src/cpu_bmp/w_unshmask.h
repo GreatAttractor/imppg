@@ -35,22 +35,13 @@ class c_UnsharpMaskingThread: public IWorkerThread
     virtual void DoWork();
 
     std::optional<c_View<const IImageBuffer>> m_BlurredRawInput; ///< Raw/original image fragment smoothed to alleviate noise.
-    // See comments in c_UnsharpMaskingThread::DoWork() for details
-    bool m_Adaptive;
-    float m_Sigma;
-    float m_AmountMin, m_AmountMax;
-    float m_Threshold, m_Width;
+    UnsharpMask m_UnsharpMask;
 
 public:
     c_UnsharpMaskingThread(
         WorkerParameters&& params,
         std::optional<c_View<const IImageBuffer>>&& m_BlurredRawInput,
-        bool adaptive, ///< If true, adaptive algorithm is used
-        float sigma,  ///< Unsharp mask Gaussian sigma
-        float amountMin, ///< Unsharp masking amount min
-        float amountMax, ///< Unsharp masking amount max (or just "amount" if 'adaptive' is false)
-        float threshold,  ///< Brightness threshold for transition from 'amountMin' to 'amountMax'
-        float width       ///< Transition width
+        UnsharpMask unsharpMask
     );
 };
 

@@ -104,98 +104,155 @@ void SettingsWrapper::lr_deconv_deringing(bool enabled)
     m_Settings.LucyRichardson.deringing.enabled = enabled;
 }
 
-bool SettingsWrapper::get_unsh_mask_adaptive() const
+bool SettingsWrapper::get_unsh_mask_adaptive(int index) const
 {
-    return m_Settings.unsharpMasking.adaptive;
+    if (index < 0 || static_cast<std::size_t>(index) >= m_Settings.unsharpMask.size())
+    {
+        throw ScriptExecutionError{std::string{"invalid unsharp mask index: "} + blc(index)};
+    }
+    return m_Settings.unsharpMask.at(static_cast<std::size_t>(index)).adaptive;
 }
 
-void SettingsWrapper::unsh_mask_adaptive(bool enabled)
+void SettingsWrapper::unsh_mask_adaptive(int index, bool enabled)
 {
-    m_Settings.unsharpMasking.adaptive = enabled;
+    if (index < 0 || static_cast<std::size_t>(index) >= m_Settings.unsharpMask.size())
+    {
+        throw ScriptExecutionError{std::string{"invalid unsharp mask index: "} + blc(index)};
+    }
+    m_Settings.unsharpMask.at(static_cast<std::size_t>(index)).adaptive = enabled;
 }
 
-double SettingsWrapper::get_unsh_mask_sigma() const
+double SettingsWrapper::get_unsh_mask_sigma(int index) const
 {
-    return m_Settings.unsharpMasking.sigma;
+    if (index < 0 || static_cast<std::size_t>(index) >= m_Settings.unsharpMask.size())
+    {
+        throw ScriptExecutionError{std::string{"invalid unsharp mask index: "} + blc(index)};
+    }
+    return m_Settings.unsharpMask.at(static_cast<std::size_t>(index)).sigma;
 }
 
-void SettingsWrapper::unsh_mask_sigma(double value)
+void SettingsWrapper::unsh_mask_sigma(int index, double value)
 {
+    if (index < 0 || static_cast<std::size_t>(index) >= m_Settings.unsharpMask.size())
+    {
+        throw ScriptExecutionError{std::string{"invalid unsharp mask index: "} + blc(index)};
+    }
     if (value <= 0.0)
     {
         throw ScriptExecutionError{std::string{"invalid unsharp mask sigma value: "} + blc(value)};
     }
-    m_Settings.unsharpMasking.sigma = value;
+    m_Settings.unsharpMask.at(static_cast<std::size_t>(index)).sigma = value;
 }
 
-double SettingsWrapper::get_unsh_mask_amount_min() const
+double SettingsWrapper::get_unsh_mask_amount_min(int index) const
 {
-    return m_Settings.unsharpMasking.amountMin;
+    if (index < 0 || static_cast<std::size_t>(index) >= m_Settings.unsharpMask.size())
+    {
+        throw ScriptExecutionError{std::string{"invalid unsharp mask index: "} + blc(index)};
+    }
+    return m_Settings.unsharpMask.at(static_cast<std::size_t>(index)).amountMin;
 }
 
-void SettingsWrapper::unsh_mask_amount_min(double value)
+void SettingsWrapper::unsh_mask_amount_min(int index, double value)
 {
+    if (index < 0 || static_cast<std::size_t>(index) >= m_Settings.unsharpMask.size())
+    {
+        throw ScriptExecutionError{std::string{"invalid unsharp mask index: "} + blc(index)};
+    }
     if (value <= 0.0)
     {
         throw ScriptExecutionError{std::string{"invalid unsharp mask amount min value: "} + blc(value)};
     }
-    m_Settings.unsharpMasking.amountMin = value;
+    m_Settings.unsharpMask.at(static_cast<std::size_t>(index)).amountMin = value;
 }
 
-double SettingsWrapper::get_unsh_mask_amount_max() const
+double SettingsWrapper::get_unsh_mask_amount_max(int index) const
 {
-    return m_Settings.unsharpMasking.amountMax;
+    if (index < 0 || static_cast<std::size_t>(index) >= m_Settings.unsharpMask.size())
+    {
+        throw ScriptExecutionError{std::string{"invalid unsharp mask index: "} + blc(index)};
+    }
+    return m_Settings.unsharpMask.at(static_cast<std::size_t>(index)).amountMax;
 }
 
-void SettingsWrapper::unsh_mask_amount_max(double value)
+void SettingsWrapper::unsh_mask_amount_max(int index, double value)
 {
+    if (index < 0 || static_cast<std::size_t>(index) >= m_Settings.unsharpMask.size())
+    {
+        throw ScriptExecutionError{std::string{"invalid unsharp mask index: "} + blc(index)};
+    }
     if (value <= 0.0)
     {
         throw ScriptExecutionError{std::string{"invalid unsharp mask amount max value: "} + blc(value)};
     }
-    m_Settings.unsharpMasking.amountMax = value;
+    m_Settings.unsharpMask.at(static_cast<std::size_t>(index)).amountMax = value;
 }
 
-double SettingsWrapper::get_unsh_mask_amount() const
+double SettingsWrapper::get_unsh_mask_amount(int index) const
 {
-    return m_Settings.unsharpMasking.amountMax;
+    if (index < 0 || static_cast<std::size_t>(index) >= m_Settings.unsharpMask.size())
+    {
+        throw ScriptExecutionError{std::string{"invalid unsharp mask index: "} + blc(index)};
+    }
+    return m_Settings.unsharpMask.at(static_cast<std::size_t>(index)).amountMax;
 }
 
-void SettingsWrapper::unsh_mask_amount(double value)
+void SettingsWrapper::unsh_mask_amount(int index, double value)
 {
+    if (index < 0 || static_cast<std::size_t>(index) >= m_Settings.unsharpMask.size())
+    {
+        throw ScriptExecutionError{std::string{"invalid unsharp mask index: "} + blc(index)};
+    }
     if (value <= 0.0)
     {
         throw ScriptExecutionError{std::string{"invalid unsharp mask amount value: "} + blc(value)};
     }
-    m_Settings.unsharpMasking.amountMax = value;
+    m_Settings.unsharpMask.at(static_cast<std::size_t>(index)).amountMax = value;
 }
 
-double SettingsWrapper::get_unsh_mask_threshold() const
+double SettingsWrapper::get_unsh_mask_threshold(int index) const
 {
-    return m_Settings.unsharpMasking.threshold;
+    if (index < 0 || static_cast<std::size_t>(index) >= m_Settings.unsharpMask.size())
+    {
+        throw ScriptExecutionError{std::string{"invalid unsharp mask index: "} + blc(index)};
+    }
+    return m_Settings.unsharpMask.at(static_cast<std::size_t>(index)).threshold;
 }
 
-void SettingsWrapper::unsh_mask_threshold(double value)
+void SettingsWrapper::unsh_mask_threshold(int index, double value)
 {
+    if (index < 0 || static_cast<std::size_t>(index) >= m_Settings.unsharpMask.size())
+    {
+        throw ScriptExecutionError{std::string{"invalid unsharp mask index: "} + blc(index)};
+    }
+
     if (value < 0.0 || value > 1.0)
     {
         throw ScriptExecutionError{std::string{"invalid unsharp mask threshold value: "} + blc(value)};
     }
-    m_Settings.unsharpMasking.threshold = value;
+    m_Settings.unsharpMask.at(static_cast<std::size_t>(index)).threshold = value;
 }
 
-double SettingsWrapper::get_unsh_mask_twidth() const
+double SettingsWrapper::get_unsh_mask_twidth(int index) const
 {
-    return m_Settings.unsharpMasking.width;
+    if (index < 0 || static_cast<std::size_t>(index) >= m_Settings.unsharpMask.size())
+    {
+        throw ScriptExecutionError{std::string{"invalid unsharp mask index: "} + blc(index)};
+    }
+    return m_Settings.unsharpMask.at(static_cast<std::size_t>(index)).width;
 }
 
-void SettingsWrapper::unsh_mask_twidth(double value)
+void SettingsWrapper::unsh_mask_twidth(int index, double value)
 {
+    if (index < 0 || static_cast<std::size_t>(index) >= m_Settings.unsharpMask.size())
+    {
+        throw ScriptExecutionError{std::string{"invalid unsharp mask index: "} + blc(index)};
+    }
     if (value <= 0.0 || value >= 1.0)
     {
         throw ScriptExecutionError{std::string{"invalid unsharp mask transition width value: "} + blc(value)};
     }
-    m_Settings.unsharpMasking.width = value;
+    m_Settings.unsharpMask.at(static_cast<std::size_t>(index)).width = value;
 }
 
 int SettingsWrapper::tc_add_point(double x, double y)

@@ -65,7 +65,7 @@ void c_CpuAndBitmapsProcessing::StartProcessing(c_Image img, ProcessingSettings 
 
     if (img.GetPixelFormat() == PixelFormat::PIX_MONO32F)
     {
-        if (procSettings.unsharpMasking.adaptive)
+        if (procSettings.unsharpMask.at(0).adaptive)
         {
             m_ImgMonoBlurred = CreateBlurredMonoImage(img);
         }
@@ -73,7 +73,7 @@ void c_CpuAndBitmapsProcessing::StartProcessing(c_Image img, ProcessingSettings 
     }
     else
     {
-        if (procSettings.unsharpMasking.adaptive)
+        if (procSettings.unsharpMask.at(0).adaptive)
         {
             const auto mono = img.ConvertPixelFormat(PixelFormat::PIX_MONO32F);
             m_ImgMonoBlurred = CreateBlurredMonoImage(mono);
@@ -197,7 +197,7 @@ void c_CpuAndBitmapsProcessing::ScheduleProcessing(ProcessingRequest request)
     ProcessingRequest originalReq = request;
 
     // if the previous processing step(s) did not complete, we have to execute it (them) first
-    if (request == ProcessingRequest::TONE_CURVE && !m_Output.unsharpMasking.valid)
+    if (request == ProcessingRequest::TONE_CURVE && !m_Output.unsharpMask.valid)
         request = ProcessingRequest::UNSHARP_MASKING;
 
     if (request == ProcessingRequest::UNSHARP_MASKING && !m_Output.sharpening.valid)
@@ -243,7 +243,7 @@ void c_CpuAndBitmapsProcessing::OnProcessingStepCompleted(CompletionStatus statu
         }
         else if (m_ProcessingRequest == ProcessingRequest::UNSHARP_MASKING)
         {
-            m_Output.unsharpMasking.valid = true;
+            m_Output.unsharpMask.valid = true;
             ScheduleProcessing(ProcessingRequest::TONE_CURVE);
         }
         else if (m_ProcessingRequest == ProcessingRequest::TONE_CURVE)
@@ -287,7 +287,7 @@ void c_CpuAndBitmapsProcessing::StartLRDeconvolution()
 
     // invalidate the current output and those of subsequent steps
     m_Output.sharpening.valid = false;
-    m_Output.unsharpMasking.valid = false;
+    m_Output.unsharpMask.valid = false;
     m_Output.toneCurve.valid = false;
 
     if (m_ProcSettings.LucyRichardson.iterations == 0)
@@ -354,7 +354,7 @@ void c_CpuAndBitmapsProcessing::StartLRDeconvolution()
 
 void c_CpuAndBitmapsProcessing::StartUnsharpMasking()
 {
-    auto& img = m_Output.unsharpMasking.img;
+    auto& img = m_Output.unsharpMask.img;
     if (img.empty() ||
         static_cast<int>(img.at(0).GetWidth()) != m_Selection.width ||
         static_cast<int>(img.at(0).GetHeight()) != m_Selection.height)
@@ -367,18 +367,18 @@ void c_CpuAndBitmapsProcessing::StartUnsharpMasking()
     }
 
     // invalidate the current output and those of subsequent steps
-    m_Output.unsharpMasking.valid = false;
+    m_Output.unsharpMask.valid = false;
     m_Output.toneCurve.valid = false;
 
-    if (!m_ProcSettings.unsharpMasking.IsEffective())
+    if (!m_ProcSettings.unsharpMask.at(0).IsEffective())
     {
         Log::Print("Unsharp masking disabled, no work needed\n");
 
-        // No processing required, just copy the selection into `output.unsharpMasking.img`,
+        // No processing required, just copy the selection into `output.unsharpMask.img`,
         // as it will be used by the subsequent processing steps.
         for (std::size_t ch = 0; ch < m_Img.size(); ++ch)
         {
-            c_Image::Copy(m_Output.sharpening.img.at(ch), m_Output.unsharpMasking.img.at(ch), 0, 0, m_Selection.width, m_Selection.height, 0, 0);
+            c_Image::Copy(m_Output.sharpening.img.at(ch), m_Output.unsharpMask.img.at(ch), 0, 0, m_Selection.width, m_Selection.height, 0, 0);
         }
         OnProcessingStepCompleted(CompletionStatus::COMPLETED);
     }
@@ -395,7 +395,7 @@ void c_CpuAndBitmapsProcessing::StartUnsharpMasking()
         for (std::size_t ch = 0; ch < m_Img.size(); ++ch)
         {
             input.emplace_back(m_Output.sharpening.img.at(ch).GetBuffer());
-            output.emplace_back(m_Output.unsharpMasking.img.at(ch).GetBuffer());
+            output.emplace_back(m_Output.unsharpMask.img.at(ch).GetBuffer());
         }
 
         auto blurred = m_ImgMonoBlurred.has_value()
@@ -411,12 +411,7 @@ void c_CpuAndBitmapsProcessing::StartUnsharpMasking()
                 m_CurrentThreadId
             },
             std::move(blurred),
-            m_ProcSettings.unsharpMasking.adaptive,
-            m_ProcSettings.unsharpMasking.sigma,
-            m_ProcSettings.unsharpMasking.amountMin,
-            m_ProcSettings.unsharpMasking.amountMax,
-            m_ProcSettings.unsharpMasking.threshold,
-            m_ProcSettings.unsharpMasking.width
+            m_ProcSettings.unsharpMask.at(0)
         );
 
         if (m_ProgressTextHandler)
@@ -454,7 +449,7 @@ void c_CpuAndBitmapsProcessing::StartToneCurve()
         for (std::size_t ch = 0; ch < m_Img.size(); ++ch)
         {
             c_Image::Copy(
-                m_Output.unsharpMasking.img.at(ch),
+                m_Output.unsharpMask.img.at(ch),
                 m_Output.toneCurve.img.at(ch),
                 0,
                 0,
@@ -479,7 +474,7 @@ void c_CpuAndBitmapsProcessing::StartToneCurve()
         std::vector<c_View<IImageBuffer>> output;
         for (std::size_t ch = 0; ch < m_Img.size(); ++ch)
         {
-            input.emplace_back(m_Output.unsharpMasking.img.at(ch).GetBuffer());
+            input.emplace_back(m_Output.unsharpMask.img.at(ch).GetBuffer());
             output.emplace_back(m_Output.toneCurve.img.at(ch).GetBuffer());
         }
 
@@ -570,19 +565,19 @@ void c_CpuAndBitmapsProcessing::ApplyPreciseToneCurveValues()
         return;
     }
 
-    if (!m_Output.unsharpMasking.valid)
+    if (!m_Output.unsharpMask.valid)
     {
-        m_Output.unsharpMasking.img.clear();
+        m_Output.unsharpMask.img.clear();
         for (std::size_t i = 0; i < m_Img.size(); ++i)
         {
-            m_Output.unsharpMasking.img.emplace_back(m_Selection.width, m_Selection.height, PixelFormat::PIX_MONO32F);
+            m_Output.unsharpMask.img.emplace_back(m_Selection.width, m_Selection.height, PixelFormat::PIX_MONO32F);
         }
 
         for (std::size_t i = 0; i < m_Img.size(); ++i)
         {
             c_Image::Copy(
                 m_Img.at(i),
-                m_Output.unsharpMasking.img.at(i),
+                m_Output.unsharpMask.img.at(i),
                 m_Selection.x,
                 m_Selection.y,
                 m_Selection.width,
@@ -604,7 +599,7 @@ void c_CpuAndBitmapsProcessing::ApplyPreciseToneCurveValues()
         for (std::size_t i = 0; i < m_Img.size(); ++i)
         {
             c_Image::Copy(
-                m_Output.unsharpMasking.img.at(i),
+                m_Output.unsharpMask.img.at(i),
                 m_Output.toneCurve.img.at(i),
                 0,
                 0,
@@ -616,9 +611,9 @@ void c_CpuAndBitmapsProcessing::ApplyPreciseToneCurveValues()
         }
     }
 
-    IMPPG_ASSERT(m_Output.unsharpMasking.img.at(0).GetImageRect() == m_Output.toneCurve.img.at(0).GetImageRect());
+    IMPPG_ASSERT(m_Output.unsharpMask.img.at(0).GetImageRect() == m_Output.toneCurve.img.at(0).GetImageRect());
 
-    c_Image& src = m_Output.unsharpMasking.img.at(0);
+    c_Image& src = m_Output.unsharpMask.img.at(0);
     c_Image& dest = m_Output.toneCurve.img.at(0);
     for (unsigned y = 0; y < src.GetHeight(); ++y)
     {
@@ -649,7 +644,7 @@ void c_CpuAndBitmapsProcessing::SetImage(c_Image img)
 
     if (img.GetPixelFormat() == PixelFormat::PIX_MONO32F)
     {
-        if (m_ProcSettings.unsharpMasking.adaptive)
+        if (m_ProcSettings.unsharpMask.at(0).adaptive)
         {
             m_ImgMonoBlurred = CreateBlurredMonoImage(img);
         }
@@ -657,7 +652,7 @@ void c_CpuAndBitmapsProcessing::SetImage(c_Image img)
     }
     else
     {
-        if (m_ProcSettings.unsharpMasking.adaptive)
+        if (m_ProcSettings.unsharpMask.at(0).adaptive)
         {
             const auto mono = img.ConvertPixelFormat(PixelFormat::PIX_MONO32F);
             m_ImgMonoBlurred = CreateBlurredMonoImage(mono);
@@ -672,9 +667,9 @@ void c_CpuAndBitmapsProcessing::SetImage(c_Image img)
 
 std::optional<const std::vector<c_Image>*> c_CpuAndBitmapsProcessing::GetUnshMaskOutput() const
 {
-    if (!m_Output.unsharpMasking.img.empty() && m_Output.unsharpMasking.valid)
+    if (!m_Output.unsharpMask.img.empty() && m_Output.unsharpMask.valid)
     {
-        return &m_Output.unsharpMasking.img;
+        return &m_Output.unsharpMask.img;
     }
     else
     {
@@ -685,7 +680,7 @@ std::optional<const std::vector<c_Image>*> c_CpuAndBitmapsProcessing::GetUnshMas
 void c_CpuAndBitmapsProcessing::SetProcessingSettings(ProcessingSettings procSettings)
 {
     const bool adaptiveUnshMaskSwitchedOn =
-        (procSettings.unsharpMasking.adaptive && !m_ProcSettings.unsharpMasking.adaptive);
+        (procSettings.unsharpMask.at(0).adaptive && !m_ProcSettings.unsharpMask.at(0).adaptive);
 
     m_ProcSettings = std::move(procSettings);
 

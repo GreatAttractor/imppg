@@ -62,6 +62,24 @@ int ConstMethodIntArgIntResult(lua_State* lua, int (T::* method)(int) const)
 }
 
 template<typename T>
+int ConstMethodIntArgDoubleResult(lua_State* lua, double (T::* method)(int) const)
+{
+    const auto* object = GetConstObject<T>(lua);
+    int i = luaL_checkinteger(lua, 2);
+    lua_pushnumber(lua, (object->*method)(i));
+    return 1;
+}
+
+template<typename T>
+int ConstMethodIntArgBoolResult(lua_State* lua, bool (T::* method)(int) const)
+{
+    const auto* object = GetConstObject<T>(lua);
+    int i = luaL_checkinteger(lua, 2);
+    lua_pushboolean(lua, (object->*method)(i));
+    return 1;
+}
+
+template<typename T>
 int MethodIntArg(lua_State* lua, void (T::* method)(int))
 {
     auto* object = GetObject<T>(lua);
@@ -87,10 +105,26 @@ int MethodBoolArg(lua_State* lua, void (T::* method)(bool))
 }
 
 template<typename T>
+int MethodIntBoolArg(lua_State* lua, void (T::* method)(int, bool))
+{
+    auto* object = GetObject<T>(lua);
+    (object->*method)(GetInteger(lua, 2), GetBoolean(lua, 3));
+    return 0;
+}
+
+template<typename T>
 int MethodDoubleDoubleArg(lua_State* lua, void (T::* method)(double, double))
 {
     auto* object = GetObject<T>(lua);
     (object->*method)(GetNumber(lua, 2), GetNumber(lua, 3));
+    return 0;
+}
+
+template<typename T>
+int MethodIntDoubleArg(lua_State* lua, void (T::* method)(int, double))
+{
+    auto* object = GetObject<T>(lua);
+    (object->*method)(GetInteger(lua, 2), GetNumber(lua, 3));
     return 0;
 }
 

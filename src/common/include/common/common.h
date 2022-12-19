@@ -184,27 +184,6 @@ inline wxString FromDir(const wxFileName& dir, wxString fname)
     return wxFileName(dir.GetFullPath(), fname).GetFullPath();
 }
 
-/// Returns the coefficients a, b, c, d of the cubic curve defining the "amount" value
-/// for adaptive unsharp masking. The amount is a function of local brightness
-/// (of the raw input image) as follows:
-///
-///   - if brightness < threshold - width, amount is amountMin
-///   - if brightness > threshold + width, amount is amountMax
-///   - transition region: if threshold - width <= brightness <= threshold - width,
-///     amount changes smoothly from amounMin to amountMax following a cubic function:
-///
-///     amount = a*brightness^3 + b*brightness^2 + c*brightness + d
-///
-///  such that its derivatives are zero at (threshold - width) and (threshold + width)
-///  and there is an inflection point at the threshold.
-///
-std::array<float, 4> GetAdaptiveUnshMaskTransitionCurve(
-    float amountMin,
-    float amountMax,
-    float threshold,
-    float width
-);
-
 wxString GetBackEndText(BackEnd backEnd);
 
 wxFileName GetImagesDirectory();

@@ -61,8 +61,6 @@ void ScriptImageProcessor::StartProcessing(
     std::function<void(FunctionCallResult)> onCompletion
 )
 {
-    std::optional<wxString> errorMsg = std::nullopt;
-
     const auto handler = Overload{
         [&](const contents::ProcessImageFile& call) { OnProcessImageFile(call, onCompletion); },
 

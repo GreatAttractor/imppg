@@ -35,26 +35,26 @@ public:
     bool get_lr_deconv_deringing() const;
     void lr_deconv_deringing(bool enabled);
 
-    bool get_unsh_mask_adaptive() const;
-    void unsh_mask_adaptive(bool enabled);
+    bool get_unsh_mask_adaptive(int index) const;
+    void unsh_mask_adaptive(int index, bool enabled);
 
-    double get_unsh_mask_sigma() const;
-    void unsh_mask_sigma(double value);
+    double get_unsh_mask_sigma(int index) const;
+    void unsh_mask_sigma(int index, double value);
 
-    double get_unsh_mask_amount_min() const;
-    void unsh_mask_amount_min(double value);
+    double get_unsh_mask_amount_min(int index) const;
+    void unsh_mask_amount_min(int index, double value);
 
-    double get_unsh_mask_amount_max() const;
-    void unsh_mask_amount_max(double value);
+    double get_unsh_mask_amount_max(int index) const;
+    void unsh_mask_amount_max(int index, double value);
 
-    double get_unsh_mask_amount() const;
-    void unsh_mask_amount(double value);
+    double get_unsh_mask_amount(int index) const;
+    void unsh_mask_amount(int index, double value);
 
-    double get_unsh_mask_threshold() const;
-    void unsh_mask_threshold(double value);
+    double get_unsh_mask_threshold(int index) const;
+    void unsh_mask_threshold(int index, double value);
 
-    double get_unsh_mask_twidth() const;
-    void unsh_mask_twidth(double value);
+    double get_unsh_mask_twidth(int index) const;
+    void unsh_mask_twidth(int index, double value);
 
     int tc_add_point(double x, double y);
     void tc_set_point(int index, double x, double y);
@@ -111,59 +111,59 @@ public:
             }},
 
             {"get_unsh_mask_adaptive", [](lua_State* lua) {
-                return ConstMethodBoolResult<SettingsWrapper>(lua, &SettingsWrapper::get_unsh_mask_adaptive);
+                return ConstMethodIntArgBoolResult<SettingsWrapper>(lua, &SettingsWrapper::get_unsh_mask_adaptive);
             }},
 
             {"unsh_mask_adaptive", [](lua_State* lua) {
-                return MethodBoolArg<SettingsWrapper>(lua, &SettingsWrapper::unsh_mask_adaptive);
+                return MethodIntBoolArg<SettingsWrapper>(lua, &SettingsWrapper::unsh_mask_adaptive);
             }},
 
             {"get_unsh_mask_sigma", [](lua_State* lua) {
-                return ConstMethodDoubleResult<SettingsWrapper>(lua, &SettingsWrapper::get_unsh_mask_sigma);
+                return ConstMethodIntArgDoubleResult<SettingsWrapper>(lua, &SettingsWrapper::get_unsh_mask_sigma);
             }},
 
             {"unsh_mask_sigma", [](lua_State* lua) {
-                return MethodDoubleArg<SettingsWrapper>(lua, &SettingsWrapper::unsh_mask_sigma);
+                return MethodIntDoubleArg<SettingsWrapper>(lua, &SettingsWrapper::unsh_mask_sigma);
             }},
 
             {"get_unsh_mask_amount_min", [](lua_State* lua) {
-                return ConstMethodDoubleResult<SettingsWrapper>(lua, &SettingsWrapper::get_unsh_mask_amount_min);
+                return ConstMethodIntArgDoubleResult<SettingsWrapper>(lua, &SettingsWrapper::get_unsh_mask_amount_min);
             }},
 
             {"unsh_mask_amount_min", [](lua_State* lua) {
-                return MethodDoubleArg<SettingsWrapper>(lua, &SettingsWrapper::unsh_mask_amount_min);
+                return MethodIntDoubleArg<SettingsWrapper>(lua, &SettingsWrapper::unsh_mask_amount_min);
             }},
 
             {"get_unsh_mask_amount_max", [](lua_State* lua) {
-                return ConstMethodDoubleResult<SettingsWrapper>(lua, &SettingsWrapper::get_unsh_mask_amount_max);
+                return ConstMethodIntArgDoubleResult<SettingsWrapper>(lua, &SettingsWrapper::get_unsh_mask_amount_max);
             }},
 
             {"unsh_mask_amount_max", [](lua_State* lua) {
-                return MethodDoubleArg<SettingsWrapper>(lua, &SettingsWrapper::unsh_mask_amount_max);
+                return MethodIntDoubleArg<SettingsWrapper>(lua, &SettingsWrapper::unsh_mask_amount_max);
             }},
 
             {"get_unsh_mask_amount", [](lua_State* lua) {
-                return ConstMethodDoubleResult<SettingsWrapper>(lua, &SettingsWrapper::get_unsh_mask_amount);
+                return ConstMethodIntArgDoubleResult<SettingsWrapper>(lua, &SettingsWrapper::get_unsh_mask_amount);
             }},
 
             {"unsh_mask_amount", [](lua_State* lua) {
-                return MethodDoubleArg<SettingsWrapper>(lua, &SettingsWrapper::unsh_mask_amount);
+                return MethodIntDoubleArg<SettingsWrapper>(lua, &SettingsWrapper::unsh_mask_amount);
             }},
 
             {"get_unsh_mask_threshold", [](lua_State* lua) {
-                return ConstMethodDoubleResult<SettingsWrapper>(lua, &SettingsWrapper::get_unsh_mask_threshold);
+                return ConstMethodIntArgDoubleResult<SettingsWrapper>(lua, &SettingsWrapper::get_unsh_mask_threshold);
             }},
 
             {"unsh_mask_threshold", [](lua_State* lua) {
-                return MethodDoubleArg<SettingsWrapper>(lua, &SettingsWrapper::unsh_mask_threshold);
+                return MethodIntDoubleArg<SettingsWrapper>(lua, &SettingsWrapper::unsh_mask_threshold);
             }},
 
             {"get_unsh_mask_twidth", [](lua_State* lua) {
-                return ConstMethodDoubleResult<SettingsWrapper>(lua, &SettingsWrapper::get_unsh_mask_twidth);
+                return ConstMethodIntArgDoubleResult<SettingsWrapper>(lua, &SettingsWrapper::get_unsh_mask_twidth);
             }},
 
             {"unsh_mask_twidth", [](lua_State* lua) {
-                return MethodDoubleArg<SettingsWrapper>(lua, &SettingsWrapper::unsh_mask_twidth);
+                return MethodIntDoubleArg<SettingsWrapper>(lua, &SettingsWrapper::unsh_mask_twidth);
             }},
 
             {"tc_add_point", [](lua_State* lua) {

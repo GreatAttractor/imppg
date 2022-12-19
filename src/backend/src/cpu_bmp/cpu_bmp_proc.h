@@ -152,7 +152,7 @@ private:
         {
             std::vector<c_Image> img; ///< Luminance or R, G, B channels.
             bool valid{false}; ///< `true` if the last unsharp masking request completed.
-        } unsharpMasking;
+        } unsharpMask;
 
         /// Results of sharpening, unsharp masking and applying of tone curve.
         struct

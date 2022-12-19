@@ -29,21 +29,11 @@ namespace imppg::backend {
 c_UnsharpMaskingThread::c_UnsharpMaskingThread(
     WorkerParameters&& params,
     std::optional<c_View<const IImageBuffer>>&& blurredRawInput,
-    bool adaptive,
-    float sigma,
-    float amountMin,
-    float amountMax,
-    float threshold,
-    float width
+    UnsharpMask unsharpMask
 )
 : IWorkerThread(std::move(params)),
   m_BlurredRawInput(std::move(blurredRawInput)),
-  m_Adaptive(adaptive),
-  m_Sigma(sigma),
-  m_AmountMin(amountMin),
-  m_AmountMax(amountMax),
-  m_Threshold(threshold),
-  m_Width(width)
+  m_UnsharpMask(unsharpMask)
 {
     if (m_BlurredRawInput.has_value())
     {
@@ -64,11 +54,11 @@ void c_UnsharpMaskingThread::DoWork()
         gaussianImg.emplace_back(std::make_unique<float[]>(width * height));
         ConvolveSeparable(
             c_PaddedArrayPtr(m_Params.input.at(ch).GetRowAs<const float>(0), width, height, m_Params.input.at(ch).GetBytesPerRow()),
-            c_PaddedArrayPtr(gaussianImg.at(ch).get(), width, height), m_Sigma
+            c_PaddedArrayPtr(gaussianImg.at(ch).get(), width, height), m_UnsharpMask.sigma
         );
     }
 
-    if (!m_Adaptive)
+    if (!m_UnsharpMask.adaptive)
     {
         // Standard unsharp masking - the amount (taken from `m_AmountMax`) is constant for the whole image.
 
@@ -82,7 +72,7 @@ void c_UnsharpMaskingThread::DoWork()
 
                 for (unsigned col = 0; col < width; col++)
                 {
-                    destRow[col] = m_AmountMax * srcRow[col] + (1.0f - m_AmountMax) * gaussianRow[col];
+                    destRow[col] = m_UnsharpMask.amountMax * srcRow[col] + (1.0f - m_UnsharpMask.amountMax) * gaussianRow[col];
                 }
             }
         }
@@ -94,7 +84,12 @@ void c_UnsharpMaskingThread::DoWork()
         // to alleviate noise (`m_BlurredRawInput`). See the declaration of `GetAdaptiveUnshMaskTransitionCurve`
         // for further details.
 
-        const auto& [a, b, c, d] = GetAdaptiveUnshMaskTransitionCurve(m_AmountMin, m_AmountMax, m_Threshold, m_Width);
+        const auto& [a, b, c, d] = GetAdaptiveUnshMaskTransitionCurve(m_UnsharpMask);
+
+        const float amountMin = m_UnsharpMask.amountMin;
+        const float amountMax = m_UnsharpMask.amountMax;
+        const float threshold = m_UnsharpMask.threshold;
+        const float width = m_UnsharpMask.width;
 
         for (std::size_t channel = 0; channel < m_Params.input.size(); ++channel)
         {
@@ -109,13 +104,13 @@ void c_UnsharpMaskingThread::DoWork()
                 {
                     const float amount = [&]() {
                         const float lum = lumRow[col];
-                        if (lum < m_Threshold - m_Width)
+                        if (lum < threshold - width)
                         {
-                            return m_AmountMin;
+                            return amountMin;
                         }
-                        else if (lum > m_Threshold + m_Width)
+                        else if (lum > threshold + width)
                         {
-                            return m_AmountMax;
+                            return amountMax;
                         }
                         else
                         {

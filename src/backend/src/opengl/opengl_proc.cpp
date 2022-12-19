@@ -466,11 +466,11 @@ void c_OpenGLProcessing::StartUnsharpMasking()
         {&m_TexFBOs.gaussianBlur.tex, uniforms::BlurredImage},
         {&m_TexFBOs.inputBlurred.tex, uniforms::InputImageBlurred}
     });
-    prog.SetUniform1i(uniforms::Adaptive, m_ProcessingSettings.unsharpMasking.adaptive);
-    prog.SetUniform1f(uniforms::AmountMin, m_ProcessingSettings.unsharpMasking.amountMin);
-    prog.SetUniform1f(uniforms::AmountMax, m_ProcessingSettings.unsharpMasking.amountMax);
-    prog.SetUniform1f(uniforms::Threshold, m_ProcessingSettings.unsharpMasking.threshold);
-    prog.SetUniform1f(uniforms::Width, m_ProcessingSettings.unsharpMasking.width);
+    prog.SetUniform1i(uniforms::Adaptive, m_ProcessingSettings.unsharpMask.at(0).adaptive);
+    prog.SetUniform1f(uniforms::AmountMin, m_ProcessingSettings.unsharpMask.at(0).amountMin);
+    prog.SetUniform1f(uniforms::AmountMax, m_ProcessingSettings.unsharpMask.at(0).amountMax);
+    prog.SetUniform1f(uniforms::Threshold, m_ProcessingSettings.unsharpMask.at(0).threshold);
+    prog.SetUniform1f(uniforms::Width, m_ProcessingSettings.unsharpMask.at(0).width);
     prog.SetUniform2i(uniforms::SelectionPos, m_Selection.GetLeft(), m_Selection.GetTop());
     prog.SetUniform4f(
         uniforms::TransitionCurve,
@@ -653,7 +653,7 @@ void c_OpenGLProcessing::SetTexturesLinearInterpolation(bool enable)
 
 void c_OpenGLProcessing::SetProcessingSettings(ProcessingSettings settings)
 {
-    const bool recalculateUnshMaskGaussian = (m_ProcessingSettings.unsharpMasking.sigma != settings.unsharpMasking.sigma);
+    const bool recalculateUnshMaskGaussian = (m_ProcessingSettings.unsharpMask.at(0).sigma != settings.unsharpMask.at(0).sigma);
     const bool recalculateLRGaussian = (m_ProcessingSettings.LucyRichardson.sigma != settings.LucyRichardson.sigma);
 
     m_ProcessingSettings = settings;
@@ -665,17 +665,12 @@ void c_OpenGLProcessing::SetProcessingSettings(ProcessingSettings settings)
 
     if (recalculateUnshMaskGaussian)
     {
-        m_UnshMaskGaussian = GetGaussianKernel(m_ProcessingSettings.unsharpMasking.sigma);
+        m_UnshMaskGaussian = GetGaussianKernel(m_ProcessingSettings.unsharpMask.at(0).sigma);
     }
 
     m_ProcessingSettings = settings;
 
-    m_TransitionCurve = GetAdaptiveUnshMaskTransitionCurve(
-        settings.unsharpMasking.amountMin,
-        settings.unsharpMasking.amountMax,
-        settings.unsharpMasking.threshold,
-        settings.unsharpMasking.width
-    );
+    m_TransitionCurve = GetAdaptiveUnshMaskTransitionCurve(settings.unsharpMask.at(0));
 }
 
 c_Image c_OpenGLProcessing::GetProcessedSelection()

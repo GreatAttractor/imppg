@@ -16,8 +16,8 @@ imppg.test.notify_settings(s)
     const ProcessingSettings& settings = GetSettingsNotification();
     BOOST_CHECK_EQUAL(0, settings.LucyRichardson.iterations);
     BOOST_CHECK_EQUAL(false, settings.LucyRichardson.deringing.enabled);
-    BOOST_CHECK_EQUAL(false, settings.unsharpMasking.adaptive);
-    BOOST_CHECK_EQUAL(1.0, settings.unsharpMasking.amountMax);
+    BOOST_CHECK_EQUAL(false, settings.unsharpMask.at(0).adaptive);
+    BOOST_CHECK_EQUAL(1.0, settings.unsharpMask.at(0).amountMax);
     BOOST_CHECK_EQUAL(2, settings.toneCurve.GetNumPoints());
     BOOST_CHECK_EQUAL(0.0, settings.toneCurve.GetPoint(0).x);
     BOOST_CHECK_EQUAL(0.0, settings.toneCurve.GetPoint(0).y);
@@ -39,12 +39,12 @@ s:lr_deconv_sigma(5.0)
 s:lr_deconv_num_iters(123)
 s:lr_deconv_deringing(true)
 
-s:unsh_mask_adaptive(true)
-s:unsh_mask_sigma(5.0)
-s:unsh_mask_amount_min(1.0)
-s:unsh_mask_amount_max(2.0)
-s:unsh_mask_threshold(0.125)
-s:unsh_mask_twidth(0.125)
+s:unsh_mask_adaptive(0, true)
+s:unsh_mask_sigma(0, 5.0)
+s:unsh_mask_amount_min(0, 1.0)
+s:unsh_mask_amount_max(0, 2.0)
+s:unsh_mask_threshold(0, 0.125)
+s:unsh_mask_twidth(0, 0.125)
 
 -- TODO: tone curve setters & getters
 
@@ -56,13 +56,13 @@ imppg.test.notify_number(s:get_lr_deconv_sigma())
 imppg.test.notify_integer(s:get_lr_deconv_num_iters())
 imppg.test.notify_boolean(s:get_lr_deconv_deringing())
 
-imppg.test.notify_boolean(s:get_unsh_mask_adaptive())
-imppg.test.notify_number(s:get_unsh_mask_sigma())
-imppg.test.notify_number(s:get_unsh_mask_amount_min())
-imppg.test.notify_number(s:get_unsh_mask_amount_max())
-imppg.test.notify_number(s:get_unsh_mask_amount())
-imppg.test.notify_number(s:get_unsh_mask_threshold())
-imppg.test.notify_number(s:get_unsh_mask_twidth())
+imppg.test.notify_boolean(s:get_unsh_mask_adaptive(0))
+imppg.test.notify_number(s:get_unsh_mask_sigma(0))
+imppg.test.notify_number(s:get_unsh_mask_amount_min(0))
+imppg.test.notify_number(s:get_unsh_mask_amount_max(0))
+imppg.test.notify_number(s:get_unsh_mask_amount(0))
+imppg.test.notify_number(s:get_unsh_mask_threshold(0))
+imppg.test.notify_number(s:get_unsh_mask_twidth(0))
 
     )";
 

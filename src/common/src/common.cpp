@@ -147,24 +147,6 @@ Histogram DetermineHistogramFromChannels(const std::vector<c_Image>& channels, c
     return histogram;
 }
 
-std::array<float, 4> GetAdaptiveUnshMaskTransitionCurve(
-    float amountMin,
-    float amountMax,
-    float threshold,
-    float width
-)
-{
-    const float divisor = 4 * width * width * width;
-    const float a = (amountMin - amountMax) / divisor;
-    const float b = 3 * (amountMax - amountMin) * threshold / divisor;
-    const float c = 3 * (amountMax - amountMin) * (width - threshold) * (width + threshold) / divisor;
-    const float d = (2 * width * width * width * (amountMin + amountMax) +
-        3 * threshold * width * width * (amountMin - amountMax) +
-        threshold * threshold * threshold * (amountMax - amountMin)) / divisor;
-
-    return {a, b, c, d};
-}
-
 wxString GetBackEndText(BackEnd backEnd)
 {
     switch (backEnd)

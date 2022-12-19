@@ -110,7 +110,7 @@ wxThread::ExitCode ScriptRunner::Entry()
         lua_close(lua);
         scripting::Finish();
     }
-    catch (const ScriptExecutionError& exc)
+    catch (const std::exception& exc)
     {
         auto* event = new wxThreadEvent(wxEVT_THREAD);
         event->SetPayload(ScriptMessagePayload{contents::Error{exc.what()}});

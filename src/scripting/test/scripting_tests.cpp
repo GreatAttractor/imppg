@@ -69,7 +69,7 @@ imppg.test.notify_image(image)
     BOOST_CHECK(PixelFormat::PIX_MONO32F == loadedImage.GetPixelFormat());
 }
 
-BOOST_FIXTURE_TEST_CASE(LoadAndProcessImage, ScriptTestFixture)
+BOOST_FIXTURE_TEST_CASE(LoadAndProcessImage, ScriptTestFixture) //FIXME: hangs!
 {
     std::string script{R"(
 

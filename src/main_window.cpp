@@ -209,12 +209,12 @@ void c_MainWindow::LoadSettingsFromFile(wxString settingsFile, bool moveToMruLis
         m_Ctrls.lrIters->SetValue(s.processing.LucyRichardson.iterations);
         m_Ctrls.lrDeriging->SetValue(s.processing.LucyRichardson.deringing.enabled);
 
-        m_Ctrls.unshAdaptive->SetValue(s.processing.unsharpMasking.adaptive);
-        m_Ctrls.unshSigma->SetValue(s.processing.unsharpMasking.sigma);
-        m_Ctrls.unshAmountMin->SetValue(s.processing.unsharpMasking.amountMin);
-        m_Ctrls.unshAmountMax->SetValue(s.processing.unsharpMasking.amountMax);
-        m_Ctrls.unshThreshold->SetValue(s.processing.unsharpMasking.threshold);
-        m_Ctrls.unshWidth->SetValue(s.processing.unsharpMasking.width);
+        m_Ctrls.unshAdaptive->SetValue(s.processing.unsharpMask.at(0).adaptive);
+        m_Ctrls.unshSigma->SetValue(s.processing.unsharpMask.at(0).sigma);
+        m_Ctrls.unshAmountMin->SetValue(s.processing.unsharpMask.at(0).amountMin);
+        m_Ctrls.unshAmountMax->SetValue(s.processing.unsharpMask.at(0).amountMax);
+        m_Ctrls.unshThreshold->SetValue(s.processing.unsharpMask.at(0).threshold);
+        m_Ctrls.unshWidth->SetValue(s.processing.unsharpMask.at(0).width);
         SetUnsharpMaskingControlsVisibility();
 
         m_Ctrls.tcrvEditor->SetToneCurve(&s.processing.toneCurve);
@@ -523,7 +523,7 @@ bool c_MainWindow::SharpeningEnabled()
 /// Returns 'true' if unsharp masking settings have impact on the image
 bool c_MainWindow::UnshMaskingEnabled()
 {
-    return m_CurrentSettings.processing.unsharpMasking.IsEffective();
+    return m_CurrentSettings.processing.unsharpMask.at(0).IsEffective();
 }
 
 /// Returns 'true' if tone curve has impact on the image (i.e. it is not the identity map)
@@ -555,12 +555,12 @@ c_MainWindow::c_MainWindow()
     s.processing.LucyRichardson.iterations = Default::LR_ITERATIONS;
     s.processing.LucyRichardson.deringing.enabled = false;
 
-    s.processing.unsharpMasking.adaptive = false;
-    s.processing.unsharpMasking.sigma = Default::UNSHMASK_SIGMA;
-    s.processing.unsharpMasking.amountMin = Default::UNSHMASK_AMOUNT;
-    s.processing.unsharpMasking.amountMax = Default::UNSHMASK_AMOUNT;
-    s.processing.unsharpMasking.threshold = Default::UNSHMASK_THRESHOLD;
-    s.processing.unsharpMasking.width = Default::UNSHMASK_WIDTH;
+    s.processing.unsharpMask.at(0).adaptive = false;
+    s.processing.unsharpMask.at(0).sigma = Default::UNSHMASK_SIGMA;
+    s.processing.unsharpMask.at(0).amountMin = Default::UNSHMASK_AMOUNT;
+    s.processing.unsharpMask.at(0).amountMax = Default::UNSHMASK_AMOUNT;
+    s.processing.unsharpMask.at(0).threshold = Default::UNSHMASK_THRESHOLD;
+    s.processing.unsharpMask.at(0).width = Default::UNSHMASK_WIDTH;
 
     s.selection.x = s.selection.y = -1;
     s.selection.width = s.selection.height = 0;
@@ -1016,11 +1016,11 @@ void c_MainWindow::OnUpdateUnsharpMaskingSettings()
 {
     TransferDataFromWindow();
     auto& proc = m_CurrentSettings.processing;
-    proc.unsharpMasking.sigma = m_Ctrls.unshSigma->GetValue();
-    proc.unsharpMasking.amountMin = m_Ctrls.unshAmountMin->GetValue();
-    proc.unsharpMasking.amountMax = m_Ctrls.unshAmountMax->GetValue();
-    proc.unsharpMasking.threshold = m_Ctrls.unshThreshold->GetValue();
-    proc.unsharpMasking.width = m_Ctrls.unshWidth->GetValue();
+    proc.unsharpMask.at(0).sigma = m_Ctrls.unshSigma->GetValue();
+    proc.unsharpMask.at(0).amountMin = m_Ctrls.unshAmountMin->GetValue();
+    proc.unsharpMask.at(0).amountMax = m_Ctrls.unshAmountMax->GetValue();
+    proc.unsharpMask.at(0).threshold = m_Ctrls.unshThreshold->GetValue();
+    proc.unsharpMask.at(0).width = m_Ctrls.unshWidth->GetValue();
 
     m_BackEnd->UnshMaskSettingsChanged(proc);
 }
@@ -1379,7 +1379,7 @@ wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(wxWindow* parent)
     result->Add(m_Ctrls.unshWidth, 0, wxGROW | wxALL, BORDER);
 
     result->Add(m_Ctrls.unshAdaptive = new wxCheckBox(result->GetStaticBox(), ID_UnsharpMaskingAdaptive, _("Adaptive"),
-            wxDefaultPosition, wxDefaultSize, wxCHK_2STATE, wxGenericValidator(&m_CurrentSettings.processing.unsharpMasking.adaptive)),
+            wxDefaultPosition, wxDefaultSize, wxCHK_2STATE, wxGenericValidator(&m_CurrentSettings.processing.unsharpMask.at(0).adaptive)),
             0, wxALIGN_LEFT | wxALL, BORDER);
     m_Ctrls.unshAdaptive->SetToolTip(_("Enable adaptive mode: amount changes from min to max depending on input brightness"));
 
