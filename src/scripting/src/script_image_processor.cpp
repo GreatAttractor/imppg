@@ -92,8 +92,8 @@ void ScriptImageProcessor::OnProcessImageFile(const contents::ProcessImageFile& 
     }
     c_Image image = std::move(loadResult.value());
 
-    ProcessingSettings settings{};
-    if (!LoadSettings(call.settingsPath, settings))
+    const auto settings = LoadSettings(call.settingsPath);
+    if (!settings.has_value())
     {
         onCompletion(call_result::Error{
             wxString::Format(_("failed to load processing settings from %s"), call.settingsPath).ToStdString()
@@ -101,9 +101,9 @@ void ScriptImageProcessor::OnProcessImageFile(const contents::ProcessImageFile& 
         return;
     }
 
-    if (settings.normalization.enabled)
+    if (settings->normalization.enabled)
     {
-        NormalizeFpImage(image, settings.normalization.min, settings.normalization.max);
+        NormalizeFpImage(image, settings->normalization.min, settings->normalization.max);
     }
 
     m_Processor->SetProcessingCompletedHandler(
@@ -122,7 +122,7 @@ void ScriptImageProcessor::OnProcessImageFile(const contents::ProcessImageFile& 
                 }
         }
     );
-    m_Processor->StartProcessing(std::move(image), settings);
+    m_Processor->StartProcessing(std::move(image), *settings);
 }
 
 void ScriptImageProcessor::OnProcessImage(const contents::ProcessImage& call, CompletionFunc onCompletion)

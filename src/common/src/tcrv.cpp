@@ -63,6 +63,7 @@ c_ToneCurve& c_ToneCurve::operator=(const c_ToneCurve& c)
 
 void c_ToneCurve::UpdatePoint(std::size_t idx, float x, float y)
 {
+    IMPPG_ASSERT(idx < m_Points.size());
     if (idx > 0) { IMPPG_ASSERT(m_Points[idx - 1].x < x); }
     if (static_cast<std::size_t>(idx) < m_Points.size() - 1) { IMPPG_ASSERT(x < m_Points[idx + 1].x); }
 
@@ -268,11 +269,12 @@ float c_ToneCurve::GetPreciseValue(
 /// Removes the specified point. If there are only 2 points, does nothing.
 void c_ToneCurve::RemovePoint(std::size_t index)
 {
-     if (m_Points.size() > 2)
-     {
-         m_Points.erase(m_Points.begin() + index);
-         CalculateSpline();
-     }
+    IMPPG_ASSERT(index < m_Points.size());
+    if (m_Points.size() > 2)
+    {
+        m_Points.erase(m_Points.begin() + index);
+        CalculateSpline();
+    }
 }
 
 /// Adds a curve point; returns its index

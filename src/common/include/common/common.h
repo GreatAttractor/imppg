@@ -103,6 +103,8 @@ struct strPoint
     strPoint() : x(0), y(0) { }
     strPoint(T x, T y) : x(x), y(y) { }
 
+    bool operator==(const strPoint& p) const { return x == p.x && y == p.y; }
+
     // Used for binary search via std::lower_bound()
     bool operator <(const strPoint& p) const { return x < p.x; }
 };

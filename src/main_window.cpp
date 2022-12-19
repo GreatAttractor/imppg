@@ -188,7 +188,8 @@ void c_MainWindow::LoadSettingsFromFile(wxString settingsFile, bool moveToMruLis
 {
     auto& s = m_CurrentSettings;
 
-    if (!LoadSettings(settingsFile.ToStdString(), s.processing))
+    const auto loaded = LoadSettings(settingsFile.ToStdString());
+    if (!loaded.has_value())
     {
         wxMessageBox(_("Failed to load processing settings."), _("Error"), wxOK | wxCENTRE | wxICON_ERROR);
 
@@ -202,6 +203,8 @@ void c_MainWindow::LoadSettingsFromFile(wxString settingsFile, bool moveToMruLis
     }
     else
     {
+        s.processing = *loaded;
+
         if (moveToMruListStart)
             SetAsMRU(settingsFile);
 

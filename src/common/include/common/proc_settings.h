@@ -29,6 +29,7 @@ File description:
 #include <array>
 #include <string>
 #include <vector>
+#include <wx/stream.h>
 
 /// Default-constructed value does not have any effect on image.
 struct UnsharpMask
@@ -44,6 +45,16 @@ struct UnsharpMask
     {
         return !adaptive && amountMax != 1.0f ||
             adaptive && (amountMin != 1.0f || amountMax != 1.0f);
+    }
+
+    bool operator==(const UnsharpMask& other) const
+    {
+        return adaptive == other.adaptive
+            && sigma == other.sigma
+            && amountMin == other.amountMin
+            && amountMax == other.amountMax
+            && threshold == other.threshold
+            && width == other.width;
     }
 };
 
@@ -70,20 +81,29 @@ struct ProcessingSettings
     std::vector<UnsharpMask> unsharpMask{UnsharpMask{}};
 
     c_ToneCurve toneCurve;
+
+    bool operator==(const ProcessingSettings& other) const
+    {
+        return normalization.enabled == other.normalization.enabled
+            && normalization.min == other.normalization.min
+            && normalization.max == other.normalization.max
+            && LucyRichardson.sigma == other.LucyRichardson.sigma
+            && LucyRichardson.iterations == other.LucyRichardson.iterations
+            && LucyRichardson.deringing.enabled == other.LucyRichardson.deringing.enabled
+            && unsharpMask == other.unsharpMask
+            && toneCurve == other.toneCurve;
+    }
 };
+
+void SerializeSettings(const ProcessingSettings& settings, wxOutputStream& stream);
+
+std::optional<ProcessingSettings> DeserializeSettings(wxInputStream& stream);
 
 /// Saves the settings of Lucy-Richardson deconvolution, unsharp masking, tone curve and deringing; returns 'false' on error.
 bool SaveSettings(const std::string& filePath, const ProcessingSettings& settings);
 
 /// Loads the settings of Lucy-Richardson deconvolution, unsharp masking, tone curve and deringing; returns 'false' on error.
-/** If the specified file does not contain some of the settings, the corresponding parameters' values will not be updated.*/
-bool LoadSettings(
-    const std::string& filePath,
-    ProcessingSettings& settings,
-    bool* loadedLR = nullptr,
-    bool* loadedUnsh = nullptr,
-    bool* loadedTCurve = nullptr
-);
+std::optional<ProcessingSettings> LoadSettings(const std::string& filePath);
 
 /// Returns the coefficients a, b, c, d of the cubic curve defining the "amount" value
 /// for adaptive unsharp masking. The amount is a function of local brightness

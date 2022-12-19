@@ -18,7 +18,6 @@ target_include_directories(scripting_tests PRIVATE ${Boost_INCLUDE_DIRS})
 target_link_libraries(scripting_tests PRIVATE
     ${Boost_LIBRARIES}
     ${wxWidgets_LIBRARIES}
-    # image
     scripting
 )
 

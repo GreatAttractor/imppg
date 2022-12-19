@@ -25,6 +25,7 @@ File description:
 #include "common/proc_settings.h"
 
 #include <sstream>
+#include <wx/wfstream.h>
 #include <wx/xml/xml.h>
 
 // private definitions
@@ -65,15 +66,6 @@ namespace XmlName
 
 const char* trueStr = "true";
 const char* falseStr = "false";
-
-bool CreateAndSaveDocument(wxString filePath, wxXmlNode* root)
-{
-    wxXmlDocument xdoc;
-    xdoc.SetVersion("1.0");
-    xdoc.SetFileEncoding("UTF-8");
-    xdoc.SetRoot(root);
-    return xdoc.Save(filePath, XML_INDENT);
-}
 
 wxXmlNode* CreateToneCurveSettingsNode(const c_ToneCurve& toneCurve)
 {
@@ -284,6 +276,32 @@ bool ParseToneCurveSettings(const wxXmlNode* node, c_ToneCurve& tcurve)
 
 bool SaveSettings(const std::string& filePath, const ProcessingSettings& settings)
 {
+    wxFileOutputStream file{filePath};
+    SerializeSettings(settings, file);
+    return file.IsOk();
+}
+
+std::optional<ProcessingSettings> LoadSettings(const std::string& filePath)
+{
+    wxFileInputStream stream{filePath};
+    return DeserializeSettings(stream);
+}
+
+std::array<float, 4> GetAdaptiveUnshMaskTransitionCurve(const UnsharpMask& um)
+{
+    const float divisor = 4 * um.width * um.width * um.width;
+    const float a = (um.amountMin - um.amountMax) / divisor;
+    const float b = 3 * (um.amountMax - um.amountMin) * um.threshold / divisor;
+    const float c = 3 * (um.amountMax - um.amountMin) * (um.width - um.threshold) * (um.width + um.threshold) / divisor;
+    const float d = (2 * um.width * um.width * um.width * (um.amountMin + um.amountMax) +
+        3 * um.threshold * um.width * um.width * (um.amountMin - um.amountMax) +
+        um.threshold * um.threshold * um.threshold * (um.amountMax - um.amountMin)) / divisor;
+
+    return {a, b, c, d};
+}
+
+void SerializeSettings(const ProcessingSettings& settings, wxOutputStream& stream)
+{
     wxXmlNode* root = new wxXmlNode(wxXML_ELEMENT_NODE, XmlName::root);
 
     root->AddChild(CreateLucyRichardsonSettingsNode(
@@ -299,34 +317,22 @@ bool SaveSettings(const std::string& filePath, const ProcessingSettings& setting
         settings.normalization.max
     ));
 
-    return CreateAndSaveDocument(filePath, root);
+    wxXmlDocument xdoc;
+    xdoc.SetVersion("1.0");
+    xdoc.SetFileEncoding("UTF-8");
+    xdoc.SetRoot(root);
+    xdoc.Save(stream, XML_INDENT);
 }
 
-bool LoadSettings(
-    const std::string& filePath,
-    ProcessingSettings& settings,
-    bool* loadedLR,
-    bool* loadedUnsh,
-    bool* loadedTCurve
-)
+std::optional<ProcessingSettings> DeserializeSettings(wxInputStream& stream)
 {
-    if (loadedLR)
-        *loadedLR = false;
-    if (loadedUnsh)
-        *loadedUnsh = false;
-    if (loadedTCurve)
-        *loadedTCurve = false;
-
-    settings.LucyRichardson.deringing.enabled = false;
-    settings.normalization.enabled = false;
+    ProcessingSettings settings{};
 
     wxXmlDocument xdoc;
-    if (!xdoc.Load(filePath))
-        return false;
+    if (!xdoc.Load(stream)) { return std::nullopt; }
 
     wxXmlNode* root = xdoc.GetRoot();
-    if (!root)
-        return false;
+    if (!root) { return std::nullopt; }
 
     wxXmlNode* child = root->GetChildren();
     while (child)
@@ -337,43 +343,32 @@ bool LoadSettings(
             int iters;
             bool deringing;
 
-            if (!ParseLucyRichardsonSettings(child, sigma, iters, deringing))
-                return false;
+            if (!ParseLucyRichardsonSettings(child, sigma, iters, deringing)) { return std::nullopt; }
 
             settings.LucyRichardson.sigma = sigma;
             settings.LucyRichardson.iterations = iters;
             settings.LucyRichardson.deringing.enabled = deringing;
-
-            if (loadedLR)
-                *loadedLR = true;
         }
         else if (child->GetName() == XmlName::unshMask)
         {
             const auto unsharpMask = ParseUnsharpMaskingSettings(child);
-            if (!unsharpMask.has_value()) { return false; }
+            if (!unsharpMask.has_value()) { return std::nullopt; }
 
             settings.unsharpMask = { unsharpMask.value() };
-
-            if (loadedUnsh) { *loadedUnsh = true; }
         }
         else if (child->GetName() == XmlName::tcurve)
         {
             c_ToneCurve tcurve;
-            if (!ParseToneCurveSettings(child, tcurve))
-                return false;
+            if (!ParseToneCurveSettings(child, tcurve)) { return std::nullopt; }
 
             settings.toneCurve = tcurve;
-
-            if (loadedTCurve)
-                *loadedTCurve = true;
         }
         else if (child->GetName() == XmlName::normalization)
         {
             bool enabled;
             float nmin, nmax;
 
-            if (!ParseNormalizationSetings(child, enabled, nmin, nmax))
-                return false;
+            if (!ParseNormalizationSetings(child, enabled, nmin, nmax)) { return std::nullopt; }
             settings.normalization.enabled = enabled;
             settings.normalization.min = nmin;
             settings.normalization.max = nmax;
@@ -382,18 +377,5 @@ bool LoadSettings(
         child = child->GetNext();
     }
 
-    return true;
-}
-
-std::array<float, 4> GetAdaptiveUnshMaskTransitionCurve(const UnsharpMask& um)
-{
-    const float divisor = 4 * um.width * um.width * um.width;
-    const float a = (um.amountMin - um.amountMax) / divisor;
-    const float b = 3 * (um.amountMax - um.amountMin) * um.threshold / divisor;
-    const float c = 3 * (um.amountMax - um.amountMin) * (um.width - um.threshold) * (um.width + um.threshold) / divisor;
-    const float d = (2 * um.width * um.width * um.width * (um.amountMin + um.amountMax) +
-        3 * um.threshold * um.width * um.width * (um.amountMin - um.amountMax) +
-        um.threshold * um.threshold * um.threshold * (um.amountMax - um.amountMin)) / divisor;
-
-    return {a, b, c, d};
+    return settings;
 }

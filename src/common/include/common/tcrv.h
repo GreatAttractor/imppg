@@ -98,7 +98,7 @@ public:
     }
 
     /// Tone-maps `input` to `output` using precise tone curve values.
-    void ApplyPreciseToneCurve(const float input[], float output[], size_t length)
+    void ApplyPreciseToneCurve(const float input[], float output[], size_t length) const
     {
         for (size_t i = 0; i < length; i++)
             output[i] = GetPreciseValue(input[i]);
@@ -152,6 +152,14 @@ public:
 
     /// Returns `true` if the tone curve is an identity map (no impact on the image).
     bool IsIdentity() const;
+
+    bool operator==(const c_ToneCurve& other) const
+    {
+        return m_Points == other.m_Points
+            && m_Smooth == other.m_Smooth
+            && m_IsGamma == other.m_IsGamma
+            && m_Gamma == other.m_Gamma;
+    }
 };
 
 #endif
