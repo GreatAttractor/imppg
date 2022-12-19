@@ -79,7 +79,7 @@ void ScriptTestFixture::OnRunnerMessage(wxThreadEvent& event)
             m_ScriptExecutionFailure = true;
         },
 
-        [&](const auto& contents) {
+        [&](const auto&) {
             OnScriptMessageContents(payload);
         }
     };

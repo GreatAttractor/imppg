@@ -7,6 +7,8 @@ add_executable(scripting_tests
     settings_tests.cpp
 )
 
+set_compiler_options(scripting_tests)
+
 include(FindPkgConfig)
 find_package(Boost REQUIRED
     unit_test_framework
