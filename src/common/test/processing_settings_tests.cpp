@@ -29,12 +29,32 @@ BOOST_AUTO_TEST_CASE(SaveAndLoadSettings)
     SerializeSettings(s, sOut);
 
     wxStringInputStream sIn(sOut.GetString());
-    const auto loaded = DeserializeSettings(sIn);
-    BOOST_REQUIRE(loaded.has_value());
-    BOOST_REQUIRE(*loaded == s);
+    const auto parsed = DeserializeSettings(sIn);
+    BOOST_REQUIRE(parsed.has_value());
+    BOOST_REQUIRE(*parsed == s);
 }
 
 BOOST_AUTO_TEST_CASE(LoadLegacySettingsWithCommas)
 {
-    BOOST_CHECK_EQUAL(2, 3);
+    const char* xml =
+R"(<?xml version="1.0" encoding="UTF-8"?>
+<imppg>
+    <lucy-richardson sigma="1,5000" iterations="50" deringing="false"/>
+    <unsharp_mask adaptive="false" sigma="1,25000" amount_min="1,0000" amount_max="1,5000" amount_threshold="0,25" amount_width="0,25"/>
+    <tone_curve smooth="true" is_gamma="false">0,0000;0,0000;0,25;0,25;0,75;0,75;1,0000;1,0000;</tone_curve>
+    <normalization enabled="true" min="0,25" max="0,75"/>
+</imppg>
+    )";
+
+    const auto expected = ProcessingSettings{
+        {true, 0.25, 0.75},
+        {1.5, 50, {false}},
+        {UnsharpMask{false, 1.25, 1.0, 1.5, 0.25, 0.25}},
+        c_ToneCurve{{{0.0, 0.0}, {0.25, 0.25}, {0.75, 0.75}, {1.0, 1.0}}}
+    };
+
+    wxStringInputStream sIn(xml);
+    const auto parsed = DeserializeSettings(sIn);
+    BOOST_REQUIRE(parsed.has_value());
+    BOOST_REQUIRE(*parsed == expected);
 }

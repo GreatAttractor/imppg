@@ -47,6 +47,17 @@ c_ToneCurve::c_ToneCurve(const c_ToneCurve& c)
   m_Gamma(c.m_Gamma)
 {}
 
+c_ToneCurve::c_ToneCurve(std::initializer_list<FloatPoint_t> points)
+: m_Smooth(true), m_IsGamma(false), m_Gamma(1.0f)
+{
+    for (const auto& point: points)
+    {
+        AddPoint(point.x, point.y);
+    }
+    CalculateSpline();
+    RefreshLut();
+}
+
 /// Does not copy and does not recalculate LUT contents.
 c_ToneCurve& c_ToneCurve::operator=(const c_ToneCurve& c)
 {

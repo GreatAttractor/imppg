@@ -24,6 +24,7 @@ File description:
 #ifndef IMPPG_TONE_CURVE_H
 #define IMPPG_TONE_CURVE_H
 
+#include <initializer_list>
 #include <optional>
 #include <vector>
 
@@ -66,6 +67,8 @@ public:
 
     /// Allocates a LUT, but does not copy and does not recalculate LUT contents.
     c_ToneCurve(const c_ToneCurve& c);
+
+    c_ToneCurve(std::initializer_list<FloatPoint_t> points);
 
     /// Does not copy and does not recalculate LUT contents.
     c_ToneCurve& operator=(const c_ToneCurve& c);
