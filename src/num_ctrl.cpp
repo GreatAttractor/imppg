@@ -160,7 +160,7 @@ void c_NumericalCtrl::OnSpinEvent(wxSpinDoubleEvent&)
 
 void c_NumericalCtrl::DoPerformAction(void*)
 {
-    GetParent()->GetEventHandler()->AddPendingEvent(wxCommandEvent(EVT_NUMERICAL_CTRL, GetId()));
+    AddPendingEvent(wxCommandEvent(EVT_NUMERICAL_CTRL, GetId()));
 }
 
 void c_NumericalCtrl::OnSliderKeyDown(wxKeyEvent& event)

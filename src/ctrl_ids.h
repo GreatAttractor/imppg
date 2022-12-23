@@ -49,14 +49,6 @@ enum
     ID_LucyRichardsonDeringing,
     ID_LucyRichardsonOff,
 
-    ID_UnsharpMaskingSigma,
-    ID_UnsharpMaskingAmountMin,
-    ID_UnsharpMaskingAmountMax,
-    ID_UnsharpMaskingReset,
-    ID_UnsharpMaskingAdaptive,
-    ID_UnsharpMaskingThreshold,
-    ID_UnsharpMaskingWidth,
-
     ID_ToneCurveEditor,
 
     // File menu items

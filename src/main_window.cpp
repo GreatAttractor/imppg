@@ -125,22 +125,13 @@ BEGIN_EVENT_TABLE(c_MainWindow, wxFrame)
     EVT_BUTTON(ID_LucyRichardsonReset, c_MainWindow::OnCommandEvent)
     EVT_BUTTON(ID_LucyRichardsonOff, c_MainWindow::OnCommandEvent)
     EVT_COMMAND(ID_LucyRichardsonSigma, EVT_NUMERICAL_CTRL, c_MainWindow::OnCommandEvent)
-    EVT_COMMAND(ID_UnsharpMaskingSigma, EVT_NUMERICAL_CTRL, c_MainWindow::OnCommandEvent)
-    EVT_COMMAND(ID_UnsharpMaskingAmountMin, EVT_NUMERICAL_CTRL, c_MainWindow::OnCommandEvent)
-    EVT_COMMAND(ID_UnsharpMaskingAmountMax, EVT_NUMERICAL_CTRL, c_MainWindow::OnCommandEvent)
-    EVT_COMMAND(ID_UnsharpMaskingThreshold, EVT_NUMERICAL_CTRL, c_MainWindow::OnCommandEvent)
-    EVT_COMMAND(ID_UnsharpMaskingWidth, EVT_NUMERICAL_CTRL, c_MainWindow::OnCommandEvent)
-    EVT_BUTTON(ID_UnsharpMaskingReset, c_MainWindow::OnCommandEvent)
-    EVT_CHECKBOX(ID_UnsharpMaskingAdaptive, c_MainWindow::OnCommandEvent)
     EVT_TOOL(ID_SelectAndProcessAll, c_MainWindow::OnCommandEvent)
     EVT_TOOL(ID_FitInWindow, c_MainWindow::OnCommandEvent)
     EVT_MENU(ID_FitInWindow, c_MainWindow::OnCommandEvent)
     EVT_AUI_PANE_CLOSE(c_MainWindow::OnAuiPaneClose)
-
     EVT_TOOL(ID_LoadSettings, c_MainWindow::OnSettingsFile)
     EVT_TOOL(ID_SaveSettings, c_MainWindow::OnSettingsFile)
     EVT_TOOL(ID_MruSettings,  c_MainWindow::OnSettingsFile)
-
     EVT_MENU(ID_BatchProcessing, c_MainWindow::OnCommandEvent)
     EVT_MENU(ID_RunScript, c_MainWindow::OnCommandEvent)
     EVT_CHECKBOX(ID_LucyRichardsonDeringing, c_MainWindow::OnCommandEvent)
@@ -1129,32 +1120,6 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent& event)
         IndicateSettingsModified();
         break;
 
-    case ID_UnsharpMaskingAdaptive:
-    case ID_UnsharpMaskingSigma:
-    case ID_UnsharpMaskingAmountMin:
-    case ID_UnsharpMaskingAmountMax:
-    case ID_UnsharpMaskingThreshold:
-    case ID_UnsharpMaskingWidth:
-        if (event.GetId() == ID_UnsharpMaskingAdaptive)
-            SetUnsharpMaskingControlsVisibility();
-
-        OnUpdateUnsharpMaskingSettings();
-        IndicateSettingsModified();
-        break;
-
-    case ID_UnsharpMaskingReset:
-        m_Ctrls.unshAdaptive->SetValue(false);
-        m_Ctrls.unshSigma->SetValue(Default::UNSHMASK_SIGMA);
-        m_Ctrls.unshAmountMin->SetValue(Default::UNSHMASK_AMOUNT);
-        m_Ctrls.unshAmountMax->SetValue(Default::UNSHMASK_AMOUNT);
-        m_Ctrls.unshThreshold->SetValue(Default::UNSHMASK_THRESHOLD);
-        m_Ctrls.unshWidth->SetValue(Default::UNSHMASK_WIDTH);
-
-        SetUnsharpMaskingControlsVisibility();
-        OnUpdateUnsharpMaskingSettings();
-        IndicateSettingsModified();
-        break;
-
     case ID_SelectAndProcessAll:
         if (m_ImageLoaded)
         {
@@ -1347,47 +1312,157 @@ wxPanel* c_MainWindow::CreateLucyRichardsonControlsPanel(wxWindow* parent)
     return result;
 }
 
+void c_MainWindow::OnUnsharpMaskingControlChanged(wxCommandEvent&)
+{
+    OnUpdateUnsharpMaskingSettings();
+    IndicateSettingsModified();
+}
+
 wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(wxWindow* parent)
 {
     int maxfreq = Configuration::GetMaxProcessingRequestsPerSec();
 
     wxStaticBoxSizer* result = new wxStaticBoxSizer(wxVERTICAL, parent, _("Unsharp masking"));
 
-    result->Add(m_Ctrls.unshSigma = new c_NumericalCtrl(
-        result->GetStaticBox(), ID_UnsharpMaskingSigma,
-        _("Sigma:"), 0.5, MAX_GAUSSIAN_SIGMA, Default::UNSHMASK_SIGMA, 0.05, 4, 2.0, 100, true, maxfreq ? 1000/maxfreq : 0),
-        0, wxGROW | wxALL, BORDER);
+    m_Ctrls.unshSigma = new c_NumericalCtrl(
+        result->GetStaticBox(),
+        wxID_ANY,
+        _("Sigma:"),
+        0.5,
+        MAX_GAUSSIAN_SIGMA,
+        Default::UNSHMASK_SIGMA,
+        0.05,
+        4,
+        2.0,
+        100,
+        true,
+        maxfreq ? 1000/maxfreq : 0
+    );
+    result->Add(m_Ctrls.unshSigma, 0, wxGROW | wxALL, BORDER);
 
-    m_Ctrls.unshAmountMin = new c_NumericalCtrl(result->GetStaticBox(), ID_UnsharpMaskingAmountMin,
-            _("Amount min:"), 0, 100.0, Default::UNSHMASK_AMOUNT, 0.05, 4, 5.0, 100, true, maxfreq ? 1000/maxfreq : 0);
+    m_Ctrls.unshAmountMin = new c_NumericalCtrl(
+        result->GetStaticBox(),
+        wxID_ANY,
+        _("Amount min:"),
+        0,
+        100.0,
+        Default::UNSHMASK_AMOUNT,
+        0.05,
+        4,
+        5.0,
+        100,
+        true,
+        maxfreq ? 1000/maxfreq : 0
+    );
     m_Ctrls.unshAmountMin->SetToolTip(_("Value 1.0: no effect, <1.0: blur, >1.0: sharpen"));
     m_Ctrls.unshAmountMin->Show(false);
     result->Add(m_Ctrls.unshAmountMin, 0, wxGROW | wxALL, BORDER);
 
-    m_Ctrls.unshAmountMax = new c_NumericalCtrl(result->GetStaticBox(), ID_UnsharpMaskingAmountMax,
-            _("Amount:"), 0, 100.0, Default::UNSHMASK_AMOUNT, 0.05, 4, 5.0, 100, true, maxfreq ? 1000/maxfreq : 0);
+    m_Ctrls.unshAmountMax = new c_NumericalCtrl(
+        result->GetStaticBox(),
+        wxID_ANY,
+        _("Amount:"),
+        0,
+        100.0,
+        Default::UNSHMASK_AMOUNT,
+        0.05,
+        4,
+        5.0,
+        100,
+        true,
+        maxfreq ? 1000/maxfreq : 0
+    );
     m_Ctrls.unshAmountMax->SetToolTip(_("Value 1.0: no effect, <1.0: blur, >1.0: sharpen"));
+    m_Ctrls.unshAmountMax->Bind(EVT_NUMERICAL_CTRL, [this](wxCommandEvent& event) {
+        OnUnsharpMaskingControlChanged(event);
+    });
     result->Add(m_Ctrls.unshAmountMax, 0, wxGROW | wxALL, BORDER);
 
-    m_Ctrls.unshThreshold = new c_NumericalCtrl(result->GetStaticBox(), ID_UnsharpMaskingThreshold,
-            _("Threshold:"), 0, 1.0, Default::UNSHMASK_THRESHOLD, 0.05, 4, 5.0, 100, true, maxfreq ? 1000/maxfreq : 0);
+    m_Ctrls.unshThreshold = new c_NumericalCtrl(
+        result->GetStaticBox(),
+        wxID_ANY,
+        _("Threshold:"),
+        0,
+        1.0,
+        Default::UNSHMASK_THRESHOLD,
+        0.05,
+        4,
+        5.0,
+        100,
+        true,
+        maxfreq ? 1000/maxfreq : 0
+    );
     m_Ctrls.unshThreshold->SetToolTip(_("Input brightness threshold of transition from amount min to amount max"));
     m_Ctrls.unshThreshold->Show(false);
     result->Add(m_Ctrls.unshThreshold, 0, wxGROW | wxALL, BORDER);
 
-    m_Ctrls.unshWidth = new c_NumericalCtrl(result->GetStaticBox(), ID_UnsharpMaskingWidth,
-            _("Transition width:"), 0, 1.0, Default::UNSHMASK_THRESHOLD, 0.05, 4, 5.0, 100, true, maxfreq ? 1000/maxfreq : 0);
+    m_Ctrls.unshWidth = new c_NumericalCtrl(
+        result->GetStaticBox(),
+        wxID_ANY,
+        _("Transition width:"),
+        0,
+        1.0,
+        Default::UNSHMASK_THRESHOLD,
+        0.05,
+        4,
+        5.0,
+        100,
+        true,
+        maxfreq ? 1000/maxfreq : 0
+    );
     m_Ctrls.unshWidth->SetToolTip(_("Amount will be set to amount min for input brightness <= threshold-width and amount max for brightness >= threshold+width"));
     m_Ctrls.unshWidth->Show(false);
     result->Add(m_Ctrls.unshWidth, 0, wxGROW | wxALL, BORDER);
 
-    result->Add(m_Ctrls.unshAdaptive = new wxCheckBox(result->GetStaticBox(), ID_UnsharpMaskingAdaptive, _("Adaptive"),
-            wxDefaultPosition, wxDefaultSize, wxCHK_2STATE, wxGenericValidator(&m_CurrentSettings.processing.unsharpMask.at(0).adaptive)),
-            0, wxALIGN_LEFT | wxALL, BORDER);
+    m_Ctrls.unshAdaptive = new wxCheckBox(
+        result->GetStaticBox(),
+        wxID_ANY,
+        _("Adaptive"),
+        wxDefaultPosition,
+        wxDefaultSize,
+        wxCHK_2STATE,
+        wxGenericValidator(&m_CurrentSettings.processing.unsharpMask.at(0).adaptive)
+    );
+    m_Ctrls.unshAdaptive->Bind(wxEVT_CHECKBOX, [this](wxCommandEvent& event) {
+        SetUnsharpMaskingControlsVisibility();
+        OnUnsharpMaskingControlChanged(event);
+    });
+    result->Add(m_Ctrls.unshAdaptive, 0, wxALIGN_LEFT | wxALL, BORDER);
     m_Ctrls.unshAdaptive->SetToolTip(_("Enable adaptive mode: amount changes from min to max depending on input brightness"));
 
-    result->Add(new wxButton(result->GetStaticBox(), ID_UnsharpMaskingReset, _("reset"), wxDefaultPosition,
-        wxDefaultSize, wxBU_EXACTFIT), 0, wxALIGN_LEFT | wxALL, BORDER);
+    wxButton* btnReset = new wxButton(
+        result->GetStaticBox(),
+        wxID_ANY,
+        _("reset"),
+        wxDefaultPosition,
+        wxDefaultSize,
+        wxBU_EXACTFIT
+    );
+    btnReset->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
+        m_Ctrls.unshAdaptive->SetValue(false);
+        m_Ctrls.unshSigma->SetValue(Default::UNSHMASK_SIGMA);
+        m_Ctrls.unshAmountMin->SetValue(Default::UNSHMASK_AMOUNT);
+        m_Ctrls.unshAmountMax->SetValue(Default::UNSHMASK_AMOUNT);
+        m_Ctrls.unshThreshold->SetValue(Default::UNSHMASK_THRESHOLD);
+        m_Ctrls.unshWidth->SetValue(Default::UNSHMASK_WIDTH);
+
+        SetUnsharpMaskingControlsVisibility();
+        OnUpdateUnsharpMaskingSettings();
+        IndicateSettingsModified();
+    });
+    result->Add(btnReset, 0, wxALIGN_LEFT | wxALL, BORDER);
+
+    for (wxEvtHandler* control: {
+        m_Ctrls.unshSigma,
+        m_Ctrls.unshAmountMin,
+        m_Ctrls.unshAmountMax,
+        m_Ctrls.unshThreshold,
+        m_Ctrls.unshWidth
+    }) {
+        control->Bind(EVT_NUMERICAL_CTRL, [this](wxCommandEvent& event) {
+            OnUnsharpMaskingControlChanged(event);
+        });
+    }
 
     return result;
 }

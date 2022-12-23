@@ -67,6 +67,7 @@ class c_MainWindow: public wxFrame
     void OnImageViewMouseWheel(wxMouseEvent& event);
     void OnProcessingPanelScrolled(wxScrollWinEvent& event);
     void OnSettingsFile(wxCommandEvent& event);
+    void OnUnsharpMaskingControlChanged(wxCommandEvent& event);
     //--------------------------
 
     void OnNewSelection(
