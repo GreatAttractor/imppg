@@ -32,25 +32,12 @@ File description:
 /// Border size in pixels between constituent controls
 const int BORDER = 5;
 
-enum
-{
-    ID_SpinCtrl = wxID_HIGHEST + 1,
-    ID_Slider
-};
-
 // Event sent to parent every time the control's value changes
 wxDEFINE_EVENT(EVT_NUMERICAL_CTRL, wxCommandEvent);
 
 BEGIN_EVENT_TABLE(c_NumericalCtrl, wxWindow)
-    EVT_SPINCTRLDOUBLE(ID_SpinCtrl, c_NumericalCtrl::OnSpinEvent)
-#ifdef __WXMSW__
-	// On MS Windows, wxWidgets 3.0.2, the control doesn't generate EVT_SPINCTRLDOUBLE on Enter;
-	// needs a separate handler.
-    EVT_TEXT_ENTER(ID_SpinCtrl, c_NumericalCtrl::OnSpinEnter)
-#endif
     EVT_SCROLL_THUMBTRACK(c_NumericalCtrl::OnSliderScroll)
     EVT_SCROLL_THUMBRELEASE(c_NumericalCtrl::OnSliderEndScroll)
-
     EVT_SCROLL_BOTTOM(c_NumericalCtrl::OnSliderEndScroll)
     EVT_SCROLL_TOP(c_NumericalCtrl::OnSliderEndScroll)
     EVT_SCROLL_PAGEDOWN(c_NumericalCtrl::OnSliderEndScroll)
@@ -80,16 +67,22 @@ c_NumericalCtrl::c_NumericalCtrl(wxWindow* parent, int id,
     wxSizer* szSpinCtrl = new wxBoxSizer(wxHORIZONTAL);
     m_Label.Create(this, wxID_ANY, label);
     szSpinCtrl->Add(&m_Label, 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
-    m_SpinCtrl = new wxSpinCtrlDouble(this, ID_SpinCtrl, wxString::Format("%f", initialVal),
+    m_SpinCtrl = new wxSpinCtrlDouble(this, wxID_ANY, wxString::Format("%f", initialVal),
         wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS | wxTE_PROCESS_ENTER, minVal, maxVal, initialVal, spinCtrlStep);
     m_SpinCtrl->SetDigits(numDigits);
+    m_SpinCtrl->Bind(wxEVT_SPINCTRLDOUBLE, &c_NumericalCtrl::OnSpinEvent, this);
+#ifdef __WXMSW__
+	// On MS Windows, wxWidgets 3.0.2, the control doesn't generate EVT_SPINCTRLDOUBLE on Enter;
+	// needs a separate handler.
+    m_SpinCtrl->Bind(wxEVT_TEXT_ENTER, &c_NumericalCtrl::OnSpinEnter, this);
+#endif
     szSpinCtrl->Add(m_SpinCtrl, 0, wxGROW | wxALL, BORDER);
     szTop->Add(szSpinCtrl, 0, wxALIGN_LEFT | wxALL, BORDER);
 
     if (autoAdjustNumSteps && numSliderSteps <= 0)
         numSliderSteps = 2;
 
-    m_SliderCtrl = new wxSlider(this, ID_Slider, numSliderSteps/2, 0, numSliderSteps-1);
+    m_SliderCtrl = new wxSlider(this, wxID_ANY, numSliderSteps/2, 0, numSliderSteps-1);
     m_SliderCtrl->Bind(wxEVT_SIZE, &c_NumericalCtrl::OnSliderSize, this);
     m_SliderCtrl->Bind(wxEVT_KEY_DOWN, &c_NumericalCtrl::OnSliderKeyDown, this);
     m_SliderCtrl->Bind(wxEVT_KEY_UP, &c_NumericalCtrl::OnSliderKeyUp, this);
@@ -109,37 +102,31 @@ void c_NumericalCtrl::OnSliderSize(wxSizeEvent& event)
     event.Skip();
 }
 
-void c_NumericalCtrl::OnSliderEndScroll(wxScrollEvent& event)
+void c_NumericalCtrl::OnSliderEndScroll(wxScrollEvent&)
 {
-    if (event.GetId() == ID_Slider)
-    {
-        Scrolling.grabbed = false;
-        m_SliderCtrl->SetValue((m_SliderCtrl->GetMax() + 1)/2);
-    }
+    Scrolling.grabbed = false;
+    m_SliderCtrl->SetValue((m_SliderCtrl->GetMax() + 1)/2);
 }
 
 
-void c_NumericalCtrl::OnSliderScroll(wxScrollEvent& event)
+void c_NumericalCtrl::OnSliderScroll(wxScrollEvent&)
 {
-    if (event.GetId() == ID_Slider)
+    if (!Scrolling.grabbed)
     {
-        if (!Scrolling.grabbed)
-        {
-            Scrolling.grabbed = true;
-            Scrolling.grabbedVal = m_SpinCtrl->GetValue();
-        }
-
-        if (Scrolling.grabbedVal == 0.0) // Possible if spin ctrl's minVal is 0
-        {
-            // Bump the value up a bit, otherwise the slider alone wouldn't increase it (due to the formula below)
-            Scrolling.grabbedVal = std::pow(10.0, -static_cast<int>(m_SpinCtrl->GetDigits()));
-        }
-
-        double newVal = Scrolling.grabbedVal * std::pow(m_SliderRangeFactor, 2.0 * m_SliderCtrl->GetValue() / m_SliderCtrl->GetMax() - 1);
-
-        m_SpinCtrl->SetValue(newVal);
-        OnValueChanged();
+        Scrolling.grabbed = true;
+        Scrolling.grabbedVal = m_SpinCtrl->GetValue();
     }
+
+    if (Scrolling.grabbedVal == 0.0) // Possible if spin ctrl's minVal is 0
+    {
+        // Bump the value up a bit, otherwise the slider alone wouldn't increase it (due to the formula below)
+        Scrolling.grabbedVal = std::pow(10.0, -static_cast<int>(m_SpinCtrl->GetDigits()));
+    }
+
+    double newVal = Scrolling.grabbedVal * std::pow(m_SliderRangeFactor, 2.0 * m_SliderCtrl->GetValue() / m_SliderCtrl->GetMax() - 1);
+
+    m_SpinCtrl->SetValue(newVal);
+    OnValueChanged();
 }
 
 #ifdef __WXMSW__
@@ -181,7 +168,7 @@ void c_NumericalCtrl::OnSliderKeyDown(wxKeyEvent& event)
     if (event.GetKeyCode() == WXK_LEFT || event.GetKeyCode() == WXK_RIGHT)
     {
         wxScrollEvent screvt;
-        screvt.SetId(ID_Slider);
+        //screvt.SetId(ID_Slider);
         OnSliderScroll(screvt);
         event.Skip();
     }
@@ -192,7 +179,7 @@ void c_NumericalCtrl::OnSliderKeyUp(wxKeyEvent& event)
     if (event.GetKeyCode() == WXK_LEFT || event.GetKeyCode() == WXK_RIGHT)
     {
         wxScrollEvent screvt;
-        screvt.SetId(ID_Slider);
+        //screvt.SetId(ID_Slider);
         OnSliderEndScroll(screvt);
         event.Skip();
     }
