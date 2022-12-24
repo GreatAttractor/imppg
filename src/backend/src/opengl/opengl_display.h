@@ -68,7 +68,7 @@ public:
 
     void LRSettingsChanged(const ProcessingSettings& procSettings) override;
 
-    void UnshMaskSettingsChanged(const ProcessingSettings& procSettings) override;
+    void UnshMaskSettingsChanged(const ProcessingSettings& procSettings, std::size_t maskIdx) override;
 
     void ToneCurveChanged(const ProcessingSettings& procSettings) override;
 

@@ -78,7 +78,7 @@ public:
 
     virtual void LRSettingsChanged(const ProcessingSettings& procSettings) = 0;
 
-    virtual void UnshMaskSettingsChanged(const ProcessingSettings& procSettings) = 0;
+    virtual void UnshMaskSettingsChanged(const ProcessingSettings& procSettings, std::size_t maskIdx) = 0;
 
     virtual void ToneCurveChanged(const ProcessingSettings& procSettings) = 0;
 

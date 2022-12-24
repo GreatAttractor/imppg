@@ -418,7 +418,7 @@ void c_OpenGLDisplay::ToneCurveChanged(const ProcessingSettings& procSettings)
     }
 }
 
-void c_OpenGLDisplay::UnshMaskSettingsChanged(const ProcessingSettings& procSettings)
+void c_OpenGLDisplay::UnshMaskSettingsChanged(const ProcessingSettings& procSettings, std::size_t maskIdx)
 {
     m_Processor->SetProcessingSettings(procSettings);
     if (m_Img)

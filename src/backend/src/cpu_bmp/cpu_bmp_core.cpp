@@ -409,7 +409,7 @@ void c_CpuAndBitmaps::LRSettingsChanged(const ProcessingSettings& procSettings)
     m_Processor.ScheduleProcessing(ProcessingRequest::SHARPENING);
 }
 
-void c_CpuAndBitmaps::UnshMaskSettingsChanged(const ProcessingSettings& procSettings)
+void c_CpuAndBitmaps::UnshMaskSettingsChanged(const ProcessingSettings& procSettings, std::size_t maskIdx)
 {
     m_Processor.SetProcessingSettings(procSettings);
     m_Processor.ScheduleProcessing(ProcessingRequest::UNSHARP_MASKING);

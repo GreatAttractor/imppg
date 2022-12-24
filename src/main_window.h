@@ -87,8 +87,8 @@ class c_MainWindow: public wxFrame
     bool UnshMaskingEnabled(); ///< Returns 'true' if unsharp masking settings have impact on the image
     bool ToneCurveEnabled(); ///< Returns 'true' if tone curve has impact on the image (i.e. it is not the identity map)
     wxPanel* CreateLucyRichardsonControlsPanel(wxWindow* parent);
-    wxStaticBoxSizer* CreateUnsharpMaskingControls(wxWindow* parent);
-    void OnUpdateUnsharpMaskingSettings();
+    wxStaticBoxSizer* CreateUnsharpMaskingControls(wxWindow* parent, std::size_t maskIdx);
+    void OnUpdateUnsharpMaskingSettings(std::size_t maskIdx);
     /// Updates state of menu items and toolbar buttons responsible for toggling the processing panel and tone curve editor
     void UpdateToggleControlsState();
     /// Returns the ratio of 'm_ImgView' to the size of 'imgSize', assuming uniform scaling in "touch from inside" fashion
