@@ -128,18 +128,23 @@ class c_MainWindow: public wxFrame
     wxString m_LastChosenSettingsFileName;
     wxStaticText* m_LastChosenSettings; ///< Shows the last chosen settings file name in toolbar
 
+    struct UnsharpMaskControls
+    {
+        c_NumericalCtrl* sigma{nullptr};
+        c_NumericalCtrl* amountMin{nullptr};
+        c_NumericalCtrl* amountMax{nullptr};
+        c_NumericalCtrl* threshold{nullptr};
+        c_NumericalCtrl* width{nullptr};
+        wxCheckBox* adaptive{nullptr};
+    };
+
     struct
     {
         c_NumericalCtrl* lrSigma{nullptr};
         wxSpinCtrl* lrIters{nullptr};
         wxCheckBox* lrDeriging{nullptr};
-        wxCheckBox* unshAdaptive{nullptr};
 
-        c_NumericalCtrl* unshSigma{nullptr};
-        c_NumericalCtrl* unshAmountMin{nullptr};
-        c_NumericalCtrl* unshAmountMax{nullptr};
-        c_NumericalCtrl* unshThreshold{nullptr};
-        c_NumericalCtrl* unshWidth{nullptr};
+        std::vector<UnsharpMaskControls> unshMask;
 
         c_ToneCurveEditor* tcrvEditor{nullptr};
 
