@@ -1322,12 +1322,12 @@ wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(wxWindow* parent)
 {
     int maxfreq = Configuration::GetMaxProcessingRequestsPerSec();
 
-    wxStaticBoxSizer* result = new wxStaticBoxSizer(wxVERTICAL, parent, _("Unsharp masking"));
+    wxStaticBoxSizer* box = new wxStaticBoxSizer(wxVERTICAL, parent, _("mask 1"));
 
     UnsharpMaskControls umCtrls{};
 
     umCtrls.sigma = new c_NumericalCtrl(
-        result->GetStaticBox(),
+        box->GetStaticBox(),
         wxID_ANY,
         _("Sigma:"),
         0.5,
@@ -1340,10 +1340,10 @@ wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(wxWindow* parent)
         true,
         maxfreq ? 1000/maxfreq : 0
     );
-    result->Add(umCtrls.sigma, 0, wxGROW | wxALL, BORDER);
+    box->Add(umCtrls.sigma, 0, wxGROW | wxALL, BORDER);
 
     umCtrls.amountMin = new c_NumericalCtrl(
-        result->GetStaticBox(),
+        box->GetStaticBox(),
         wxID_ANY,
         _("Amount min:"),
         0,
@@ -1358,10 +1358,10 @@ wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(wxWindow* parent)
     );
     umCtrls.amountMin->SetToolTip(_("Value 1.0: no effect, <1.0: blur, >1.0: sharpen"));
     umCtrls.amountMin->Show(false);
-    result->Add(umCtrls.amountMin, 0, wxGROW | wxALL, BORDER);
+    box->Add(umCtrls.amountMin, 0, wxGROW | wxALL, BORDER);
 
     umCtrls.amountMax = new c_NumericalCtrl(
-        result->GetStaticBox(),
+        box->GetStaticBox(),
         wxID_ANY,
         _("Amount:"),
         0,
@@ -1378,10 +1378,10 @@ wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(wxWindow* parent)
     umCtrls.amountMax->Bind(EVT_NUMERICAL_CTRL, [this](wxCommandEvent& event) {
         OnUnsharpMaskingControlChanged(event);
     });
-    result->Add(umCtrls.amountMax, 0, wxGROW | wxALL, BORDER);
+    box->Add(umCtrls.amountMax, 0, wxGROW | wxALL, BORDER);
 
     umCtrls.threshold = new c_NumericalCtrl(
-        result->GetStaticBox(),
+        box->GetStaticBox(),
         wxID_ANY,
         _("Threshold:"),
         0,
@@ -1396,10 +1396,10 @@ wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(wxWindow* parent)
     );
     umCtrls.threshold->SetToolTip(_("Input brightness threshold of transition from amount min to amount max"));
     umCtrls.threshold->Show(false);
-    result->Add(umCtrls.threshold, 0, wxGROW | wxALL, BORDER);
+    box->Add(umCtrls.threshold, 0, wxGROW | wxALL, BORDER);
 
     umCtrls.width = new c_NumericalCtrl(
-        result->GetStaticBox(),
+        box->GetStaticBox(),
         wxID_ANY,
         _("Transition width:"),
         0,
@@ -1414,10 +1414,10 @@ wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(wxWindow* parent)
     );
     umCtrls.width->SetToolTip(_("Amount will be set to amount min for input brightness <= threshold-width and amount max for brightness >= threshold+width"));
     umCtrls.width->Show(false);
-    result->Add(umCtrls.width, 0, wxGROW | wxALL, BORDER);
+    box->Add(umCtrls.width, 0, wxGROW | wxALL, BORDER);
 
     umCtrls.adaptive = new wxCheckBox(
-        result->GetStaticBox(),
+        box->GetStaticBox(),
         wxID_ANY,
         _("Adaptive"),
         wxDefaultPosition,
@@ -1429,13 +1429,13 @@ wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(wxWindow* parent)
         SetUnsharpMaskingControlsVisibility();
         OnUnsharpMaskingControlChanged(event);
     });
-    result->Add(umCtrls.adaptive, 0, wxALIGN_LEFT | wxALL, BORDER);
+    box->Add(umCtrls.adaptive, 0, wxALIGN_LEFT | wxALL, BORDER);
     umCtrls.adaptive->SetToolTip(_("Enable adaptive mode: amount changes from min to max depending on input brightness"));
 
     m_Ctrls.unshMask.emplace_back(umCtrls);
 
     wxButton* btnReset = new wxButton(
-        result->GetStaticBox(),
+        box->GetStaticBox(),
         wxID_ANY,
         _("reset"),
         wxDefaultPosition,
@@ -1454,7 +1454,7 @@ wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(wxWindow* parent)
         OnUpdateUnsharpMaskingSettings();
         IndicateSettingsModified();
     });
-    result->Add(btnReset, 0, wxALIGN_LEFT | wxALL, BORDER);
+    box->Add(btnReset, 0, wxALIGN_LEFT | wxALL, BORDER);
 
     for (auto& unsharpMaskControls: m_Ctrls.unshMask)
     {
@@ -1471,7 +1471,7 @@ wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(wxWindow* parent)
         }
     }
 
-    return result;
+    return box;
 }
 
 /// Creates and returns a panel containing the processing controls
@@ -1487,7 +1487,12 @@ wxWindow* c_MainWindow::CreateProcessingControlsPanel()
     // ...
     szTop->Add(notebook, 0, wxGROW | wxALL, BORDER);
 
-    szTop->Add(CreateUnsharpMaskingControls(result), 0, wxGROW | wxALL, BORDER);
+    wxStaticBoxSizer* unshMaskBox = new wxStaticBoxSizer(wxVERTICAL, result, _("Unsharp masking"));
+
+    wxStaticBoxSizer* mask1 = CreateUnsharpMaskingControls(unshMaskBox->GetStaticBox());
+    unshMaskBox->Add(mask1, 0, wxGROW | wxALL, BORDER);
+
+    szTop->Add(unshMaskBox, 0, wxGROW | wxALL, BORDER);
 
     result->SetSizer(szTop);
     result->SetScrollRate(1, 1);
