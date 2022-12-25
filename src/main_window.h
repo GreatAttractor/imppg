@@ -67,7 +67,8 @@ class c_MainWindow: public wxFrame
     void OnImageViewMouseWheel(wxMouseEvent& event);
     void OnProcessingPanelScrolled(wxScrollWinEvent& event);
     void OnSettingsFile(wxCommandEvent& event);
-    void OnUnsharpMaskingControlChanged(wxCommandEvent& event);
+    void OnUnsharpMaskingControlChanged(wxCommandEvent& event, std::size_t maskIdx);
+    void OnAddUnsharpMask(wxCommandEvent& event);
     //--------------------------
 
     void OnNewSelection(
@@ -143,9 +144,8 @@ class c_MainWindow: public wxFrame
         c_NumericalCtrl* lrSigma{nullptr};
         wxSpinCtrl* lrIters{nullptr};
         wxCheckBox* lrDeriging{nullptr};
-
+        wxStaticBoxSizer* unshMaskBox{nullptr};
         std::vector<UnsharpMaskControls> unshMask;
-
         c_ToneCurveEditor* tcrvEditor{nullptr};
 
     } m_Ctrls;
