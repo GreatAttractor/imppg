@@ -64,19 +64,20 @@ enum class ScalingMethod
     NUM_METHODS // This has to be the last entry
 };
 
-// namespace req_type
-// {
-//     struct None {};
-//     struct
-// };
-
-//using ProcessingRequest = std::variant
-enum class ProcessingRequest
+namespace req_type
 {
-    SHARPENING,
-    UNSHARP_MASKING,
-    TONE_CURVE
+    struct Sharpening {};
+
+    struct UnsharpMasking { std::size_t maskIdx; };
+
+    struct ToneCurve {};
 };
+
+using ProcessingRequest = std::variant<
+    req_type::Sharpening,
+    req_type::UnsharpMasking,
+    req_type::ToneCurve
+>;
 
 enum class BackEnd
 {

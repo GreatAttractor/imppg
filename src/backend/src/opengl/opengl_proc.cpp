@@ -50,7 +50,7 @@ void c_OpenGLProcessing::StartProcessing(c_Image img, ProcessingSettings procSet
     SetSelection(img.GetImageRect());
     SetImage(std::move(img), false);
     SetProcessingSettings(procSettings);
-    StartProcessing(ProcessingRequest::SHARPENING);
+    StartProcessing(req_type::Sharpening{});
 }
 
 void c_OpenGLProcessing::SetProcessingCompletedHandler(std::function<void(CompletionStatus)> handler)
@@ -209,30 +209,23 @@ c_OpenGLProcessing::c_OpenGLProcessing(unsigned lRCmdBatchSizeMpixIters)
 void c_OpenGLProcessing::StartProcessing(ProcessingRequest procRequest)
 {
     // if the previous processing step(s) did not complete, we have to execute it (them) first
-    if (procRequest == ProcessingRequest::TONE_CURVE && !m_ProcessingOutputValid.unshMask)
+    if (std::holds_alternative<req_type::ToneCurve>(procRequest) && !m_ProcessingOutputValid.unshMask)
     {
-        procRequest = ProcessingRequest::UNSHARP_MASKING;
+        procRequest = req_type::UnsharpMasking{};
     }
 
-    if (procRequest == ProcessingRequest::UNSHARP_MASKING && !m_ProcessingOutputValid.sharpening)
+    if (std::holds_alternative<req_type::UnsharpMasking>(procRequest) && !m_ProcessingOutputValid.sharpening)
     {
-        procRequest = ProcessingRequest::SHARPENING;
+        procRequest = req_type::Sharpening{};
     }
 
-    switch (procRequest)
-    {
-    case ProcessingRequest::SHARPENING:
-        StartLRDeconvolution();
-        break;
+    std::visit(Overload{
+        [&](const req_type::Sharpening&) { StartLRDeconvolution(); },
 
-    case ProcessingRequest::UNSHARP_MASKING:
-        StartUnsharpMasking();
-        break;
+        [&](const req_type::UnsharpMasking&) { StartUnsharpMasking(); },
 
-    case ProcessingRequest::TONE_CURVE:
-        StartToneMapping();
-        break;
-    }
+        [&](const req_type::ToneCurve&) { StartToneMapping(); }
+    }, procRequest);
 }
 
 void c_OpenGLProcessing::InitTextureAndFBO(c_OpenGLProcessing::TexFbo& texFbo, const wxSize& size)
@@ -291,7 +284,7 @@ void c_OpenGLProcessing::IssueLRCommandBatch()
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
         m_ProcessingOutputValid.sharpening = true;
-        StartProcessing(ProcessingRequest::UNSHARP_MASKING);
+        StartProcessing(req_type::UnsharpMasking{});
     }
 }
 
@@ -328,7 +321,7 @@ void c_OpenGLProcessing::StartLRDeconvolution()
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
         m_ProcessingOutputValid.sharpening = true;
-        StartProcessing(ProcessingRequest::UNSHARP_MASKING);
+        StartProcessing(req_type::UnsharpMasking{});
     }
     else
     {
@@ -482,7 +475,7 @@ void c_OpenGLProcessing::StartUnsharpMasking()
 
     m_ProcessingOutputValid.unshMask = true;
 
-    StartProcessing(ProcessingRequest::TONE_CURVE);
+    StartProcessing(req_type::ToneCurve{});
 }
 
 void c_OpenGLProcessing::StartToneMapping()

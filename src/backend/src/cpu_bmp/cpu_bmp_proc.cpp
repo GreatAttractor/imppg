@@ -89,7 +89,7 @@ void c_CpuAndBitmapsProcessing::StartProcessing(c_Image img, ProcessingSettings 
     m_ProcSettings = procSettings;
     m_UsePreciseToneCurveValues = true;
 
-    ScheduleProcessing(ProcessingRequest::SHARPENING);
+    ScheduleProcessing(req_type::Sharpening{});
 }
 
 void c_CpuAndBitmapsProcessing::SetProcessingCompletedHandler(std::function<void(CompletionStatus)> handler)
@@ -144,18 +144,21 @@ void c_CpuAndBitmapsProcessing::OnThreadEvent(wxThreadEvent& event)
             Log::Print(wxString::Format("Received a processing progress (%d%%) event from threadId = %d\n",
                     event.GetPayload<WorkerEventPayload>().percentageComplete, event.GetInt()));
 
-            wxString action;
-            if (m_ProcessingRequest == ProcessingRequest::SHARPENING)
-                action = _(L"Lucy\u2013Richardson deconvolution");
-            else if (m_ProcessingRequest == ProcessingRequest::UNSHARP_MASKING)
-                action = _("Unsharp masking");
-            else if (m_ProcessingRequest == ProcessingRequest::TONE_CURVE)
-                action = _("Applying tone curve");
-
-            if (m_ProgressTextHandler)
+            if (m_ProcessingRequest.has_value())
             {
-                m_ProgressTextHandler(std::move(wxString::Format(action + ": %d%%", event.GetPayload<WorkerEventPayload>().percentageComplete)));
+                wxString action;
+                std::visit(Overload{
+                    [&](const req_type::Sharpening&) { action = _(L"Lucy\u2013Richardson deconvolution"); },
+                    [&](const req_type::UnsharpMasking&) { action = _("Unsharp masking"); },
+                    [&](const req_type::ToneCurve&) { action = _("Applying tone curve"); },
+                }, m_ProcessingRequest.value());
+
+                if (m_ProgressTextHandler)
+                {
+                    m_ProgressTextHandler(std::move(wxString::Format(action + ": %d%%", event.GetPayload<WorkerEventPayload>().percentageComplete)));
+                }
             }
+
             break;
         }
 
@@ -197,16 +200,15 @@ void c_CpuAndBitmapsProcessing::ScheduleProcessing(ProcessingRequest request)
     ProcessingRequest originalReq = request;
 
     // if the previous processing step(s) did not complete, we have to execute it (them) first
-    if (request == ProcessingRequest::TONE_CURVE && !m_Output.unsharpMask.valid)
-        request = ProcessingRequest::UNSHARP_MASKING;
+    if (std::holds_alternative<req_type::ToneCurve>(request) && !m_Output.unsharpMask.valid)
+    {
+        request = req_type::UnsharpMasking{};
+    }
 
-    if (request == ProcessingRequest::UNSHARP_MASKING && !m_Output.sharpening.valid)
-        request = ProcessingRequest::SHARPENING;
-
-    Log::Print(wxString::Format("Scheduling processing; requested: %d, scheduled: %d\n",
-        static_cast<int>(originalReq),
-        static_cast<int>(request))
-    );
+    if (std::holds_alternative<req_type::UnsharpMasking>(request) && !m_Output.sharpening.valid)
+    {
+        request = req_type::Sharpening{};
+    }
 
     m_ProcessingRequest = request;
 
@@ -236,34 +238,38 @@ void c_CpuAndBitmapsProcessing::OnProcessingStepCompleted(CompletionStatus statu
     {
         Log::Print("Processing step completed\n");
 
-        if (m_ProcessingRequest == ProcessingRequest::SHARPENING)
-        {
-            m_Output.sharpening.valid = true;
-            ScheduleProcessing(ProcessingRequest::UNSHARP_MASKING);
-        }
-        else if (m_ProcessingRequest == ProcessingRequest::UNSHARP_MASKING)
-        {
-            m_Output.unsharpMask.valid = true;
-            ScheduleProcessing(ProcessingRequest::TONE_CURVE);
-        }
-        else if (m_ProcessingRequest == ProcessingRequest::TONE_CURVE)
-        {
-            m_Output.toneCurve.valid = true;
-
-            if (m_Img.size() == 3)
+        std::visit(Overload{
+            [&](const req_type::Sharpening&)
             {
-                m_Output.toneCurve.combined = c_Image::CombineRGB(
-                    m_Output.toneCurve.img.at(0),
-                    m_Output.toneCurve.img.at(1),
-                    m_Output.toneCurve.img.at(2)
-                );
-            }
+                m_Output.sharpening.valid = true;
+                ScheduleProcessing(req_type::UnsharpMasking{});
+            },
 
-            if (m_OnProcessingCompleted)
+            [&](const req_type::UnsharpMasking&)
             {
-                m_OnProcessingCompleted(status);
+                m_Output.unsharpMask.valid = true;
+                ScheduleProcessing(req_type::ToneCurve{});
+            },
+
+            [&](const req_type::ToneCurve&)
+            {
+                m_Output.toneCurve.valid = true;
+
+                if (m_Img.size() == 3)
+                {
+                    m_Output.toneCurve.combined = c_Image::CombineRGB(
+                        m_Output.toneCurve.img.at(0),
+                        m_Output.toneCurve.img.at(1),
+                        m_Output.toneCurve.img.at(2)
+                    );
+                }
+
+                if (m_OnProcessingCompleted)
+                {
+                    m_OnProcessingCompleted(status);
+                }
             }
-        }
+        }, m_ProcessingRequest.value());
     }
     else if (status == CompletionStatus::ABORTED && m_OnProcessingCompleted)
     {
@@ -318,7 +324,7 @@ void c_CpuAndBitmapsProcessing::StartLRDeconvolution()
                 m_CurrentThreadId));
 
         // Sharpening thread takes the currently selected fragment of the original image as input
-        m_ProcRequestInProgress = ProcessingRequest::SHARPENING;
+        m_ProcRequestInProgress = req_type::Sharpening{};
 
         std::vector<c_View<const IImageBuffer>> input;
         std::vector<c_View<IImageBuffer>> output;
@@ -388,7 +394,7 @@ void c_CpuAndBitmapsProcessing::StartUnsharpMasking()
             m_CurrentThreadId));
 
         // unsharp masking thread takes the output of sharpening as input
-        m_ProcRequestInProgress = ProcessingRequest::UNSHARP_MASKING;
+        m_ProcRequestInProgress = req_type::UnsharpMasking{};
 
         std::vector<c_View<const IImageBuffer>> input;
         std::vector<c_View<IImageBuffer>> output;
@@ -468,7 +474,7 @@ void c_CpuAndBitmapsProcessing::StartToneCurve()
                 m_CurrentThreadId));
 
         // tone curve thread takes the output of unsharp masking as input
-        m_ProcRequestInProgress = ProcessingRequest::TONE_CURVE;
+        m_ProcRequestInProgress = req_type::ToneCurve{};
 
         std::vector<c_View<const IImageBuffer>> input;
         std::vector<c_View<IImageBuffer>> output;
@@ -519,20 +525,13 @@ void c_CpuAndBitmapsProcessing::StartProcessing()
     // See also: OnThreadEvent().
     m_CurrentThreadId += 1;
 
-    switch (m_ProcessingRequest.value())
-    {
-    case ProcessingRequest::SHARPENING:
-        StartLRDeconvolution();
-        break;
+    std::visit(Overload{
+        [&](const req_type::Sharpening&) { StartLRDeconvolution(); },
 
-    case ProcessingRequest::UNSHARP_MASKING:
-        StartUnsharpMasking();
-        break;
+        [&](const req_type::UnsharpMasking&) { StartUnsharpMasking(); },
 
-    case ProcessingRequest::TONE_CURVE:
-        StartToneCurve();
-        break;
-    }
+        [&](const req_type::ToneCurve&) { StartToneCurve(); }
+    }, m_ProcessingRequest.value());
 }
 
 c_CpuAndBitmapsProcessing::~c_CpuAndBitmapsProcessing()

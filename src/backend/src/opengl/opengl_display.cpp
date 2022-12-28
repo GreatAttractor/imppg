@@ -363,7 +363,7 @@ void c_OpenGLDisplay::SetImage(c_Image&& img, std::optional<wxRect> newSelection
     FillWholeImgVBO();
     FillLastChosenSelectionScaledVBO();
 
-    m_Processor->StartProcessing(ProcessingRequest::SHARPENING);
+    m_Processor->StartProcessing(req_type::Sharpening{});
 }
 
 Histogram c_OpenGLDisplay::GetHistogram()
@@ -396,7 +396,7 @@ void c_OpenGLDisplay::NewSelection(const wxRect& selection, const wxRect&)
     FillLastChosenSelectionScaledVBO();
     if (m_Img)
     {
-        m_Processor->StartProcessing(ProcessingRequest::SHARPENING);
+        m_Processor->StartProcessing(req_type::Sharpening{});
     }
 }
 
@@ -414,7 +414,7 @@ void c_OpenGLDisplay::ToneCurveChanged(const ProcessingSettings& procSettings)
     m_Processor->SetProcessingSettings(procSettings);
     if (m_Img)
     {
-        m_Processor->StartProcessing(ProcessingRequest::TONE_CURVE);
+        m_Processor->StartProcessing(req_type::ToneCurve{});
     }
 }
 
@@ -423,7 +423,7 @@ void c_OpenGLDisplay::UnshMaskSettingsChanged(const ProcessingSettings& procSett
     m_Processor->SetProcessingSettings(procSettings);
     if (m_Img)
     {
-        m_Processor->StartProcessing(ProcessingRequest::UNSHARP_MASKING);
+        m_Processor->StartProcessing(req_type::UnsharpMasking{});
     }
 }
 
@@ -432,7 +432,7 @@ void c_OpenGLDisplay::LRSettingsChanged(const ProcessingSettings& procSettings)
     m_Processor->SetProcessingSettings(procSettings);
     if (m_Img)
     {
-        m_Processor->StartProcessing(ProcessingRequest::SHARPENING);
+        m_Processor->StartProcessing(req_type::Sharpening{});
     }
 }
 
@@ -441,7 +441,7 @@ void c_OpenGLDisplay::NewProcessingSettings(const ProcessingSettings& procSettin
     m_Processor->SetProcessingSettings(procSettings);
     if (m_Img)
     {
-        m_Processor->StartProcessing(ProcessingRequest::SHARPENING);
+        m_Processor->StartProcessing(req_type::Sharpening{});
     }
 }
 

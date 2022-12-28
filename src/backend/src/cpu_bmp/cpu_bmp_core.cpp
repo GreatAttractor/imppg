@@ -165,7 +165,7 @@ void c_CpuAndBitmaps::SetImage(c_Image&& img, std::optional<wxRect> newSelection
     {
         m_Processor.SetSelection(newSelection.value());
     }
-    m_Processor.ScheduleProcessing(ProcessingRequest::SHARPENING);
+    m_Processor.ScheduleProcessing(req_type::Sharpening{});
 }
 
 void c_CpuAndBitmaps::OnPaint(wxPaintEvent&)
@@ -394,31 +394,31 @@ void c_CpuAndBitmaps::NewSelection(
 
     m_Selection = selection;
     m_Processor.SetSelection(selection);
-    m_Processor.ScheduleProcessing(ProcessingRequest::SHARPENING);
+    m_Processor.ScheduleProcessing(req_type::Sharpening{});
 }
 
 void c_CpuAndBitmaps::NewProcessingSettings(const ProcessingSettings& procSettings)
 {
     m_Processor.SetProcessingSettings(procSettings);
-    m_Processor.ScheduleProcessing(ProcessingRequest::SHARPENING);
+    m_Processor.ScheduleProcessing(req_type::Sharpening{});
 }
 
 void c_CpuAndBitmaps::LRSettingsChanged(const ProcessingSettings& procSettings)
 {
     m_Processor.SetProcessingSettings(procSettings);
-    m_Processor.ScheduleProcessing(ProcessingRequest::SHARPENING);
+    m_Processor.ScheduleProcessing(req_type::Sharpening{});
 }
 
 void c_CpuAndBitmaps::UnshMaskSettingsChanged(const ProcessingSettings& procSettings, std::size_t maskIdx)
 {
     m_Processor.SetProcessingSettings(procSettings);
-    m_Processor.ScheduleProcessing(ProcessingRequest::UNSHARP_MASKING);
+    m_Processor.ScheduleProcessing(req_type::UnsharpMasking{});
 }
 
 void c_CpuAndBitmaps::ToneCurveChanged(const ProcessingSettings& procSettings)
 {
     m_Processor.SetProcessingSettings(procSettings);
-    m_Processor.ScheduleProcessing(ProcessingRequest::TONE_CURVE);
+    m_Processor.ScheduleProcessing(req_type::ToneCurve{});
 }
 
 void c_CpuAndBitmaps::AbortProcessing()
