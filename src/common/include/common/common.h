@@ -25,6 +25,7 @@ File description:
 #define IMPGG_COMMON_HEADER
 
 #include <array>
+#include <variant>
 #include <vector>
 #include <wx/bitmap.h>
 #include <wx/filename.h>
@@ -57,9 +58,15 @@ enum class ScalingMethod
     NUM_METHODS // This has to be the last entry
 };
 
+// namespace req_type
+// {
+//     struct None {};
+//     struct
+// };
+
+//using ProcessingRequest = std::variant
 enum class ProcessingRequest
 {
-    NONE = 0,
     SHARPENING,
     UNSHARP_MASKING,
     TONE_CURVE

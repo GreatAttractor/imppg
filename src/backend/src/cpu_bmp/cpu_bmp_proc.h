@@ -128,10 +128,10 @@ private:
     /// and finally the tone curve applied. If, however, the user changes only a control point
     /// in the tone curve editor, only the (updated) tone curve is applied (to the results
     /// of the last performed unsharp masking).
-    ProcessingRequest m_ProcessingRequest{ProcessingRequest::NONE};
+    std::optional<ProcessingRequest> m_ProcessingRequest;
 
     /// Currently running processing request (may be different than `processingRequest`).
-    ProcessingRequest m_ProcRequestInProgress{ProcessingRequest::NONE};
+    std::optional<ProcessingRequest> m_ProcRequestInProgress;
 
     /// If `true`, processing has been scheduled to start ASAP (as soon as `m_Processing.worker` is not running)
     bool m_ProcessingScheduled{false};

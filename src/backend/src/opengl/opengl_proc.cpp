@@ -232,8 +232,6 @@ void c_OpenGLProcessing::StartProcessing(ProcessingRequest procRequest)
     case ProcessingRequest::TONE_CURVE:
         StartToneMapping();
         break;
-
-    case ProcessingRequest::NONE: IMPPG_ABORT();
     }
 }
 

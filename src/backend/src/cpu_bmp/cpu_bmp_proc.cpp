@@ -225,7 +225,7 @@ void c_CpuAndBitmapsProcessing::ScheduleProcessing(ProcessingRequest request)
 
 void c_CpuAndBitmapsProcessing::OnProcessingStepCompleted(CompletionStatus status)
 {
-    m_ProcRequestInProgress = ProcessingRequest::NONE;
+    m_ProcRequestInProgress = std::nullopt;
 
     if (m_ProgressTextHandler)
     {
@@ -519,7 +519,7 @@ void c_CpuAndBitmapsProcessing::StartProcessing()
     // See also: OnThreadEvent().
     m_CurrentThreadId += 1;
 
-    switch (m_ProcessingRequest)
+    switch (m_ProcessingRequest.value())
     {
     case ProcessingRequest::SHARPENING:
         StartLRDeconvolution();
@@ -532,8 +532,6 @@ void c_CpuAndBitmapsProcessing::StartProcessing()
     case ProcessingRequest::TONE_CURVE:
         StartToneCurve();
         break;
-
-    case ProcessingRequest::NONE: IMPPG_ABORT();
     }
 }
 
