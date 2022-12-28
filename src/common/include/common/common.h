@@ -38,6 +38,12 @@ constexpr double MAX_GAUSSIAN_SIGMA = 10.0; // shaders/unsh_mask.frag uses the s
 
 constexpr float RAW_IMAGE_BLUR_SIGMA_FOR_ADAPTIVE_UNSHARP_MASK = 1.0f;
 
+template<typename ... Ts>
+struct Overload : Ts ... {
+    using Ts::operator() ...;
+};
+template<class... Ts> Overload(Ts...) -> Overload<Ts...>;
+
 class c_Image;
 
 enum class ToneCurveEditorColors

@@ -11,18 +11,6 @@
 #include <wx/app.h>
 #include <wx/init.h>
 
-// private definitions
-namespace
-{
-
-template<typename ... Ts>
-struct Overload : Ts ... {
-    using Ts::operator() ...;
-};
-template<class... Ts> Overload(Ts...) -> Overload<Ts...>;
-
-}
-
 ScriptTestFixture::ScriptTestFixture()
 {
     wxInitialize();

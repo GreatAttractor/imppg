@@ -27,12 +27,6 @@ File description:
 
 #include <optional>
 
-template<typename ... Ts>
-struct Overload : Ts ... {
-    using Ts::operator() ...;
-};
-template<class... Ts> Overload(Ts...) -> Overload<Ts...>;
-
 /// Accessor for an owned or non-owned image; may be empty.
 class ImageAccessor
 {

@@ -55,12 +55,6 @@ constexpr int BORDER = 5; ///< Border size (in pixels) between controls.
 
 constexpr int PROGRESS_PULSE_INTERVAL_MS = 250;
 
-template<typename ... Ts>
-struct Overload : Ts ... {
-    using Ts::operator() ...;
-};
-template<class... Ts> Overload(Ts...) -> Overload<Ts...>;
-
 }
 
 c_ScriptDialog::c_ScriptDialog(wxWindow* parent)
