@@ -537,8 +537,6 @@ c_MainWindow::c_MainWindow()
     wxRect wndPos = Configuration::MainWindowPosSize;
     Create(NULL, wxID_ANY, "ImPPG", wndPos.GetTopLeft(), wndPos.GetSize());
 
-    SetExtraStyle(GetExtraStyle() | wxWS_EX_VALIDATE_RECURSIVELY); // Make sure all validators are run
-
     auto& s = m_CurrentSettings;
 
     s.processing.normalization.enabled = false;
@@ -997,7 +995,6 @@ void c_MainWindow::OnOpenFile(wxCommandEvent&)
 
 void c_MainWindow::OnUpdateLucyRichardsonSettings()
 {
-    TransferDataFromWindow();
     auto& proc = m_CurrentSettings.processing;
     proc.LucyRichardson.iterations = m_Ctrls.lrIters->GetValue();
     proc.LucyRichardson.sigma = m_Ctrls.lrSigma->GetValue();
@@ -1008,7 +1005,6 @@ void c_MainWindow::OnUpdateLucyRichardsonSettings()
 
 void c_MainWindow::OnUpdateUnsharpMaskingSettings(std::size_t maskIdx)
 {
-    TransferDataFromWindow();
     auto& proc = m_CurrentSettings.processing;
     proc.unsharpMask.at(maskIdx).sigma = m_Ctrls.unshMask.at(maskIdx).sigma->GetValue();
     proc.unsharpMask.at(maskIdx).amountMin = m_Ctrls.unshMask.at(maskIdx).amountMin->GetValue();
@@ -1332,10 +1328,7 @@ wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(wxWindow* parent, s
         box->GetStaticBox(),
         wxID_ANY,
         _("Adaptive"),
-        wxDefaultPosition,
-        wxDefaultSize,
-        wxCHK_2STATE,
-        wxGenericValidator(&m_CurrentSettings.processing.unsharpMask.at(0).adaptive)
+        wxDefaultPosition
     );
     umCtrls.adaptive->Bind(wxEVT_CHECKBOX, [this, maskIdx](wxCommandEvent& event) {
         SetUnsharpMaskingControlsVisibility();

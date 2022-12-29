@@ -1756,7 +1756,7 @@ c_Image c_Image::Blend(const c_Image& img1, double weight1, const c_Image& img2,
             for (std::size_t channel = 0; channel < numChannels; ++channel)
             {
                 destRow[x * numChannels + channel] =
-                    actualW1 * srcRow1[x * numChannels + channel] + 
+                    actualW1 * srcRow1[x * numChannels + channel] +
                     actualW2 * srcRow2[x * numChannels + channel];
             }
         }

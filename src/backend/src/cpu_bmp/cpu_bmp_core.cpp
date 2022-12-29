@@ -412,7 +412,7 @@ void c_CpuAndBitmaps::LRSettingsChanged(const ProcessingSettings& procSettings)
 void c_CpuAndBitmaps::UnshMaskSettingsChanged(const ProcessingSettings& procSettings, std::size_t maskIdx)
 {
     m_Processor.SetProcessingSettings(procSettings);
-    m_Processor.ScheduleProcessing(req_type::UnsharpMasking{});
+    m_Processor.ScheduleProcessing(req_type::UnsharpMasking{maskIdx});
 }
 
 void c_CpuAndBitmaps::ToneCurveChanged(const ProcessingSettings& procSettings)

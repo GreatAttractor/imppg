@@ -24,6 +24,8 @@ File description:
 #ifndef IMPGG_COMMON_HEADER
 #define IMPGG_COMMON_HEADER
 
+#include "../../imppg_assert.h"
+
 #include <array>
 #include <variant>
 #include <vector>
@@ -43,6 +45,20 @@ struct Overload : Ts ... {
     using Ts::operator() ...;
 };
 template<class... Ts> Overload(Ts...) -> Overload<Ts...>;
+
+template<typename T>
+T& checked_back(std::vector<T>& v)
+{
+    IMPPG_ASSERT(!v.empty());
+    return v.back();
+}
+
+template<typename T>
+const T& checked_back(const std::vector<T>& v)
+{
+    IMPPG_ASSERT(!v.empty());
+    return v.back();
+}
 
 class c_Image;
 

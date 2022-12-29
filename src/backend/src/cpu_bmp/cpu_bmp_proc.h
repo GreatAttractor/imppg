@@ -89,7 +89,7 @@ private:
 
     void StartLRDeconvolution();
 
-    void StartUnsharpMasking();
+    void StartUnsharpMasking(std::size_t maskIdx);
 
     void StartToneCurve();
 
@@ -130,11 +130,14 @@ private:
     /// of the last performed unsharp masking).
     std::optional<ProcessingRequest> m_ProcessingRequest;
 
-    /// Currently running processing request (may be different than `processingRequest`).
-    std::optional<ProcessingRequest> m_ProcRequestInProgress;
-
     /// If `true`, processing has been scheduled to start ASAP (as soon as `m_Processing.worker` is not running)
     bool m_ProcessingScheduled{false};
+
+    struct UnsharpMaskResult
+    {
+        std::vector<c_Image> img; ///< 1 or 3 elements: luminance or R, G, B channels.
+        bool valid{false}; ///< `true` if the last unsharp masking request completed.
+    };
 
     /// Incremental results of processing of the current selection.
     /** Must not be accessed when the relevant background thread is running. */
@@ -143,21 +146,18 @@ private:
         /// Results of sharpening.
         struct
         {
-            std::vector<c_Image> img; ///< Luminance or R, G, B channels.
+            std::vector<c_Image> img; ///< 1 or 3 elements: luminance or R, G, B channels.
             bool valid{false}; ///< `true` if the last sharpening request completed.
         } sharpening;
 
-        /// Results of sharpening and unsharp masking.
-        struct
-        {
-            std::vector<c_Image> img; ///< Luminance or R, G, B channels.
-            bool valid{false}; ///< `true` if the last unsharp masking request completed.
-        } unsharpMask;
+        /// Results of sharpening and unsharp masking. By convention, there is always at least one element,
+        /// even if unsharp masking is a no-op (i.e., amount = 1.0).
+        std::vector<UnsharpMaskResult> unsharpMask{UnsharpMaskResult{}};
 
         /// Results of sharpening, unsharp masking and applying of tone curve.
         struct
         {
-            std::vector<c_Image> img; ///< Luminance or R, G, B channels.
+            std::vector<c_Image> img; ///< 1 or 3 elements: luminance or R, G, B channels.
             std::optional<c_Image> combined; ///< Luminance or combined R, G, B channels.
             bool valid{false}; ///< `true` if the last tone curve application request completed.
             bool preciseValuesApplied{false}; ///< 'true' if precise values of tone curve have been applied; happens only when saving output file.

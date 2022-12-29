@@ -78,6 +78,7 @@ struct ProcessingSettings
         } deringing;
     } LucyRichardson;
 
+    // By convention, there is always at least one element (may be a no-op, i.e. amount = 1.0).
     std::vector<UnsharpMask> unsharpMask{UnsharpMask{}};
 
     c_ToneCurve toneCurve;
@@ -92,6 +93,15 @@ struct ProcessingSettings
             && LucyRichardson.deringing.enabled == other.LucyRichardson.deringing.enabled
             && unsharpMask == other.unsharpMask
             && toneCurve == other.toneCurve;
+    }
+
+    bool AdaptiveUnshMaskEnabled() const
+    {
+        for (const auto& umask: unsharpMask)
+        {
+            if (umask.adaptive) { return true; }
+        }
+        return false;
     }
 };
 
