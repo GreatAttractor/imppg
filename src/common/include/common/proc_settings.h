@@ -31,15 +31,23 @@ File description:
 #include <vector>
 #include <wx/stream.h>
 
+namespace Default
+{
+    constexpr float UNSHMASK_SIGMA = 1.3f;
+    constexpr float UNSHMASK_AMOUNT = 1.0f;
+    constexpr float UNSHMASK_THRESHOLD = 0.01f;
+    constexpr float UNSHMASK_WIDTH = 0.1f;
+}
+
 /// Default-constructed value does not have any effect on image.
 struct UnsharpMask
 {
     bool adaptive{false}; ///If true, adaptive unsharp masking is used.
-    float sigma{1.0}; ///< Gaussian kernel sigma.
-    float amountMin{1.0}; ///< Amount (weight) of the unsharped layer; <1.0 blurs, >1.0 sharpens; if adaptive=true, used as the min amount.
-    float amountMax{1.0}; ///< Max amount.
-    float threshold{0.1}; ///< Threshold of input image brightness where the min-max amount transition occurs.
-    float width{0.10}; ///< Width of the transition interval.
+    float sigma{Default::UNSHMASK_SIGMA}; ///< Gaussian kernel sigma.
+    float amountMin{Default::UNSHMASK_AMOUNT}; ///< Amount (weight) of the unsharped layer; <1.0 blurs, >1.0 sharpens; if adaptive=true, used as the min amount.
+    float amountMax{Default::UNSHMASK_AMOUNT}; ///< Max amount.
+    float threshold{Default::UNSHMASK_THRESHOLD}; ///< Threshold of input image brightness where the min-max amount transition occurs.
+    float width{Default::UNSHMASK_WIDTH}; ///< Width of the transition interval.
 
     bool IsEffective() const
     {
