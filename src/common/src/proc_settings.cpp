@@ -45,6 +45,7 @@ namespace XmlName
     const char* lrIters = "iterations";
     const char* lrDeringing = "deringing";
 
+    const char* unshMaskList = "unsharp_mask_list";
     const char* unshMask = "unsharp_mask";
     const char* unshAdaptive = "adaptive";
     const char* unshSigma = "sigma";
@@ -95,7 +96,7 @@ wxXmlNode* CreateLucyRichardsonSettingsNode(float lrSigma, int lrIters, bool lrD
     return result;
 }
 
-wxXmlNode* CreateUnsharpMaskingSettingsNode(const UnsharpMask& unsharpMask)
+wxXmlNode* CreateUnsharpMaskNode(const UnsharpMask& unsharpMask)
 {
     wxXmlNode* result = new wxXmlNode(wxXML_ELEMENT_NODE, XmlName::unshMask);
 
@@ -105,6 +106,18 @@ wxXmlNode* CreateUnsharpMaskingSettingsNode(const UnsharpMask& unsharpMask)
     result->AddAttribute(XmlName::unshAmountMax, NumFormatter::Format(unsharpMask.amountMax, FLOAT_PREC));
     result->AddAttribute(XmlName::unshThreshold, NumFormatter::Format(unsharpMask.threshold, FLOAT_PREC));
     result->AddAttribute(XmlName::unshWidth, NumFormatter::Format(unsharpMask.width, FLOAT_PREC));
+    return result;
+}
+
+wxXmlNode* CreateUnsharpMaskListNode(const std::vector<UnsharpMask>& masks)
+{
+    wxXmlNode* result = new wxXmlNode(wxXML_ELEMENT_NODE, XmlName::unshMaskList);
+
+    for (const auto& mask: masks)
+    {
+        result->AddChild(CreateUnsharpMaskNode(mask));
+    }
+
     return result;
 }
 
@@ -309,8 +322,11 @@ void SerializeSettings(const ProcessingSettings& settings, wxOutputStream& strea
         settings.LucyRichardson.iterations,
         settings.LucyRichardson.deringing.enabled
     ));
-    root->AddChild(CreateUnsharpMaskingSettingsNode(settings.unsharpMask.at(0)));
+
+    root->AddChild(CreateUnsharpMaskListNode(settings.unsharpMask));
+
     root->AddChild(CreateToneCurveSettingsNode(settings.toneCurve));
+
     root->AddChild(CreateNormalizationSettingsNode(
         settings.normalization.enabled,
         settings.normalization.min,
@@ -349,12 +365,27 @@ std::optional<ProcessingSettings> DeserializeSettings(wxInputStream& stream)
             settings.LucyRichardson.iterations = iters;
             settings.LucyRichardson.deringing.enabled = deringing;
         }
-        else if (child->GetName() == XmlName::unshMask)
+        else if (child->GetName() == XmlName::unshMask) // legacy settings with 1 unsharp mask
         {
             const auto unsharpMask = ParseUnsharpMaskingSettings(child);
             if (!unsharpMask.has_value()) { return std::nullopt; }
 
             settings.unsharpMask = { unsharpMask.value() };
+        }
+        else if (child->GetName() == XmlName::unshMaskList)
+        {
+            settings.unsharpMask.clear();
+
+            wxXmlNode* maskNode = child->GetChildren();
+            while (maskNode)
+            {
+                const auto unsharpMask = ParseUnsharpMaskingSettings(maskNode);
+                if (!unsharpMask.has_value()) { return std::nullopt; }
+                settings.unsharpMask.push_back(unsharpMask.value());
+                maskNode = maskNode->GetNext();
+            }
+
+            if (settings.unsharpMask.empty()) { return std::nullopt; }
         }
         else if (child->GetName() == XmlName::tcurve)
         {

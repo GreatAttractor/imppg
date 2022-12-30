@@ -22,6 +22,15 @@ BOOST_AUTO_TEST_CASE(SaveAndLoadSettings)
     um.width = 0.125;
     um.sigma = 1.5;
 
+    UnsharpMask um2{};
+    um2.adaptive = false;
+    um2.amountMax = 1.25;
+    um2.amountMin = 0.25;
+    um2.threshold = 0.125;
+    um2.width = 0.125;
+    um2.sigma = 1.5;
+    s.unsharpMask.push_back(um2);
+
     s.toneCurve.UpdatePoint(0, 0.25, 0.25);
     s.toneCurve.UpdatePoint(1, 0.75, 0.5);
 
@@ -34,7 +43,7 @@ BOOST_AUTO_TEST_CASE(SaveAndLoadSettings)
     BOOST_REQUIRE(*parsed == s);
 }
 
-BOOST_AUTO_TEST_CASE(LoadLegacySettingsWithCommas)
+BOOST_AUTO_TEST_CASE(LoadLegacySettingsWithOneUnsharpMaskAndCommas)
 {
     const char* xml =
 R"(<?xml version="1.0" encoding="UTF-8"?>

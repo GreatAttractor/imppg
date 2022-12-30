@@ -1318,7 +1318,12 @@ wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(wxWindow* parent, s
 {
     int maxfreq = Configuration::GetMaxProcessingRequestsPerSec();
 
-    wxStaticBoxSizer* box = new wxStaticBoxSizer(wxVERTICAL, parent, _("mask 1"));
+    // using %d instead of %zu for compatibility with older MSVC versions
+    wxStaticBoxSizer* box = new wxStaticBoxSizer(
+        wxVERTICAL,
+        parent,
+        wxString::Format(_("mask %d"), static_cast<int>(maskIdx + 1))
+    );
 
     UnsharpMaskControls umCtrls{};
 
