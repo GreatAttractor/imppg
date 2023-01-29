@@ -116,7 +116,7 @@ const luaL_Reg functions[] = {
 
     {"progress", [](lua_State* lua) -> int {
         CheckNumArgs(lua, "progress", 1);
-        const int percentage = GetInteger(lua, 1);
+        const int percentage = GetNumber(lua, 1);
         scripting::g_State->SendMessage(scripting::contents::Progress{percentage});
         return 0;
     }},

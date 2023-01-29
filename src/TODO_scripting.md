@@ -6,6 +6,5 @@
 - add lua package info to READMEs
 - `save`: assume some default output format from just the extension (e.g., BMP i 8 bpp, TIFF is 16 bpp, FITS 32f etc.)
 - FIXME: if there's an error in `c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment` when checking file sizes, user gets on indication
-- `imppg.progress` shall also accept real numbers
 - for automatic RGB alignment of planets, check if just matching channels' centroids works
 - support `?` wildcard in file path masks

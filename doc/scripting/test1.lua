@@ -1,11 +1,6 @@
-counter = 0
-for file in imppg.filesystem.list_files("/home/filip/Pictures/astrofoto/2022-08-30 Flüela Pass/raw/l1*.tif") do
-    imppg.process_image_file(
-        file,
-        "/home/filip/Pictures/astrofoto/2022-08-30 Flüela Pass/lum.xml",
-        string.format("/home/filip/Documents/temp/%04d_out.png", counter),
-        imppg.PNG_8
-    )
-    -- imppg.progress(counter)
-    counter = counter + 1
+for i = 1, 10, 1 do
+    t0 = os.clock()
+    while os.clock() - t0 < 0.1 do end
+
+    imppg.progress(1.5 * i)
 end
