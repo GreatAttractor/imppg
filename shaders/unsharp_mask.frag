@@ -31,8 +31,8 @@ uniform bool IsMono;
 uniform sampler2DRect Image;
 uniform sampler2DRect BlurredImage;
 
-// whole input image, blurred; the fragment corresponding to `Image` and
-// `BlurredImage` is at `SelectionPos`
+// Whole input image (without any processing applied), blurred; the fragment corresponding to `Image` and
+// `BlurredImage` is at `SelectionPos`. Uses only for adaptive unsharp masking.
 uniform sampler2DRect InputImageBlurred;
 
 uniform ivec2 SelectionPos;

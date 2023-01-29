@@ -25,6 +25,7 @@ File description:
 #define IMPPG_GL_PROCESSING_BACKEND_H
 
 #include "backend/backend.h"
+#include "common/common.h"
 #include "opengl/gl_utils.h"
 #include "image/image.h"
 
@@ -80,7 +81,7 @@ public:
     {
         if (m_ProcessingOutputValid.unshMask)
         {
-            return &m_TexFBOs.unsharpMask.tex;
+            return &checked_back(m_TexFBOs.unsharpMask).tex;
         }
         else
         {
@@ -172,7 +173,9 @@ private:
         TexFbo aux;
         TexFbo lrSharpened; ///< Result of L-R deconvolution sharpening of the original image.
         TexFbo toneCurve; ///< Result of sharpening, unsharp masking and tone mapping.
-        TexFbo unsharpMask; ///< Result of sharpening and unsharp masking.
+        /// Results of sharpening and unsharp masking. By convention, there is always at least one element,
+        /// even if unsharp masking is a no-op (i.e., amount = 1.0).
+        std::vector<TexFbo> unsharpMask;
 
         /// Lucy-Richardson deconvolution intermediate data.
         struct
@@ -211,11 +214,17 @@ private:
     } m_ProcessingOutputValid;
 
     std::vector<float> m_LRGaussian; // element [0] = max value
-    std::vector<float> m_UnshMaskGaussian; // element [0] = max value
 
-    /// Coefficients of cubic transition curve for adaptive unsharp masking
-    /// (see `GetAdaptiveUnshMaskTransitionCurve` in `common.h` for details).
-    std::array<float, 4> m_TransitionCurve;
+    struct UnsharpMaskData
+    {
+        std::vector<float> gaussian; // element [0] = max value
+
+        /// Coefficients of cubic transition curve for adaptive unsharp masking
+        /// (see `GetAdaptiveUnshMaskTransitionCurve` in `common.h` for details).
+        std::array<float, 4> transitionCurve;
+    };
+
+    std::vector<UnsharpMaskData> m_UnshMaskData; // data for each unsharp mask
 
     /// Number of megapixel-iterations of L-R deconvolution to perform in a single OpenGL command batch.
     const unsigned m_LRCmdBatchSizeMpixIters;
@@ -224,23 +233,23 @@ private:
     ///
     /// Does not bind VBOs nor activates vertex attribute pointers.
     ///
-    void GaussianConvolution(gl::c_Texture& src, gl::c_Framebuffer& dest, const std::vector<float>& gaussian);
+    void GaussianConvolution(const gl::c_Texture& src, gl::c_Framebuffer& dest, const std::vector<float>& gaussian);
 
     /// Does not bind VBOs nor activates vertex attribute pointers.
-    void MultiplyTextures(gl::c_Texture& tex1, gl::c_Texture& tex2, gl::c_Framebuffer& dest);
+    void MultiplyTextures(const gl::c_Texture& tex1, const gl::c_Texture& tex2, gl::c_Framebuffer& dest);
 
     /// Does not bind VBOs nor activates vertex attribute pointers.
-    void DivideTextures(gl::c_Texture& tex1, gl::c_Texture& tex2, gl::c_Framebuffer& dest);
+    void DivideTextures(const gl::c_Texture& tex1, const gl::c_Texture& tex2, gl::c_Framebuffer& dest);
 
-    /// Reinitializes texture and FBO if their size differs from `size`.
-    void InitTextureAndFBO(TexFbo& texFbo, const wxSize& size);
+    /// Reinitializes texture and FBO if their size differs from `size` (in that case, returns `true`).
+    bool InitTextureAndFBO(TexFbo& texFbo, const wxSize& size);
 
     /// Issues an OpenGL command batch performing L-R iterations.
     void IssueLRCommandBatch();
 
     void StartLRDeconvolution();
 
-    void StartUnsharpMasking();
+    void StartUnsharpMasking(std::size_t maskIdx);
 
     void StartToneMapping();
 

@@ -1,9 +1,9 @@
+- don't use `std::vector<c_Image>` of 1 or 3 elements for storing channels; wrap in a class enforcing this
 - flash the window or sth on script completion
 - Add some "print-to-imppg's console" functionality. Consider io.output() (with ImPPG providing a file descriptor). Then use it in all API examples instead of just `print`.
 - CPU&bmp backend processor does not apply precise tone curve values?
 - translate all scripting error messages
 - add lua package info to READMEs
-- fix histogram calculation; currently can overblow green in case of split/process/recombine
 - `save`: assume some default output format from just the extension (e.g., BMP i 8 bpp, TIFF is 16 bpp, FITS 32f etc.)
 - FIXME: if there's an error in `c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment` when checking file sizes, user gets on indication
 - `imppg.progress` shall also accept real numbers

@@ -21,6 +21,7 @@ File description:
     OpenGL processing back end implementation.
 */
 
+#include "common/common.h"
 #include "opengl/gl_common.h"
 #include "opengl/opengl_proc.h"
 #include "opengl/uniforms.h"
@@ -204,6 +205,14 @@ c_OpenGLProcessing::c_OpenGLProcessing(unsigned lRCmdBatchSizeMpixIters)
 
     m_VBOs.wholeSelection = gl::c_Buffer(GL_ARRAY_BUFFER, nullptr, 0, GL_DYNAMIC_DRAW);
     m_VBOs.wholeSelectionAtZero = gl::c_Buffer(GL_ARRAY_BUFFER, nullptr, 0, GL_DYNAMIC_DRAW);
+
+    m_TexFBOs.unsharpMask.emplace_back(TexFbo{});
+
+    m_LRGaussian = GetGaussianKernel(m_ProcessingSettings.LucyRichardson.sigma);
+    m_UnshMaskData.emplace_back(UnsharpMaskData{
+        GetGaussianKernel(m_ProcessingSettings.unsharpMask.at(0).sigma),
+        GetAdaptiveUnshMaskTransitionCurve(m_ProcessingSettings.unsharpMask.at(0))
+    });
 }
 
 void c_OpenGLProcessing::StartProcessing(ProcessingRequest procRequest)
@@ -211,7 +220,7 @@ void c_OpenGLProcessing::StartProcessing(ProcessingRequest procRequest)
     // if the previous processing step(s) did not complete, we have to execute it (them) first
     if (std::holds_alternative<req_type::ToneCurve>(procRequest) && !m_ProcessingOutputValid.unshMask)
     {
-        procRequest = req_type::UnsharpMasking{};
+        procRequest = req_type::UnsharpMasking{0};
     }
 
     if (std::holds_alternative<req_type::UnsharpMasking>(procRequest) && !m_ProcessingOutputValid.sharpening)
@@ -222,18 +231,23 @@ void c_OpenGLProcessing::StartProcessing(ProcessingRequest procRequest)
     std::visit(Overload{
         [&](const req_type::Sharpening&) { StartLRDeconvolution(); },
 
-        [&](const req_type::UnsharpMasking&) { StartUnsharpMasking(); },
+        [&](const req_type::UnsharpMasking& umaskRequest) { StartUnsharpMasking(umaskRequest.maskIdx); },
 
         [&](const req_type::ToneCurve&) { StartToneMapping(); }
     }, procRequest);
 }
 
-void c_OpenGLProcessing::InitTextureAndFBO(c_OpenGLProcessing::TexFbo& texFbo, const wxSize& size)
+bool c_OpenGLProcessing::InitTextureAndFBO(c_OpenGLProcessing::TexFbo& texFbo, const wxSize& size)
 {
     if (!texFbo.tex || texFbo.tex.GetWidth() != size.GetWidth() || texFbo.tex.GetHeight() != size.GetHeight())
     {
         texFbo.tex = gl::c_Texture::Create(size.GetWidth(), size.GetHeight(), nullptr, false, IsMono(m_Img->GetPixelFormat()));
         texFbo.fbo = gl::c_Framebuffer({ &texFbo.tex });
+        return true;
+    }
+    else
+    {
+        return false;
     }
 }
 
@@ -385,7 +399,7 @@ void c_OpenGLProcessing::StartLRDeconvolution()
     }
 }
 
-void c_OpenGLProcessing::MultiplyTextures(gl::c_Texture& tex1, gl::c_Texture& tex2, gl::c_Framebuffer& dest)
+void c_OpenGLProcessing::MultiplyTextures(const gl::c_Texture& tex1, const gl::c_Texture& tex2, gl::c_Framebuffer& dest)
 {
     dest.Bind();
     auto& prog = m_GLPrograms.multiply;
@@ -395,7 +409,7 @@ void c_OpenGLProcessing::MultiplyTextures(gl::c_Texture& tex1, gl::c_Texture& te
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
 
-void c_OpenGLProcessing::DivideTextures(gl::c_Texture& tex1, gl::c_Texture& tex2, gl::c_Framebuffer& dest)
+void c_OpenGLProcessing::DivideTextures(const gl::c_Texture& tex1, const gl::c_Texture& tex2, gl::c_Framebuffer& dest)
 {
     dest.Bind();
     auto& prog = m_GLPrograms.divide;
@@ -405,7 +419,7 @@ void c_OpenGLProcessing::DivideTextures(gl::c_Texture& tex1, gl::c_Texture& tex2
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
 
-void c_OpenGLProcessing::GaussianConvolution(gl::c_Texture& src, gl::c_Framebuffer& dest, const std::vector<float>& gaussian)
+void c_OpenGLProcessing::GaussianConvolution(const gl::c_Texture& src, gl::c_Framebuffer& dest, const std::vector<float>& gaussian)
 {
     InitTextureAndFBO(m_TexFBOs.aux, wxSize{src.GetWidth(), src.GetHeight()});
 
@@ -434,44 +448,60 @@ void c_OpenGLProcessing::GaussianConvolution(gl::c_Texture& src, gl::c_Framebuff
 }
 
 
-void c_OpenGLProcessing::StartUnsharpMasking()
+void c_OpenGLProcessing::StartUnsharpMasking(std::size_t maskIdx)
 {
     m_ProcessingOutputValid.unshMask = false;
     m_ProcessingOutputValid.toneCurve = false;
 
-    InitTextureAndFBO(m_TexFBOs.unsharpMask, m_Selection.GetSize());
-    InitTextureAndFBO(m_TexFBOs.gaussianBlur, m_Selection.GetSize());
+    bool tfReinitialized = InitTextureAndFBO(m_TexFBOs.gaussianBlur, m_Selection.GetSize());
+    for (TexFbo& umaskTexFbo: m_TexFBOs.unsharpMask)
+    {
+        tfReinitialized |= InitTextureAndFBO(umaskTexFbo, m_Selection.GetSize());
+    }
+    if (tfReinitialized) { maskIdx = 0; }
 
     m_VBOs.wholeSelectionAtZero.Bind();
     gl::SpecifyVertexAttribPointers();
-    GaussianConvolution(m_TexFBOs.lrSharpened.tex, m_TexFBOs.gaussianBlur.fbo, m_UnshMaskGaussian);
 
-    // apply the unsharp mask
-    m_TexFBOs.unsharpMask.fbo.Bind();
+    for (std::size_t i = maskIdx; i < m_ProcessingSettings.unsharpMask.size(); ++i)
+    {
+        const UnsharpMask& umask = m_ProcessingSettings.unsharpMask.at(i);
 
-    auto& prog = m_GLPrograms.unsharpMask;
-    prog.Use();
-    prog.SetUniform1i(uniforms::IsMono, IsMono(m_Img->GetPixelFormat()));
-    gl::BindProgramTextures(prog, {
-        {&m_TexFBOs.lrSharpened.tex, uniforms::Image},
-        {&m_TexFBOs.gaussianBlur.tex, uniforms::BlurredImage},
-        {&m_TexFBOs.inputBlurred.tex, uniforms::InputImageBlurred}
-    });
-    prog.SetUniform1i(uniforms::Adaptive, m_ProcessingSettings.unsharpMask.at(0).adaptive);
-    prog.SetUniform1f(uniforms::AmountMin, m_ProcessingSettings.unsharpMask.at(0).amountMin);
-    prog.SetUniform1f(uniforms::AmountMax, m_ProcessingSettings.unsharpMask.at(0).amountMax);
-    prog.SetUniform1f(uniforms::Threshold, m_ProcessingSettings.unsharpMask.at(0).threshold);
-    prog.SetUniform1f(uniforms::Width, m_ProcessingSettings.unsharpMask.at(0).width);
-    prog.SetUniform2i(uniforms::SelectionPos, m_Selection.GetLeft(), m_Selection.GetTop());
-    prog.SetUniform4f(
-        uniforms::TransitionCurve,
-        m_TransitionCurve[0],
-        m_TransitionCurve[1],
-        m_TransitionCurve[2],
-        m_TransitionCurve[3]
-    );
+        const auto& inputTex = [&]() -> const gl::c_Texture& {
+            if (0 == i) { return m_TexFBOs.lrSharpened.tex; }
+            else { return m_TexFBOs.unsharpMask.at(i - 1).tex; }
+        }();
 
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+        GaussianConvolution(inputTex, m_TexFBOs.gaussianBlur.fbo, m_UnshMaskData.at(i).gaussian);
+
+        m_TexFBOs.unsharpMask.at(i).fbo.Bind();
+
+        auto& prog = m_GLPrograms.unsharpMask;
+        prog.Use();
+        prog.SetUniform1i(uniforms::IsMono, IsMono(m_Img->GetPixelFormat()));
+
+        gl::BindProgramTextures(prog, {
+            {&inputTex, uniforms::Image},
+            {&m_TexFBOs.gaussianBlur.tex, uniforms::BlurredImage},
+            {&m_TexFBOs.inputBlurred.tex, uniforms::InputImageBlurred}
+        });
+        prog.SetUniform1i(uniforms::Adaptive, umask.adaptive);
+        prog.SetUniform1f(uniforms::AmountMin, umask.amountMin);
+        prog.SetUniform1f(uniforms::AmountMax, umask.amountMax);
+        prog.SetUniform1f(uniforms::Threshold, umask.threshold);
+        prog.SetUniform1f(uniforms::Width, umask.width);
+        prog.SetUniform2i(uniforms::SelectionPos, m_Selection.GetLeft(), m_Selection.GetTop());
+        const auto &trCurve = m_UnshMaskData.at(i).transitionCurve;
+        prog.SetUniform4f(
+            uniforms::TransitionCurve,
+            trCurve[0],
+            trCurve[1],
+            trCurve[2],
+            trCurve[3]
+        );
+
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    }
 
     m_ProcessingOutputValid.unshMask = true;
 
@@ -489,7 +519,7 @@ void c_OpenGLProcessing::StartToneMapping()
 
     auto& prog = m_GLPrograms.toneCurve;
     prog.Use();
-    gl::BindProgramTextures(prog, { {&m_TexFBOs.unsharpMask.tex, uniforms::Image} });
+    gl::BindProgramTextures(prog, { {&checked_back(m_TexFBOs.unsharpMask).tex, uniforms::Image} });
     prog.SetUniform1i(uniforms::IsMono, IsMono(m_Img->GetPixelFormat()));
 
     const auto& tcurve = m_ProcessingSettings.toneCurve;
@@ -644,24 +674,38 @@ void c_OpenGLProcessing::SetTexturesLinearInterpolation(bool enable)
 
 void c_OpenGLProcessing::SetProcessingSettings(ProcessingSettings settings)
 {
-    const bool recalculateUnshMaskGaussian = (m_ProcessingSettings.unsharpMask.at(0).sigma != settings.unsharpMask.at(0).sigma);
-    const bool recalculateLRGaussian = (m_ProcessingSettings.LucyRichardson.sigma != settings.LucyRichardson.sigma);
-
-    m_ProcessingSettings = settings;
-
-    if (recalculateLRGaussian)
+    if (m_ProcessingSettings.LucyRichardson.sigma != settings.LucyRichardson.sigma)
     {
-        m_LRGaussian = GetGaussianKernel(m_ProcessingSettings.LucyRichardson.sigma);
+        m_LRGaussian = GetGaussianKernel(settings.LucyRichardson.sigma);
     }
 
-    if (recalculateUnshMaskGaussian)
+    if (settings.unsharpMask.size() != m_ProcessingSettings.unsharpMask.size())
     {
-        m_UnshMaskGaussian = GetGaussianKernel(m_ProcessingSettings.unsharpMask.at(0).sigma);
+        m_TexFBOs.unsharpMask.clear();
+        m_UnshMaskData.clear();
+        for (std::size_t i = 0; i < settings.unsharpMask.size(); ++i)
+        {
+            m_TexFBOs.unsharpMask.emplace_back(TexFbo{});
+            m_UnshMaskData.emplace_back(UnsharpMaskData{
+                GetGaussianKernel(settings.unsharpMask.at(i).sigma),
+                GetAdaptiveUnshMaskTransitionCurve(settings.unsharpMask.at(i))
+            });
+        }
+    }
+    else
+    {
+        for (std::size_t i = 0; i < settings.unsharpMask.size(); ++i)
+        {
+            if (m_ProcessingSettings.unsharpMask.at(i).sigma != settings.unsharpMask.at(i).sigma)
+            {
+                m_UnshMaskData.at(i).gaussian = GetGaussianKernel(settings.unsharpMask.at(i).sigma);
+            }
+
+            m_UnshMaskData.at(i).transitionCurve = GetAdaptiveUnshMaskTransitionCurve(settings.unsharpMask.at(i));
+        }
     }
 
     m_ProcessingSettings = settings;
-
-    m_TransitionCurve = GetAdaptiveUnshMaskTransitionCurve(settings.unsharpMask.at(0));
 }
 
 c_Image c_OpenGLProcessing::GetProcessedSelection()
