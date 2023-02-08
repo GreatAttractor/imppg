@@ -73,7 +73,7 @@ struct ProcessingSettings
     struct
     {
         bool enabled{false};
-        float min, max;
+        float min{0.0}, max{1.0};
     } normalization;
 
     struct
