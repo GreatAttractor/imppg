@@ -423,7 +423,7 @@ void c_OpenGLDisplay::UnshMaskSettingsChanged(const ProcessingSettings& procSett
     m_Processor->SetProcessingSettings(procSettings);
     if (m_Img)
     {
-        m_Processor->StartProcessing(req_type::UnsharpMasking{});
+        m_Processor->StartProcessing(req_type::UnsharpMasking{maskIdx});
     }
 }
 

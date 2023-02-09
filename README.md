@@ -22,18 +22,20 @@ version 0.6.5 (2022-04-10)
 - 7\. Image sequence alignment
   - 7\.1\. High-contrast features stabilization (phase correlation)
   - 7\.2\. Solar limb stabilization
-- 8\. Misc
-- 9\. Known problems
-- 10\. Downloading
-- 11\. Building from source code
-  - 11\.1\. Building under Linux and similar systems using GNU (or compatible) toolchain
-    - 11\.1\.1. Building under Ubuntu 18.04
-    - 11\.1\.2. Packaging
-    - 11\.1\.3. Building for macOS
-  - 11\.2\. Building under MS Windows
-  - 11\.3\. UI language
-- 12\. Acknowledgements
-- 13\. Change log
+
+- 8\. Scripting
+- 9\. Misc
+- 10\. Known problems
+- 11\. Downloading
+- 12\. Building from source code
+  - 12\.1\. Building under Linux and similar systems using GNU (or compatible) toolchain
+    - 12\.1\.1. Building under Ubuntu 18.04
+    - 12\.1\.2. Packaging
+    - 12\.1\.3. Building for macOS
+  - 12\.2\. Building under MS Windows
+  - 12\.3\. UI language
+- 13\. Acknowledgements
+- 14\. Change log
 
 ----------------------------------------
 
@@ -130,6 +132,8 @@ Access by:
 
 Unsharp masking can be used for final sharpening (independently of L–R deconvolution) or blurring of the image. The *sigma* parameter specifies the Gaussian kernel’s width; the larger the value, the coarser the sharpening or blurring. `Amount` specifies the effect’s strength. Value < 1.0 blurs the image, 1.0 does nothing, value > 1.0 sharpens the image.
 
+More than one unsharp masks can be specified; they will be applied sequentially. E.g., a sharpening one (amount > 1), and then a smaller-sigma blurring one for mild denoising (amount < 1).
+
 
 #### Adaptive mode
 
@@ -202,13 +206,19 @@ Access by:
 
 
 ----------------------------------------
-## 8. Misc
+### 8. Scripting
+
+All ImPPG's image processing facilities can be invoked from a script written in the [Lua](https://www.lua.org/) programming language. See the [scripting documentation](doc/scripting/scripting.md) for details.
+
+
+----------------------------------------
+## 9. Misc
 
 ImPPG stores certain settings (e.g. the main window’s size and position) in an INI file, whose location is platform-dependent. On recent versions of MS Windows the path is `%HOMEPATH%\AppData\Roaming\imppg.ini`, where `%HOMEPATH%` usually equals `C:\Users\<username>` (but if OneDrive is enabled, the file may be located there). On Linux the path is `~/.imppg`.
 
 
 ----------------------------------------
-## 9. Known problems
+## 10. Known problems
 
   - Starting with wxWidgets 3.1.5 on Linux, GL Canvas uses EGL by default. If the GLEW library used for building ImPPG is not built with EGL support, the call to `glewInit` will fail. Solution: either use GLEW built with EGL, or build wxWidgets adding `-DwxUSE_GLCANVAS_EGL=OFF` to its CMake invocation.
 
@@ -227,14 +237,14 @@ Solution: change the GTK theme to "Raleigh" (e.g. in Fedora use the "GTK+ Appear
 
 
 ----------------------------------------
-## 10. Downloading
+## 11. Downloading
 
 ImPPG source code and binaries for MS Windows and Ubuntu 18.04 (x86-64) can be downloaded from:
     https://github.com/GreatAttractor/imppg/releases
 
 
 ----------------------------------------
-## 11. Building from source code
+## 12. Building from source code
 
 Building from source code requires a C++ compiler toolchain (with C++17 support), CMake, Boost libraries v. 1.57.0 or later (though earlier versions may work) and wxWidgets 3.0 (3.1 under MS Windows). Support for more image formats requires the FreeImage library, version 3.14.0 or newer. Without FreeImage the only supported formats are: BMP 8-, 24- and 32-bit, TIFF mono and RGB, 8 or 16 bits per channel (no compression). FITS support (optional) requires the CFITSIO library. Multithreaded processing requires a compiler supporting OpenMP.
 
@@ -248,7 +258,7 @@ $ ctest
 ```
 
 
-### 11.1. Building under Linux and similar systems using GNU (or compatible) toolchain
+### 12.1. Building under Linux and similar systems using GNU (or compatible) toolchain
 
 *Note: CMake relies on the presence of the `wx-config` tool to detect and configure wxWidgets-related build options. Sometimes this tool can be named differently, e.g. in Fedora 23 with wxGTK3 packages from repository it is `wx-config-3.0`. Older versions of CMake may not accept it. This can be remedied e.g. by creating a symlink:*
 ```bash
@@ -286,7 +296,7 @@ $ cat install_manifest.txt | sudo xargs rm
 
 To use a different installation prefix, add `-DCMAKE_INSTALL_PREFIX=<my_dir>` to the initial CMake invocation.
 
-#### 11.1.1. Building under Ubuntu 18.04
+#### 12.1.1. Building under Ubuntu 18.04
 
 The following packages are needed for building under Ubuntu 18.04:
 ```
@@ -298,7 +308,7 @@ The default GCC version (7.x) is too old. Install and enable GCC 8 (example inst
 After building `imppg`, it can be either installed as in section 11.1, or a Debian package can be created and installed with `apt` (see 11.1.2).
 
 
-#### 11.1.2. Packaging
+#### 12.1.2. Packaging
 
 In order to create a binary package, modify appropriately the final statement in `CMakeLists.txt`:
 ```cmake
@@ -310,7 +320,7 @@ $ cpack
 ```
 Note that building needs to be performed in an environment corresponding to the selected target system, so that proper shared objects are linked to (“environment” = a full system installation, a Docker image, or similar).
 
-#### 11.1.3. Building for macOS
+#### 12.1.3. Building for macOS
 
 *Note: macOS build and support is still work-in-progress*
 
@@ -340,7 +350,7 @@ CC=/usr/local/opt/llvm/bin/clang CXX=/usr/local/opt/llvm/bin/clang++ LDFLAGS="-L
 ```
 
 ----------------------------------------
-### 11.2. Building under MS Windows
+### 12.2. Building under MS Windows
 
 The provided `CMakeLists.txt` supports the [MSYS2](http://www.msys2.org/) build environment. With manual configuration, other toolchains can also be used (e.g. MS Visual Studio).
 
@@ -376,7 +386,7 @@ To run ImPPG from Windows Explorer, the subfolders `images`, `pl`, `shaders` and
 
 
 ----------------------------------------
-### 11.3. UI language
+### 12.3. UI language
 
 
 ImPPG supports multiple user interface languages using the wxWidgets built-in internationalization facilities. All translatable strings in the source code are surrounded by the `_()` macro. Adding a new translation requires the `GNU gettext` package and consists of the following steps:
@@ -401,14 +411,14 @@ Binary distribution of ImPPG needs only the MO (binary) language files. Beside t
 
 
 ----------------------------------------
-## 12. Acknowledgements
+## 13. Acknowledgements
 
 Russian and Ukrainian translations: Rusłan Pazenko.
 German translation: Marcel Hoffmann.
 
 
 ----------------------------------------
-## 13. Change log
+## 14. Change log
 
 **0.6.5** (2022-04-10)
 

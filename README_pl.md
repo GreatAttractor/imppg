@@ -23,18 +23,19 @@ wersja 0.6.5 (2022-04-10)
 - 7\. Wyrównywanie sekwencji obrazów
   - 7\.1\. Stabilizacja kontrastowych obszarów (korelacja fazowa)
   - 7\.2\. Stabilizacja krawędzi tarczy słonecznej
-- 8\. Pozostałe
-- 9\. Znane problemy
-- 10\. Pobieranie
-- 11\. Budowanie ze źródeł
-  - 11\.1\. Budowanie w systemie Linux i podobnych z użyciem narzędzi GNU (lub kompatybilnych)
-    - 11\.1\.1. Budowanie pod Ubuntu 18.04
-    - 11\.1\.2. Tworzenie pakietów
-    - 11\.1\.3. Budowanie pod macOS
-  - 11\.2\. Budowanie pod MS Windows
-  - 11\.3\. Język UI
-- 12\. Podziękowania
-- 13\. Historia zmian
+- 8\. Obsługa skryptów
+- 9\. Pozostałe
+- 10\. Znane problemy
+- 11\. Pobieranie
+- 12\. Budowanie ze źródeł
+  - 12\.1\. Budowanie w systemie Linux i podobnych z użyciem narzędzi GNU (lub kompatybilnych)
+    - 12\.1\.1. Budowanie pod Ubuntu 18.04
+    - 12\.1\.2. Tworzenie pakietów
+    - 12\.1\.3. Budowanie pod macOS
+  - 12\.2\. Budowanie pod MS Windows
+  - 12\.3\. Język UI
+- 13\. Podziękowania
+- 14\. Historia zmian
 
 ----------------------------------------
 
@@ -133,6 +134,8 @@ Dostęp:
 
 Unsharp masking służy do końcowego wyostrzania (niezależnie od dekonwolucji L-R) lub wygładzania obrazu. Parametr `sigma` określa szerokość kernela gaussowskiego; im większa wartość, tym bardziej gruboziarniste ostrzenie/wygładzanie. `Poziom` reguluje natężenie efektu. Wartość < 1 wygładza, 1 pozostawia obraz bez zmian, wartość > 1 wyostrza.
 
+Można stworzyć więcej niż jedną maskę; będą zastosowane do obrazu w sposób sekwencyjny. Przykładowo, pierwsza maska może wyostrzać (poziom > 1), a druga (z mniejszą sigmą) lekko rozmywać (poziom < 1) obraz w celu usunięcia szumu.
+
 #### Tryb adaptatywny
 
 W trybie tym `poziom` jest zmienny i zależy od jasności (nieprzetworzonego) obrazu wejściowego. Dla obszarów ciemniejszych niż `próg − szerokość granicy` przybiera on wartość `poziom min.`, dla jaśniejszych niż `próg + szerokość granicy`: `poziom max.`. Pomiędzy nimi `poziom` zmienia się płynnie od `poziom min.` do `poziom max.`.
@@ -206,13 +209,19 @@ Dostęp:
 
 
 ----------------------------------------
-## 8. Pozostałe
+### 8. Obsługa skryptów
+
+Wszystkie funkcje obróbki obrazu dostępne w ImPPG mogą być wywołane z poziomu skryptów napisanych w języku programowania [Lua](https://www.lua.org/). Ze szczegółami można zapoznać się w [dokumentacji](doc/scripting/scripting.md).
+
+
+----------------------------------------
+## 9. Pozostałe
 
 ImPPG przechowuje pewne ustawienia (np. pozycję i rozmiar okna głównego) w pliku INI, w miejscu zależnym od używanej platformy. W nowszych wersjach MS Windows jest to `%HOMEPATH%\AppData\Roaming\imppg.ini`, gdzie `%HOMEPATH%` zwykle oznacza `C:\Users\<użytkownik>`. W systemie Linux: `~/.imppg`.
 
 
 ----------------------------------------
-## 9. Znane problemy
+## 10. Znane problemy
 
   - Poczynając od wersji 3.1.5, wxWidgets pod Linuksem używają EGL dla GL Canvas. Jeśli używana do zbudowania ImPPG biblioteka GLEW nie została zbudowana z obsługą EGL, wywołanie funkcji `glewInit` nie powiedzie się. Rozwiązanie: użyć GLEW z obsługą EGL lub zbudować wxWidgets dodając `-DwxUSE_GLCANVAS_EGL=OFF` do wywołania CMake.
 
@@ -231,14 +240,14 @@ Rozwiązanie: zmienić motyw GTK na „Raleigh” (np. w Fedorze użyć narzędz
 
 
 ----------------------------------------
-## 10. Pobieranie
+## 11. Pobieranie
 
 Kod źródłowy ImPPG oraz pliki wykonywalne dla MS Windows i Ubuntu 18.04 (x86-64) można pobrać pod adresem:
     https://github.com/GreatAttractor/imppg/releases
 
 
 ----------------------------------------
-## 11. Budowanie ze źródeł
+## 12. Budowanie ze źródeł
 
 Budowanie ze źródeł wymaga narzędzi do kompilacji C++ (z obsługą C++17), CMake, bibliotek Boost w wersji 1.57.0 lub późniejszej (choć wcześniejsze też mogą działać) oraz wxWidgets 3.0 (3.1 pod MS Windows). Do obsługi większej liczby formatów graficznych potrzebna jest biblioteka FreeImage w wersji co najmniej 3.14.0. Bez niej obsługiwane są jedynie: BMP 8-, 24- i 32-bitowe, TIFF mono lub RGB, 8 lub 16 bitów na kanał (bez kompresji). Obsługę plików FITS (opcjonalną) zapewnia biblioteka CFITSIO. Przetwarzanie wielowątkowe wymaga kompilatora obsługującego OpenMP.
 
@@ -252,7 +261,7 @@ $ ctest
 ```
 
 
-### 11.1. Budowanie w systemie Linux i podobnych z użyciem narzędzi GNU (lub kompatybilnych)
+### 12.1. Budowanie w systemie Linux i podobnych z użyciem narzędzi GNU (lub kompatybilnych)
 
 *Uwaga: CMake wymaga dostępności narzędzia `wx-config`, by wykryć wxWidgets i skonfigurować związane z nimi ustawienia. Czasami nazwa może być inna, np. w Fedorze 23 z pakietami wxGTK3 z repozytorium jest to `wx-config-3.0`. Można temu zaradzić np. tworząc dowiązanie symboliczne:*
 ```bash
@@ -289,7 +298,7 @@ $ cat install_manifest.txt | sudo xargs rm
 ```
 
 
-#### 11.1.1. Budowanie pod Ubuntu 18.04
+#### 12.1.1. Budowanie pod Ubuntu 18.04
 
 Następujące pakiety są konieczne, by zbudować ImPPG pod Ubuntu 18.04:
 ```
@@ -305,7 +314,7 @@ $ cpack
 który można następnie zainstalować narzędziem `apt`.
 
 
-#### 11.1.2. Tworzenie pakietów
+#### 12.1.2. Tworzenie pakietów
 
 By stworzyć pakiet binarny, należy zmodyfikować ostatnią instrukcję w `CMakeLists.txt`:
 ```cmake
@@ -317,7 +326,7 @@ $ cpack
 ```
 Uwaga: kompilacja musi być przeprowadzona w środowisku odpowiadającym wybranemu rodzajowi pakietu, tak by dołączone zostały właściwe biblioteki dynamiczne („środowisko” = pełna instalacja systemu, obraz Dockera itp.).
 
-#### 11.1.3. Budowanie pod macOS
+#### 12.1.3. Budowanie pod macOS
 
 *Uwaga: Budowanie pod macOS nie jest jeszcze w pełni ukończone.*
 
@@ -347,7 +356,7 @@ CC=/usr/local/opt/llvm/bin/clang CXX=/usr/local/opt/llvm/bin/clang++ LDFLAGS="-L
 ```
 
 ----------------------------------------
-### 11.2. Budowanie pod MS Windows
+### 12.2. Budowanie pod MS Windows
 
 Dostarczony plik `CMakeLists.txt` umożliwia budowanie w środowisku [MSYS2](http://www.msys2.org/). W przypadku ręcznej konfiguracji można użyć również innych środowisk (np. MS Visual Studio).
 
@@ -383,7 +392,7 @@ By uruchomić ImPPG z Eksploratora Windowa, podkatalogi `images`, `pl`, `shaders
 
 
 ----------------------------------------
-### 11.3. Język UI
+### 12.3. Język UI
 
 ImPPG obsługuje wielojęzyczny interfejs użytkownika poprzez wbudowane funkcje regionalizacji biblioteki wxWidgets. Wszystkie wymagające tłumaczenia napisy w kodzie źródłowym otoczone są makrem `_()`. Dla dodania nowego tłumaczenia wymagany jest pakiet `GNU gettext` i wykonanie następujących kroków:
 
@@ -407,14 +416,14 @@ Dystrybucja binarna ImPPG potrzebuje jedynie plików MO (binarnych). Oprócz pli
 
 
 ----------------------------------------
-## 12. Podziękowania
+## 13. Podziękowania
 
 Tłumaczenie na jęz. rosyjski i ukraiński: Rusłan Pazenko.
 Tłumaczenie na jęz. niemiecki: Marcel Hoffmann.
 
 
 ----------------------------------------
-## 13. Historia zmian
+## 14. Historia zmian
 
 **0.6.5** (2022-04-10)
 
