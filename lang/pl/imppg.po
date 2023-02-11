@@ -946,3 +946,9 @@ msgstr "Skrypt zakończony."
 
 msgid "Script execution error:"
 msgstr "Błąd wykonania skryptu:"
+
+msgid "add mask"
+msgstr "dodaj maskę"
+
+msgid "mask %d"
+msgstr "maska %d"

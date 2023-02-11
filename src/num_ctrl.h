@@ -24,6 +24,7 @@ File description:
 #ifndef IMPPG_NUMERICAL_CTRL_H
 #define IMPPG_NUMERICAL_CTRL_H
 
+#include <optional>
 #include <wx/panel.h>
 #include <wx/spinctrl.h>
 #include <wx/slider.h>
@@ -80,6 +81,7 @@ public:
         /// For spin control's value 'v' the range of the slider is [v/sliderRangeFactor, v*sliderRangeFactor]
         double sliderRangeFactor,
         int numSliderSteps, ///< Number of slider steps
+        std::optional<wxString> toolTip,
         bool autoAdjustNumSteps = false, ///< If true, the slider will always have 1 step per pixel (adjusted after every resize)
         unsigned updateEvtDelay = 0 ///< Delay in milliseconds between sending subsequent EVT_NUMERICAL_CTRL events
         );

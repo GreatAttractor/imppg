@@ -54,6 +54,7 @@ c_NumericalCtrl::c_NumericalCtrl(wxWindow* parent, int id,
     /// For spin control's value 'v' the range of the slider is [v/sliderRangeFactor, v*sliderRangeFactor]
     double sliderRangeFactor,
     int numSliderSteps, ///< Number of slider steps
+    std::optional<wxString> toolTip,
     bool autoAdjustNumSteps, ///< If true, the slider will always have 1 step per pixel (adjusted after every resize)
     unsigned updateEvtDelay ///< Delay in milliseconds between sending subsequent EVT_NUMERICAL_CTRL events
 )
@@ -77,6 +78,13 @@ c_NumericalCtrl::c_NumericalCtrl(wxWindow* parent, int id,
     m_SpinCtrl->Bind(wxEVT_TEXT_ENTER, &c_NumericalCtrl::OnSpinEnter, this);
 #endif
     szSpinCtrl->Add(m_SpinCtrl, 0, wxGROW | wxALL, BORDER);
+    if (toolTip.has_value())
+    {
+        auto* info = new wxStaticText(this, wxID_ANY, L"ⓘ");
+        info->SetToolTip(toolTip.value());
+        szSpinCtrl->Add(info, 0, wxGROW | wxALL, BORDER);
+
+    }
     szTop->Add(szSpinCtrl, 0, wxALIGN_LEFT | wxALL, BORDER);
 
     if (autoAdjustNumSteps && numSliderSteps <= 0)

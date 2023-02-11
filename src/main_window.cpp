@@ -1291,14 +1291,16 @@ wxPanel* c_MainWindow::CreateLucyRichardsonControlsPanel(wxWindow* parent)
     wxSizer* szTop = new wxBoxSizer(wxVERTICAL);
 
     szTop->Add(m_Ctrls.lrSigma = new c_NumericalCtrl(result, ID_LucyRichardsonSigma, _("Sigma:"), 0.5, MAX_GAUSSIAN_SIGMA,
-        Default::LR_SIGMA, 0.05, 4, 2, 100, true, maxfreq ? 1000/maxfreq : 0),
+        Default::LR_SIGMA, 0.05, 4, 2, 100, std::nullopt, true, maxfreq ? 1000/maxfreq : 0),
         0, wxGROW | wxALL, BORDER);
 
     wxSizer *szIters = new wxBoxSizer(wxHORIZONTAL);
     szIters->Add(new wxStaticText(result, wxID_ANY, _("Iterations:")), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
     szIters->Add(m_Ctrls.lrIters = new wxSpinCtrl(result, ID_LucyRichardsonIters, "", wxDefaultPosition, wxDefaultSize,
         wxTE_PROCESS_ENTER | wxSP_ARROW_KEYS| wxALIGN_RIGHT, 0, 500, Default::LR_ITERATIONS), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
-    m_Ctrls.lrIters->SetToolTip(_(L"Suggested value: 30 to 70. Specify 0 to disable L\u2013R deconvolution."));
+    auto* info = new wxStaticText(result, wxID_ANY, L"ⓘ");
+    info->SetToolTip(_(L"Suggested value: 30 to 70. Specify 0 to disable L\u2013R deconvolution."));
+    szIters->Add(info, 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
     szTop->Add(szIters, 0, wxALIGN_LEFT | wxALL, BORDER);
 
     szTop->Add(m_Ctrls.lrDeriging = new wxCheckBox(result, ID_LucyRichardsonDeringing, _("Prevent ringing")), 0, wxALIGN_LEFT | wxALL, BORDER);
@@ -1392,10 +1394,13 @@ wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(
         4,
         2.0,
         100,
+        std::nullopt,
         true,
         maxfreq ? 1000/maxfreq : 0
     );
     box->Add(umCtrls.sigma, 0, wxGROW | wxALL, BORDER);
+
+    const wxString unshMaskAmountToolTip = _("Value 1.0: no effect, <1.0: blur, >1.0: sharpen");
 
     umCtrls.amountMin = new c_NumericalCtrl(
         box->GetStaticBox(),
@@ -1408,10 +1413,10 @@ wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(
         4,
         5.0,
         100,
+        unshMaskAmountToolTip,
         true,
         maxfreq ? 1000/maxfreq : 0
     );
-    umCtrls.amountMin->SetToolTip(_("Value 1.0: no effect, <1.0: blur, >1.0: sharpen"));
     umCtrls.amountMin->Show(false);
     box->Add(umCtrls.amountMin, 0, wxGROW | wxALL, BORDER);
 
@@ -1426,10 +1431,10 @@ wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(
         4,
         5.0,
         100,
+        unshMaskAmountToolTip,
         true,
         maxfreq ? 1000/maxfreq : 0
     );
-    umCtrls.amountMax->SetToolTip(_("Value 1.0: no effect, <1.0: blur, >1.0: sharpen"));
     umCtrls.amountMax->Bind(EVT_NUMERICAL_CTRL, [this, maskIdx](wxCommandEvent& event) {
         OnUnsharpMaskingControlChanged(event, maskIdx);
     });
@@ -1446,6 +1451,7 @@ wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(
         4,
         5.0,
         100,
+        std::nullopt,
         true,
         maxfreq ? 1000/maxfreq : 0
     );
@@ -1464,6 +1470,7 @@ wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(
         4,
         5.0,
         100,
+        std::nullopt,
         true,
         maxfreq ? 1000/maxfreq : 0
     );
