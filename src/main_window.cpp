@@ -1379,7 +1379,22 @@ wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(
         OnUpdateUnsharpMaskingSettings(maskIdx);
         IndicateSettingsModified();
     });
-    szButtons->Add(btnReset, 0, wxALIGN_CENTER_VERTICAL | wxALL, 0/*BORDER*/);
+    szButtons->Add(btnReset, 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
+
+    wxButton* btnRemove = new wxButton(
+        box->GetStaticBox(),
+        wxID_ANY,
+        _("remove"),
+        wxDefaultPosition,
+        wxDefaultSize,
+        wxBU_EXACTFIT
+    );
+    if (0 == maskIdx) { btnRemove->Disable(); }
+    btnRemove->SetToolTip(_("Remove unsharp mask"));
+    btnRemove->Bind(wxEVT_BUTTON, [this, maskIdx](wxCommandEvent&) {
+        //TODO: recreate all controls? seems we have to, 'cuz `maskIdx` is part of the state of all lambdas...
+    });
+    szButtons->Add(btnRemove, 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
 
     box->Add(szButtons, 0, wxGROW | wxALL, BORDER);
 

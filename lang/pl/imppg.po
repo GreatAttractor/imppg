@@ -952,3 +952,9 @@ msgstr "dodaj maskę"
 
 msgid "mask %d"
 msgstr "maska %d"
+
+msgid "remove"
+msgstr "usuń"
+
+msgid "Remove unsharp mask"
+msgstr "Usuń maskę"
