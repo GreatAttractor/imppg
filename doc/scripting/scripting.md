@@ -30,6 +30,8 @@ end
 ```Lua
 settings = imppg.load_settings("/path/to/settings.xml")
 image = imppg.load_image("/path/to/stack.tif")
+
+-- use sigma from 1.0 to 1.4, increasing by 0.1
 for sigma = 1.0, 1.5, 0.1 do
     settings:lr_deconv_sigma(sigma)
     processed_image = imppg.process_image(image, settings)
