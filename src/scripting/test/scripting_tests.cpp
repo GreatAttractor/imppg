@@ -51,7 +51,7 @@ image = imppg.load_image("$ROOT/image.tif")
 imppg.test.notify_image(image)
 
     )"};
-    const auto root = fs::temp_directory_path();
+    const auto root = GetTestRoot();
     boost::algorithm::replace_all(script, "$ROOT", root.generic_string());
 
     c_Image image{128, 64, PixelFormat::PIX_MONO8};
@@ -69,7 +69,7 @@ imppg.test.notify_image(image)
     BOOST_CHECK(PixelFormat::PIX_MONO32F == loadedImage.GetPixelFormat());
 }
 
-BOOST_FIXTURE_TEST_CASE(LoadAndProcessImage, ScriptTestFixture) //FIXME: hangs!
+BOOST_FIXTURE_TEST_CASE(LoadAndProcessImage, ScriptTestFixture)
 {
     std::string script{R"(
 
@@ -83,7 +83,7 @@ imppg.test.notify_image(processed_image)
 processed_image:save("$ROOT/output.tif", imppg.TIFF_16)
 
     )"};
-    const auto root = fs::temp_directory_path();
+    const auto root = GetTestRoot();
     boost::algorithm::replace_all(script, "$ROOT", root.generic_string());
 
     c_Image image{128, 64, PixelFormat::PIX_MONO8};
@@ -111,7 +111,7 @@ imppg.process_image_file("$ROOT/image.bmp", "$ROOT/settings.xml", "$ROOT/output.
 
     )"};
 
-    const auto root = fs::temp_directory_path();
+    const auto root = GetTestRoot();
     boost::algorithm::replace_all(script, "$ROOT", root.generic_string());
 
     c_Image image{128, 64, PixelFormat::PIX_MONO8};

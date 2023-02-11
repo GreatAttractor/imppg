@@ -1,5 +1,9 @@
 #pragma once
 
+#include "common/proc_settings.h"
+#include "image/image.h"
+#include "scripting/script_image_processor.h"
+
 #include <filesystem>
 #include <future>
 #include <initializer_list>
@@ -7,13 +11,11 @@
 #include <unordered_map>
 #include <vector>
 
-#include "common/proc_settings.h"
-#include "image/image.h"
-#include "scripting/script_image_processor.h"
-
 namespace scripting { class ScriptMessagePayload; }
 class wxAppConsole;
 class wxThreadEvent;
+
+std::filesystem::path GetTestRoot();
 
 class ScriptTestFixture
 {

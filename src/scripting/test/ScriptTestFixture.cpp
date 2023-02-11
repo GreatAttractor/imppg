@@ -11,6 +11,13 @@
 #include <wx/app.h>
 #include <wx/init.h>
 
+std::filesystem::path GetTestRoot()
+{
+    const auto root = std::filesystem::temp_directory_path() / "imppg_tests";
+    std::filesystem::create_directories(root);
+    return root;
+}
+
 ScriptTestFixture::ScriptTestFixture()
 {
     wxInitialize();

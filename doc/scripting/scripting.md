@@ -77,3 +77,7 @@ image = imppg.load_image(dir .. "input/image02.tif")
 proc = imppg.process_image(image, settings)
 proc:save(dir .. "output/output02.png", imppg.PNG_8)
 ```
+
+## Interrupting script execution
+
+Script execution can be interrupted using the `Stop` button in the `Run script` dialog. The interruption happens on a subsequent script call to any ImPPG API function/method. If the script does not make such a call, and instead e.g. hangs in an infinite loop (`while true do end`), the user needs to kill the whole ImPPG process.

@@ -17,7 +17,7 @@ for f in imppg.filesystem.list_files("$ROOT/*.tif") do
 end
 
     )"};
-    const auto root = fs::temp_directory_path();
+    const auto root = GetTestRoot();
     boost::algorithm::replace_all(script, "$ROOT", root.generic_string());
     CreateEmptyFile(root / "file1.tif");
     CreateEmptyFile(root / "file2.tif");
@@ -40,7 +40,7 @@ for f in imppg.filesystem.list_files("$ROOT/*") do
 end
 
     )"};
-    const auto root = fs::temp_directory_path();
+    const auto root = GetTestRoot();
     boost::algorithm::replace_all(script, "$ROOT", root.generic_string());
     CreateEmptyFile(root / "file1.tif");
     CreateEmptyFile(root / "file2");
@@ -62,7 +62,7 @@ for f in imppg.filesystem.list_files("$ROOT/subdir") do
 end
 
     )"};
-    const auto root = fs::temp_directory_path();
+    const auto root = GetTestRoot();
     boost::algorithm::replace_all(script, "$ROOT", root.generic_string());
     fs::create_directory(root / "subdir");
     CreateEmptyFile(root / "subdir" / "file1");
@@ -85,7 +85,7 @@ for f in imppg.filesystem.list_files("$ROOT/file*suffix.tif") do
 end
 
     )"};
-    const auto root = fs::temp_directory_path();
+    const auto root = GetTestRoot();
     boost::algorithm::replace_all(script, "$ROOT", root.generic_string());
     CreateEmptyFile(root / "file1_suffix.tif");
     CreateEmptyFile(root / "file20suffix.tif");
@@ -120,7 +120,7 @@ for idx, f in ipairs(imppg.filesystem.list_files_sorted("$ROOT/*.tif")) do
 end
 
     )"};
-    const auto root = fs::temp_directory_path();
+    const auto root = GetTestRoot();
     boost::algorithm::replace_all(script, "$ROOT", root.generic_string());
     CreateEmptyFile(root / "file1.tif");
     CreateEmptyFile(root / "file2.tif");
@@ -143,7 +143,7 @@ for idx, f in ipairs(imppg.filesystem.list_files_sorted("$ROOT/*")) do
 end
 
     )"};
-    const auto root = fs::temp_directory_path();
+    const auto root = GetTestRoot();
     boost::algorithm::replace_all(script, "$ROOT", root.generic_string());
     CreateEmptyFile(root / "file1.tif");
     CreateEmptyFile(root / "file2");
@@ -165,7 +165,7 @@ for idx, f in ipairs(imppg.filesystem.list_files_sorted("$ROOT/subdir")) do
 end
 
     )"};
-    const auto root = fs::temp_directory_path();
+    const auto root = GetTestRoot();
     boost::algorithm::replace_all(script, "$ROOT", root.generic_string());
     fs::create_directory(root / "subdir");
     CreateEmptyFile(root / "subdir" / "file1");
@@ -188,7 +188,7 @@ for idx, f in ipairs(imppg.filesystem.list_files_sorted("$ROOT/file*suffix.tif")
 end
 
     )"};
-    const auto root = fs::temp_directory_path();
+    const auto root = GetTestRoot();
     boost::algorithm::replace_all(script, "$ROOT", root.generic_string());
     CreateEmptyFile(root / "file1_suffix.tif");
     CreateEmptyFile(root / "file20suffix.tif");
@@ -225,7 +225,7 @@ end
 imppg.test.notify_integer(count)
 
     )"};
-    const auto root = fs::temp_directory_path();
+    const auto root = GetTestRoot();
     boost::algorithm::replace_all(script, "$ROOT", root.generic_string());
     std::default_random_engine rng{1234};
     std::uniform_int_distribution<int> distribution(0, 99999);
