@@ -268,7 +268,7 @@ void c_ScriptDialog::OnRunnerMessage(wxThreadEvent& event)
         [&](const contents::None&) {},
 
         [&](const contents::Error& contents) {
-            m_Console->AppendText(_("Script execution error: ") + contents.message + ".\n");
+            m_Console->AppendText(_("Script execution error:") + " " + contents.message + ".\n");
         },
 
         [&](const contents::ScriptFinished&) {

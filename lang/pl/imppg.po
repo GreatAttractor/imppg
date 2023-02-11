@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: ImPPG 0.6\n"
 "Report-Msgid-Bugs-To: Filip Szczerek <ga.software@yahoo.com>\n"
 "POT-Creation-Date: 2016-10-01 22:00+0100\n"
-"PO-Revision-Date: 2022-04-02 19:47+0100\n"
+"PO-Revision-Date: 2023-02-11 12:00+0100\n"
 "Last-Translator: Filip Szczerek <ga.software@yahoo.com>\n"
 "Language-Team: \n"
 "Language: Polish\n"
@@ -916,3 +916,33 @@ msgstr "Włącza normalizację zmiennoprzecinkowych wartości pikseli obrazów F
 
 msgid "Invalid number."
 msgstr "Nieprawidłowa liczba."
+
+msgid "Run script..."
+msgstr "Wykonaj skrypt..."
+
+msgid "Run script"
+msgstr "Wykonaj skrypt"
+
+msgid "Script file:"
+msgstr "Skrypt:"
+
+msgid "Select the script file."
+msgstr "Wybierz plik skryptu."
+
+msgid "Run"
+msgstr "Wykonaj"
+
+msgid "Stop"
+msgstr "Stop"
+
+msgid "Pause"
+msgstr "Wstrzymaj"
+
+msgid "Running script %s..."
+msgstr "Wykonywanie skryptu %s..."
+
+msgid "Script execution finished."
+msgstr "Skrypt zakończony."
+
+msgid "Script execution error:"
+msgstr "Błąd wykonania skryptu:"
