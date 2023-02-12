@@ -21,4 +21,8 @@ target_link_libraries(scripting_tests PRIVATE
     scripting
 )
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
+    target_link_libraries(scripting_tests PRIVATE stdc++fs)
+endif()
+
 add_test(NAME scripting COMMAND scripting_tests)
