@@ -17,6 +17,7 @@ add_library(scripting STATIC
     src/interop/modules/imppg_test.h
     src/interop/modules/imppg.cpp
     src/interop/modules/imppg.h
+    src/interop/interop_impl.h
     src/interop/interop.cpp
     src/interop/state.cpp
     src/interop/state.h

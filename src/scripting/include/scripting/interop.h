@@ -29,10 +29,8 @@ File description:
 #include "scripting/script_exceptions.h"
 
 #include <future>
-#include <lua.hpp>
 #include <memory>
 #include <variant>
-#include <wx/event.h>
 
 namespace scripting
 {
@@ -146,11 +144,5 @@ private:
     /// Empty for certain kinds of `MessageContents`; the receiver must then not call `SignalCompletion`.
     std::promise<FunctionCallResult> m_Completion;
 };
-
-/// Prepares interop for script execution.
-void Prepare(lua_State* lua, wxEvtHandler& parent, std::future<void>&& stopRequested);
-
-/// Cleans up interop state.
-void Finish();
 
 }

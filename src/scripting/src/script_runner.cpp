@@ -21,6 +21,7 @@ File description:
     Script runner thread implementation.
 */
 
+#include "interop/interop_impl.h"
 #include "scripting/script_exceptions.h"
 #include "scripting/interop.h"
 #include "scripting/script_runner.h"
