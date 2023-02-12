@@ -198,20 +198,7 @@ void c_MainWindow::LoadSettingsFromFile(wxString settingsFile, bool moveToMruLis
         m_Ctrls.lrIters->SetValue(s.processing.LucyRichardson.iterations);
         m_Ctrls.lrDeriging->SetValue(s.processing.LucyRichardson.deringing.enabled);
 
-        m_Ctrls.unshMaskBox->Clear();
-        m_Ctrls.unshMaskBox->GetStaticBox()->DestroyChildren();
-        m_Ctrls.unshMask.clear();
-        CreateUnshMaskBoxUpperControls(m_Ctrls.unshMaskBox);
-        std::size_t maskIdx{0};
-        for (const auto umask: s.processing.unsharpMask)
-        {
-            wxStaticBoxSizer* maskCtrls =
-                CreateUnsharpMaskingControls(m_Ctrls.unshMaskBox->GetStaticBox(), umask, maskIdx);
-
-            m_Ctrls.unshMaskBox->Add(maskCtrls, 0, wxGROW | wxALL, BORDER);
-            ++maskIdx;
-        }
-        SetUnsharpMaskingControlsVisibility();
+        CreateAnewControlsForAllUnsharpMasks();
 
         m_Ctrls.tcrvEditor->SetToneCurve(&s.processing.toneCurve);
 
@@ -220,6 +207,24 @@ void c_MainWindow::LoadSettingsFromFile(wxString settingsFile, bool moveToMruLis
 
         OnUpdateLucyRichardsonSettings(); // Perform all processing steps, starting with L-R deconvolution
     }
+}
+
+void c_MainWindow::CreateAnewControlsForAllUnsharpMasks()
+{
+    m_Ctrls.unshMaskBox->Clear();
+    m_Ctrls.unshMaskBox->GetStaticBox()->DestroyChildren();
+    m_Ctrls.unshMask.clear();
+    CreateUnshMaskBoxUpperControls(m_Ctrls.unshMaskBox);
+    std::size_t maskIdx{0};
+    for (const auto umask: m_CurrentSettings.processing.unsharpMask)
+    {
+        wxStaticBoxSizer* maskCtrls =
+            CreateControlsOfSingleUnsharpMask(m_Ctrls.unshMaskBox->GetStaticBox(), umask, maskIdx);
+
+        m_Ctrls.unshMaskBox->Add(maskCtrls, 0, wxGROW | wxALL, BORDER);
+        ++maskIdx;
+    }
+    SetUnsharpMaskingControlsVisibility();
 }
 
 void c_MainWindow::OnSettingsFile(wxCommandEvent& event)
@@ -624,7 +629,7 @@ c_MainWindow::c_MainWindow()
         }
     });
 
-    Bind(wxEVT_IDLE, [this](wxIdleEvent& event) { if (m_BackEnd) { m_BackEnd->OnIdle(event); } });
+    Bind(wxEVT_IDLE, &c_MainWindow::OnIdle, this);
 
     DragAcceptFiles(true);
     Bind(wxEVT_DROP_FILES, [this](wxDropFilesEvent& event) {
@@ -635,6 +640,20 @@ c_MainWindow::c_MainWindow()
             OpenFile(path, true);
         }
     });
+}
+
+void c_MainWindow::OnIdle(wxIdleEvent& event)
+{
+    if (m_BackEnd) { m_BackEnd->OnIdle(event); }
+
+    if (m_CreateUMaskControlsAnew)
+    {
+        CreateAnewControlsForAllUnsharpMasks();
+        OnUpdateUnsharpMaskingSettings(0);
+        IndicateSettingsModified();
+
+        m_CreateUMaskControlsAnew = false;
+    }
 }
 
 template<typename T>
@@ -1324,7 +1343,7 @@ void c_MainWindow::OnUnsharpMaskingControlChanged(wxCommandEvent&, std::size_t m
     IndicateSettingsModified();
 }
 
-wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(
+wxStaticBoxSizer* c_MainWindow::CreateControlsOfSingleUnsharpMask(
     wxWindow* parent,
     const UnsharpMask& umask,
     std::size_t maskIdx
@@ -1389,10 +1408,15 @@ wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(
         wxDefaultSize,
         wxBU_EXACTFIT
     );
-    if (0 == maskIdx) { btnRemove->Disable(); }
+    if (0 == maskIdx) { btnRemove->Disable(); } // by convention, there is always at least 1 unsharp mask (even if no-op)
     btnRemove->SetToolTip(_("Remove unsharp mask"));
     btnRemove->Bind(wxEVT_BUTTON, [this, maskIdx](wxCommandEvent&) {
-        //TODO: recreate all controls? seems we have to, 'cuz `maskIdx` is part of the state of all lambdas...
+        IMPPG_ASSERT(maskIdx != 0);
+        auto& masks = m_CurrentSettings.processing.unsharpMask;
+        masks.erase(masks.begin() + maskIdx);
+        // cannot delete controls (including this `btnRemove`) while executing the bound event handler;
+        // do it a moment later from `OnIdle` instead
+        m_CreateUMaskControlsAnew = true;
     });
     szButtons->Add(btnRemove, 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
 
@@ -1512,7 +1536,7 @@ wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(
 
 void c_MainWindow::OnAddUnsharpMask(wxCommandEvent&)
 {
-    wxStaticBoxSizer* newMask = CreateUnsharpMaskingControls(
+    wxStaticBoxSizer* newMask = CreateControlsOfSingleUnsharpMask(
         m_Ctrls.unshMaskBox->GetStaticBox(),
         UnsharpMask{},
         m_Ctrls.unshMask.size()
@@ -1550,7 +1574,7 @@ wxWindow* c_MainWindow::CreateProcessingControlsPanel()
 
     CreateUnshMaskBoxUpperControls(m_Ctrls.unshMaskBox);
 
-    wxStaticBoxSizer* mask1 = CreateUnsharpMaskingControls(m_Ctrls.unshMaskBox->GetStaticBox(), UnsharpMask{}, 0);
+    wxStaticBoxSizer* mask1 = CreateControlsOfSingleUnsharpMask(m_Ctrls.unshMaskBox->GetStaticBox(), UnsharpMask{}, 0);
     m_Ctrls.unshMaskBox->Add(mask1, 0, wxGROW | wxALL, BORDER);
 
     szTop->Add(m_Ctrls.unshMaskBox, 0, wxGROW | wxALL, BORDER);

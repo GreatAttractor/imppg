@@ -52,6 +52,7 @@ class c_MainWindow: public wxFrame
     // Event handlers ----------
     void OnClose(wxCloseEvent& event);
     void OnCommandEvent(wxCommandEvent& event);
+    void OnIdle(wxIdleEvent& event);
     void OnImageViewMouseDragStart(wxMouseEvent& event);
     void OnImageViewMouseMove(wxMouseEvent& event);
     void OnImageViewMouseDragEnd(wxMouseEvent& event);
@@ -88,11 +89,12 @@ class c_MainWindow: public wxFrame
     bool UnshMaskingEnabled(); ///< Returns 'true' if unsharp masking settings have impact on the image
     bool ToneCurveEnabled(); ///< Returns 'true' if tone curve has impact on the image (i.e. it is not the identity map)
     wxPanel* CreateLucyRichardsonControlsPanel(wxWindow* parent);
-    wxStaticBoxSizer* CreateUnsharpMaskingControls(
+    wxStaticBoxSizer* CreateControlsOfSingleUnsharpMask(
         wxWindow* parent,
         const UnsharpMask& unsharpMask,
         std::size_t maskIdx
     );
+    void CreateAnewControlsForAllUnsharpMasks();
     void OnUpdateUnsharpMaskingSettings(std::size_t maskIdx);
     /// Updates state of menu items and toolbar buttons responsible for toggling the processing panel and tone curve editor
     void UpdateToggleControlsState();
@@ -161,6 +163,8 @@ class c_MainWindow: public wxFrame
     int m_MruSettingsIdx{wxNOT_FOUND};
 
     bool m_ImageLoaded{false}; ///< Becomes true after first successful image load.
+
+    bool m_CreateUMaskControlsAnew{false};
 
     /// Current image, processing settings and processing steps' results.
     struct
