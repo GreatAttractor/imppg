@@ -25,12 +25,16 @@ const luaL_Reg functions[] = {
     }},
 
     {"new_settings", [](lua_State* lua) -> int {
+        if (scripting::g_State->CheckStopRequested(lua)) { return 0; }
+
         CheckNumArgs(lua, "new_settings", 0);
         new(PrepareObject<SettingsWrapper>(lua)) SettingsWrapper();
         return 1;
     }},
 
     {"load_settings", [](lua_State* lua) -> int {
+        if (scripting::g_State->CheckStopRequested(lua)) { return 0; }
+
         CheckNumArgs(lua, "load_settings", 1);
         const std::string path = GetString(lua, 1);
         new(PrepareObject<SettingsWrapper>(lua)) SettingsWrapper(path);
@@ -38,6 +42,8 @@ const luaL_Reg functions[] = {
     }},
 
     {"load_image", [](lua_State* lua) -> int {
+        if (scripting::g_State->CheckStopRequested(lua)) { return 0; }
+
         CheckNumArgs(lua, "load_image", 1);
         const std::string imagePath = GetString(lua, 1);
         new(PrepareObject<ImageWrapper>(lua)) ImageWrapper(imagePath);
@@ -46,6 +52,8 @@ const luaL_Reg functions[] = {
 
     //TODO: rename?
     {"load_image_split_rgb", [](lua_State* lua) -> int {
+        if (scripting::g_State->CheckStopRequested(lua)) { return 0; }
+
         CheckNumArgs(lua, "load_image_split_rgb", 1);
 
         const std::string imagePath = GetString(lua, 1);
@@ -115,6 +123,8 @@ const luaL_Reg functions[] = {
     }},
 
     {"progress", [](lua_State* lua) -> int {
+        if (scripting::g_State->CheckStopRequested(lua)) { return 0; }
+
         CheckNumArgs(lua, "progress", 1);
         const double fraction = GetNumber(lua, 1);
         scripting::g_State->SendMessage(scripting::contents::Progress{fraction});
@@ -122,6 +132,8 @@ const luaL_Reg functions[] = {
     }},
 
     {"combine_rgb", [](lua_State* lua) -> int {
+        if (scripting::g_State->CheckStopRequested(lua)) { return 0; }
+
         CheckNumArgs(lua, "combine_rgb", 3);
         const auto red = GetObject<ImageWrapper>(lua, 1);
         const auto green = GetObject<ImageWrapper>(lua, 2);
@@ -134,6 +146,8 @@ const luaL_Reg functions[] = {
 
     //TODO: accept list of images and weights (tuples)
     {"blend", [](lua_State* lua) -> int {
+        if (scripting::g_State->CheckStopRequested(lua)) { return 0; }
+
         CheckNumArgs(lua, "blend", 4);
         const auto img1 = GetObject<ImageWrapper>(lua, 1);
         const auto weight1 = GetNumber(lua, 2);

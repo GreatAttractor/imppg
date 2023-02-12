@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: ImPPG 0.6\n"
 "Report-Msgid-Bugs-To: Filip Szczerek <ga.software@yahoo.com>\n"
 "POT-Creation-Date: 2016-10-01 22:00+0100\n"
-"PO-Revision-Date: 2023-02-11 12:00+0100\n"
+"PO-Revision-Date: 2023-02-12 12:29+0100\n"
 "Last-Translator: Filip Szczerek <ga.software@yahoo.com>\n"
 "Language-Team: \n"
 "Language: Polish\n"
@@ -958,3 +958,9 @@ msgstr "usuń"
 
 msgid "Remove unsharp mask"
 msgstr "Usuń maskę"
+
+msgid "Waiting for the script to stop..."
+msgstr "Oczekiwanie na zakończenie skryptu..."
+
+msgid "script interrupted by user"
+msgstr "skrypt przerwany przez użytkownika"
