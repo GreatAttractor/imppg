@@ -239,7 +239,7 @@ Solution: change the GTK theme to "Raleigh" (e.g. in Fedora use the "GTK+ Appear
 ----------------------------------------
 ## 11. Downloading
 
-ImPPG source code and binaries for MS Windows and Ubuntu 18.04 (x86-64) can be downloaded from:
+ImPPG source code and binaries for MS Windows and Ubuntu 20.04 (x86-64) can be downloaded from:
     https://github.com/GreatAttractor/imppg/releases
 
 
@@ -300,7 +300,7 @@ To use a different installation prefix, add `-DCMAKE_INSTALL_PREFIX=<my_dir>` to
 
 The following packages are needed for building under Ubuntu 18.04:
 ```
-git cmake build-essential libboost-dev libwxgtk3.0-gtk3-dev libglew-dev pkg-config libccfits-dev libfreeimage-dev
+git cmake build-essential libboost-dev libboost-test-dev libwxgtk3.0-gtk3-dev libglew-dev pkg-config libccfits-dev libfreeimage-dev liblua5.3-dev
 ```
 
 The default GCC version (7.x) is too old. Install and enable GCC 8 (example instructions: `https://linuxize.com/post/how-to-install-gcc-compiler-on-ubuntu-18-04/`). (Do not choose GCC 9, otherwise the built binary will not run on a clean Ubuntu 18.04 due to too old a version of `libstdc++`.)
@@ -329,12 +329,7 @@ To build ImPPG for macOS you will need Xcode and [Homebrew](https://brew.sh) ins
 OpenMP is currently supported with 3rd party LLVM toolchain installed with Homebrew as Apple disabled OpenMP in clang toolchain distributed with Xcode. As of July 2022 the build method was verified on macOS Monterey 12.5 and Xcode 13.4.1.
 
 Install following libraries with Homebrew:
-```bash
-$ brew update
-$ brew install boost cfitsio cmake freeimage glew mesa pkg-config wxwidgets llvm libomp
-```
-
-Now follow Linux build steps:
+```bashBuilding under
 ```bash
 $ mkdir build
 $ cd build

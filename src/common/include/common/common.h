@@ -87,7 +87,7 @@ namespace req_type
     struct UnsharpMasking { std::size_t maskIdx; };
 
     struct ToneCurve {};
-};
+}
 
 using ProcessingRequest = std::variant<
     req_type::Sharpening,
