@@ -190,7 +190,7 @@ void c_ScriptDialog::OnRunScript(wxCommandEvent&)
     m_Runner->Run();
     m_BtnRun->Disable();
     m_BtnStop->Enable();
-    m_BtnTogglePause->Enable();
+    // TODO: implement script pausing m_BtnTogglePause->Enable();
     m_ScriptFileCtrl->Disable();
     m_Progress->Pulse();
     m_ProgressTimer.Start(PROGRESS_PULSE_INTERVAL_MS);
@@ -284,7 +284,7 @@ void c_ScriptDialog::OnRunnerMessage(wxThreadEvent& event)
 
         [&](const contents::Progress& contents) {
             m_ProgressTimer.Stop();
-            m_Progress->SetValue(contents.percentage);
+            m_Progress->SetValue(100 * contents.fraction);
         },
 
         [&](const auto& contents) {

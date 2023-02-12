@@ -48,7 +48,7 @@ struct NotifyInteger { int value; };
 struct NotifyNumber { double number; };
 struct NotifySettings { ProcessingSettings settings; };
 struct NotifyString { std::string s; bool ordered; };
-struct Progress { double percentage; };
+struct Progress { double fraction; };
 
 struct AlignRGB
 {

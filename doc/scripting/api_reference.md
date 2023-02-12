@@ -118,6 +118,26 @@
   rgb = imppg.combine_rgb(processed_r, processed_g, processed_b)
   ```
 
+- `progress`
+
+  Sets the value of the "Run script" dialog's progress bar.
+
+  *Parameters:*
+  - progress fraction (from 0.0 to 1.0)
+
+  ----
+  *Example*
+  ```Lua
+  settings = imppg.load_settings("/path/to/settings.xml")
+  files, num_files = imppg.filesystem.list_files_sorted("/path/to/stack*.tif")
+  for index, file in ipairs(files) do
+      image = imppg.load_image(file)
+      processed_image = imppg.process_image(image, settings)
+      processed_image:save(string.format("/path/to/processed/output_%02d.png", index), imppg.PNG_8)
+      imppg.progress(index / num_files)
+  end
+  ```
+
 ### Module `imppg.filesystem`
 
 - `list_files`
