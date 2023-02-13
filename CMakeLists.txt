@@ -157,6 +157,12 @@ install(FILES
 )
 
 install(FILES
+    doc/scripting/api_reference.md
+    doc/scripting/scripting.md
+    DESTINATION ${CMAKE_INSTALL_FULL_DOCDIR}/doc/scripting
+)
+
+install(FILES
     shaders/copy.frag
     shaders/divide.frag
     shaders/gaussian_horz.frag
