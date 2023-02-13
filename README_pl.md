@@ -209,7 +209,7 @@ Dostęp:
 
 
 ----------------------------------------
-### 8. Obsługa skryptów
+## 8. Obsługa skryptów
 
 Wszystkie funkcje obróbki obrazu dostępne w ImPPG mogą być wywołane z poziomu skryptów napisanych w języku programowania [Lua](https://www.lua.org/). Ze szczegółami można zapoznać się w [dokumentacji](doc/scripting/scripting.md).
 

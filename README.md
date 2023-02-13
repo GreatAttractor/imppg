@@ -22,7 +22,6 @@ version 0.6.5 (2022-04-10)
 - 7\. Image sequence alignment
   - 7\.1\. High-contrast features stabilization (phase correlation)
   - 7\.2\. Solar limb stabilization
-
 - 8\. Scripting
 - 9\. Misc
 - 10\. Known problems
@@ -206,7 +205,7 @@ Access by:
 
 
 ----------------------------------------
-### 8. Scripting
+## 8. Scripting
 
 All ImPPG's image processing facilities can be invoked from a script written in the [Lua](https://www.lua.org/) programming language. See the [scripting documentation](doc/scripting/scripting.md) for details.
 
