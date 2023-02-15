@@ -419,6 +419,7 @@ German translation: Marcel Hoffmann.
   - **New features**
     - Scripting support
     - RGB processing
+    - Multiple unsharp masks
 
 **0.6.5** (2022-04-10)
 

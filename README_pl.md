@@ -430,6 +430,7 @@ Tłumaczenie na jęz. niemiecki: Marcel Hoffmann.
   - **Nowe funkcje**
     - Obsługa skryptów
     - Obróbka obrazów RGB
+    - Więcej niż jedna unsharp mask
 
 **0.6.5** (2022-04-10)
 
