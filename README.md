@@ -1,7 +1,7 @@
 # ImPPG (Image Post-Processor)
-Copyright (C) 2015-2022 Filip Szczerek (ga.software@yahoo.com)
+Copyright (C) 2015-2023 Filip Szczerek (ga.software@yahoo.com)
 
-version 0.6.5 (2022-04-10)
+version 1.9.0-beta (2023-02-15)
 
 *This program comes with ABSOLUTELY NO WARRANTY. This is free software, licensed under GNU General Public License v3 or any later version and you are welcome to redistribute it under certain conditions. See the LICENSE file for details.*
 
@@ -89,7 +89,7 @@ Processing back ends can be switched via menu `Settings/Back end`.
 ----------------------------------------
 ## 3. Supported image file formats
 
-Accepted input formats: BMP, JPEG, PNG, TIFF (most of bit depths and compression methods), TGA and other via the FreeImage library, FITS. Image is processed in grayscale and saved in one of the following formats: BMP 8-bit; PNG 8-bit; TIFF 8-bit, 16-bit, 32-bit floating-point (no compression or compressed with LZW or ZIP), FITS 8-bit, 16-bit or 32-bit floating-point.
+Accepted input formats: BMP, JPEG, PNG, TIFF (most of bit depths and compression methods), TGA and other via the FreeImage library, FITS. Processed image is saved in one of the following formats: BMP 8-bit; PNG 8-bit; TIFF 8-bit, 16-bit, 32-bit floating-point (no compression or compressed with LZW or ZIP), FITS 8-bit, 16-bit or 32-bit floating-point.
 
 Output images produces by the sequence alignment function are saved as uncompressed TIFF with number of channels and bit depth preserved (except 8-bit palettized ones; those are converted to 24-bit RGB). Input FITS files are saved as FITS with bit depth preserved.
 
@@ -413,6 +413,12 @@ German translation: Marcel Hoffmann.
 
 ----------------------------------------
 ## 14. Change log
+
+**1.9.0-beta** (2023-02-15)
+
+  - **New features**
+    - Scripting support
+    - RGB processing
 
 **0.6.5** (2022-04-10)
 

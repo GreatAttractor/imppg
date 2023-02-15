@@ -142,7 +142,7 @@
 
 - `list_files`
 
-  Returns an iterator over all files matching the file path mask. The iteration is performed in an unspecified order.
+  Returns an iterator over all files matching the file path mask. The iteration is performed in an unspecified order. *Note:* typically `list_files_sorted` is more convenient.
 
   *Parameters:*
   - file path mask (wildcards are supported)
@@ -170,12 +170,23 @@
 
 - `list_files_sorted`
 
-  Returns a sorted table (and its length) of files matching the file path mask (see `list_files` examples of masks).
+  Returns a sorted table (and its length) of files matching the file path mask (see `list_files` for examples of masks).
 
   *Parameters:*
   - file path mask (wildcards are supported)
 
-
+  ----
+  *Example:*
+  ```Lua
+  settings = imppg.load_settings("/path/to/settings.xml")
+  files, num_files = imppg.filesystem.list_files_sorted("/path/to/stack*.tif")
+  for index, file in ipairs(files) do
+      image = imppg.load_image(file)
+      processed_image = imppg.process_image(image, settings)
+      processed_image:save(string.format("/path/to/processed/output_%02d.png", index), imppg.PNG_8)
+      imppg.progress(index / num_files)
+  end
+  ```
 
 ## Classes
 

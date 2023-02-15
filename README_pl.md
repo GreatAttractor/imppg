@@ -1,7 +1,7 @@
 # ImPPG (Image Post-Processor)
-Copyright (C) 2015-2022 Filip Szczerek (ga.software@yahoo.com)
+Copyright (C) 2015-2023 Filip Szczerek (ga.software@yahoo.com)
 
-wersja 0.6.5 (2022-04-10)
+wersja 1.9.0-beta (2023-02-15)
 
 *Niniejszy program ABSOLUTNIE nie jest objęty JAKĄKOLWIEK GWARANCJĄ. Jest to wolne oprogramowanie na licencji GNU GPL w wersji 3 (lub dowolnej późniejszej) i można je swobodnie rozpowszechniać pod pewnymi warunkami: zob. pełny tekst licencji w pliku LICENSE.*
 
@@ -93,7 +93,7 @@ Back endy można przełączyć za pomocą menu `Ustawienia/Back end`.
 ----------------------------------------
 ## 3. Obsługiwane formaty graficzne
 
-Akceptowane formaty wejściowe: BMP, JPEG, PNG, TIFF (większość głębi bitowych i metod kompresji), TGA i inne poprzez bibliotekę FreeImage, FITS. Obraz jest przetwarzany i zapisywany w odcieniach szarości w jednym z formatów: BMP 8-bitowy, PNG 8-bitowy, TIFF 8-bitowy, 16-bitowy, 32-bitowy zmiennoprzecinkowy (bez kompresji bądź z kompresją LZW lub ZIP), FITS 8-, 16-, 32-bitowy zmiennoprzecinkowy.
+Akceptowane formaty wejściowe: BMP, JPEG, PNG, TIFF (większość głębi bitowych i metod kompresji), TGA i inne poprzez bibliotekę FreeImage, FITS. Przetworzony obraz zapisywany jest w jednym z formatów: BMP 8-bitowy, PNG 8-bitowy, TIFF 8-bitowy, 16-bitowy, 32-bitowy zmiennoprzecinkowy (bez kompresji bądź z kompresją LZW lub ZIP), FITS 8-, 16-, 32-bitowy zmiennoprzecinkowy.
 
 Obrazy wyjściowe po użyciu funkcji wyrównywania sekwencji zapisywane są w formacie TIFF (bez kompresji) z zachowaniem liczby kanałów i głębi bitowej (oprócz 8-bitowych z paletą; te zostaną skonwertowane na 24-bitowe RGB). Pliki wejściowe FITS zapisywane są jako FITS o takiej samej głębi bitowej.
 
@@ -424,6 +424,12 @@ Tłumaczenie na jęz. niemiecki: Marcel Hoffmann.
 
 ----------------------------------------
 ## 14. Historia zmian
+
+**1.9.0-beta** (2023-02-15)
+
+  - **Nowe funkcje**
+    - Obsługa skryptów
+    - Obróbka obrazów RGB
 
 **0.6.5** (2022-04-10)
 
