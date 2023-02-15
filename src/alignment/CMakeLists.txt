@@ -1,4 +1,5 @@
 add_library(alignment STATIC
+    src/align_common.h
     src/align_disc.cpp
     src/align_disc.h
     src/align_phasecorr.cpp
@@ -8,7 +9,7 @@ add_library(alignment STATIC
     src/fft.h
 )
 
-set_cpp_standard(alignment)
+set_compiler_options(alignment)
 
 if(USE_FREEIMAGE EQUAL 1)
     target_compile_definitions(alignment PRIVATE USE_FREEIMAGE=1)

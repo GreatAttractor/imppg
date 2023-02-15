@@ -71,7 +71,10 @@ File description:
 #include "logging.h"
 #include "main_window.h"
 #include "normalize.h"
-#include "settings.h"
+#if ENABLE_SCRIPTING
+#include "script_dialog.h"
+#endif
+#include "common/proc_settings.h"
 #include "tcrv_wnd_settings.h"
 
 DECLARE_APP(c_MyApp)
@@ -84,13 +87,8 @@ const float ZOOM_MAX = 20.0f;
 
 namespace Default
 {
-    const float LR_SIGMA = 1.3f;
-    const int LR_ITERATIONS = 50;
-
-    const float UNSHMASK_SIGMA = 1.3f;
-    const float UNSHMASK_AMOUNT = 1.0f;
-    const float UNSHMASK_THRESHOLD = 0.01f;
-    const float UNSHMASK_WIDTH = 0.01f;
+    constexpr float LR_SIGMA = 1.3f;
+    constexpr int LR_ITERATIONS = 50;
 }
 
 namespace PaneNames
@@ -122,23 +120,15 @@ BEGIN_EVENT_TABLE(c_MainWindow, wxFrame)
     EVT_BUTTON(ID_LucyRichardsonReset, c_MainWindow::OnCommandEvent)
     EVT_BUTTON(ID_LucyRichardsonOff, c_MainWindow::OnCommandEvent)
     EVT_COMMAND(ID_LucyRichardsonSigma, EVT_NUMERICAL_CTRL, c_MainWindow::OnCommandEvent)
-    EVT_COMMAND(ID_UnsharpMaskingSigma, EVT_NUMERICAL_CTRL, c_MainWindow::OnCommandEvent)
-    EVT_COMMAND(ID_UnsharpMaskingAmountMin, EVT_NUMERICAL_CTRL, c_MainWindow::OnCommandEvent)
-    EVT_COMMAND(ID_UnsharpMaskingAmountMax, EVT_NUMERICAL_CTRL, c_MainWindow::OnCommandEvent)
-    EVT_COMMAND(ID_UnsharpMaskingThreshold, EVT_NUMERICAL_CTRL, c_MainWindow::OnCommandEvent)
-    EVT_COMMAND(ID_UnsharpMaskingWidth, EVT_NUMERICAL_CTRL, c_MainWindow::OnCommandEvent)
-    EVT_BUTTON(ID_UnsharpMaskingReset, c_MainWindow::OnCommandEvent)
-    EVT_CHECKBOX(ID_UnsharpMaskingAdaptive, c_MainWindow::OnCommandEvent)
     EVT_TOOL(ID_SelectAndProcessAll, c_MainWindow::OnCommandEvent)
     EVT_TOOL(ID_FitInWindow, c_MainWindow::OnCommandEvent)
     EVT_MENU(ID_FitInWindow, c_MainWindow::OnCommandEvent)
     EVT_AUI_PANE_CLOSE(c_MainWindow::OnAuiPaneClose)
-
     EVT_TOOL(ID_LoadSettings, c_MainWindow::OnSettingsFile)
     EVT_TOOL(ID_SaveSettings, c_MainWindow::OnSettingsFile)
     EVT_TOOL(ID_MruSettings,  c_MainWindow::OnSettingsFile)
-
     EVT_MENU(ID_BatchProcessing, c_MainWindow::OnCommandEvent)
+    EVT_MENU(ID_RunScript, c_MainWindow::OnCommandEvent)
     EVT_CHECKBOX(ID_LucyRichardsonDeringing, c_MainWindow::OnCommandEvent)
     EVT_MENU(ID_NormalizeImage, c_MainWindow::OnCommandEvent)
     EVT_MENU(ID_ChooseLanguage, c_MainWindow::OnCommandEvent)
@@ -184,7 +174,8 @@ void c_MainWindow::LoadSettingsFromFile(wxString settingsFile, bool moveToMruLis
 {
     auto& s = m_CurrentSettings;
 
-    if (!LoadSettings(settingsFile, s.processing))
+    const auto loaded = LoadSettings(settingsFile.ToStdString());
+    if (!loaded.has_value())
     {
         wxMessageBox(_("Failed to load processing settings."), _("Error"), wxOK | wxCENTRE | wxICON_ERROR);
 
@@ -198,6 +189,8 @@ void c_MainWindow::LoadSettingsFromFile(wxString settingsFile, bool moveToMruLis
     }
     else
     {
+        s.processing = *loaded;
+
         if (moveToMruListStart)
             SetAsMRU(settingsFile);
 
@@ -205,13 +198,7 @@ void c_MainWindow::LoadSettingsFromFile(wxString settingsFile, bool moveToMruLis
         m_Ctrls.lrIters->SetValue(s.processing.LucyRichardson.iterations);
         m_Ctrls.lrDeriging->SetValue(s.processing.LucyRichardson.deringing.enabled);
 
-        m_Ctrls.unshAdaptive->SetValue(s.processing.unsharpMasking.adaptive);
-        m_Ctrls.unshSigma->SetValue(s.processing.unsharpMasking.sigma);
-        m_Ctrls.unshAmountMin->SetValue(s.processing.unsharpMasking.amountMin);
-        m_Ctrls.unshAmountMax->SetValue(s.processing.unsharpMasking.amountMax);
-        m_Ctrls.unshThreshold->SetValue(s.processing.unsharpMasking.threshold);
-        m_Ctrls.unshWidth->SetValue(s.processing.unsharpMasking.width);
-        SetUnsharpMaskingControlsVisibility();
+        CreateAnewControlsForAllUnsharpMasks();
 
         m_Ctrls.tcrvEditor->SetToneCurve(&s.processing.toneCurve);
 
@@ -220,6 +207,24 @@ void c_MainWindow::LoadSettingsFromFile(wxString settingsFile, bool moveToMruLis
 
         OnUpdateLucyRichardsonSettings(); // Perform all processing steps, starting with L-R deconvolution
     }
+}
+
+void c_MainWindow::CreateAnewControlsForAllUnsharpMasks()
+{
+    m_Ctrls.unshMaskBox->Clear();
+    m_Ctrls.unshMaskBox->GetStaticBox()->DestroyChildren();
+    m_Ctrls.unshMask.clear();
+    CreateUnshMaskBoxUpperControls(m_Ctrls.unshMaskBox);
+    std::size_t maskIdx{0};
+    for (const auto umask: m_CurrentSettings.processing.unsharpMask)
+    {
+        wxStaticBoxSizer* maskCtrls =
+            CreateControlsOfSingleUnsharpMask(m_Ctrls.unshMaskBox->GetStaticBox(), umask, maskIdx);
+
+        m_Ctrls.unshMaskBox->Add(maskCtrls, 0, wxGROW | wxALL, BORDER);
+        ++maskIdx;
+    }
+    SetUnsharpMaskingControlsVisibility();
 }
 
 void c_MainWindow::OnSettingsFile(wxCommandEvent& event)
@@ -255,7 +260,7 @@ void c_MainWindow::OnSettingsFile(wxCommandEvent& event)
                     fname.SetExt("xml");
 
 
-                if (!SaveSettings(fname.GetFullPath(), s.processing))
+                if (!SaveSettings(fname.GetFullPath().ToStdString(), s.processing))
                 {
                     wxMessageBox(_("Failed to save processing settings."), _("Error"), wxOK | wxCENTRE | wxICON_ERROR);
                 }
@@ -519,7 +524,7 @@ bool c_MainWindow::SharpeningEnabled()
 /// Returns 'true' if unsharp masking settings have impact on the image
 bool c_MainWindow::UnshMaskingEnabled()
 {
-    return m_CurrentSettings.processing.unsharpMasking.IsEffective();
+    return m_CurrentSettings.processing.unsharpMask.at(0).IsEffective();
 }
 
 /// Returns 'true' if tone curve has impact on the image (i.e. it is not the identity map)
@@ -539,8 +544,6 @@ c_MainWindow::c_MainWindow()
     wxRect wndPos = Configuration::MainWindowPosSize;
     Create(NULL, wxID_ANY, "ImPPG", wndPos.GetTopLeft(), wndPos.GetSize());
 
-    SetExtraStyle(GetExtraStyle() | wxWS_EX_VALIDATE_RECURSIVELY); // Make sure all validators are run
-
     auto& s = m_CurrentSettings;
 
     s.processing.normalization.enabled = false;
@@ -551,12 +554,12 @@ c_MainWindow::c_MainWindow()
     s.processing.LucyRichardson.iterations = Default::LR_ITERATIONS;
     s.processing.LucyRichardson.deringing.enabled = false;
 
-    s.processing.unsharpMasking.adaptive = false;
-    s.processing.unsharpMasking.sigma = Default::UNSHMASK_SIGMA;
-    s.processing.unsharpMasking.amountMin = Default::UNSHMASK_AMOUNT;
-    s.processing.unsharpMasking.amountMax = Default::UNSHMASK_AMOUNT;
-    s.processing.unsharpMasking.threshold = Default::UNSHMASK_THRESHOLD;
-    s.processing.unsharpMasking.width = Default::UNSHMASK_WIDTH;
+    s.processing.unsharpMask.at(0).adaptive = false;
+    s.processing.unsharpMask.at(0).sigma = Default::UNSHMASK_SIGMA;
+    s.processing.unsharpMask.at(0).amountMin = Default::UNSHMASK_AMOUNT;
+    s.processing.unsharpMask.at(0).amountMax = Default::UNSHMASK_AMOUNT;
+    s.processing.unsharpMask.at(0).threshold = Default::UNSHMASK_THRESHOLD;
+    s.processing.unsharpMask.at(0).width = Default::UNSHMASK_WIDTH;
 
     s.selection.x = s.selection.y = -1;
     s.selection.width = s.selection.height = 0;
@@ -626,7 +629,7 @@ c_MainWindow::c_MainWindow()
         }
     });
 
-    Bind(wxEVT_IDLE, [this](wxIdleEvent& event) { if (m_BackEnd) { m_BackEnd->OnIdle(event); } });
+    Bind(wxEVT_IDLE, &c_MainWindow::OnIdle, this);
 
     DragAcceptFiles(true);
     Bind(wxEVT_DROP_FILES, [this](wxDropFilesEvent& event) {
@@ -637,6 +640,20 @@ c_MainWindow::c_MainWindow()
             OpenFile(path, true);
         }
     });
+}
+
+void c_MainWindow::OnIdle(wxIdleEvent& event)
+{
+    if (m_BackEnd) { m_BackEnd->OnIdle(event); }
+
+    if (m_CreateUMaskControlsAnew)
+    {
+        CreateAnewControlsForAllUnsharpMasks();
+        OnUpdateUnsharpMaskingSettings(0);
+        IndicateSettingsModified();
+
+        m_CreateUMaskControlsAnew = false;
+    }
 }
 
 template<typename T>
@@ -924,7 +941,7 @@ void c_MainWindow::OpenFile(wxFileName path, bool resetSelection)
 
     std::string errorMsg;
 
-    const auto loadResult = LoadImageFileAsMono32f(
+    const auto loadResult = LoadImageFileAs32f(
         path.GetFullPath().ToStdString(),
         Configuration::NormalizeFITSValues,
         &errorMsg
@@ -999,7 +1016,6 @@ void c_MainWindow::OnOpenFile(wxCommandEvent&)
 
 void c_MainWindow::OnUpdateLucyRichardsonSettings()
 {
-    TransferDataFromWindow();
     auto& proc = m_CurrentSettings.processing;
     proc.LucyRichardson.iterations = m_Ctrls.lrIters->GetValue();
     proc.LucyRichardson.sigma = m_Ctrls.lrSigma->GetValue();
@@ -1008,17 +1024,16 @@ void c_MainWindow::OnUpdateLucyRichardsonSettings()
     m_BackEnd->LRSettingsChanged(proc);
 }
 
-void c_MainWindow::OnUpdateUnsharpMaskingSettings()
+void c_MainWindow::OnUpdateUnsharpMaskingSettings(std::size_t maskIdx)
 {
-    TransferDataFromWindow();
     auto& proc = m_CurrentSettings.processing;
-    proc.unsharpMasking.sigma = m_Ctrls.unshSigma->GetValue();
-    proc.unsharpMasking.amountMin = m_Ctrls.unshAmountMin->GetValue();
-    proc.unsharpMasking.amountMax = m_Ctrls.unshAmountMax->GetValue();
-    proc.unsharpMasking.threshold = m_Ctrls.unshThreshold->GetValue();
-    proc.unsharpMasking.width = m_Ctrls.unshWidth->GetValue();
+    proc.unsharpMask.at(maskIdx).sigma = m_Ctrls.unshMask.at(maskIdx).sigma->GetValue();
+    proc.unsharpMask.at(maskIdx).amountMin = m_Ctrls.unshMask.at(maskIdx).amountMin->GetValue();
+    proc.unsharpMask.at(maskIdx).amountMax = m_Ctrls.unshMask.at(maskIdx).amountMax->GetValue();
+    proc.unsharpMask.at(maskIdx).threshold = m_Ctrls.unshMask.at(maskIdx).threshold->GetValue();
+    proc.unsharpMask.at(maskIdx).width = m_Ctrls.unshMask.at(maskIdx).width->GetValue();
 
-    m_BackEnd->UnshMaskSettingsChanged(proc);
+    m_BackEnd->UnshMaskSettingsChanged(proc, maskIdx);
 }
 
 float c_MainWindow::CalcZoomIn(float currentZoom)
@@ -1062,16 +1077,22 @@ void c_MainWindow::OnClose(wxCloseEvent& event)
 
 void c_MainWindow::SetUnsharpMaskingControlsVisibility()
 {
-    bool adaptiveEnabled = m_Ctrls.unshAdaptive->IsChecked();
+    for (UnsharpMaskControls umCtrls: m_Ctrls.unshMask)
+    {
+        bool adaptiveEnabled = umCtrls.adaptive->IsChecked();
 
-    m_Ctrls.unshAmountMin->Show(adaptiveEnabled);
-    if (adaptiveEnabled)
-        m_Ctrls.unshAmountMax->SetLabel(_("Amount max:"));
-    else
-        m_Ctrls.unshAmountMax->SetLabel(_("Amount:"));
-
-    m_Ctrls.unshThreshold->Show(adaptiveEnabled);
-    m_Ctrls.unshWidth->Show(adaptiveEnabled);
+        umCtrls.amountMin->Show(adaptiveEnabled);
+        if (adaptiveEnabled)
+        {
+            umCtrls.amountMax->SetLabel(_("Amount max:"));
+        }
+        else
+        {
+            umCtrls.amountMax->SetLabel(_("Amount:"));
+        }
+        umCtrls.threshold->Show(adaptiveEnabled);
+        umCtrls.width->Show(adaptiveEnabled);
+    }
 
     auto* procPanel = FindWindowById(ID_ProcessingControlsPanel, this);
     procPanel->Layout();
@@ -1119,32 +1140,6 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent& event)
     case ID_LucyRichardsonOff:
         m_Ctrls.lrIters->SetValue(0);
         OnUpdateLucyRichardsonSettings();
-        IndicateSettingsModified();
-        break;
-
-    case ID_UnsharpMaskingAdaptive:
-    case ID_UnsharpMaskingSigma:
-    case ID_UnsharpMaskingAmountMin:
-    case ID_UnsharpMaskingAmountMax:
-    case ID_UnsharpMaskingThreshold:
-    case ID_UnsharpMaskingWidth:
-        if (event.GetId() == ID_UnsharpMaskingAdaptive)
-            SetUnsharpMaskingControlsVisibility();
-
-        OnUpdateUnsharpMaskingSettings();
-        IndicateSettingsModified();
-        break;
-
-    case ID_UnsharpMaskingReset:
-        m_Ctrls.unshAdaptive->SetValue(false);
-        m_Ctrls.unshSigma->SetValue(Default::UNSHMASK_SIGMA);
-        m_Ctrls.unshAmountMin->SetValue(Default::UNSHMASK_AMOUNT);
-        m_Ctrls.unshAmountMax->SetValue(Default::UNSHMASK_AMOUNT);
-        m_Ctrls.unshThreshold->SetValue(Default::UNSHMASK_THRESHOLD);
-        m_Ctrls.unshWidth->SetValue(Default::UNSHMASK_WIDTH);
-
-        SetUnsharpMaskingControlsVisibility();
-        OnUpdateUnsharpMaskingSettings();
         IndicateSettingsModified();
         break;
 
@@ -1298,6 +1293,12 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent& event)
         m_BackEnd->SetScalingMethod(s.scalingMethod);
         Configuration::DisplayScalingMethod = s.scalingMethod;
         break;
+
+    case ID_RunScript:
+#if ENABLE_SCRIPTING
+        RunScript();
+#endif
+        break;
     }
 }
 
@@ -1309,14 +1310,16 @@ wxPanel* c_MainWindow::CreateLucyRichardsonControlsPanel(wxWindow* parent)
     wxSizer* szTop = new wxBoxSizer(wxVERTICAL);
 
     szTop->Add(m_Ctrls.lrSigma = new c_NumericalCtrl(result, ID_LucyRichardsonSigma, _("Sigma:"), 0.5, MAX_GAUSSIAN_SIGMA,
-        Default::LR_SIGMA, 0.05, 4, 2, 100, true, maxfreq ? 1000/maxfreq : 0),
+        Default::LR_SIGMA, 0.05, 4, 2, 100, std::nullopt, true, maxfreq ? 1000/maxfreq : 0),
         0, wxGROW | wxALL, BORDER);
 
     wxSizer *szIters = new wxBoxSizer(wxHORIZONTAL);
     szIters->Add(new wxStaticText(result, wxID_ANY, _("Iterations:")), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
     szIters->Add(m_Ctrls.lrIters = new wxSpinCtrl(result, ID_LucyRichardsonIters, "", wxDefaultPosition, wxDefaultSize,
         wxTE_PROCESS_ENTER | wxSP_ARROW_KEYS| wxALIGN_RIGHT, 0, 500, Default::LR_ITERATIONS), 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
-    m_Ctrls.lrIters->SetToolTip(_(L"Suggested value: 30 to 70. Specify 0 to disable L\u2013R deconvolution."));
+    auto* info = new wxStaticText(result, wxID_ANY, L"ⓘ");
+    info->SetToolTip(_(L"Suggested value: 30 to 70. Specify 0 to disable L\u2013R deconvolution."));
+    szIters->Add(info, 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
     szTop->Add(szIters, 0, wxALIGN_LEFT | wxALL, BORDER);
 
     szTop->Add(m_Ctrls.lrDeriging = new wxCheckBox(result, ID_LucyRichardsonDeringing, _("Prevent ringing")), 0, wxALIGN_LEFT | wxALL, BORDER);
@@ -1334,49 +1337,224 @@ wxPanel* c_MainWindow::CreateLucyRichardsonControlsPanel(wxWindow* parent)
     return result;
 }
 
-wxStaticBoxSizer* c_MainWindow::CreateUnsharpMaskingControls(wxWindow* parent)
+void c_MainWindow::OnUnsharpMaskingControlChanged(wxCommandEvent&, std::size_t maskIdx)
+{
+    OnUpdateUnsharpMaskingSettings(maskIdx);
+    IndicateSettingsModified();
+}
+
+wxStaticBoxSizer* c_MainWindow::CreateControlsOfSingleUnsharpMask(
+    wxWindow* parent,
+    const UnsharpMask& umask,
+    std::size_t maskIdx
+)
 {
     int maxfreq = Configuration::GetMaxProcessingRequestsPerSec();
 
-    wxStaticBoxSizer* result = new wxStaticBoxSizer(wxVERTICAL, parent, _("Unsharp masking"));
+    // using %d instead of %zu for compatibility with older MSVC versions
+    wxStaticBoxSizer* box = new wxStaticBoxSizer(
+        wxVERTICAL,
+        parent,
+        wxString::Format(_("mask %d"), static_cast<int>(maskIdx + 1))
+    );
 
-    result->Add(m_Ctrls.unshSigma = new c_NumericalCtrl(
-        result->GetStaticBox(), ID_UnsharpMaskingSigma,
-        _("Sigma:"), 0.5, MAX_GAUSSIAN_SIGMA, Default::UNSHMASK_SIGMA, 0.05, 4, 2.0, 100, true, maxfreq ? 1000/maxfreq : 0),
-        0, wxGROW | wxALL, BORDER);
+    UnsharpMaskControls umCtrls{};
 
-    m_Ctrls.unshAmountMin = new c_NumericalCtrl(result->GetStaticBox(), ID_UnsharpMaskingAmountMin,
-            _("Amount min:"), 0, 100.0, Default::UNSHMASK_AMOUNT, 0.05, 4, 5.0, 100, true, maxfreq ? 1000/maxfreq : 0);
-    m_Ctrls.unshAmountMin->SetToolTip(_("Value 1.0: no effect, <1.0: blur, >1.0: sharpen"));
-    m_Ctrls.unshAmountMin->Show(false);
-    result->Add(m_Ctrls.unshAmountMin, 0, wxGROW | wxALL, BORDER);
+    auto* szButtons = new wxBoxSizer(wxHORIZONTAL);
 
-    m_Ctrls.unshAmountMax = new c_NumericalCtrl(result->GetStaticBox(), ID_UnsharpMaskingAmountMax,
-            _("Amount:"), 0, 100.0, Default::UNSHMASK_AMOUNT, 0.05, 4, 5.0, 100, true, maxfreq ? 1000/maxfreq : 0);
-    m_Ctrls.unshAmountMax->SetToolTip(_("Value 1.0: no effect, <1.0: blur, >1.0: sharpen"));
-    result->Add(m_Ctrls.unshAmountMax, 0, wxGROW | wxALL, BORDER);
+    umCtrls.adaptive = new wxCheckBox(
+        box->GetStaticBox(),
+        wxID_ANY,
+        _("Adaptive"),
+        wxDefaultPosition
+    );
+    umCtrls.adaptive->Bind(wxEVT_CHECKBOX, [this, maskIdx](wxCommandEvent& event) {
+        SetUnsharpMaskingControlsVisibility();
+        OnUnsharpMaskingControlChanged(event, maskIdx);
+    });
+    umCtrls.adaptive->SetToolTip(_("Enable adaptive mode: amount changes from min to max depending on input brightness"));
+    umCtrls.adaptive->SetValue(umask.adaptive);
+    szButtons->Add(umCtrls.adaptive, 0, wxALIGN_CENTER_VERTICAL | wxALL, /*BORDER*/0);
 
-    m_Ctrls.unshThreshold = new c_NumericalCtrl(result->GetStaticBox(), ID_UnsharpMaskingThreshold,
-            _("Threshold:"), 0, 1.0, Default::UNSHMASK_THRESHOLD, 0.05, 4, 5.0, 100, true, maxfreq ? 1000/maxfreq : 0);
-    m_Ctrls.unshThreshold->SetToolTip(_("Input brightness threshold of transition from amount min to amount max"));
-    m_Ctrls.unshThreshold->Show(false);
-    result->Add(m_Ctrls.unshThreshold, 0, wxGROW | wxALL, BORDER);
+    szButtons->AddStretchSpacer();
 
-    m_Ctrls.unshWidth = new c_NumericalCtrl(result->GetStaticBox(), ID_UnsharpMaskingWidth,
-            _("Transition width:"), 0, 1.0, Default::UNSHMASK_THRESHOLD, 0.05, 4, 5.0, 100, true, maxfreq ? 1000/maxfreq : 0);
-    m_Ctrls.unshWidth->SetToolTip(_("Amount will be set to amount min for input brightness <= threshold-width and amount max for brightness >= threshold+width"));
-    m_Ctrls.unshWidth->Show(false);
-    result->Add(m_Ctrls.unshWidth, 0, wxGROW | wxALL, BORDER);
+    wxButton* btnReset = new wxButton(
+        box->GetStaticBox(),
+        wxID_ANY,
+        _("reset"),
+        wxDefaultPosition,
+        wxDefaultSize,
+        wxBU_EXACTFIT
+    );
+    btnReset->Bind(wxEVT_BUTTON, [this, maskIdx](wxCommandEvent&) {
+        m_Ctrls.unshMask.at(maskIdx).adaptive->SetValue(false);
+        m_Ctrls.unshMask.at(maskIdx).sigma->SetValue(Default::UNSHMASK_SIGMA);
+        m_Ctrls.unshMask.at(maskIdx).amountMin->SetValue(Default::UNSHMASK_AMOUNT);
+        m_Ctrls.unshMask.at(maskIdx).amountMax->SetValue(Default::UNSHMASK_AMOUNT);
+        m_Ctrls.unshMask.at(maskIdx).threshold->SetValue(Default::UNSHMASK_THRESHOLD);
+        m_Ctrls.unshMask.at(maskIdx).width->SetValue(Default::UNSHMASK_WIDTH);
 
-    result->Add(m_Ctrls.unshAdaptive = new wxCheckBox(result->GetStaticBox(), ID_UnsharpMaskingAdaptive, _("Adaptive"),
-            wxDefaultPosition, wxDefaultSize, wxCHK_2STATE, wxGenericValidator(&m_CurrentSettings.processing.unsharpMasking.adaptive)),
-            0, wxALIGN_LEFT | wxALL, BORDER);
-    m_Ctrls.unshAdaptive->SetToolTip(_("Enable adaptive mode: amount changes from min to max depending on input brightness"));
+        SetUnsharpMaskingControlsVisibility();
+        OnUpdateUnsharpMaskingSettings(maskIdx);
+        IndicateSettingsModified();
+    });
+    szButtons->Add(btnReset, 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
 
-    result->Add(new wxButton(result->GetStaticBox(), ID_UnsharpMaskingReset, _("reset"), wxDefaultPosition,
-        wxDefaultSize, wxBU_EXACTFIT), 0, wxALIGN_LEFT | wxALL, BORDER);
+    wxButton* btnRemove = new wxButton(
+        box->GetStaticBox(),
+        wxID_ANY,
+        _("remove"),
+        wxDefaultPosition,
+        wxDefaultSize,
+        wxBU_EXACTFIT
+    );
+    if (0 == maskIdx) { btnRemove->Disable(); } // by convention, there is always at least 1 unsharp mask (even if no-op)
+    btnRemove->SetToolTip(_("Remove unsharp mask"));
+    btnRemove->Bind(wxEVT_BUTTON, [this, maskIdx](wxCommandEvent&) {
+        IMPPG_ASSERT(maskIdx != 0);
+        auto& masks = m_CurrentSettings.processing.unsharpMask;
+        masks.erase(masks.begin() + maskIdx);
+        // cannot delete controls (including this `btnRemove`) while executing the bound event handler;
+        // do it a moment later from `OnIdle` instead
+        m_CreateUMaskControlsAnew = true;
+    });
+    szButtons->Add(btnRemove, 0, wxALIGN_CENTER_VERTICAL | wxALL, BORDER);
 
-    return result;
+    box->Add(szButtons, 0, wxGROW | wxALL, BORDER);
+
+    umCtrls.sigma = new c_NumericalCtrl(
+        box->GetStaticBox(),
+        wxID_ANY,
+        _("Sigma:"),
+        0.5,
+        MAX_GAUSSIAN_SIGMA,
+        umask.sigma,
+        0.05,
+        4,
+        2.0,
+        100,
+        std::nullopt,
+        true,
+        maxfreq ? 1000/maxfreq : 0
+    );
+    box->Add(umCtrls.sigma, 0, wxGROW | wxALL, BORDER);
+
+    const wxString unshMaskAmountToolTip = _("Value 1.0: no effect, <1.0: blur, >1.0: sharpen");
+
+    umCtrls.amountMin = new c_NumericalCtrl(
+        box->GetStaticBox(),
+        wxID_ANY,
+        _("Amount min:"),
+        0,
+        100.0,
+        umask.amountMin,
+        0.05,
+        4,
+        5.0,
+        100,
+        unshMaskAmountToolTip,
+        true,
+        maxfreq ? 1000/maxfreq : 0
+    );
+    umCtrls.amountMin->Show(false);
+    box->Add(umCtrls.amountMin, 0, wxGROW | wxALL, BORDER);
+
+    umCtrls.amountMax = new c_NumericalCtrl(
+        box->GetStaticBox(),
+        wxID_ANY,
+        _("Amount:"),
+        0,
+        100.0,
+        umask.amountMax,
+        0.05,
+        4,
+        5.0,
+        100,
+        unshMaskAmountToolTip,
+        true,
+        maxfreq ? 1000/maxfreq : 0
+    );
+    umCtrls.amountMax->Bind(EVT_NUMERICAL_CTRL, [this, maskIdx](wxCommandEvent& event) {
+        OnUnsharpMaskingControlChanged(event, maskIdx);
+    });
+    box->Add(umCtrls.amountMax, 0, wxGROW | wxALL, BORDER);
+
+    umCtrls.threshold = new c_NumericalCtrl(
+        box->GetStaticBox(),
+        wxID_ANY,
+        _("Threshold:"),
+        0,
+        1.0,
+        umask.threshold,
+        0.05,
+        4,
+        5.0,
+        100,
+        std::nullopt,
+        true,
+        maxfreq ? 1000/maxfreq : 0
+    );
+    umCtrls.threshold->SetToolTip(_("Input brightness threshold of transition from amount min to amount max"));
+    umCtrls.threshold->Show(false);
+    box->Add(umCtrls.threshold, 0, wxGROW | wxALL, BORDER);
+
+    umCtrls.width = new c_NumericalCtrl(
+        box->GetStaticBox(),
+        wxID_ANY,
+        _("Transition width:"),
+        0,
+        1.0,
+        umask.width,
+        0.05,
+        4,
+        5.0,
+        100,
+        std::nullopt,
+        true,
+        maxfreq ? 1000/maxfreq : 0
+    );
+    umCtrls.width->SetToolTip(_("Amount will be set to amount min for input brightness <= threshold-width and amount max for brightness >= threshold+width"));
+    umCtrls.width->Show(false);
+    box->Add(umCtrls.width, 0, wxGROW | wxALL, BORDER);
+
+    for (wxEvtHandler* control: {
+        umCtrls.sigma,
+        umCtrls.amountMin,
+        umCtrls.amountMax,
+        umCtrls.threshold,
+        umCtrls.width
+    }) {
+        control->Bind(EVT_NUMERICAL_CTRL, [this, maskIdx](wxCommandEvent& event) {
+            OnUnsharpMaskingControlChanged(event, maskIdx);
+        });
+    }
+
+    m_Ctrls.unshMask.emplace_back(umCtrls);
+
+    return box;
+}
+
+void c_MainWindow::OnAddUnsharpMask(wxCommandEvent&)
+{
+    wxStaticBoxSizer* newMask = CreateControlsOfSingleUnsharpMask(
+        m_Ctrls.unshMaskBox->GetStaticBox(),
+        UnsharpMask{},
+        m_Ctrls.unshMask.size()
+    );
+
+    m_Ctrls.unshMaskBox->Add(newMask, 0, wxGROW | wxALL, BORDER);
+
+    m_Ctrls.unshMaskBox->Layout();
+    m_AuiMgr->Update(); // FIXME: not enough if the processing panel is undocked; need to resize it to see the new controls
+
+    m_CurrentSettings.processing.unsharpMask.emplace_back(UnsharpMask{});
+}
+
+void c_MainWindow::CreateUnshMaskBoxUpperControls(wxStaticBoxSizer* szBox)
+{
+    auto* btnAddMask = new wxButton(szBox->GetStaticBox(), wxID_ANY, _("add mask"));
+    btnAddMask->Bind(wxEVT_BUTTON, &c_MainWindow::OnAddUnsharpMask, this);
+    szBox->Add(btnAddMask, 0, wxALIGN_LEFT | wxALL, BORDER);
 }
 
 /// Creates and returns a panel containing the processing controls
@@ -1392,7 +1570,14 @@ wxWindow* c_MainWindow::CreateProcessingControlsPanel()
     // ...
     szTop->Add(notebook, 0, wxGROW | wxALL, BORDER);
 
-    szTop->Add(CreateUnsharpMaskingControls(result), 0, wxGROW | wxALL, BORDER);
+    m_Ctrls.unshMaskBox = new wxStaticBoxSizer(wxVERTICAL, result, _("Unsharp masking"));
+
+    CreateUnshMaskBoxUpperControls(m_Ctrls.unshMaskBox);
+
+    wxStaticBoxSizer* mask1 = CreateControlsOfSingleUnsharpMask(m_Ctrls.unshMaskBox->GetStaticBox(), UnsharpMask{}, 0);
+    m_Ctrls.unshMaskBox->Add(mask1, 0, wxGROW | wxALL, BORDER);
+
+    szTop->Add(m_Ctrls.unshMaskBox, 0, wxGROW | wxALL, BORDER);
 
     result->SetSizer(szTop);
     result->SetScrollRate(1, 1);
@@ -1494,6 +1679,9 @@ void c_MainWindow::InitMenu()
     menuFile->Append(ID_SaveSettings, _("Save processing settings..."));
     menuFile->AppendSeparator();
     menuFile->Append(ID_BatchProcessing, _("Batch processing..."));
+#if ENABLE_SCRIPTING
+    menuFile->Append(ID_RunScript, _("Run script..."));
+#endif
     menuFile->AppendSeparator();
     menuFile->Append(wxID_EXIT);
 
@@ -1520,6 +1708,7 @@ void c_MainWindow::InitMenu()
         [this](wxCommandEvent&)
         {
             std::optional<c_Image> img = m_BackEnd->GetImage();
+
             InitializeBackEnd(imppg::backend::CreateCpuBmpDisplayBackend(*m_ImageView), img);
             Configuration::ProcessingBackEnd = BackEnd::CPU_AND_BITMAPS;
             SetStatusText(GetBackEndStatusText(Configuration::ProcessingBackEnd), StatusBarField::BACK_END);
@@ -1793,3 +1982,23 @@ void c_MainWindow::OnProcessingPanelScrolled(wxScrollWinEvent &event)
     FindWindowById(ID_ProcessingControlsPanel)->Refresh(false);
     event.Skip();
 }
+
+#if ENABLE_SCRIPTING
+void c_MainWindow::RunScript()
+{
+    if (m_BackEnd->ProcessingInProgress())
+    {
+        if (wxYES == wxMessageBox(_("Processing in progress, abort it?"), _("Warning"), wxICON_EXCLAMATION | wxYES_NO, this))
+        {
+            m_BackEnd->AbortProcessing();
+        }
+        else
+        {
+            return;
+        }
+    }
+
+    scripting::c_ScriptDialog dialog(this);
+    dialog.ShowModal();
+}
+#endif

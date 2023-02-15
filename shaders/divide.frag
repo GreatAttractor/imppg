@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2016-2019 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2016-2022 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -26,13 +26,24 @@ File description:
 in vec2 TexCoord;
 out vec4 Color;
 
+uniform bool IsMono;
 uniform sampler2DRect InputArray1;
 uniform sampler2DRect InputArray2;
 
 void main()
 {
-    // add a small epsilon to prevent division by 0 and possible propagation of NaNs across output pixels
-    const float EPSILON = 1.0e-8f;
-    float outputValue = texture(InputArray1, TexCoord).r / (texture(InputArray2, TexCoord).r + EPSILON);
-    Color = vec4(outputValue, outputValue, outputValue, 1.0);
+    if (IsMono)
+    {
+        // add a small epsilon to prevent division by 0 and possible propagation of Infs across output pixels
+        const float EPSILON = 1.0e-8f;
+        float outputValue = texture(InputArray1, TexCoord).r / (texture(InputArray2, TexCoord).r + EPSILON);
+        Color = vec4(vec3(outputValue), 1.0);
+    }
+    else
+    {
+        // add a small epsilon to prevent division by 0 and possible propagation of Infs across output pixels
+        const vec3 EPSILON = vec3(1.0e-8f, 1.0e-8f, 1.0e-8f);
+        vec3 outputValue = texture(InputArray1, TexCoord).rgb / (texture(InputArray2, TexCoord).rgb + EPSILON);
+        Color = vec4(outputValue, 1.0);
+    }
 }

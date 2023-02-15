@@ -12,3 +12,6 @@ set(USE_FREEIMAGE 1)
 
 # To disable OpenGL back end (processing on the GPU), change 1 to 0 below:
 set(USE_OPENGL_BACKEND 1)
+
+# To disable Lua scripting, change 1 to 0 below:
+set(ENABLE_SCRIPTING 1)

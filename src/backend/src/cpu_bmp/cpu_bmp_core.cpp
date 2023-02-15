@@ -139,13 +139,19 @@ void c_CpuAndBitmaps::ImageViewZoomChanged(float zoomFactor)
 
 void c_CpuAndBitmaps::SetImage(c_Image&& img, std::optional<wxRect> newSelection)
 {
+    IMPPG_ASSERT(
+        img.GetPixelFormat() == PixelFormat::PIX_MONO32F ||
+        img.GetPixelFormat() == PixelFormat::PIX_RGB32F
+    );
+
     m_Img = std::move(img);
+
     m_ImgBmp = ImageToRgbBitmap(
-        m_Img.value(),
+        *m_Img,
         0,
         0,
-        m_Img.value().GetWidth(),
-        m_Img.value().GetHeight()
+        m_Img->GetWidth(),
+        m_Img->GetHeight()
     );
 
     if (m_ZoomFactor != ZOOM_NONE)
@@ -159,7 +165,7 @@ void c_CpuAndBitmaps::SetImage(c_Image&& img, std::optional<wxRect> newSelection
     {
         m_Processor.SetSelection(newSelection.value());
     }
-    m_Processor.ScheduleProcessing(ProcessingRequest::SHARPENING);
+    m_Processor.ScheduleProcessing(req_type::Sharpening{});
 }
 
 void c_CpuAndBitmaps::OnPaint(wxPaintEvent&)
@@ -293,13 +299,13 @@ Histogram c_CpuAndBitmaps::GetHistogram()
     if (!m_Img)
         return Histogram{};
 
-    if (const c_Image* unshMaskResult = m_Processor.GetUnshMaskOutput())
+    if (const auto unshMaskResult = m_Processor.GetUnshMaskOutput())
     {
-        return DetermineHistogram(*unshMaskResult, unshMaskResult->GetImageRect());
+        return DetermineHistogramFromChannels(*unshMaskResult.value(), unshMaskResult.value()->at(0).GetImageRect());
     }
     else
     {
-        return DetermineHistogram(m_Img.value(), m_Selection);
+        return DetermineHistogram(*m_Img, m_Selection);
     }
 }
 
@@ -309,7 +315,7 @@ void c_CpuAndBitmaps::NewSelection(
 )
 {
     // restore unprocessed image contents in the previous selection
-    wxBitmap restored = ImageToRgbBitmap(m_Img.value(), m_Selection.x, m_Selection.y, m_Selection.width, m_Selection.height);
+    wxBitmap restored = ImageToRgbBitmap(*m_Img, m_Selection.x, m_Selection.y, m_Selection.width, m_Selection.height);
     wxMemoryDC restoredDc(restored);
     wxMemoryDC(m_ImgBmp.value()).Blit(m_Selection.GetTopLeft(), m_Selection.GetSize(), &restoredDc, wxPoint(0, 0));
 
@@ -388,31 +394,31 @@ void c_CpuAndBitmaps::NewSelection(
 
     m_Selection = selection;
     m_Processor.SetSelection(selection);
-    m_Processor.ScheduleProcessing(ProcessingRequest::SHARPENING);
+    m_Processor.ScheduleProcessing(req_type::Sharpening{});
 }
 
 void c_CpuAndBitmaps::NewProcessingSettings(const ProcessingSettings& procSettings)
 {
     m_Processor.SetProcessingSettings(procSettings);
-    m_Processor.ScheduleProcessing(ProcessingRequest::SHARPENING);
+    m_Processor.ScheduleProcessing(req_type::Sharpening{});
 }
 
 void c_CpuAndBitmaps::LRSettingsChanged(const ProcessingSettings& procSettings)
 {
     m_Processor.SetProcessingSettings(procSettings);
-    m_Processor.ScheduleProcessing(ProcessingRequest::SHARPENING);
+    m_Processor.ScheduleProcessing(req_type::Sharpening{});
 }
 
-void c_CpuAndBitmaps::UnshMaskSettingsChanged(const ProcessingSettings& procSettings)
+void c_CpuAndBitmaps::UnshMaskSettingsChanged(const ProcessingSettings& procSettings, std::size_t maskIdx)
 {
     m_Processor.SetProcessingSettings(procSettings);
-    m_Processor.ScheduleProcessing(ProcessingRequest::UNSHARP_MASKING);
+    m_Processor.ScheduleProcessing(req_type::UnsharpMasking{maskIdx});
 }
 
 void c_CpuAndBitmaps::ToneCurveChanged(const ProcessingSettings& procSettings)
 {
     m_Processor.SetProcessingSettings(procSettings);
-    m_Processor.ScheduleProcessing(ProcessingRequest::TONE_CURVE);
+    m_Processor.ScheduleProcessing(req_type::ToneCurve{});
 }
 
 void c_CpuAndBitmaps::AbortProcessing()
@@ -424,7 +430,7 @@ void c_CpuAndBitmaps::UpdateSelectionAfterProcessing()
 {
     Log::Print("Updating selection after processing\n");
 
-    const c_Image& toneMappingOutput = m_Processor.GetToneMappingOutput();
+    const c_Image& toneMappingOutput = m_Processor.GetProcessedOutput();
     wxBitmap updatedArea = ImageToRgbBitmap(toneMappingOutput, 0, 0,
         toneMappingOutput.GetWidth(),
         toneMappingOutput.GetHeight());
@@ -518,7 +524,7 @@ c_Image c_CpuAndBitmaps::GetProcessedSelection()
     AbortProcessing();
 
     m_Processor.ApplyPreciseToneCurveValues();
-    return m_Processor.GetToneMappingOutput();
+    return m_Processor.GetProcessedOutput();
 }
 
 bool c_CpuAndBitmaps::ProcessingInProgress()

@@ -123,8 +123,9 @@ END_EVENT_TABLE()
 void c_ImageAlignmentParams::GetAlignmentParameters(AlignmentParameters_t& params)
 {
     params = m_Parameters;
-    params.inputFiles.Clear();
-    m_FileList.GetStrings(params.inputFiles);
+    auto newInputs = wxArrayString{};
+    m_FileList.GetStrings(newInputs);
+    params.inputs = std::move(newInputs);
     params.outputDir = m_Parameters.outputDir = m_OutputDirCtrl->GetPath();
 }
 

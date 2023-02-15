@@ -114,6 +114,10 @@ namespace Keys
 
     const char* DisplayScalingMethod = UserInterfaceGroup"/DisplayScalingMethod";
 
+    const char* ScriptDialogPosSize = UserInterfaceGroup"/ScriptDialogPosSize";
+
+    const char* ScriptOpenPath = UserInterfaceGroup"/ScriptOpenPath";
+
 #define OpenGLGroup "/OpenGL"
 
     const char* LRCmdBatchSizeMpixIters = OpenGLGroup"/LRCommandBatchSizeMpixIters";
@@ -192,6 +196,7 @@ PROPERTY_RECT(BatchProgressDialogPosSize);
 PROPERTY_RECT(AlignProgressDialogPosSize);
 PROPERTY_RECT(AlignParamsDialogPosSize);
 PROPERTY_RECT(ToneCurveSettingsDialogPosSize);
+PROPERTY_RECT(ScriptDialogPosSize);
 
 // Finds and uses wxFromString() and wxToString() defined above
 #define PROPERTY_OUTPUT_FORMAT(Name)                                                                       \
@@ -331,5 +336,7 @@ c_Property<ScalingMethod> DisplayScalingMethod(
 );
 
 PROPERTY_BOOL(NormalizeFITSValues, true);
+
+PROPERTY_STRING(ScriptOpenPath);
 
 }  // namespace Configuration

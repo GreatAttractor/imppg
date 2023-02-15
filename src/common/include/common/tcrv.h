@@ -24,6 +24,7 @@ File description:
 #ifndef IMPPG_TONE_CURVE_H
 #define IMPPG_TONE_CURVE_H
 
+#include <initializer_list>
 #include <optional>
 #include <vector>
 
@@ -67,6 +68,8 @@ public:
     /// Allocates a LUT, but does not copy and does not recalculate LUT contents.
     c_ToneCurve(const c_ToneCurve& c);
 
+    c_ToneCurve(std::initializer_list<FloatPoint_t> points);
+
     /// Does not copy and does not recalculate LUT contents.
     c_ToneCurve& operator=(const c_ToneCurve& c);
 
@@ -80,10 +83,10 @@ public:
     void ClearPoints();
 
     /// Adds a curve point (keeps all points sorted by their 'x'); returns its index
-    int AddPoint(float x, float y);
+    std::size_t AddPoint(float x, float y);
 
     /// Removes the specified point. If there are only 2 points, does nothing.
-    void RemovePoint(int index);
+    void RemovePoint(std::size_t index);
 
     bool GetSmooth() const { return m_Smooth; }
     void SetSmooth(bool smooth);
@@ -98,7 +101,7 @@ public:
     }
 
     /// Tone-maps `input` to `output` using precise tone curve values.
-    void ApplyPreciseToneCurve(const float input[], float output[], size_t length)
+    void ApplyPreciseToneCurve(const float input[], float output[], size_t length) const
     {
         for (size_t i = 0; i < length; i++)
             output[i] = GetPreciseValue(input[i]);
@@ -110,19 +113,19 @@ public:
     ) const;
 
     /// Returns index of the curve point closest to (x, y)
-    int GetIdxOfClosestPoint(
+    std::size_t GetIdxOfClosestPoint(
         float x, ///< X coordinate, range [0; 1]
         float y  ///< Y coordinate, range [0; 1]
-        ) const;
+    ) const;
 
-    const FloatPoint_t& GetPoint(int idx) const
+    const FloatPoint_t& GetPoint(std::size_t idx) const
     {
         return m_Points[idx];
     }
 
-    void UpdatePoint(int idx, float x, float y);
+    void UpdatePoint(std::size_t idx, float x, float y);
 
-    int GetNumPoints() const
+    std::size_t GetNumPoints() const
     {
         return m_Points.size();
     }
@@ -152,6 +155,14 @@ public:
 
     /// Returns `true` if the tone curve is an identity map (no impact on the image).
     bool IsIdentity() const;
+
+    bool operator==(const c_ToneCurve& other) const
+    {
+        return m_Points == other.m_Points
+            && m_Smooth == other.m_Smooth
+            && m_IsGamma == other.m_IsGamma
+            && m_Gamma == other.m_Gamma;
+    }
 };
 
 #endif

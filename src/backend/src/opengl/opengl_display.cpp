@@ -54,16 +54,10 @@ static const int IMPPG_GL_ATTRIBUTES[] =
 
 std::unique_ptr<IDisplayBackEnd> CreateOpenGLDisplayBackend(c_ScrolledView& imgView, unsigned lRCmdBatchSizeMpixIters)
 {
-    return c_OpenGLDisplay::Create(imgView, lRCmdBatchSizeMpixIters);
-}
-
-//TODO: remove this?
-std::unique_ptr<c_OpenGLDisplay> c_OpenGLDisplay::Create(c_ScrolledView& imgView, unsigned lRCmdBatchSizeMpixIters)
-{
     if (!wxGLCanvas::IsDisplaySupported(IMPPG_GL_ATTRIBUTES))
         return nullptr;
     else
-        return std::unique_ptr<c_OpenGLDisplay>(new c_OpenGLDisplay(imgView, lRCmdBatchSizeMpixIters));
+        return std::make_unique<c_OpenGLDisplay>(imgView, lRCmdBatchSizeMpixIters);
 }
 
 c_OpenGLDisplay::c_OpenGLDisplay(c_ScrolledView& imgView, unsigned lRCmdBatchSizeMpixIters)
@@ -117,7 +111,8 @@ c_OpenGLDisplay::c_OpenGLDisplay(c_ScrolledView& imgView, unsigned lRCmdBatchSiz
     m_GLPrograms.monoOutput = gl::c_Program(
         { &m_GLShaders.frag.monoOutput,
           &m_GLShaders.vert.vertex },
-        { uniforms::Image,
+        { uniforms::IsMono,
+          uniforms::Image,
           uniforms::ViewportSize,
           uniforms::ScrollPos },
         {},
@@ -127,7 +122,8 @@ c_OpenGLDisplay::c_OpenGLDisplay(c_ScrolledView& imgView, unsigned lRCmdBatchSiz
     m_GLPrograms.monoOutputCubic = gl::c_Program(
         { &m_GLShaders.frag.monoOutputCubic,
           &m_GLShaders.vert.vertex },
-        { uniforms::Image,
+        { uniforms::IsMono,
+          uniforms::Image,
           uniforms::ViewportSize,
           uniforms::ScrollPos },
         {},
@@ -204,11 +200,11 @@ void c_OpenGLDisplay::OnPaint(wxPaintEvent&)
         canvasSize.GetHeight() * m_GLCanvasScaleFactor);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    if (m_Img.has_value())
+    if (m_Img)
     {
         auto& prog = (m_ScalingMethod == ScalingMethod::CUBIC) ? m_GLPrograms.monoOutputCubic : m_GLPrograms.monoOutput;
         prog.Use();
-
+        prog.SetUniform1i(uniforms::IsMono, IsMono(m_Img.value().GetPixelFormat()));
         gl::BindProgramTextures(prog, { {&m_Processor->GetOriginalImg(), uniforms::Image} });
 
         const auto scrollPos = m_ImgView.GetScrollPosition();
@@ -239,7 +235,7 @@ void c_OpenGLDisplay::RenderProcessingResults()
 
     auto& prog = (m_ScalingMethod == ScalingMethod::CUBIC) ? m_GLPrograms.monoOutputCubic : m_GLPrograms.monoOutput;
     prog.Use();
-
+    prog.SetUniform1i(uniforms::IsMono, IsMono(m_Img.value().GetPixelFormat()));
     gl::BindProgramTextures(prog, { {renderingResults, uniforms::Image} });
 
     const auto scrollPos = m_ImgView.GetScrollPosition();
@@ -292,7 +288,7 @@ void c_OpenGLDisplay::MarkSelection()
 void c_OpenGLDisplay::ImageViewScrolledOrResized(float zoomFactor)
 {
     m_ZoomFactor = zoomFactor;
-    if (m_Img.has_value())
+    if (m_Img)
     {
         FillWholeImgVBO();
         FillLastChosenSelectionScaledVBO();
@@ -302,7 +298,7 @@ void c_OpenGLDisplay::ImageViewScrolledOrResized(float zoomFactor)
 void c_OpenGLDisplay::ImageViewZoomChanged(float zoomFactor)
 {
     m_ZoomFactor = zoomFactor;
-    if (m_Img.has_value())
+    if (m_Img)
     {
         FillWholeImgVBO();
         FillLastChosenSelectionScaledVBO();
@@ -331,8 +327,8 @@ void c_OpenGLDisplay::FillLastChosenSelectionScaledVBO()
 void c_OpenGLDisplay::FillWholeImgVBO()
 {
     const auto absoluteScale = m_ZoomFactor * m_GLCanvasScaleFactor;
-    const GLfloat width =  static_cast<GLfloat>(m_Img.value().GetWidth());
-    const GLfloat height = static_cast<GLfloat>(m_Img.value().GetHeight());
+    const GLfloat width =  static_cast<GLfloat>(m_Img->GetWidth());
+    const GLfloat height = static_cast<GLfloat>(m_Img->GetHeight());
     const GLfloat swidth = width * absoluteScale;
     const GLfloat sheight = height * absoluteScale;
 
@@ -349,6 +345,11 @@ void c_OpenGLDisplay::FillWholeImgVBO()
 
 void c_OpenGLDisplay::SetImage(c_Image&& img, std::optional<wxRect> newSelection)
 {
+    IMPPG_ASSERT(
+        img.GetPixelFormat() == PixelFormat::PIX_MONO32F ||
+        img.GetPixelFormat() == PixelFormat::PIX_RGB32F
+    );
+
     m_Img = std::move(img);
 
     if (newSelection.has_value())
@@ -362,23 +363,30 @@ void c_OpenGLDisplay::SetImage(c_Image&& img, std::optional<wxRect> newSelection
     FillWholeImgVBO();
     FillLastChosenSelectionScaledVBO();
 
-    m_Processor->StartProcessing(ProcessingRequest::SHARPENING);
+    m_Processor->StartProcessing(req_type::Sharpening{});
 }
 
 Histogram c_OpenGLDisplay::GetHistogram()
 {
-    if (const gl::c_Texture* unshMaskOutput = m_Processor->GetUsharpMaskOutput())
+    const gl::c_Texture* unshMaskOutput = m_Processor->GetUsharpMaskOutput();
+
+    if (m_Img.has_value() && unshMaskOutput != nullptr)
     {
-        c_Image img(unshMaskOutput->GetWidth(), unshMaskOutput->GetHeight(), PixelFormat::PIX_MONO32F);
+        const auto pixFmt = m_Img->GetPixelFormat();
+        c_Image img(unshMaskOutput->GetWidth(), unshMaskOutput->GetHeight(), pixFmt);
         glBindTexture(GL_TEXTURE_RECTANGLE, unshMaskOutput->Get());
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glGetTexImage(GL_TEXTURE_RECTANGLE, 0, GL_RED, GL_FLOAT, img.GetRow(0));
+        glGetTexImage(GL_TEXTURE_RECTANGLE, 0, IsMono(pixFmt) ? GL_RED : GL_RGB, GL_FLOAT, img.GetRow(0));
         return DetermineHistogram(img, img.GetImageRect());
     }
-    else if (m_Img)
+    else if (m_Img.has_value())
+    {
         return DetermineHistogram(m_Img.value(), m_Selection);
+    }
     else
+    {
         return Histogram{};
+    }
 }
 
 void c_OpenGLDisplay::NewSelection(const wxRect& selection, const wxRect&)
@@ -386,9 +394,9 @@ void c_OpenGLDisplay::NewSelection(const wxRect& selection, const wxRect&)
     m_Selection = selection;
     m_Processor->SetSelection(selection);
     FillLastChosenSelectionScaledVBO();
-    if (m_Img.has_value())
+    if (m_Img)
     {
-        m_Processor->StartProcessing(ProcessingRequest::SHARPENING);
+        m_Processor->StartProcessing(req_type::Sharpening{});
     }
 }
 
@@ -404,36 +412,36 @@ void c_OpenGLDisplay::SetScalingMethod(ScalingMethod scalingMethod)
 void c_OpenGLDisplay::ToneCurveChanged(const ProcessingSettings& procSettings)
 {
     m_Processor->SetProcessingSettings(procSettings);
-    if (m_Img.has_value())
+    if (m_Img)
     {
-        m_Processor->StartProcessing(ProcessingRequest::TONE_CURVE);
+        m_Processor->StartProcessing(req_type::ToneCurve{});
     }
 }
 
-void c_OpenGLDisplay::UnshMaskSettingsChanged(const ProcessingSettings& procSettings)
+void c_OpenGLDisplay::UnshMaskSettingsChanged(const ProcessingSettings& procSettings, std::size_t maskIdx)
 {
     m_Processor->SetProcessingSettings(procSettings);
-    if (m_Img.has_value())
+    if (m_Img)
     {
-        m_Processor->StartProcessing(ProcessingRequest::UNSHARP_MASKING);
+        m_Processor->StartProcessing(req_type::UnsharpMasking{maskIdx});
     }
 }
 
 void c_OpenGLDisplay::LRSettingsChanged(const ProcessingSettings& procSettings)
 {
     m_Processor->SetProcessingSettings(procSettings);
-    if (m_Img.has_value())
+    if (m_Img)
     {
-        m_Processor->StartProcessing(ProcessingRequest::SHARPENING);
+        m_Processor->StartProcessing(req_type::Sharpening{});
     }
 }
 
 void c_OpenGLDisplay::NewProcessingSettings(const ProcessingSettings& procSettings)
 {
     m_Processor->SetProcessingSettings(procSettings);
-    if (m_Img.has_value())
+    if (m_Img)
     {
-        m_Processor->StartProcessing(ProcessingRequest::SHARPENING);
+        m_Processor->StartProcessing(req_type::Sharpening{});
     }
 }
 

@@ -26,18 +26,59 @@ File description:
 
 #include "common/tcrv.h"
 
+#include <array>
+#include <string>
+#include <vector>
+#include <wx/stream.h>
+
+namespace Default
+{
+    constexpr float UNSHMASK_SIGMA = 1.3f;
+    constexpr float UNSHMASK_AMOUNT = 1.0f;
+    constexpr float UNSHMASK_THRESHOLD = 0.01f;
+    constexpr float UNSHMASK_WIDTH = 0.1f;
+}
+
+/// Default-constructed value does not have any effect on image.
+struct UnsharpMask
+{
+    bool adaptive{false}; ///If true, adaptive unsharp masking is used.
+    float sigma{Default::UNSHMASK_SIGMA}; ///< Gaussian kernel sigma.
+    float amountMin{Default::UNSHMASK_AMOUNT}; ///< Amount (weight) of the unsharped layer; <1.0 blurs, >1.0 sharpens; if adaptive=true, used as the min amount.
+    float amountMax{Default::UNSHMASK_AMOUNT}; ///< Max amount.
+    float threshold{Default::UNSHMASK_THRESHOLD}; ///< Threshold of input image brightness where the min-max amount transition occurs.
+    float width{Default::UNSHMASK_WIDTH}; ///< Width of the transition interval.
+
+    bool IsEffective() const
+    {
+        return !adaptive && amountMax != 1.0f ||
+            adaptive && (amountMin != 1.0f || amountMax != 1.0f);
+    }
+
+    bool operator==(const UnsharpMask& other) const
+    {
+        return adaptive == other.adaptive
+            && sigma == other.sigma
+            && amountMin == other.amountMin
+            && amountMax == other.amountMax
+            && threshold == other.threshold
+            && width == other.width;
+    }
+};
+
+/// Default-constructed settings do not have any effect on image.
 struct ProcessingSettings
 {
     /// Normalization is performed prior to all other processing steps.
     struct
     {
         bool enabled{false};
-        float min, max;
+        float min{0.0}, max{1.0};
     } normalization;
 
     struct
     {
-        float sigma; ///< Lucy-Richardson deconvolution kernel sigma
+        float sigma{1.0}; ///< Lucy-Richardson deconvolution kernel sigma
         int iterations{0}; ///< Number of Lucy-Richardson deconvolution iterations.
         struct
         {
@@ -45,24 +86,57 @@ struct ProcessingSettings
         } deringing;
     } LucyRichardson;
 
-    struct
-    {
-        bool adaptive{false}; ///If true, adaptive unsharp masking is used.
-        float sigma; ///< Gaussian kernel sigma.
-        float amountMin{1.0}; ///< Amount (weight) of the unsharped layer; <1.0 blurs, >1.0 sharpens; if adaptive=true, used as the min amount.
-        float amountMax{1.0}; ///< Max amount.
-        float threshold; ///< Threshold of input image brightness where the min-max amount transition occurs.
-        float width; ///< Width of the transition interval.
-
-        bool IsEffective() const
-        {
-            return !adaptive && amountMax != 1.0f ||
-                adaptive && (amountMin != 1.0f || amountMax != 1.0f);
-        }
-    } unsharpMasking;
+    // By convention, there is always at least one element (may be a no-op, i.e. amount = 1.0).
+    std::vector<UnsharpMask> unsharpMask{UnsharpMask{}};
 
     c_ToneCurve toneCurve;
+
+    bool operator==(const ProcessingSettings& other) const
+    {
+        return normalization.enabled == other.normalization.enabled
+            && normalization.min == other.normalization.min
+            && normalization.max == other.normalization.max
+            && LucyRichardson.sigma == other.LucyRichardson.sigma
+            && LucyRichardson.iterations == other.LucyRichardson.iterations
+            && LucyRichardson.deringing.enabled == other.LucyRichardson.deringing.enabled
+            && unsharpMask == other.unsharpMask
+            && toneCurve == other.toneCurve;
+    }
+
+    bool AdaptiveUnshMaskEnabled() const
+    {
+        for (const auto& umask: unsharpMask)
+        {
+            if (umask.adaptive) { return true; }
+        }
+        return false;
+    }
 };
 
-#endif // IMPGG_PROCESSING_SETTINGS_HEADER
+void SerializeSettings(const ProcessingSettings& settings, wxOutputStream& stream);
 
+std::optional<ProcessingSettings> DeserializeSettings(wxInputStream& stream);
+
+/// Saves the settings of Lucy-Richardson deconvolution, unsharp masking, tone curve and deringing; returns 'false' on error.
+bool SaveSettings(const std::string& filePath, const ProcessingSettings& settings);
+
+/// Loads the settings of Lucy-Richardson deconvolution, unsharp masking, tone curve and deringing; returns 'false' on error.
+std::optional<ProcessingSettings> LoadSettings(const std::string& filePath);
+
+/// Returns the coefficients a, b, c, d of the cubic curve defining the "amount" value
+/// for adaptive unsharp masking. The amount is a function of local brightness
+/// (of the raw input image) as follows:
+///
+///   - if brightness < threshold - width, amount is amountMin
+///   - if brightness > threshold + width, amount is amountMax
+///   - transition region: if threshold - width <= brightness <= threshold - width,
+///     amount changes smoothly from amounMin to amountMax following a cubic function:
+///
+///     amount = a*brightness^3 + b*brightness^2 + c*brightness + d
+///
+///  such that its derivatives are zero at (threshold - width) and (threshold + width)
+///  and there is an inflection point at the threshold.
+///
+std::array<float, 4> GetAdaptiveUnshMaskTransitionCurve(const UnsharpMask& um);
+
+#endif // IMPGG_PROCESSING_SETTINGS_HEADER

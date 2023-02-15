@@ -1,7 +1,7 @@
 # ImPPG (Image Post-Processor)
-Copyright (C) 2015-2022 Filip Szczerek (ga.software@yahoo.com)
+Copyright (C) 2015-2023 Filip Szczerek (ga.software@yahoo.com)
 
-version 0.6.5 (2022-04-10)
+version 1.9.0-beta (2023-02-15)
 
 *This program comes with ABSOLUTELY NO WARRANTY. This is free software, licensed under GNU General Public License v3 or any later version and you are welcome to redistribute it under certain conditions. See the LICENSE file for details.*
 
@@ -22,18 +22,19 @@ version 0.6.5 (2022-04-10)
 - 7\. Image sequence alignment
   - 7\.1\. High-contrast features stabilization (phase correlation)
   - 7\.2\. Solar limb stabilization
-- 8\. Misc
-- 9\. Known problems
-- 10\. Downloading
-- 11\. Building from source code
-  - 11\.1\. Building under Linux and similar systems using GNU (or compatible) toolchain
-    - 11\.1\.1. Building under Ubuntu 18.04
-    - 11\.1\.2. Packaging
-    - 11\.1\.3. Building for macOS
-  - 11\.2\. Building under MS Windows
-  - 11\.3\. UI language
-- 12\. Acknowledgements
-- 13\. Change log
+- 8\. Scripting
+- 9\. Misc
+- 10\. Known problems
+- 11\. Downloading
+- 12\. Building from source code
+  - 12\.1\. Building under Linux and similar systems using GNU (or compatible) toolchain
+    - 12\.1\.1. Building under Ubuntu 18.04
+    - 12\.1\.2. Packaging
+    - 12\.1\.3. Building for macOS
+  - 12\.2\. Building under MS Windows
+  - 12\.3\. UI language
+- 13\. Acknowledgements
+- 14\. Change log
 
 ----------------------------------------
 
@@ -88,7 +89,7 @@ Processing back ends can be switched via menu `Settings/Back end`.
 ----------------------------------------
 ## 3. Supported image file formats
 
-Accepted input formats: BMP, JPEG, PNG, TIFF (most of bit depths and compression methods), TGA and other via the FreeImage library, FITS. Image is processed in grayscale and saved in one of the following formats: BMP 8-bit; PNG 8-bit; TIFF 8-bit, 16-bit, 32-bit floating-point (no compression or compressed with LZW or ZIP), FITS 8-bit, 16-bit or 32-bit floating-point.
+Accepted input formats: BMP, JPEG, PNG, TIFF (most of bit depths and compression methods), TGA and other via the FreeImage library, FITS. Processed image is saved in one of the following formats: BMP 8-bit; PNG 8-bit; TIFF 8-bit, 16-bit, 32-bit floating-point (no compression or compressed with LZW or ZIP), FITS 8-bit, 16-bit or 32-bit floating-point.
 
 Output images produces by the sequence alignment function are saved as uncompressed TIFF with number of channels and bit depth preserved (except 8-bit palettized ones; those are converted to 24-bit RGB). Input FITS files are saved as FITS with bit depth preserved.
 
@@ -129,6 +130,8 @@ Access by:
 ### 4.3. Unsharp masking
 
 Unsharp masking can be used for final sharpening (independently of L–R deconvolution) or blurring of the image. The *sigma* parameter specifies the Gaussian kernel’s width; the larger the value, the coarser the sharpening or blurring. `Amount` specifies the effect’s strength. Value < 1.0 blurs the image, 1.0 does nothing, value > 1.0 sharpens the image.
+
+More than one unsharp masks can be specified; they will be applied sequentially. E.g., a sharpening one (amount > 1), and then a smaller-sigma blurring one for mild denoising (amount < 1).
 
 
 #### Adaptive mode
@@ -202,13 +205,19 @@ Access by:
 
 
 ----------------------------------------
-## 8. Misc
+## 8. Scripting
+
+All ImPPG's image processing facilities can be invoked from a script written in the [Lua](https://www.lua.org/) programming language. See the [scripting documentation](doc/scripting/scripting.md) for details.
+
+
+----------------------------------------
+## 9. Misc
 
 ImPPG stores certain settings (e.g. the main window’s size and position) in an INI file, whose location is platform-dependent. On recent versions of MS Windows the path is `%HOMEPATH%\AppData\Roaming\imppg.ini`, where `%HOMEPATH%` usually equals `C:\Users\<username>` (but if OneDrive is enabled, the file may be located there). On Linux the path is `~/.imppg`.
 
 
 ----------------------------------------
-## 9. Known problems
+## 10. Known problems
 
   - Starting with wxWidgets 3.1.5 on Linux, GL Canvas uses EGL by default. If the GLEW library used for building ImPPG is not built with EGL support, the call to `glewInit` will fail. Solution: either use GLEW built with EGL, or build wxWidgets adding `-DwxUSE_GLCANVAS_EGL=OFF` to its CMake invocation.
 
@@ -227,23 +236,28 @@ Solution: change the GTK theme to "Raleigh" (e.g. in Fedora use the "GTK+ Appear
 
 
 ----------------------------------------
-## 10. Downloading
+## 11. Downloading
 
-ImPPG source code and binaries for MS Windows and Ubuntu 18.04 (x86-64) can be downloaded from:
+ImPPG source code and binaries for MS Windows and Ubuntu 20.04 (x86-64) can be downloaded from:
     https://github.com/GreatAttractor/imppg/releases
 
 
 ----------------------------------------
-## 11. Building from source code
+## 12. Building from source code
 
 Building from source code requires a C++ compiler toolchain (with C++17 support), CMake, Boost libraries v. 1.57.0 or later (though earlier versions may work) and wxWidgets 3.0 (3.1 under MS Windows). Support for more image formats requires the FreeImage library, version 3.14.0 or newer. Without FreeImage the only supported formats are: BMP 8-, 24- and 32-bit, TIFF mono and RGB, 8 or 16 bits per channel (no compression). FITS support (optional) requires the CFITSIO library. Multithreaded processing requires a compiler supporting OpenMP.
 
-To enable/disable usage of CFITSIO, FreeImage and GPU/OpenGL back end (they are enabled by default), edit the `config.cmake` file.
+To enable/disable usage of CFITSIO, FreeImage, GPU/OpenGL back end and scripting (they are enabled by default), edit the `config.cmake` file.
 
 To remove any created CMake configuration, delete `CMakeCache.txt` and the `CMakeFiles` folder.
 
+To run the tests, execute (from the `build` directory):
+```bash
+$ ctest
+```
 
-### 11.1. Building under Linux and similar systems using GNU (or compatible) toolchain
+
+### 12.1. Building under Linux and similar systems using GNU (or compatible) toolchain
 
 *Note: CMake relies on the presence of the `wx-config` tool to detect and configure wxWidgets-related build options. Sometimes this tool can be named differently, e.g. in Fedora 23 with wxGTK3 packages from repository it is `wx-config-3.0`. Older versions of CMake may not accept it. This can be remedied e.g. by creating a symlink:*
 ```bash
@@ -281,11 +295,11 @@ $ cat install_manifest.txt | sudo xargs rm
 
 To use a different installation prefix, add `-DCMAKE_INSTALL_PREFIX=<my_dir>` to the initial CMake invocation.
 
-#### 11.1.1. Building under Ubuntu 18.04
+#### 12.1.1. Building under Ubuntu 18.04
 
 The following packages are needed for building under Ubuntu 18.04:
 ```
-git cmake build-essential libboost-dev libwxgtk3.0-gtk3-dev libglew-dev pkg-config libccfits-dev libfreeimage-dev
+git cmake build-essential libboost-dev libboost-test-dev libwxgtk3.0-gtk3-dev libglew-dev pkg-config libccfits-dev libfreeimage-dev liblua5.3-dev
 ```
 
 The default GCC version (7.x) is too old. Install and enable GCC 8 (example instructions: `https://linuxize.com/post/how-to-install-gcc-compiler-on-ubuntu-18-04/`). (Do not choose GCC 9, otherwise the built binary will not run on a clean Ubuntu 18.04 due to too old a version of `libstdc++`.)
@@ -293,7 +307,7 @@ The default GCC version (7.x) is too old. Install and enable GCC 8 (example inst
 After building `imppg`, it can be either installed as in section 11.1, or a Debian package can be created and installed with `apt` (see 11.1.2).
 
 
-#### 11.1.2. Packaging
+#### 12.1.2. Packaging
 
 In order to create a binary package, modify appropriately the final statement in `CMakeLists.txt`:
 ```cmake
@@ -305,7 +319,7 @@ $ cpack
 ```
 Note that building needs to be performed in an environment corresponding to the selected target system, so that proper shared objects are linked to (“environment” = a full system installation, a Docker image, or similar).
 
-#### 11.1.3. Building for macOS
+#### 12.1.3. Building for macOS
 
 *Note: macOS build and support is still work-in-progress*
 
@@ -314,12 +328,7 @@ To build ImPPG for macOS you will need Xcode and [Homebrew](https://brew.sh) ins
 OpenMP is currently supported with 3rd party LLVM toolchain installed with Homebrew as Apple disabled OpenMP in clang toolchain distributed with Xcode. As of July 2022 the build method was verified on macOS Monterey 12.5 and Xcode 13.4.1.
 
 Install following libraries with Homebrew:
-```bash
-$ brew update
-$ brew install boost cfitsio cmake freeimage glew mesa pkg-config wxwidgets llvm libomp
-```
-
-Now follow Linux build steps:
+```bashBuilding under
 ```bash
 $ mkdir build
 $ cd build
@@ -335,13 +344,13 @@ CC=/usr/local/opt/llvm/bin/clang CXX=/usr/local/opt/llvm/bin/clang++ LDFLAGS="-L
 ```
 
 ----------------------------------------
-### 11.2. Building under MS Windows
+### 12.2. Building under MS Windows
 
 The provided `CMakeLists.txt` supports the [MSYS2](http://www.msys2.org/) build environment. With manual configuration, other toolchains can also be used (e.g. MS Visual Studio).
 
 In order to build ImPPG (64-bit) under MSYS2, follow its installation instructions at http://www.msys2.org/. Then open the MSYS2/MinGW64 shell (after default installation: `c:\msys64\mingw64.exe`) and install the ImPPG’s dependencies by running:
 ```bash
-$ pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage mingw64/mingw-w64-x86_64-glew mingw64/mingw-w64-x86_64-wxmsw3.1
+$ pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage mingw64/mingw-w64-x86_64-glew mingw64/mingw-w64-x86_64-wxmsw3.1 mingw64/mingw-w64-x86_64-lua
 ```
 
 Download the ImPPG’s source code manually or clone it with Git:
@@ -371,7 +380,7 @@ To run ImPPG from Windows Explorer, the subfolders `images`, `pl`, `shaders` and
 
 
 ----------------------------------------
-### 11.3. UI language
+### 12.3. UI language
 
 
 ImPPG supports multiple user interface languages using the wxWidgets built-in internationalization facilities. All translatable strings in the source code are surrounded by the `_()` macro. Adding a new translation requires the `GNU gettext` package and consists of the following steps:
@@ -396,14 +405,21 @@ Binary distribution of ImPPG needs only the MO (binary) language files. Beside t
 
 
 ----------------------------------------
-## 12. Acknowledgements
+## 13. Acknowledgements
 
 Russian and Ukrainian translations: Rusłan Pazenko.
 German translation: Marcel Hoffmann.
 
 
 ----------------------------------------
-## 13. Change log
+## 14. Change log
+
+**1.9.0-beta** (2023-02-15)
+
+  - **New features**
+    - Scripting support
+    - RGB processing
+    - Multiple unsharp masks
 
 **0.6.5** (2022-04-10)
 

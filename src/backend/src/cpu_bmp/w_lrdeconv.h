@@ -44,6 +44,8 @@ class c_LucyRichardsonThread : public IWorkerThread
 
     void IterationNotification(int iter, int totalIters);
 
+    int m_LastReportedPercentage{0};
+
 public:
     c_LucyRichardsonThread(
         WorkerParameters&& params,

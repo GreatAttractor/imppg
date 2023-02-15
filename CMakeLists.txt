@@ -15,6 +15,8 @@ project("imppg")
 
 cmake_minimum_required(VERSION 2.8)
 
+enable_testing()
+
 include(config.cmake)
 include(utils.cmake)
 include(FindPkgConfig)
@@ -33,22 +35,20 @@ add_executable(imppg WIN32
     src/main.cpp
     src/normalize.cpp
     src/num_ctrl.cpp
-    src/num_formatter.cpp
+    src/progress_bar.cpp
     src/scrollable_dlg.cpp
-    src/settings.cpp
     src/tcrv_edit.cpp
     src/tcrv_wnd_settings.cpp
     src/wxapp.cpp
 )
 
 target_include_directories(imppg PRIVATE src)
-target_compile_options(imppg PRIVATE -Wall -Wextra -Wpedantic -Wold-style-cast -Wno-parentheses)
 
 set(IMPPG_SHADERS_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/imppg/shaders)
 set(IMPPG_IMAGES_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/imppg/images)
-set(IMPPG_VERSION_MAJOR 0)
-set(IMPPG_VERSION_MINOR 6)
-set(IMPPG_VERSION_SUBMINOR 5)
+set(IMPPG_VERSION_MAJOR 1)
+set(IMPPG_VERSION_MINOR 9)
+set(IMPPG_VERSION_SUBMINOR 0)
 
 target_compile_definitions(imppg PRIVATE
     IMPPG_VERSION_MAJOR=${IMPPG_VERSION_MAJOR}
@@ -56,7 +56,7 @@ target_compile_definitions(imppg PRIVATE
     IMPPG_VERSION_SUBMINOR=${IMPPG_VERSION_SUBMINOR}
 )
 
-set_cpp_standard(imppg)
+set_compiler_options(imppg)
 
 if(WIN32)
     # The RC file includes the application manifest and defines the application icon.
@@ -78,7 +78,7 @@ if(UNIX AND NOT APPLE)
     set(wxWidgets_CONFIG_OPTIONS --toolkit=gtk3)
 endif()
 
-set(WX_COMPONENTS "adv aui xml core base")
+set(WX_COMPONENTS "adv aui xml core base richtext")
 if(USE_OPENGL_BACKEND)
 	string(APPEND WX_COMPONENTS " gl")
 endif()
@@ -92,18 +92,15 @@ endif()
 include(${wxWidgets_USE_FILE})
 target_link_libraries(imppg PRIVATE ${wxWidgets_LIBRARIES})
 
-# TODO: move to backend
 find_package(OpenMP)
 if(OPENMP_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
 
-# TODO: move to backend
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag(-ffast-math GNU_FFAST_MATH_SUPPORTED)
 
-# TODO: move to backend
 if(GNU_FFAST_MATH_SUPPORTED)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
 endif()
@@ -122,21 +119,30 @@ else()
 endif()
 
 if(USE_CFITSIO EQUAL 1)
-    target_compile_definitions(imppg PRIVATE USE_CFITSIO=1)
     pkg_check_modules(CFITSIO cfitsio REQUIRED)
     target_include_directories(imppg PRIVATE ${CFITSIO_INCLUDE_DIRS})
     target_link_libraries(imppg PRIVATE ${CFITSIO_LIBRARIES})
 endif()
 
+if(ENABLE_SCRIPTING EQUAL 1)
+    target_compile_definitions(imppg PRIVATE ENABLE_SCRIPTING=1)
+    target_sources(imppg PRIVATE src/script_dialog.cpp)
+endif()
+
 add_subdirectory(src/alignment)
-add_subdirectory(src/backend)
+add_subdirectory(src/math_utils)
 add_subdirectory(src/common)
+add_subdirectory(src/backend)
 add_subdirectory(src/image)
 add_subdirectory(src/logging)
-add_subdirectory(src/math_utils)
+if(ENABLE_SCRIPTING)
+    add_subdirectory(src/scripting)
+endif()
 
 target_link_libraries(imppg PRIVATE alignment common math_utils backend image logging)
-
+if(ENABLE_SCRIPTING EQUAL 1)
+    target_link_libraries(imppg PRIVATE scripting)
+endif()
 
 # Installation -------------------------------------
 
@@ -148,6 +154,12 @@ install(FILES
     main_wnd.png
     LICENSE
     DESTINATION ${CMAKE_INSTALL_FULL_DOCDIR}
+)
+
+install(FILES
+    doc/scripting/api_reference.md
+    doc/scripting/scripting.md
+    DESTINATION ${CMAKE_INSTALL_FULL_DOCDIR}/doc/scripting
 )
 
 install(FILES

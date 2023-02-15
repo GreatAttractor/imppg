@@ -30,6 +30,7 @@ File description:
 #include <wx/arrstr.h>
 #include <wx/string.h>
 
+#include "alignment/align_proc.h"
 #include "common/common.h"
 #include "image/image.h"
 
@@ -41,7 +42,7 @@ unsigned GetClosestGPowerOf2(unsigned n);
 bool DetermineTranslationVectors(
         unsigned Nwidth, ///< FFT width
         unsigned Nheight, ///< FFT height
-        const wxArrayString& inputFiles, ///< List of input file names
+        const AlignmentInputs& inputFiles,
         /// Receives list of translation vectors between files in 'inputFiles'; each vector is a translation relative to the first image
         std::vector<FloatPoint_t>& translation,
         /// Receives the bounding box (within the NxN working area) of all images after alignment

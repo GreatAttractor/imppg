@@ -27,7 +27,7 @@ File description:
 
 */
 
-#include "num_formatter.h"
+#include "common/num_formatter.h"
 
 #include <iomanip>
 #include <sstream>

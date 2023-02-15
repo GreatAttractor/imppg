@@ -24,10 +24,13 @@ File description:
 #include <algorithm>
 #include <cmath>
 #include <complex>
+#include <functional>
+#include <optional>
 #include <wx/arrstr.h>
 #include <wx/string.h>
 #include <wx/filename.h>
 
+#include "align_common.h"
 #include "align_phasecorr.h"
 #include "common/common.h"
 #include "fft.h"
@@ -235,7 +238,7 @@ FloatPoint_t DetermineTranslationVector(
 bool DetermineTranslationVectors(
         unsigned Nwidth, ///< FFT width
         unsigned Nheight, ///< FFT height
-        const wxArrayString& inputFiles, ///< List of input file names
+        const AlignmentInputs& inputFiles,
         /// Receives list of translation vectors between files in 'inputFiles'; each vector is a translation relative to the first image
         std::vector<FloatPoint_t>& translation,
         /// Receives the bounding box (within the Nwidth x Nheight working area) of all images after alignment
@@ -273,30 +276,50 @@ bool DetermineTranslationVectors(
         static_cast<std::complex<float>*>(operator new[](Nwidth * Nheight * sizeof(std::complex<float>)))
     );
 
-    // Read the first image and calculate its FFT
-    Log::Print(wxString::Format("Loading %s... ", inputFiles[0]));
-    std::string localErrorMsg;
-    const auto loadResult = LoadImageFileAsMono32f(
-        inputFiles[0].ToStdString(),
-        normalizeFitsValues,
-        &localErrorMsg
-    );
-    Log::Print("done.\n");
-    if (!loadResult)
-    {
-        if (errorMsg)
-            *errorMsg = localErrorMsg;
-        return false;
-    }
+    const auto loadFileByIndex = [&](const wxArrayString& fnames, std::size_t idx) -> std::optional<c_Image> {
+        IMPPG_ASSERT(fnames.Count() > idx);
+        Log::Print(wxString::Format("Loading %s... ", fnames[idx]));
+        std::string localErrorMsg;
+        const auto loadResult = LoadImageFileAsMono32f(
+            fnames[idx].ToStdString(),
+            normalizeFitsValues,
+            &localErrorMsg
+        );
+        Log::Print("done.\n");
+        if (!loadResult)
+        {
+            if (errorMsg)
+            {
+                *errorMsg = localErrorMsg;
+            }
+        }
+        return loadResult;
+    };
 
-    const c_Image& src = loadResult.value();
+    std::optional<ImageAccessor> src = std::visit(Overload{
+        [&](const wxArrayString& fnames) -> std::optional<ImageAccessor> {
+            auto loadResult = loadFileByIndex(fnames, 0);
+            if (!loadResult.has_value())
+            {
+                return std::nullopt;
+            }
+            else
+            {
+                return ImageAccessor{std::move(*loadResult)};
+            }
+        },
 
-    imgWidth = src.GetWidth();
-    imgHeight = src.GetHeight();
+        [](const InputImageList& images) -> std::optional<ImageAccessor> { return ImageAccessor{images.at(0).get()}; },
+    }, inputFiles);
 
-    c_Image::ResizeAndTranslate(src.GetBuffer(), prevImg->GetBuffer(),
-            0, 0, src.GetWidth()-1, src.GetHeight()-1,
-            (Nwidth - src.GetWidth())/2, (Nheight - src.GetHeight())/2, true);
+    if (!src.has_value()) { return false; }
+
+    imgWidth = src->Get()->GetWidth();
+    imgHeight = src->Get()->GetHeight();
+
+    c_Image::ResizeAndTranslate(src->Get()->GetBuffer(), prevImg->GetBuffer(),
+            0, 0, src->Get()->GetWidth()-1, src->Get()->GetHeight()-1,
+            (Nwidth - src->Get()->GetWidth())/2, (Nheight - src->Get()->GetHeight())/2, true);
 
     prevImg->Multiply(windowFunc);
 
@@ -320,32 +343,40 @@ bool DetermineTranslationVectors(
     int xmax = bBox.x + imgWidth - 1;
     int ymax = bBox.y + imgHeight - 1;
 
-    for (unsigned i = 1; i < inputFiles.size(); i++)
+    const std::size_t numImages = std::visit(Overload{
+        [](const wxArrayString& fnames) { return fnames.Count(); },
+        [](const InputImageList& images) { return images.size(); }
+    }, inputFiles);
+
+    const auto getFileByIdx = [&](const AlignmentInputs& inputs, std::size_t idx) {
+        return std::visit(Overload{
+            [&](const wxArrayString& fnames) -> std::optional<ImageAccessor> {
+                auto loadResult = loadFileByIndex(fnames, idx);
+                if (!loadResult.has_value())
+                {
+                    return std::nullopt;
+                }
+                else
+                {
+                    return ImageAccessor{std::move(*loadResult)};
+                }
+            },
+
+            [&](const InputImageList& images) -> std::optional<ImageAccessor> { return ImageAccessor{images[idx].get()}; }
+        }, inputs);
+    };
+
+    for (std::size_t i = 1; i < numImages; ++i)
     {
-        // Read the current (i-th) file
-        Log::Print(wxString::Format("Loading %s... ", inputFiles[i]));
-        std::string localErrorMsg;
-        const auto loadResult = LoadImageFileAsMono32f(
-            inputFiles[i].ToStdString(),
-            normalizeFitsValues,
-            &localErrorMsg
-        );
-        Log::Print("done.\n");
-        if (!loadResult)
-        {
-            if (errorMsg)
-                *errorMsg = localErrorMsg;
-            return false;
-        }
+        const auto src = getFileByIdx(inputFiles, i);
+        if (!src.has_value()) { return false; }
 
-        const c_Image& src = loadResult.value();
+        imgWidth = src->Get()->GetWidth();
+        imgHeight = src->Get()->GetHeight();
 
-        imgWidth = src.GetWidth();
-        imgHeight = src.GetHeight();
-
-        c_Image::ResizeAndTranslate(src.GetBuffer(), currImg->GetBuffer(),
-                0, 0, src.GetWidth()-1, src.GetHeight()-1,
-                (Nwidth - src.GetWidth())/2, (Nheight - src.GetHeight())/2, true);
+        c_Image::ResizeAndTranslate(src->Get()->GetBuffer(), currImg->GetBuffer(),
+                0, 0, src->Get()->GetWidth()-1, src->Get()->GetHeight()-1,
+                (Nwidth - src->Get()->GetWidth())/2, (Nheight - src->Get()->GetHeight())/2, true);
 
         currImg->Multiply(windowFunc);
 

@@ -1,4 +1,4 @@
-function(set_cpp_standard target)
+function(set_compiler_options target)
     if (CMAKE_VERSION VERSION_LESS "3.1")
         if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
@@ -6,5 +6,15 @@ function(set_cpp_standard target)
     else()
         set_property(TARGET ${target} PROPERTY CXX_STANDARD 17)
         set_property(TARGET ${target} PROPERTY CXX_STANDARD_REQUIRED ON)
+    endif()
+
+    target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Wold-style-cast -Wno-parentheses)
+
+    if(USE_CFITSIO EQUAL 1)
+        target_compile_definitions(${target} PRIVATE USE_CFITSIO=1)
+    endif()
+
+    if(USE_FREEIMAGE EQUAL 1)
+        target_compile_definitions(${target} PRIVATE USE_FREEIMAGE=1)
     endif()
 endfunction()

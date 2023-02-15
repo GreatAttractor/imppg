@@ -73,7 +73,8 @@ public:
 
     void LRSettingsChanged(const ProcessingSettings& procSettings) override;
 
-    void UnshMaskSettingsChanged(const ProcessingSettings& procSettings) override;
+    /// Requests processing starting with unsharp masking using mask of given index.
+    void UnshMaskSettingsChanged(const ProcessingSettings& procSettings, std::size_t maskIdx) override;
 
     void ToneCurveChanged(const ProcessingSettings& procSettings) override;
 

@@ -24,6 +24,7 @@ File description:
 #include <cstdint>
 #include <cstdlib>
 #include <fstream>
+#include <memory>
 #include <optional>
 
 #include "image/image.h"
@@ -288,23 +289,24 @@ bool SaveBmp(const std::string& fileName, const IImageBuffer& img)
 
     int skip = bmpLineWidth - img.GetWidth() * bytesPP;
 
-    uint8_t* row = 0;
+    std::unique_ptr<std::uint8_t[]> row;
     if (pixFmt == PixelFormat::PIX_RGB8)
     {
-        row = new uint8_t[img.GetWidth() * bytesPP];
+        row = std::make_unique<uint8_t[]>(img.GetWidth() * bytesPP);
     }
 
     for (i = img.GetHeight() - 1; i >= 0; i--) // lines in a BMP are stored bottom to top
     {
         if (pixFmt == PixelFormat::PIX_RGB8)
         {
+            const auto* srcRow = img.GetRowAs<std::uint8_t>(i);
             for (unsigned x = 0; x < img.GetWidth(); x++)
             {
-                uint8_t temp = row[3*x + 0];
-                row[3*x + 0] = row[3*x + 2];
-                row[3*x + 2] = temp;
+                row[3*x + 0] = srcRow[3*x + 2];
+                row[3*x + 1] = srcRow[3*x + 1];
+                row[3*x + 2] = srcRow[3*x + 0];
             }
-            file.write(reinterpret_cast<const char*>(row), img.GetWidth() * bytesPP);
+            file.write(reinterpret_cast<const char*>(row.get()), img.GetWidth() * bytesPP);
         }
         else
             file.write(img.GetRowAs<char>(i), img.GetWidth() * bytesPP);
@@ -312,8 +314,6 @@ bool SaveBmp(const std::string& fileName, const IImageBuffer& img)
         if (skip > 0)
             file.write(img.GetRowAs<char>(i), skip); //this is just padding, so write anything
     }
-
-    delete[] row;
 
     file.close();
 

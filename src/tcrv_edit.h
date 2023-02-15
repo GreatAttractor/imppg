@@ -89,13 +89,15 @@ private:
     /// Sends EVT_TONE_CURVE event to parent, but no more frequently than each 'm_UpdateEvtDelay' milliseconds
     void SignalToneCurveUpdate();
 
+    float CorrectLogicalXPosition(std::size_t pointIdx, float x);
+
     wxPanel* m_CurveArea{nullptr};
     c_ToneCurve* m_Curve{nullptr};
     struct
     {
         bool dragging;
         float minx, maxx; ///< The allowed X range to drag the current point within
-        int draggedPointIdx;
+        std::size_t draggedPointIdx;
     } m_MouseOps;
 
     Histogram m_Histogram{};

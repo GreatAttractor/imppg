@@ -43,7 +43,6 @@ File description:
 #include "imppg_assert.h"
 #include "logging.h"
 #include "common/proc_settings.h"
-#include "settings.h"
 
 using namespace imppg::backend;
 
@@ -237,7 +236,7 @@ void c_BatchDialog::ProcessNextFile()
     wxString ext = path.GetExt().Lower();
     std::string errorMsg;
 
-    auto img = LoadImageFileAsMono32f(
+    auto img = LoadImageFileAs32f(
         path.GetFullPath().ToStdString(),
         Configuration::NormalizeFITSValues,
         &errorMsg
@@ -293,13 +292,17 @@ c_BatchDialog::c_BatchDialog(wxWindow* parent, wxArrayString fileNames,
 
     m_FileNames = std::move(fileNames);
 
-    if (!LoadSettings(settingsFileName, m_Settings.procSettings))
+    const auto settings = LoadSettings(settingsFileName.ToStdString());
+    if (!settings.has_value())
     {
         wxMessageBox(_("Could not load processing settings."), _("Error"), wxICON_ERROR, parent);
         m_Settings.loadedSuccessfully = false;
     }
     else
+    {
+        m_Settings.procSettings = *settings;
         m_Settings.loadedSuccessfully = true;
+    }
 
     m_Settings.outputDir = outputDirectory;
     m_Settings.outputFmt = outputFormat;

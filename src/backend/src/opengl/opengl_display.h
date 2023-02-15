@@ -42,8 +42,7 @@ namespace imppg::backend {
 class c_OpenGLDisplay: public IDisplayBackEnd
 {
 public:
-    /// Returns `nullptr` if OpenGL cannot be initialized.
-    static std::unique_ptr<c_OpenGLDisplay> Create(c_ScrolledView& imgView, unsigned lRCmdBatchSizeMpixIters);
+    c_OpenGLDisplay(c_ScrolledView& imgView, unsigned lRCmdBatchSizeMpixIters);
 
     ~c_OpenGLDisplay() override;
 
@@ -69,7 +68,7 @@ public:
 
     void LRSettingsChanged(const ProcessingSettings& procSettings) override;
 
-    void UnshMaskSettingsChanged(const ProcessingSettings& procSettings) override;
+    void UnshMaskSettingsChanged(const ProcessingSettings& procSettings, std::size_t maskIdx) override;
 
     void ToneCurveChanged(const ProcessingSettings& procSettings) override;
 
@@ -145,8 +144,6 @@ private:
     ScalingMethod m_ScalingMethod{ScalingMethod::LINEAR};
 
     bool m_DeferredCompletionHandlerCall = false;
-
-    c_OpenGLDisplay(c_ScrolledView& imgView, unsigned lRCmdBatchSizeMpixIters);
 
     void OnPaint(wxPaintEvent& event);
 

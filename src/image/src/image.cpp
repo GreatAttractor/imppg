@@ -141,12 +141,12 @@ static bool SaveAsFits(const IImageBuffer& buf, const std::string& fname)
 
 #if USE_FREEIMAGE
 
-c_FreeImageHandleWrapper::c_FreeImageHandleWrapper(c_FreeImageHandleWrapper&& rhs)
+c_FreeImageHandleWrapper::c_FreeImageHandleWrapper(c_FreeImageHandleWrapper&& rhs) noexcept
 {
     *this = std::move(rhs);
 }
 
-c_FreeImageHandleWrapper& c_FreeImageHandleWrapper::operator=(c_FreeImageHandleWrapper&& rhs)
+c_FreeImageHandleWrapper& c_FreeImageHandleWrapper::operator=(c_FreeImageHandleWrapper&& rhs) noexcept
 {
     m_FiBmp = rhs.m_FiBmp;
     rhs.m_FiBmp = nullptr;
@@ -325,18 +325,37 @@ static bool SaveAsFreeImage(const IImageBuffer& buf, const std::string& fname, O
     //FIXME! static_assert(false, "FIXME: wrong channel order when saving RGB after Combine");
 
     c_FreeImageHandleWrapper outputFiBmp = FreeImage_AllocateT(
-        fiType, buf.GetWidth(), buf.GetHeight(), fiBpp, 0x0000FF, 0x00FF00, 0xFF0000
+        fiType, buf.GetWidth(), buf.GetHeight(), fiBpp
     );
 
     if (!outputFiBmp)
         return false;
 
-    for (unsigned row = 0; row < buf.GetHeight(); row++)
-        memcpy(
-            FreeImage_GetScanLine(outputFiBmp.get(), row),
-            buf.GetRow(buf.GetHeight() - 1 - row),
-            buf.GetWidth() * buf.GetBytesPerPixel()
-        );
+    if (FIT_BITMAP == fiType && 24 == fiBpp)
+    {
+        for (unsigned row = 0; row < buf.GetHeight(); row++)
+        {
+            const auto* srcRow = static_cast<const std::uint8_t*>(buf.GetRow(buf.GetHeight() - 1 - row));
+            std::uint8_t* destRow = FreeImage_GetScanLine(outputFiBmp.get(), row);
+            for (unsigned x = 0; x < buf.GetWidth(); ++x)
+            {
+                destRow[3 * x + 0] = srcRow[3 * x + 2];
+                destRow[3 * x + 1] = srcRow[3 * x + 1];
+                destRow[3 * x + 2] = srcRow[3 * x + 0];
+            }
+        }
+    }
+    else
+    {
+        for (unsigned row = 0; row < buf.GetHeight(); row++)
+        {
+            memcpy(
+                FreeImage_GetScanLine(outputFiBmp.get(), row),
+                buf.GetRow(buf.GetHeight() - 1 - row),
+                buf.GetWidth() * buf.GetBytesPerPixel()
+            );
+        }
+    }
 
     const auto [fiFmt, fiFlags] = GetFiFormatAndFlags(outpFileType);
     result = FreeImage_Save(fiFmt, outputFiBmp.get(), fname.c_str(), fiFlags);
@@ -497,7 +516,8 @@ static c_SimpleBuffer GetConvertedPixelFormatFragment(
     unsigned x0,
     unsigned y0,
     unsigned width,
-    unsigned height)
+    unsigned height
+)
 {
     IMPPG_ASSERT(!(destPixFmt == PixelFormat::PIX_PAL8 && srcBuf.GetPixelFormat() != PixelFormat::PIX_PAL8));
     IMPPG_ASSERT(x0 < srcBuf.GetWidth());
@@ -696,6 +716,14 @@ static c_SimpleBuffer GetConvertedPixelFormatFragment(
 
             case PixelFormat::PIX_MONO32F: ConvertWholeLine<uint8_t, float>([](const uint8_t* src, float* dest) {
                 *dest = (src[0] + src[1] + src[2]) * 1.0f/(3*0xFF);
+            },
+            width, inPtr, inPtrStep, outPtr, outPtrStep);
+            break;
+
+            case PixelFormat::PIX_RGB32F: ConvertWholeLine<uint8_t, float>([](const uint8_t* src, float* dest) {
+                dest[0] = src[0] / static_cast<float>(0xFF);
+                dest[1] = src[1] / static_cast<float>(0xFF);
+                dest[2] = src[2] / static_cast<float>(0xFF);
             },
             width, inPtr, inPtrStep, outPtr, outPtrStep);
             break;
@@ -1092,12 +1120,20 @@ void c_Image::ResizeAndTranslate(
 
 void NormalizeFpImage(c_Image& img, float minLevel, float maxLevel)
 {
-    IMPPG_ASSERT(img.GetPixelFormat() == PixelFormat::PIX_MONO32F);
-    float lmin = FLT_MAX, lmax = -FLT_MAX; // min and max brightness in the input image
+    IMPPG_ASSERT(
+        img.GetPixelFormat() == PixelFormat::PIX_MONO32F ||
+        img.GetPixelFormat() == PixelFormat::PIX_RGB32F
+    );
+
+    const std::size_t numChannels = NumChannels[static_cast<std::size_t>(img.GetPixelFormat())];
+
+    // min and max brightness in the input image
+    float lmin = FLT_MAX;
+    float lmax = -FLT_MAX;
     for (unsigned row = 0; row < img.GetHeight(); row++)
-        for (unsigned col = 0; col < img.GetWidth(); col++)
+        for (unsigned col = 0; col < img.GetWidth() * numChannels; col++)
         {
-            float val = img.GetRowAs<float>(row)[col];
+            const float val = img.GetRowAs<float>(row)[col];
             if (val < lmin)
                 lmin = val;
             if (val > lmax)
@@ -1105,13 +1141,13 @@ void NormalizeFpImage(c_Image& img, float minLevel, float maxLevel)
         }
 
     // Determine coefficients 'a' and 'b' which satisfy: new_luminance := a * old_luminance + b
-    float a = (maxLevel - minLevel) / (lmax - lmin);
-    float b = maxLevel - a*lmax;
+    const float a = (maxLevel - minLevel) / (lmax - lmin);
+    const float b = maxLevel - a * lmax;
 
     // Pixels with brightness 'minLevel' become black and those of 'maxLevel' become white.
 
     for (unsigned row = 0; row < img.GetHeight(); row++)
-        for (unsigned col = 0; col < img.GetWidth(); col++)
+        for (unsigned col = 0; col < img.GetWidth() * numChannels; col++)
         {
             float& val = img.GetRowAs<float>(row)[col];
             val = a * val + b;
@@ -1346,11 +1382,29 @@ std::optional<c_Image> LoadImage(
 #endif
 }
 
-std::optional<c_Image> LoadImageFileAsMono32f(
-    const std::string& fname,     ///< Full path (including file name and extension).
-    /// If true, floating-points values read from a FITS file are normalized, so that the highest becomes 1.0.
+std::optional<c_Image> LoadImageFileAs32f(
+    const std::string& fname,
     bool normalizeFITSvalues,
-    std::string* errorMsg         ///< If not null, may receive an error message (if any).
+    std::string* errorMsg
+)
+{
+    const auto image = LoadImage(fname, std::nullopt, errorMsg, normalizeFITSvalues);
+    if (!image) { return std::nullopt; }
+
+    if (NumChannels[static_cast<std::size_t>(image->GetPixelFormat())] == 1)
+    {
+        return image->ConvertPixelFormat(PixelFormat::PIX_MONO32F);
+    }
+    else
+    {
+        return image->ConvertPixelFormat(PixelFormat::PIX_RGB32F);
+    }
+}
+
+std::optional<c_Image> LoadImageFileAsMono32f(
+    const std::string& fname,
+    bool normalizeFITSvalues,
+    std::string* errorMsg
 )
 {
     return LoadImage(fname, PixelFormat::PIX_MONO32F, errorMsg, normalizeFITSvalues);
@@ -1666,4 +1720,47 @@ c_Image c_Image::CombineRGB(const c_Image& red, const c_Image& green, const c_Im
     }
 
     return rgb;
+}
+
+c_Image c_Image::Blend(const c_Image& img1, double weight1, const c_Image& img2, double weight2)
+{
+    IMPPG_ASSERT(weight1 >= 0.0 && weight1 <= 1.0);
+    IMPPG_ASSERT(weight2 >= 0.0 && weight2 <= 1.0);
+    IMPPG_ASSERT(img1.GetWidth() == img2.GetWidth() && img1.GetHeight() == img2.GetHeight());
+    IMPPG_ASSERT(img1.GetPixelFormat() == PixelFormat::PIX_MONO32F ||
+                 img1.GetPixelFormat() == PixelFormat::PIX_RGB32F);
+    IMPPG_ASSERT(img1.GetPixelFormat() == img2.GetPixelFormat());
+
+    if (weight1 == 0.0 && weight2 == 0.0)
+    {
+        c_Image black(img1.GetWidth(), img1.GetHeight(), img1.GetPixelFormat());
+        black.ClearToZero();
+        return black;
+    }
+
+    const float actualW1 = weight1 / (weight1 + weight2);
+    const float actualW2 = weight2 / (weight1 + weight2);
+
+    c_Image blended(img1.GetWidth(), img1.GetHeight(), img1.GetPixelFormat());
+
+    const auto numChannels = NumChannels[static_cast<int>(img1.GetPixelFormat())];
+
+    for (unsigned y = 0; y < img1.GetHeight(); ++y)
+    {
+        const float* srcRow1 = img1.GetRowAs<float>(y);
+        const float* srcRow2 = img2.GetRowAs<float>(y);
+        float* destRow = blended.GetRowAs<float>(y);
+
+        for (unsigned x = 0; x < img1.GetWidth(); ++x)
+        {
+            for (std::size_t channel = 0; channel < numChannels; ++channel)
+            {
+                destRow[x * numChannels + channel] =
+                    actualW1 * srcRow1[x * numChannels + channel] +
+                    actualW2 * srcRow2[x * numChannels + channel];
+            }
+        }
+    }
+
+    return blended;
 }

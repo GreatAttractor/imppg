@@ -52,6 +52,7 @@ class c_MainWindow: public wxFrame
     // Event handlers ----------
     void OnClose(wxCloseEvent& event);
     void OnCommandEvent(wxCommandEvent& event);
+    void OnIdle(wxIdleEvent& event);
     void OnImageViewMouseDragStart(wxMouseEvent& event);
     void OnImageViewMouseMove(wxMouseEvent& event);
     void OnImageViewMouseDragEnd(wxMouseEvent& event);
@@ -67,6 +68,8 @@ class c_MainWindow: public wxFrame
     void OnImageViewMouseWheel(wxMouseEvent& event);
     void OnProcessingPanelScrolled(wxScrollWinEvent& event);
     void OnSettingsFile(wxCommandEvent& event);
+    void OnUnsharpMaskingControlChanged(wxCommandEvent& event, std::size_t maskIdx);
+    void OnAddUnsharpMask(wxCommandEvent& event);
     //--------------------------
 
     void OnNewSelection(
@@ -86,8 +89,13 @@ class c_MainWindow: public wxFrame
     bool UnshMaskingEnabled(); ///< Returns 'true' if unsharp masking settings have impact on the image
     bool ToneCurveEnabled(); ///< Returns 'true' if tone curve has impact on the image (i.e. it is not the identity map)
     wxPanel* CreateLucyRichardsonControlsPanel(wxWindow* parent);
-    wxStaticBoxSizer* CreateUnsharpMaskingControls(wxWindow* parent);
-    void OnUpdateUnsharpMaskingSettings();
+    wxStaticBoxSizer* CreateControlsOfSingleUnsharpMask(
+        wxWindow* parent,
+        const UnsharpMask& unsharpMask,
+        std::size_t maskIdx
+    );
+    void CreateAnewControlsForAllUnsharpMasks();
+    void OnUpdateUnsharpMaskingSettings(std::size_t maskIdx);
     /// Updates state of menu items and toolbar buttons responsible for toggling the processing panel and tone curve editor
     void UpdateToggleControlsState();
     /// Returns the ratio of 'm_ImgView' to the size of 'imgSize', assuming uniform scaling in "touch from inside" fashion
@@ -114,6 +122,10 @@ class c_MainWindow: public wxFrame
     void LoadSettingsFromFile(wxString settingsFile, bool moveToMruListStart);
     void IndicateSettingsModified();
     wxRect GetPhysicalSelection() const; ///< Returns current selection in physical `m_ImageView` coords.
+#if ENABLE_SCRIPTING
+    void RunScript();
+#endif
+    void CreateUnshMaskBoxUpperControls(wxStaticBoxSizer* szBox);
 
     template<typename T>
     void InitializeBackEnd(std::unique_ptr<T> backEnd, std::optional<c_Image> img);
@@ -124,19 +136,23 @@ class c_MainWindow: public wxFrame
     wxString m_LastChosenSettingsFileName;
     wxStaticText* m_LastChosenSettings; ///< Shows the last chosen settings file name in toolbar
 
+    struct UnsharpMaskControls
+    {
+        c_NumericalCtrl* sigma{nullptr};
+        c_NumericalCtrl* amountMin{nullptr};
+        c_NumericalCtrl* amountMax{nullptr};
+        c_NumericalCtrl* threshold{nullptr};
+        c_NumericalCtrl* width{nullptr};
+        wxCheckBox* adaptive{nullptr};
+    };
+
     struct
     {
         c_NumericalCtrl* lrSigma{nullptr};
         wxSpinCtrl* lrIters{nullptr};
         wxCheckBox* lrDeriging{nullptr};
-        wxCheckBox* unshAdaptive{nullptr};
-
-        c_NumericalCtrl* unshSigma{nullptr};
-        c_NumericalCtrl* unshAmountMin{nullptr};
-        c_NumericalCtrl* unshAmountMax{nullptr};
-        c_NumericalCtrl* unshThreshold{nullptr};
-        c_NumericalCtrl* unshWidth{nullptr};
-
+        wxStaticBoxSizer* unshMaskBox{nullptr};
+        std::vector<UnsharpMaskControls> unshMask;
         c_ToneCurveEditor* tcrvEditor{nullptr};
 
     } m_Ctrls;
@@ -147,6 +163,8 @@ class c_MainWindow: public wxFrame
     int m_MruSettingsIdx{wxNOT_FOUND};
 
     bool m_ImageLoaded{false}; ///< Becomes true after first successful image load.
+
+    bool m_CreateUMaskControlsAnew{false};
 
     /// Current image, processing settings and processing steps' results.
     struct
