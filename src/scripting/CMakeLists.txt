@@ -41,4 +41,8 @@ target_include_directories(scripting PRIVATE ${LUA_INCLUDE_DIRS})
 
 target_link_libraries(scripting PRIVATE ${wxWidgets_LIBRARIES} ${LUA_LIBRARIES} alignment backend common)
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
+    target_link_libraries(scripting PRIVATE stdc++fs)
+endif()
+
 add_subdirectory(test)
