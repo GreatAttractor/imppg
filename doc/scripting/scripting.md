@@ -1,6 +1,6 @@
 # Introduction
 
-All ImPPG's image processing facilities can be invoked from a script written in the [Lua](https://www.lua.org/docs.html) programming language. For that purpose, ImPPG exposes an application programming interface (API); see [here](doc/scripting/api_reference.md) for its reference.
+All ImPPG's image processing facilities can be invoked from a script written in the [Lua](https://www.lua.org/docs.html) programming language. For that purpose, ImPPG exposes an application programming interface (API); see [here](api_reference.md) for its reference.
 
 A script can be loaded and run via the `File` / `Run script...` menu option.
 
