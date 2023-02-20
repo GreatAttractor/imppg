@@ -176,10 +176,30 @@ std::optional<std::unique_ptr<IImageBuffer>> c_FreeImageBuffer::Create(c_FreeIma
 
             if (FIC_RGB == colorType || FIC_RGBALPHA == colorType)
             {
+                const bool swapRGB = [&]() {
+                    // as of FreeImage 3.18.0, 8-bit RGB(A) is always stored as BGR(A); check anyway
+                    const auto redMask = FreeImage_GetRedMask(fiBmp.get());
+                    const auto greenMask = FreeImage_GetGreenMask(fiBmp.get());
+                    const auto blueMask = FreeImage_GetBlueMask(fiBmp.get());
+                    if (redMask == 0xFF0000 && greenMask == 0x00FF00 && blueMask == 0x0000FF)
+                    {
+                        return true;
+                    }
+                    else if (redMask == 0        && greenMask == 0        && blueMask == 0 ||
+                             redMask == 0x0000FF && greenMask == 0x00FF00 && blueMask == 0xFF0000)
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        IMPPG_ABORT_MSG("unexpected FreeImage RGB mask value(s)");
+                    }
+                }();
+
                 switch (bytesPerPixel)
                 {
-                case 3: pixFmt = PixelFormat::PIX_RGB8; break;
-                case 4: pixFmt = PixelFormat::PIX_RGBA8; break;
+                case 3: pixFmt = swapRGB ? PixelFormat::PIX_BGR8 : PixelFormat::PIX_RGB8; break;
+                case 4: pixFmt = swapRGB ? PixelFormat::PIX_BGRA8 : PixelFormat::PIX_RGBA8; break;
                 case 6: pixFmt = PixelFormat::PIX_RGB16; break;
                 case 8: pixFmt = PixelFormat::PIX_RGBA16; break;
                 default: return std::nullopt;
@@ -735,6 +755,57 @@ static c_SimpleBuffer GetConvertedPixelFormatFragment(
             },
             width, inPtr, inPtrStep, outPtr, outPtrStep);
             break;
+
+            default: IMPPG_ABORT();
+            }
+        } break;
+
+        case PixelFormat::PIX_BGR8:
+        case PixelFormat::PIX_BGRA8: {
+            switch (destPixFmt)
+            {
+            case PixelFormat::PIX_RGB8: ConvertWholeLine<uint8_t, uint8_t>([](const uint8_t* src, uint8_t* dest) {
+                dest[0] = src[2];
+                dest[1] = src[1];
+                dest[2] = src[0];
+            },
+            width, inPtr, inPtrStep, outPtr, outPtrStep);
+            break;
+
+            case PixelFormat::PIX_MONO8: ConvertWholeLine<uint8_t, uint8_t>([](const uint8_t* src, uint8_t* dest) {
+                *dest = (src[0] + src[1] + src[2]) / 3;
+            },
+            width, inPtr, inPtrStep, outPtr, outPtrStep);
+            break;
+
+            case PixelFormat::PIX_MONO16: ConvertWholeLine<uint8_t, uint16_t>([](const uint8_t* src, uint16_t* dest) {
+                *dest = ((src[0] + src[1] + src[2]) << 8) / 3;
+            },
+            width, inPtr, inPtrStep, outPtr, outPtrStep);
+            break;
+
+            case PixelFormat::PIX_MONO32F: ConvertWholeLine<uint8_t, float>([](const uint8_t* src, float* dest) {
+                *dest = (src[0] + src[1] + src[2]) * 1.0f/(3*0xFF);
+            },
+            width, inPtr, inPtrStep, outPtr, outPtrStep);
+            break;
+
+            case PixelFormat::PIX_RGB32F: ConvertWholeLine<uint8_t, float>([](const uint8_t* src, float* dest) {
+                dest[0] = src[2] / static_cast<float>(0xFF);
+                dest[1] = src[1] / static_cast<float>(0xFF);
+                dest[2] = src[0] / static_cast<float>(0xFF);
+            },
+            width, inPtr, inPtrStep, outPtr, outPtrStep);
+            break;
+
+            case PixelFormat::PIX_RGB16: ConvertWholeLine<uint8_t, uint16_t>([](const uint8_t* src, uint16_t* dest) {
+                dest[0] = src[2] << 8;
+                dest[1] = src[1] << 8;
+                dest[2] = src[0] << 8;
+            },
+            width, inPtr, inPtrStep, outPtr, outPtrStep);
+            break;
+
 
             default: IMPPG_ABORT();
             }
@@ -1354,7 +1425,11 @@ std::optional<c_Image> LoadImage(
     {
         // Makes a copy backed by `c_SimpleBuffer`; there had been performance issues with `c_FreeImageBuffer` due to it
         // using FreeImage calls internally (TODO: are there still?).
-        image = image.ConvertPixelFormat(image.GetPixelFormat());
+        const auto currentFmt = image.GetPixelFormat();
+        const auto targetFormat = (currentFmt == PixelFormat::PIX_BGR8 || currentFmt == PixelFormat::PIX_BGRA8)
+            ? PixelFormat::PIX_RGB8
+            : currentFmt;
+        image = image.ConvertPixelFormat(targetFormat);
     }
 
     return image;

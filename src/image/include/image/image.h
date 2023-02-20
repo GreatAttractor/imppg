@@ -49,7 +49,9 @@ enum class PixelFormat
     PIX_PAL8 = 0,  ///< 8-bit with palette (can be a greyscale palette)
     PIX_MONO8,     ///< 8-bit greyscale
     PIX_RGB8,      ///< 24-bit RGB (8 bits per channel)
+    PIX_BGR8,      ///< 24-bit BGR (8 bits per channel)
     PIX_RGBA8,     ///< 32-bit RGBA (8 bits per channel)
+    PIX_BGRA8,     ///< 32-bit BGRA (8 bits per channel)
     PIX_MONO16,    ///< 16-bit greyscale
     PIX_RGB16,     ///< 48-bit RGB (16 bits per channel)
     PIX_RGBA16,    ///< 64-bit RGBA (16 bits per channel)
@@ -66,7 +68,9 @@ const size_t BytesPerPixel[static_cast<size_t>(PixelFormat::PIX_NUM_FORMATS)] =
     1,    // PIX_PAL8
     1,    // PIX_MONO8
     3,    // PIX_RBG8
+    3,    // PIX_BGR8
     4,    // PIX_RBGA8
+    4,    // PIX_BGRA8
     2,    // PIX_MONO16
     6,    // PIX_RGB16
     8,    // PIX_RGBA16
@@ -81,7 +85,9 @@ constexpr size_t NumChannels[static_cast<size_t>(PixelFormat::PIX_NUM_FORMATS)] 
     1,    // PIX_PAL8
     1,    // PIX_MONO8
     3,    // PIX_RBG8
+    3,    // PIX_BGR8
     4,    // PIX_RBGA8
+    4,    // PIX_BGRA8
     1,    // PIX_MONO16
     3,    // PIX_RGB16
     4,    // PIX_RGBA16
