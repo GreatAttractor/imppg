@@ -144,7 +144,7 @@ private:
         gl::c_Program divide;
     } m_GLPrograms;
 
-    // All textures are GL_TEXTURE_RECTANGLE, GL_RED, GL_FLOAT (single-component 32-bit floating-point).
+    // All textures are GL_TEXTURE_RECTANGLE, GL_RED or GL_RGB, GL_FLOAT (1- or 3-component 32-bit floating-point).
 
     gl::c_Texture m_OriginalImg;
 
