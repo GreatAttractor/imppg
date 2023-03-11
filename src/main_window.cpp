@@ -1027,6 +1027,7 @@ void c_MainWindow::OnUpdateLucyRichardsonSettings()
 void c_MainWindow::OnUpdateUnsharpMaskingSettings(std::size_t maskIdx)
 {
     auto& proc = m_CurrentSettings.processing;
+    proc.unsharpMask.at(maskIdx).adaptive = m_Ctrls.unshMask.at(maskIdx).adaptive->GetValue();
     proc.unsharpMask.at(maskIdx).sigma = m_Ctrls.unshMask.at(maskIdx).sigma->GetValue();
     proc.unsharpMask.at(maskIdx).amountMin = m_Ctrls.unshMask.at(maskIdx).amountMin->GetValue();
     proc.unsharpMask.at(maskIdx).amountMax = m_Ctrls.unshMask.at(maskIdx).amountMax->GetValue();
