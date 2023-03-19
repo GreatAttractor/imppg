@@ -84,7 +84,7 @@ void c_UnsharpMaskingThread::DoWork()
         // to alleviate noise (`m_BlurredRawInput`). See the declaration of `GetAdaptiveUnshMaskTransitionCurve`
         // for further details.
 
-        const auto& [a, b, c, d] = GetAdaptiveUnshMaskTransitionCurve(m_UnsharpMask);
+        const auto [a, b, c, d] = GetAdaptiveUnshMaskTransitionCurve(m_UnsharpMask);
 
         const float amountMin = m_UnsharpMask.amountMin;
         const float amountMax = m_UnsharpMask.amountMax;
@@ -102,7 +102,7 @@ void c_UnsharpMaskingThread::DoWork()
 
                 for (unsigned col = 0; col < width; col++)
                 {
-                    const float amount = [&]() {
+                    const float amount = [&, a = a, b = b, c = c, d = d]() {
                         const float lum = lumRow[col];
                         if (lum < threshold - width)
                         {
