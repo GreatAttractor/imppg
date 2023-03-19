@@ -43,11 +43,11 @@ public:
 
     c_CpuAndBitmaps(const c_CpuAndBitmaps&) = delete;
 
-    c_CpuAndBitmaps(c_CpuAndBitmaps&&) = default;
+    c_CpuAndBitmaps(c_CpuAndBitmaps&&) = delete;
 
     c_CpuAndBitmaps& operator=(const c_CpuAndBitmaps&) = delete;
 
-    c_CpuAndBitmaps& operator=(c_CpuAndBitmaps&&) = default;
+    c_CpuAndBitmaps& operator=(c_CpuAndBitmaps&&) = delete;
 
     ~c_CpuAndBitmaps() override;
 

@@ -55,11 +55,11 @@ public:
 
     c_CpuAndBitmapsProcessing(const c_CpuAndBitmapsProcessing&) = delete;
 
-    c_CpuAndBitmapsProcessing(c_CpuAndBitmapsProcessing&&) = default;
-
     c_CpuAndBitmapsProcessing& operator=(const c_CpuAndBitmapsProcessing&) = delete;
 
-    c_CpuAndBitmapsProcessing& operator=(c_CpuAndBitmapsProcessing&&) = default;
+    c_CpuAndBitmapsProcessing(c_CpuAndBitmapsProcessing&&) = delete;
+
+    c_CpuAndBitmapsProcessing& operator=(c_CpuAndBitmapsProcessing&&) = delete;
 
     ~c_CpuAndBitmapsProcessing() override;
 

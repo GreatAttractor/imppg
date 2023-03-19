@@ -76,7 +76,7 @@ c_ScriptDialog::c_ScriptDialog(wxWindow* parent)
     {
     case BackEnd::CPU_AND_BITMAPS:
         m_Processor = std::make_unique<scripting::ScriptImageProcessor>(
-            std::move(imppg::backend::CreateCpuBmpProcessingBackend()),
+            imppg::backend::CreateCpuBmpProcessingBackend(),
             nfv
         );
         break;
@@ -84,7 +84,7 @@ c_ScriptDialog::c_ScriptDialog(wxWindow* parent)
 #if USE_OPENGL_BACKEND
     case BackEnd::GPU_OPENGL:
         m_Processor = std::make_unique<scripting::ScriptImageProcessor>(
-            std::move(imppg::backend::CreateOpenGLProcessingBackend(Configuration::LRCmdBatchSizeMpixIters)),
+            imppg::backend::CreateOpenGLProcessingBackend(Configuration::LRCmdBatchSizeMpixIters),
             nfv
         );
         break;

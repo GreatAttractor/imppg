@@ -44,12 +44,6 @@ public:
 
     void CheckIntegerNotifications(std::initializer_list<int> expected) const;
 
-    template<typename Value>
-    static void FillImage(c_Image& image, Value value, std::size_t channel = 0)
-    {
-        //
-    }
-
     const std::vector<std::string>& GetStringNotifications() const { return m_StringNotifications; }
 
 private:

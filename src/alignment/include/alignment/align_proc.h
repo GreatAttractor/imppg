@@ -52,7 +52,7 @@ enum class AlignmentMethod: int
 using InputImageList = std::vector<std::shared_ptr<const c_Image>>;
 using AlignmentInputs = std::variant<wxArrayString, InputImageList>;
 
-typedef struct
+struct AlignmentParameters_t
 {
     AlignmentInputs inputs; //TODO: rename type and member
     AlignmentMethod alignmentMethod;
@@ -67,7 +67,7 @@ typedef struct
         else if (const auto* images = std::get_if<InputImageList>(&inputs)) { return images->size(); }
         else { IMPPG_ABORT(); }
     }
-} AlignmentParameters_t;
+};
 
 enum class AlignmentAbortReason
 {

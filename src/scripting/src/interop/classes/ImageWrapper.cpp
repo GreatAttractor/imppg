@@ -55,15 +55,15 @@ void ImageWrapper::align_rgb()
     auto [red, green, blue] = m_Image->SplitRGB();
 
     const auto result = scripting::g_State->CallFunctionAndAwaitCompletion(
-        std::move(scripting::contents::AlignRGB{std::move(red), std::move(green), std::move(blue)})
+        scripting::contents::AlignRGB{std::move(red), std::move(green), std::move(blue)}
     );
 
     auto* alignedImg = std::get_if<call_result::ImageProcessed>(&result);
     IMPPG_ASSERT(alignedImg != nullptr);
 
-    m_Image = std::make_shared<const c_Image>(std::move(alignedImg->image->GetConvertedPixelFormatSubImage(
+    m_Image = std::make_shared<const c_Image>(alignedImg->image->GetConvertedPixelFormatSubImage(
         m_Image->GetPixelFormat(), 0, 0, m_Image->GetWidth(), m_Image->GetHeight()
-    )));
+    ));
 }
 
 }
