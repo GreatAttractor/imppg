@@ -89,7 +89,7 @@ void c_UnsharpMaskingThread::DoWork()
         const float amountMin = m_UnsharpMask.amountMin;
         const float amountMax = m_UnsharpMask.amountMax;
         const float threshold = m_UnsharpMask.threshold;
-        const float width = m_UnsharpMask.width;
+        const float transitionWidth = m_UnsharpMask.width;
 
         for (std::size_t channel = 0; channel < m_Params.input.size(); ++channel)
         {
@@ -104,11 +104,11 @@ void c_UnsharpMaskingThread::DoWork()
                 {
                     const float amount = [&, a = a, b = b, c = c, d = d]() {
                         const float lum = lumRow[col];
-                        if (lum < threshold - width)
+                        if (lum < threshold - transitionWidth)
                         {
                             return amountMin;
                         }
-                        else if (lum > threshold + width)
+                        else if (lum > threshold + transitionWidth)
                         {
                             return amountMax;
                         }
