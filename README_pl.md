@@ -337,7 +337,7 @@ Wsparcie dla OpenMP jest możliwe używając kompilatora LLVM z Homebrew, poniew
 Zainstaluj poniższe biblioteki i narzędzia używając Homebrew:
 ```bash
 $ brew update
-$ brew install boost cfitsio cmake freeimage glew mesa pkg-config wxwidgets llvm libomp
+$ brew install boost cfitsio cmake freeimage glew mesa pkg-config wxwidgets llvm libomp lua
 ```
 
 Wykonaj poniższe instrukcje podobnie jak na Linuksie:
