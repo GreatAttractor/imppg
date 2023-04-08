@@ -328,7 +328,12 @@ To build ImPPG for macOS you will need Xcode and [Homebrew](https://brew.sh) ins
 OpenMP is currently supported with 3rd party LLVM toolchain installed with Homebrew as Apple disabled OpenMP in clang toolchain distributed with Xcode. As of July 2022 the build method was verified on macOS Monterey 12.5 and Xcode 13.4.1.
 
 Install following libraries with Homebrew:
-```bashBuilding under
+```bash
+ $ brew update
+ $ brew install boost cfitsio cmake freeimage glew mesa pkg-config wxwidgets llvm libomp lua
+ ```
+
+ Now follow Linux build steps:
 ```bash
 $ mkdir build
 $ cd build
