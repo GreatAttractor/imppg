@@ -29,7 +29,7 @@ wersja 1.9.0-beta (2023-02-15)
 - 11\. Pobieranie
 - 12\. Budowanie ze źródeł
   - 12\.1\. Budowanie w systemie Linux i podobnych z użyciem narzędzi GNU (lub kompatybilnych)
-    - 12\.1\.1. Budowanie pod Ubuntu 18.04
+    - 12\.1\.1. Budowanie pod Ubuntu
     - 12\.1\.2. Tworzenie pakietów
     - 12\.1\.3. Budowanie pod macOS
   - 12\.2\. Budowanie pod MS Windows
@@ -298,14 +298,14 @@ $ cat install_manifest.txt | sudo xargs rm
 ```
 
 
-#### 12.1.1. Budowanie pod Ubuntu 18.04
+#### 12.1.1. Budowanie pod Ubuntu
 
-Następujące pakiety są konieczne, by zbudować ImPPG pod Ubuntu 18.04:
-```
-git cmake build-essential libboost-dev libwxgtk3.0-gtk3-dev libglew-dev pkg-config libccfits-dev libfreeimage-dev
-```
+*Uwaga:* domyślna wersja GCC (7.x) w Ubuntu 18.04 jest zbyt stara. Należy zainstalować i uaktywnić GCC 8 (przykładowa instrukcja: `https://linuxize.com/post/how-to-install-gcc-compiler-on-ubuntu-18-04/`). (Nie należy wybierać GCC 9, w przeciwnym razie zbudowany plik wykonywalny nie będzie działał na czystej instalacji Ubuntu 18.04 z powodu przestarzałej wersji `libstdc++`).
 
-Domyślna wersja GCC (7.x) jest zbyt stara. Należy zainstalować i uaktywnić GCC 8 (przykładowa instrukcja: `https://linuxize.com/post/how-to-install-gcc-compiler-on-ubuntu-18-04/`). (Nie należy wybierać GCC 9, w przeciwnym razie zbudowany plik wykonywalny nie będzie działał na czystej instalacji Ubuntu 18.04 z powodu przestarzałej wersji `libstdc++`).
+Następujące pakiety są konieczne, by zbudować ImPPG pod Ubuntu:
+```
+git cmake build-essential libboost-dev libwxgtk3.0-gtk3-dev libglew-dev pkg-config libccfits-dev libfreeimage-dev liblua5.3-dev
+```
 
 Po zbudowaniu można zainstalować ImPPG jak w p. 11.1; można też stworzyć pakiet debianowski poleceniem:
 ```bash

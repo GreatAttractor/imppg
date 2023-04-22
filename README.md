@@ -28,7 +28,7 @@ version 1.9.0-beta (2023-02-15)
 - 11\. Downloading
 - 12\. Building from source code
   - 12\.1\. Building under Linux and similar systems using GNU (or compatible) toolchain
-    - 12\.1\.1. Building under Ubuntu 18.04
+    - 12\.1\.1. Building under Ubuntu
     - 12\.1\.2. Packaging
     - 12\.1\.3. Building for macOS
   - 12\.2\. Building under MS Windows
