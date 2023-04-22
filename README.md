@@ -1,7 +1,7 @@
 # ImPPG (Image Post-Processor)
 Copyright (C) 2015-2023 Filip Szczerek (ga.software@yahoo.com)
 
-version 1.9.0-beta (2023-02-15)
+version 1.9.1-beta (2023-04-22)
 
 *This program comes with ABSOLUTELY NO WARRANTY. This is free software, licensed under GNU General Public License v3 or any later version and you are welcome to redistribute it under certain conditions. See the LICENSE file for details.*
 
@@ -295,14 +295,14 @@ $ cat install_manifest.txt | sudo xargs rm
 
 To use a different installation prefix, add `-DCMAKE_INSTALL_PREFIX=<my_dir>` to the initial CMake invocation.
 
-#### 12.1.1. Building under Ubuntu 18.04
+#### 12.1.1. Building under Ubuntu
 
-The following packages are needed for building under Ubuntu 18.04:
+*Note:* under Ubuntu 18.04, the default GCC version (7.x) is too old. Install and enable GCC 8 (example instructions: `https://linuxize.com/post/how-to-install-gcc-compiler-on-ubuntu-18-04/`). (Do not choose GCC 9, otherwise the built binary will not run on a clean Ubuntu 18.04 due to too old a version of `libstdc++`.)
+
+The following packages are needed for building under Ubuntu:
 ```
 git cmake build-essential libboost-dev libboost-test-dev libwxgtk3.0-gtk3-dev libglew-dev pkg-config libccfits-dev libfreeimage-dev liblua5.3-dev
 ```
-
-The default GCC version (7.x) is too old. Install and enable GCC 8 (example instructions: `https://linuxize.com/post/how-to-install-gcc-compiler-on-ubuntu-18-04/`). (Do not choose GCC 9, otherwise the built binary will not run on a clean Ubuntu 18.04 due to too old a version of `libstdc++`.)
 
 After building `imppg`, it can be either installed as in section 11.1, or a Debian package can be created and installed with `apt` (see 11.1.2).
 
@@ -418,6 +418,13 @@ German translation: Marcel Hoffmann.
 
 ----------------------------------------
 ## 14. Change log
+
+**1.9.1-beta** (2023-04-22)
+
+  - **Bug fixes**
+    - Invalid channel order when loading 8-bit RGB images
+    - Cannot enable adaptive unsharp mask
+    - Crash when using adaptive unsharp mask in CPU & bitmaps mode
 
 **1.9.0-beta** (2023-02-15)
 

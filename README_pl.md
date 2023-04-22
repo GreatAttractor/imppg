@@ -1,7 +1,7 @@
 # ImPPG (Image Post-Processor)
 Copyright (C) 2015-2023 Filip Szczerek (ga.software@yahoo.com)
 
-wersja 1.9.0-beta (2023-02-15)
+wersja 1.9.0-beta (2023-04-22)
 
 *Niniejszy program ABSOLUTNIE nie jest objęty JAKĄKOLWIEK GWARANCJĄ. Jest to wolne oprogramowanie na licencji GNU GPL w wersji 3 (lub dowolnej późniejszej) i można je swobodnie rozpowszechniać pod pewnymi warunkami: zob. pełny tekst licencji w pliku LICENSE.*
 
@@ -424,6 +424,13 @@ Tłumaczenie na jęz. niemiecki: Marcel Hoffmann.
 
 ----------------------------------------
 ## 14. Historia zmian
+
+**1.9.1-beta** (2023-04-22)
+
+  - **Poprawki błędów**
+    - Zła kolejność kanałów po załadowaniu 8-bitowego obrazu RGB
+    - Niemożność aktywacji trybu adaptatywnego unsharp mask
+    - Błąd podczas używania trybu adaptatywnego unsharp mask w trybie CPU & bitmapy
 
 **1.9.0-beta** (2023-02-15)
 
