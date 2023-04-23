@@ -304,7 +304,7 @@ The following packages are needed for building under Ubuntu:
 git cmake build-essential libboost-dev libboost-test-dev libwxgtk3.0-gtk3-dev libglew-dev pkg-config libccfits-dev libfreeimage-dev liblua5.3-dev
 ```
 
-After building `imppg`, it can be either installed as in section 11.1, or a Debian package can be created and installed with `apt` (see 11.1.2).
+After building `imppg`, it can be either installed as in section 11.1, or a Debian package can be created and installed with `apt` (see 12.1.2).
 
 
 #### 12.1.2. Packaging

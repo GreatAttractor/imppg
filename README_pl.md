@@ -307,11 +307,7 @@ Następujące pakiety są konieczne, by zbudować ImPPG pod Ubuntu:
 git cmake build-essential libboost-dev libwxgtk3.0-gtk3-dev libglew-dev pkg-config libccfits-dev libfreeimage-dev liblua5.3-dev
 ```
 
-Po zbudowaniu można zainstalować ImPPG jak w p. 11.1; można też stworzyć pakiet debianowski poleceniem:
-```bash
-$ cpack
-```
-który można następnie zainstalować narzędziem `apt`.
+Po zbudowaniu można zainstalować ImPPG jak w p. 12.1; można też stworzyć pakiet debianowski jak w p. 12.1.2 i zainstalować go poprzez `apt`.
 
 
 #### 12.1.2. Tworzenie pakietów
