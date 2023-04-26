@@ -105,13 +105,6 @@ if(GNU_FFAST_MATH_SUPPORTED)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
 endif()
 
-if(USE_FREEIMAGE EQUAL 1)
-    target_compile_definitions(imppg PRIVATE USE_FREEIMAGE=1)
-
-    # Cannot do `pkg_check_modules` on `freeimage`; as of FreeImage 3.18.0, there is no `.pc` file provided (checked in MSYS2 and Fedora 29)
-    target_link_libraries(imppg PRIVATE freeimage)
-endif()
-
 if(USE_OPENGL_BACKEND)
     target_compile_definitions(imppg PRIVATE USE_OPENGL_BACKEND=1)
 else()
