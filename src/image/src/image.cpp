@@ -56,28 +56,8 @@ File description:
 // `libimage.a` in the linker invocation).
 //
 #if USE_FREEIMAGE && !defined(_TIFFDataSize)
+  #include <tiff.h>
 extern "C" {
-
-typedef enum {
-	TIFF_NOTYPE = 0,
-	TIFF_BYTE = 1,
-	TIFF_ASCII = 2,
-	TIFF_SHORT = 3,
-	TIFF_LONG = 4,
-	TIFF_RATIONAL = 5,
-	TIFF_SBYTE = 6,
-	TIFF_UNDEFINED = 7,
-	TIFF_SSHORT = 8,
-	TIFF_SLONG = 9,
-	TIFF_SRATIONAL = 10,
-	TIFF_FLOAT = 11,
-	TIFF_DOUBLE = 12,
-	TIFF_IFD = 13,
-	TIFF_LONG8 = 16,
-	TIFF_SLONG8 = 17,
-	TIFF_IFD8 = 18
-} TIFFDataType;
-
 int
 _TIFFDataSize(TIFFDataType type)
 {
