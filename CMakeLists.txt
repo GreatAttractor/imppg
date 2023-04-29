@@ -215,8 +215,14 @@ install(FILES
 
 # Packaging -------------------------------------
 
+# TODO: change this comment=============================
+# TODO: update README =================================
+
 # Choose the desired file from the "packaging" subdirectory; after running CMake and building the ImPPG binary,
 # a package can be created by running `cpack`. Note that building needs to be performed in an environment corresponding
 # to the selected target system, so that proper shared objects are linked to ("environment" = a full system installation,
 # a Docker image, or similar).
-include(packaging/ubuntu_20.04.cmake)
+
+if(NOT "${IMPPG_PKG_TYPE}" STREQUAL "")
+    include(packaging/${IMPPG_PKG_TYPE}.cmake)
+endif()

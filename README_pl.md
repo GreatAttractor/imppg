@@ -30,8 +30,9 @@ wersja 1.9.1-beta (2023-04-22)
 - 12\. Budowanie ze źródeł
   - 12\.1\. Budowanie w systemie Linux i podobnych z użyciem narzędzi GNU (lub kompatybilnych)
     - 12\.1\.1. Budowanie pod Ubuntu
-    - 12\.1\.2. Tworzenie pakietów
-    - 12\.1\.3. Budowanie pod macOS
+    - 12\.1\.2. Budowanie pod Fedorą
+    - 12\.1\.3. Tworzenie pakietów (Linux)
+    - 12\.1\.4. Budowanie pod macOS
   - 12\.2\. Budowanie pod MS Windows
   - 12\.3\. Język UI
 - 13\. Podziękowania
@@ -307,22 +308,32 @@ Następujące pakiety są konieczne, by zbudować ImPPG pod Ubuntu:
 git cmake build-essential libboost-dev libwxgtk3.0-gtk3-dev libglew-dev pkg-config libccfits-dev libfreeimage-dev liblua5.3-dev
 ```
 
-Po zbudowaniu można zainstalować ImPPG jak w p. 12.1; można też stworzyć pakiet debianowski jak w p. 12.1.2 i zainstalować go poprzez `apt`.
+Po zbudowaniu można zainstalować ImPPG jak w p. 12.1; można też stworzyć pakiet debianowski i zainstalować go poprzez `apt` (zob. 12.1.3).
 
 
-#### 12.1.2. Tworzenie pakietów
+#### 12.1.2. Budowanie pod Fedorą
 
-By stworzyć pakiet binarny, należy zmodyfikować ostatnią instrukcję w `CMakeLists.txt`:
-```cmake
-include(packaging/ubuntu_20.04.cmake)
+Następujące pakiety są konieczne, by zbudować ImPPG pod Fedorą:
 ```
-przed wywołaniem CMake i zbudowaniem programu (lista możliwych pakietów - zob. podkatalog `packaging`). Po udanej kompilacji pakiet można stworzyć poleceniem:
+git cmake g++ pkgconf-pkg-config boost-devel wxGTK3-devel cfitsio-devel glew-devel lua-devel freeimage-devel rpm-build
+```
+
+Po zbudowaniu można zainstalować ImPPG jak w p. 12.1; można też stworzyć pakiet RPM i zainstalować go poprzez `dnf` (zob. 12.1.3).
+
+
+#### 12.1.3. Tworzenie pakietów (Linux)
+
+By stworzyć pakiet binarny, należy podać `IMPPG_PKG_TYPE` w wywołaniu CMake, np.:
 ```bash
-$ cpack
+$ cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DIMPPG_PKG_TYPE=ubuntu-22.04 ..
 ```
+gdzie `ubuntu-22.04` odpowiada nazwie jednego z plików w podkatalogu `packaging`.
+
+Po udanej kompilacji pakiet tworzy się poleceniem `cpack`.
+
 Uwaga: kompilacja musi być przeprowadzona w środowisku odpowiadającym wybranemu rodzajowi pakietu, tak by dołączone zostały właściwe biblioteki dynamiczne („środowisko” = pełna instalacja systemu, obraz Dockera itp.).
 
-#### 12.1.3. Budowanie pod macOS
+#### 12.1.4. Budowanie pod macOS
 
 *Uwaga: Budowanie pod macOS nie jest jeszcze w pełni ukończone.*
 
@@ -383,7 +394,7 @@ W podkatalogu `build` pojawi się plik wykonywalny `imppg.exe`. Można go urucho
 $ build/imppg.exe
 ```
 
-By uruchomić ImPPG z Eksploratora Windowa, podkatalogi `images`, `pl`, `shaders` i wszystkie niezbędne pliki DLL muszą znajdować się w tym samym miejscu, co `imppg.exe`. Przykład: dystrybucja binarna dla MS Windows (`imppg-win64.zip`).
+By uruchomić ImPPG z Eksploratora Windows, podkatalogi `images`, `pl`, `shaders` i wszystkie niezbędne pliki DLL muszą znajdować się w tym samym miejscu, co `imppg.exe`. Przykład: dystrybucja binarna dla MS Windows (`imppg-win64.zip`).
 
 
 
