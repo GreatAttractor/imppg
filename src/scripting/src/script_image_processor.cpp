@@ -56,6 +56,8 @@ void ScriptImageProcessor::StartProcessing(
 
         [&](const contents::AlignRGB& call) { OnAlignRGB(call, onCompletion); },
 
+        [&](const contents::AlignImages& call) { OnAlignImages(call, onCompletion); },
+
         [](auto) { IMPPG_ABORT_MSG("invalid message passed to ScriptImageProcessor"); },
     };
 
@@ -129,6 +131,53 @@ void ScriptImageProcessor::OnProcessImage(const contents::ProcessImage& call, Co
         }
     );
     m_Processor->StartProcessing(std::move(image), call.settings);
+}
+
+void ScriptImageProcessor::OnAlignImages(const contents::AlignImages& call, CompletionFunc onCompletion)
+{
+    if (m_AlignmentWorker)
+    {
+        m_AlignmentWorker->Wait();
+    }
+
+    m_AlignmentEvtHandler = std::make_unique<wxEvtHandler>();
+    m_AlignmentEvtHandler->Bind(wxEVT_THREAD, [onCompletion = std::move(onCompletion)](wxThreadEvent& event) {
+        const auto eid = event.GetId();
+        switch (eid)
+        {
+        case EID_ABORTED:
+            onCompletion(call_result::Error{_("image alignment aborted").ToStdString()});
+            break;
+
+        //TODO: progress; take different alignment phases into account, and just make it progress as a whole from 0.0 to 1.0
+
+        case EID_COMPLETED:
+            if (event.GetString().empty())
+            {
+                onCompletion(call_result::Success{});
+            }
+            else
+            {
+                onCompletion(call_result::Error{event.GetString().ToStdString()});
+            }
+            break;
+
+
+        default: break;
+        }
+    });
+
+    AlignmentParameters_t alignParams{};
+    alignParams.alignmentMethod = call.alignMode;
+    alignParams.subpixelAlignment = call.subpixelAlignment;
+    alignParams.cropMode = call.cropMode;
+    alignParams.inputs = wxArrayString{}; //TODO
+    alignParams.normalizeFitsValues = false;
+    alignParams.outputDir = call.outputDir.generic_string();
+    alignParams.outputFNameSuffix = call.outputFNameSuffix;
+
+    m_AlignmentWorker = std::make_unique<c_ImageAlignmentWorkerThread>(*m_AlignmentEvtHandler, std::move(alignParams));
+    m_AlignmentWorker->Run();
 }
 
 void ScriptImageProcessor::OnAlignRGB(const contents::AlignRGB& call, CompletionFunc onCompletion)

@@ -1,3 +1,4 @@
+#include "alignment/align_proc.h"
 #include "common/formats.h"
 #include "interop/classes/DummyObject1.h"
 #include "interop/classes/DummyObject2.h"
@@ -8,6 +9,9 @@
 #include "interop/state.h"
 
 #include <boost/format.hpp>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 namespace scripting::modules::imppg
 {
@@ -166,6 +170,66 @@ const luaL_Reg functions[] = {
         return 1;
     }},
 
+    {"align_images", [](lua_State* lua) -> int {
+        if (scripting::g_State->CheckStopRequested(lua)) { return 0; }
+
+        CheckNumArgs(lua, "align_images", 7);
+        std::vector<fs::path> inputFiles;
+        for (const auto& s: GetStringTable(lua, 1))
+        {
+            inputFiles.push_back(s);
+        }
+
+        const AlignmentMethod alignMode = [&]() {
+            const int value = GetInteger(lua, 2);
+            if (value < 0 || value >= static_cast<int>(AlignmentMethod::NUM))
+            {
+                throw ScriptExecutionError{"invalid alignment mode"};
+            }
+            return static_cast<AlignmentMethod>(value);
+        }();
+
+        const CropMode cropMode = [&]() {
+            const int value = GetInteger(lua, 3);
+            if (value < 0 || value >= static_cast<int>(CropMode::NUM))
+            {
+                throw ScriptExecutionError{"invalid crop mode"};
+            }
+            return static_cast<CropMode>(value);
+        }();
+
+        const bool subpixelAlignment = GetBoolean(lua, 4);
+
+        const fs::path outputDir = GetString(lua, 5);
+
+        CheckType(lua, 6, LUA_TSTRING, true);
+        const auto outputFNameSuffix = lua_isnil(lua, 6)
+            ? std::nullopt
+            : std::optional<std::string>{GetString(lua, 6)};
+
+        CheckType(lua, 7, LUA_TFUNCTION, true);
+        const auto progressCallback = lua_isnil(lua, 7)
+            ? std::function<void(double)>{}
+            : [lua](double value) {
+                std::cout << "progress callback: " << value << std::endl;
+                lua_pushvalue(lua, 7);
+                lua_pushnumber(lua, value);
+                lua_call(lua, 1, 0);
+            };
+
+        scripting::g_State->CallFunctionAndAwaitCompletion(scripting::contents::AlignImages{
+            std::move(inputFiles),
+            alignMode,
+            cropMode,
+            subpixelAlignment,
+            outputDir,
+            outputFNameSuffix,
+            progressCallback
+        });
+
+        return 0;
+    }},
+
     {nullptr, nullptr} // end-of-data marker
 };
 
@@ -188,6 +252,12 @@ const std::vector<std::pair<std::string, int>> constants{
     {"FITS_16",      static_cast<int>(OutputFormat::FITS_16)},
     {"FITS_32F",     static_cast<int>(OutputFormat::FITS_32F)},
 #endif
+
+    {"STANDARD",   static_cast<int>(AlignmentMethod::PHASE_CORRELATION)},
+    {"SOLAR_LIMB", static_cast<int>(AlignmentMethod::LIMB)},
+
+    {"CROP",         static_cast<int>(CropMode::CROP_TO_INTERSECTION)},
+    {"PAD",          static_cast<int>(CropMode::PAD_TO_BOUNDING_BOX)}
 };
 
 }

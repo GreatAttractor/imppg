@@ -169,7 +169,7 @@ bool c_ImageAlignmentWorkerThread::SaveTranslatedOutputImage(const wxString& inp
 
     if (!saved)
     {
-        m_CompletionMessage = wxString::Format(_("Failed to save output file: %s"), outputFileName.GetFullPath());
+        m_ErrorMessage = wxString::Format(_("Failed to save output file: %s"), outputFileName.GetFullPath());
         return false;
     }
 
@@ -194,7 +194,7 @@ void c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment()
 
                 if (!result)
                 {
-                    m_CompletionMessage = wxString::Format(_("Failed to obtain image dimensions from %s."), fname);
+                    m_ErrorMessage = wxString::Format(_("Failed to obtain image dimensions from %s."), fname);
                     return false;
                 }
 
@@ -237,7 +237,7 @@ void c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment()
     Rectangle_t bbox; // bounding box of all images after alignment
 
     if (!DetermineTranslationVectors(Nwidth, Nheight, m_Parameters.inputs,
-        translation, bbox, &m_CompletionMessage, m_Parameters.subpixelAlignment,
+        translation, bbox, &m_ErrorMessage, m_Parameters.subpixelAlignment,
         [this](int imgIdx, float tX, float tY) { PhaseCorrImgTranslationCallback(imgIdx, tX, tY); },
         [this]() { return IsAbortRequested(); },
         m_Parameters.normalizeFitsValues
@@ -279,7 +279,7 @@ void c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment()
             translationOrigin.y = bbox.y;
         }
 
-        const auto source = GetInputImageByIndex(m_Parameters.inputs, i, &m_CompletionMessage);
+        const auto source = GetInputImageByIndex(m_Parameters.inputs, i, &m_ErrorMessage);
         if (source.Empty()) { return; }
 
         auto output = CreateTranslatedOutput(
@@ -637,7 +637,7 @@ bool c_ImageAlignmentWorkerThread::FindRadii(
         );
         if (!loadResult)
         {
-            m_CompletionMessage = wxString::Format(_("Could not read %s."), fnames[i]);
+            m_ErrorMessage = wxString::Format(_("Could not read %s."), fnames[i]);
             return false;
         }
         const c_Image img = loadResult.value();
@@ -743,7 +743,7 @@ bool c_ImageAlignmentWorkerThread::FindRadii(
 
         if (limbPoints[i].size() < 3)
         {
-            m_CompletionMessage = wxString::Format(_("Could not find the limb in %s."), fnames[i]);
+            m_ErrorMessage = wxString::Format(_("Could not find the limb in %s."), fnames[i]);
             return false;
         }
 
@@ -753,7 +753,7 @@ bool c_ImageAlignmentWorkerThread::FindRadii(
         float radius, cx = centroid.x, cy = centroid.y;
         if (!FitCircleToPoints(limbPoints[i], &cx, &cy, &radius, 0.0f, true))
         {
-            m_CompletionMessage = wxString::Format(_("Could not find the limb in %s."), fnames[i]);
+            m_ErrorMessage = wxString::Format(_("Could not find the limb in %s."), fnames[i]);
             return false;
         }
         radii.push_back(radius);
@@ -804,7 +804,7 @@ void c_ImageAlignmentWorkerThread::LimbAlignment()
     {
         // If the min. and max. radii differ too much, we have misidentified limb points somewhere,
         // possibly due to vignetting or exaggerated limb darkening present.
-        m_CompletionMessage = _("Could not determine valid disc radius in every image.");
+        m_ErrorMessage = _("Could not determine valid disc radius in every image.");
         return;
     }
 
@@ -822,7 +822,7 @@ void c_ImageAlignmentWorkerThread::LimbAlignment()
         float cx = centroids[i].x, cy = centroids[i].y;
         if (!FitCircleToPoints(limbPoints[i], &cx, &cy, 0, avgRadius, true))
         {
-            m_CompletionMessage = wxString::Format(_("Could not find the limb with forced radius in %s."), (*fnames)[i]);
+            m_ErrorMessage = wxString::Format(_("Could not find the limb with forced radius in %s."), (*fnames)[i]);
             return;
         }
         if (i == 0)
@@ -920,7 +920,7 @@ void c_ImageAlignmentWorkerThread::LimbAlignment()
             Ty = boost::math::round(Ty);
         }
 
-        auto loadResult = LoadImage((*fnames)[i].ToStdString(), std::nullopt, &m_CompletionMessage, false);
+        auto loadResult = LoadImage((*fnames)[i].ToStdString(), std::nullopt, &m_ErrorMessage, false);
         if (!loadResult) { return; }
 
         const c_Image output = CreateTranslatedOutput(loadResult.value(), outputWidth, outputHeight, Tx, Ty);
@@ -955,7 +955,7 @@ wxThread::ExitCode c_ImageAlignmentWorkerThread::Entry()
             EID_ABORTED,
             m_ThreadAborted ? static_cast<int>(AlignmentAbortReason::USER_REQUESTED)
                             : static_cast<int>(AlignmentAbortReason::PROC_ERROR),
-            m_CompletionMessage
+            m_ErrorMessage
         );
     }
 
@@ -987,7 +987,7 @@ bool c_ImageAlignmentWorkerThread::IsAbortRequested()
         (wxSEMA_NO_ERROR == m_AbortReq.TryWait())) // Check if the parent has called Post() on the semaphore
     {
         m_ThreadAborted = true;
-        m_CompletionMessage = _("Aborted per user request.");
+        m_ErrorMessage = _("Aborted per user request.");
         return true;
     }
     else

@@ -60,6 +60,7 @@ struct AlignmentParameters_t
     CropMode cropMode;
     wxString outputDir;
     bool normalizeFitsValues;
+    std::optional<std::string> outputFNameSuffix;
 
     std::size_t GetNumInputs() const
     {
@@ -112,7 +113,7 @@ class c_ImageAlignmentWorkerThread: public wxThread
 
     bool m_ProcessingCompleted; ///< 'true' if processing has completed
     bool m_ThreadAborted; ///< 'true' if IsAbortRequested() has been called and has returned 'true'
-    std::string m_CompletionMessage;
+    std::string m_ErrorMessage;
     AlignmentParameters_t m_Parameters;
 
     /// Arguments: image index and its determined translation vector
