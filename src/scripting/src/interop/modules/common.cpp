@@ -43,8 +43,8 @@ std::vector<std::string> GetStringTable(lua_State* lua, int stackPos)
         const int valueType = lua_rawgeti(lua, stackPos, i);
         if (valueType != LUA_TSTRING) { throw ScriptExecutionError{"expected: string"}; }
         result.push_back(GetString(lua, lua_gettop(lua)));
+        lua_pop(lua, 1);
     }
-    lua_pop(lua, len);
     return result;
 }
 
