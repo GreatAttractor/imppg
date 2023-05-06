@@ -27,6 +27,7 @@ File description:
 #include "scripting/script_image_processor.h"
 
 #include <memory>
+#include <tuple>
 #include <wx/intl.h>
 
 namespace scripting
@@ -133,6 +134,18 @@ void ScriptImageProcessor::OnProcessImage(const contents::ProcessImage& call, Co
     m_Processor->StartProcessing(std::move(image), call.settings);
 }
 
+static double CalculateProgress(
+    std::size_t stage,
+    std::size_t numStages,
+    std::size_t imgIdx,
+    std::size_t numImages
+)
+{
+    IMPPG_ASSERT(numStages != 0 && numImages != 0);
+
+    return static_cast<double>(stage * numImages + imgIdx) / (numStages * numImages);
+}
+
 void ScriptImageProcessor::OnAlignImages(const contents::AlignImages& call, CompletionFunc onCompletion)
 {
     if (m_AlignmentWorker)
@@ -141,37 +154,75 @@ void ScriptImageProcessor::OnAlignImages(const contents::AlignImages& call, Comp
     }
 
     m_AlignmentEvtHandler = std::make_unique<wxEvtHandler>();
-    m_AlignmentEvtHandler->Bind(wxEVT_THREAD, [onCompletion = std::move(onCompletion)](wxThreadEvent& event) {
-        const auto eid = event.GetId();
-        switch (eid)
-        {
-        case EID_ABORTED:
-            onCompletion(call_result::Error{_("image alignment aborted").ToStdString()});
-            break;
+    m_AlignmentEvtHandler->Bind(wxEVT_THREAD,
+        [
+            onCompletion = std::move(onCompletion),
+            alignMode = call.alignMode,
+            progressCallback = std::move(call.progressCallback),
+            numImages = call.inputFiles.size()
+        ](wxThreadEvent& event) {
+            const int imgIdx = event.GetInt();
 
-        //TODO: progress; take different alignment phases into account, and just make it progress as a whole from 0.0 to 1.0
-
-        case EID_COMPLETED:
-            if (event.GetString().empty())
+            switch (event.GetId())
             {
-                onCompletion(call_result::Success{});
-            }
-            else
-            {
+            case EID_ABORTED:
                 onCompletion(call_result::Error{event.GetString().ToStdString()});
+                break;
+
+            case EID_PHASECORR_IMG_TRANSLATION:
+                progressCallback(CalculateProgress(0, 2, imgIdx, numImages));
+                break;
+
+            case EID_SAVED_OUTPUT_IMAGE: {
+                const auto [stageIdx, numStages] = [&]() {
+                    switch (alignMode)
+                    {
+                    case AlignmentMethod::PHASE_CORRELATION: return std::make_tuple<std::size_t, std::size_t>(1, 2);
+                    case AlignmentMethod::LIMB: return std::make_tuple<std::size_t, std::size_t>(2, 3);
+                    default: IMPPG_ABORT_MSG("unrecognized alignment method");
+                    }
+                }();
+
+                progressCallback(CalculateProgress(stageIdx, numStages, imgIdx, numImages));
+                } break;
+
+            case EID_LIMB_FOUND_DISC_RADIUS:
+                progressCallback(CalculateProgress(0, 3, imgIdx, numImages));
+                break;
+
+            case EID_LIMB_STABILIZATION_PROGRESS:
+                progressCallback(CalculateProgress(1, 3, imgIdx, numImages));
+                break;
+
+            case EID_COMPLETED:
+                if (event.GetString().empty())
+                {
+                    onCompletion(call_result::Success{});
+                }
+                else
+                {
+                    onCompletion(call_result::Error{event.GetString().ToStdString()});
+                }
+                break;
+
+
+            default: break;
             }
-            break;
-
-
-        default: break;
         }
-    });
+    );
 
     AlignmentParameters_t alignParams{};
     alignParams.alignmentMethod = call.alignMode;
     alignParams.subpixelAlignment = call.subpixelAlignment;
     alignParams.cropMode = call.cropMode;
-    alignParams.inputs = wxArrayString{}; //TODO
+    alignParams.inputs = [&]() {
+        wxArrayString files;
+        for (const auto& path: call.inputFiles)
+        {
+            files.Add(path.generic_string());
+        }
+        return files;
+    }();
     alignParams.normalizeFitsValues = false;
     alignParams.outputDir = call.outputDir.generic_string();
     alignParams.outputFNameSuffix = call.outputFNameSuffix;

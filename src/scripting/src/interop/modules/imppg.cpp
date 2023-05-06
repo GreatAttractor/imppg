@@ -211,7 +211,6 @@ const luaL_Reg functions[] = {
         const auto progressCallback = lua_isnil(lua, 7)
             ? std::function<void(double)>{}
             : [lua](double value) {
-                std::cout << "progress callback: " << value << std::endl;
                 lua_pushvalue(lua, 7);
                 lua_pushnumber(lua, value);
                 lua_call(lua, 1, 0);
@@ -224,7 +223,7 @@ const luaL_Reg functions[] = {
             subpixelAlignment,
             outputDir,
             outputFNameSuffix,
-            progressCallback
+            std::move(progressCallback)
         });
 
         return 0;
