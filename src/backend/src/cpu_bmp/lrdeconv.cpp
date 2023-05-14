@@ -223,11 +223,11 @@ void BlurThresholdVicinity(
     float sigma
 )
 {
-    IMPPG_ASSERT(input.GetWidth() == output.GetWidth() &&
-                 input.GetHeight() == output.GetHeight() &&
-                 workBuf.size() == input.GetWidth() * input.GetHeight() &&
-                 input.GetPixelFormat() == PixelFormat::PIX_MONO32F &&
-                 input.GetPixelFormat() == output.GetPixelFormat());
+    IMPPG_ASSERT(input.GetWidth() == output.GetWidth());
+    IMPPG_ASSERT(input.GetHeight() == output.GetHeight());
+    IMPPG_ASSERT(workBuf.size() == input.GetWidth() * input.GetHeight());
+    IMPPG_ASSERT(input.GetPixelFormat() == PixelFormat::PIX_MONO32F);
+    IMPPG_ASSERT(input.GetPixelFormat() == output.GetPixelFormat());
 
     FillTresholdVicinityMask(input, workBuf, threshold, sigma);
 
