@@ -938,6 +938,12 @@ void c_ImageAlignmentWorkerThread::LimbAlignment()
 
 wxThread::ExitCode c_ImageAlignmentWorkerThread::Entry()
 {
+    if (m_Parameters.GetNumInputs() == 0)
+    {
+        SendMessageToParent(EID_COMPLETED, 0,  _("no input files specified for alignment"));
+        return 0;
+    }
+
     switch (m_Parameters.alignmentMethod)
     {
     case AlignmentMethod::PHASE_CORRELATION: PhaseCorrelationAlignment(); break;
