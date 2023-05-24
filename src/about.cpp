@@ -60,7 +60,7 @@ File description:
 #include "common/common.h"
 #include "ctrl_ids.h"
 
-const char* DATE_STR = "2023-02-15"; ///< Release date of the current version
+const char* DATE_STR = "2023-04-22"; ///< Release date of the current version
 
 #if !defined(_OPENMP)
 int omp_get_num_procs() { return 1; }

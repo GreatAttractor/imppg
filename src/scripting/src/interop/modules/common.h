@@ -4,6 +4,7 @@
 
 #include <lua.hpp>
 #include <string>
+#include <vector>
 
 namespace scripting
 {
@@ -33,6 +34,10 @@ double GetNumber(lua_State* lua, int stackPos);
 
 bool GetBoolean(lua_State* lua, int stackPos);
 
+std::vector<std::string> GetStringTable(lua_State* lua, int stackPos);
+
 void CheckNumArgs(lua_State* lua, const char* functionName, int expectedNum);
+
+void CheckType(lua_State* lua, int stackPos, int type, bool allowNil = false);
 
 }

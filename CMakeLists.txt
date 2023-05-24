@@ -48,7 +48,7 @@ set(IMPPG_SHADERS_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/imppg/shaders)
 set(IMPPG_IMAGES_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/imppg/images)
 set(IMPPG_VERSION_MAJOR 1)
 set(IMPPG_VERSION_MINOR 9)
-set(IMPPG_VERSION_SUBMINOR 0)
+set(IMPPG_VERSION_SUBMINOR 1)
 
 target_compile_definitions(imppg PRIVATE
     IMPPG_VERSION_MAJOR=${IMPPG_VERSION_MAJOR}
@@ -103,13 +103,6 @@ check_cxx_compiler_flag(-ffast-math GNU_FFAST_MATH_SUPPORTED)
 
 if(GNU_FFAST_MATH_SUPPORTED)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
-endif()
-
-if(USE_FREEIMAGE EQUAL 1)
-    target_compile_definitions(imppg PRIVATE USE_FREEIMAGE=1)
-
-    # Cannot do `pkg_check_modules` on `freeimage`; as of FreeImage 3.18.0, there is no `.pc` file provided (checked in MSYS2 and Fedora 29)
-    target_link_libraries(imppg PRIVATE freeimage)
 endif()
 
 if(USE_OPENGL_BACKEND)
@@ -222,8 +215,12 @@ install(FILES
 
 # Packaging -------------------------------------
 
-# Choose the desired file from the "packaging" subdirectory; after running CMake and building the ImPPG binary,
-# a package can be created by running `cpack`. Note that building needs to be performed in an environment corresponding
-# to the selected target system, so that proper shared objects are linked to ("environment" = a full system installation,
-# a Docker image, or similar).
-include(packaging/ubuntu_20.04.cmake)
+# To create a binary package, add -DIMPPG_PKG_TYPE=<file name from packaging/> to CMake invocation,
+# e.g., -DIMPPG_PKG_TYPE=ubuntu-22.04. Then build ImPPG and run `cpack`.
+#
+# Note that building needs to be performed in an environment corresponding to the selected target system,
+# so that proper shared objects are linked to ("environment" = a full system installation, a Docker image, or similar).
+
+if(NOT "${IMPPG_PKG_TYPE}" STREQUAL "")
+    include(packaging/${IMPPG_PKG_TYPE}.cmake)
+endif()

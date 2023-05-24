@@ -1,7 +1,7 @@
 # ImPPG (Image Post-Processor)
 Copyright (C) 2015-2023 Filip Szczerek (ga.software@yahoo.com)
 
-version 1.9.0-beta (2023-02-15)
+version 1.9.1-beta (2023-04-22)
 
 *This program comes with ABSOLUTELY NO WARRANTY. This is free software, licensed under GNU General Public License v3 or any later version and you are welcome to redistribute it under certain conditions. See the LICENSE file for details.*
 
@@ -28,9 +28,10 @@ version 1.9.0-beta (2023-02-15)
 - 11\. Downloading
 - 12\. Building from source code
   - 12\.1\. Building under Linux and similar systems using GNU (or compatible) toolchain
-    - 12\.1\.1. Building under Ubuntu 18.04
-    - 12\.1\.2. Packaging
-    - 12\.1\.3. Building for macOS
+    - 12\.1\.1. Building under Ubuntu
+    - 12\.1\.2. Building under Fedora
+    - 12\.1\.3. Packaging (Linux only)
+    - 12\.1\.4. Building for macOS
   - 12\.2\. Building under MS Windows
   - 12\.3\. UI language
 - 13\. Acknowledgements
@@ -295,31 +296,39 @@ $ cat install_manifest.txt | sudo xargs rm
 
 To use a different installation prefix, add `-DCMAKE_INSTALL_PREFIX=<my_dir>` to the initial CMake invocation.
 
-#### 12.1.1. Building under Ubuntu 18.04
+#### 12.1.1. Building under Ubuntu
 
-The following packages are needed for building under Ubuntu 18.04:
+*Note:* under Ubuntu 18.04, the default GCC version (7.x) is too old. Install and enable GCC 8 (example instructions: `https://linuxize.com/post/how-to-install-gcc-compiler-on-ubuntu-18-04/`). (Do not choose GCC 9, otherwise the built binary will not run on a clean Ubuntu 18.04 due to too old a version of `libstdc++`.)
+
+The following packages are needed for building under Ubuntu:
 ```
 git cmake build-essential libboost-dev libboost-test-dev libwxgtk3.0-gtk3-dev libglew-dev pkg-config libccfits-dev libfreeimage-dev liblua5.3-dev
 ```
 
-The default GCC version (7.x) is too old. Install and enable GCC 8 (example instructions: `https://linuxize.com/post/how-to-install-gcc-compiler-on-ubuntu-18-04/`). (Do not choose GCC 9, otherwise the built binary will not run on a clean Ubuntu 18.04 due to too old a version of `libstdc++`.)
+After building `imppg`, it can be either installed as in section 12.1, or a Debian package can be created and installed with `apt` (see 12.1.3).
 
-After building `imppg`, it can be either installed as in section 11.1, or a Debian package can be created and installed with `apt` (see 11.1.2).
+#### 12.1.2. Building under Fedora
 
-
-#### 12.1.2. Packaging
-
-In order to create a binary package, modify appropriately the final statement in `CMakeLists.txt`:
-```cmake
-include(packaging/ubuntu_20.04.cmake)
+The following packages are needed for building under Fedora:
 ```
-before calling CMake and building (see the `packaging` subdirectory for possible targets). After a successful build, the package can be created by running:
+git cmake g++ pkgconf-pkg-config boost-devel wxGTK3-devel cfitsio-devel glew-devel lua-devel freeimage-devel rpm-build
+```
+
+After building `imppg`, it can be either installed as in section 12.1, or an RPM package can be created and installed with `dnf` (see 12.1.3).
+
+#### 12.1.3. Packaging (Linux only)
+
+In order to create a binary package, define `IMPPG_PKG_TYPE` when calling CMake, e.g.:
 ```bash
-$ cpack
+$ cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DIMPPG_PKG_TYPE=ubuntu-22.04 ..
 ```
+where `ubuntu-22.04` corresponds to one of the file names in the `packaging` directory.
+
+After building ImPPG, run `cpack` to create the package.
+
 Note that building needs to be performed in an environment corresponding to the selected target system, so that proper shared objects are linked to (“environment” = a full system installation, a Docker image, or similar).
 
-#### 12.1.3. Building for macOS
+#### 12.1.4. Building for macOS
 
 *Note: macOS build and support is still work-in-progress*
 
@@ -418,6 +427,13 @@ German translation: Marcel Hoffmann.
 
 ----------------------------------------
 ## 14. Change log
+
+**1.9.1-beta** (2023-04-22)
+
+  - **Bug fixes**
+    - Invalid channel order when loading 8-bit RGB images
+    - Cannot enable adaptive unsharp mask
+    - Crash when using adaptive unsharp mask in CPU & bitmaps mode
 
 **1.9.0-beta** (2023-02-15)
 

@@ -1,7 +1,7 @@
 # ImPPG (Image Post-Processor)
 Copyright (C) 2015-2023 Filip Szczerek (ga.software@yahoo.com)
 
-wersja 1.9.0-beta (2023-02-15)
+wersja 1.9.1-beta (2023-04-22)
 
 *Niniejszy program ABSOLUTNIE nie jest objęty JAKĄKOLWIEK GWARANCJĄ. Jest to wolne oprogramowanie na licencji GNU GPL w wersji 3 (lub dowolnej późniejszej) i można je swobodnie rozpowszechniać pod pewnymi warunkami: zob. pełny tekst licencji w pliku LICENSE.*
 
@@ -29,9 +29,10 @@ wersja 1.9.0-beta (2023-02-15)
 - 11\. Pobieranie
 - 12\. Budowanie ze źródeł
   - 12\.1\. Budowanie w systemie Linux i podobnych z użyciem narzędzi GNU (lub kompatybilnych)
-    - 12\.1\.1. Budowanie pod Ubuntu 18.04
-    - 12\.1\.2. Tworzenie pakietów
-    - 12\.1\.3. Budowanie pod macOS
+    - 12\.1\.1. Budowanie pod Ubuntu
+    - 12\.1\.2. Budowanie pod Fedorą
+    - 12\.1\.3. Tworzenie pakietów (Linux)
+    - 12\.1\.4. Budowanie pod macOS
   - 12\.2\. Budowanie pod MS Windows
   - 12\.3\. Język UI
 - 13\. Podziękowania
@@ -298,35 +299,41 @@ $ cat install_manifest.txt | sudo xargs rm
 ```
 
 
-#### 12.1.1. Budowanie pod Ubuntu 18.04
+#### 12.1.1. Budowanie pod Ubuntu
 
-Następujące pakiety są konieczne, by zbudować ImPPG pod Ubuntu 18.04:
+*Uwaga:* domyślna wersja GCC (7.x) w Ubuntu 18.04 jest zbyt stara. Należy zainstalować i uaktywnić GCC 8 (przykładowa instrukcja: `https://linuxize.com/post/how-to-install-gcc-compiler-on-ubuntu-18-04/`). (Nie należy wybierać GCC 9, w przeciwnym razie zbudowany plik wykonywalny nie będzie działał na czystej instalacji Ubuntu 18.04 z powodu przestarzałej wersji `libstdc++`).
+
+Następujące pakiety są konieczne, by zbudować ImPPG pod Ubuntu:
 ```
-git cmake build-essential libboost-dev libwxgtk3.0-gtk3-dev libglew-dev pkg-config libccfits-dev libfreeimage-dev
+git cmake build-essential libboost-dev libwxgtk3.0-gtk3-dev libglew-dev pkg-config libccfits-dev libfreeimage-dev liblua5.3-dev
 ```
 
-Domyślna wersja GCC (7.x) jest zbyt stara. Należy zainstalować i uaktywnić GCC 8 (przykładowa instrukcja: `https://linuxize.com/post/how-to-install-gcc-compiler-on-ubuntu-18-04/`). (Nie należy wybierać GCC 9, w przeciwnym razie zbudowany plik wykonywalny nie będzie działał na czystej instalacji Ubuntu 18.04 z powodu przestarzałej wersji `libstdc++`).
+Po zbudowaniu można zainstalować ImPPG jak w p. 12.1; można też stworzyć pakiet debianowski i zainstalować go poprzez `apt` (zob. 12.1.3).
 
-Po zbudowaniu można zainstalować ImPPG jak w p. 11.1; można też stworzyć pakiet debianowski poleceniem:
+
+#### 12.1.2. Budowanie pod Fedorą
+
+Następujące pakiety są konieczne, by zbudować ImPPG pod Fedorą:
+```
+git cmake g++ pkgconf-pkg-config boost-devel wxGTK3-devel cfitsio-devel glew-devel lua-devel freeimage-devel rpm-build
+```
+
+Po zbudowaniu można zainstalować ImPPG jak w p. 12.1; można też stworzyć pakiet RPM i zainstalować go poprzez `dnf` (zob. 12.1.3).
+
+
+#### 12.1.3. Tworzenie pakietów (Linux)
+
+By stworzyć pakiet binarny, należy podać `IMPPG_PKG_TYPE` w wywołaniu CMake, np.:
 ```bash
-$ cpack
+$ cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DIMPPG_PKG_TYPE=ubuntu-22.04 ..
 ```
-który można następnie zainstalować narzędziem `apt`.
+gdzie `ubuntu-22.04` odpowiada nazwie jednego z plików w podkatalogu `packaging`.
 
+Po udanej kompilacji pakiet tworzy się poleceniem `cpack`.
 
-#### 12.1.2. Tworzenie pakietów
-
-By stworzyć pakiet binarny, należy zmodyfikować ostatnią instrukcję w `CMakeLists.txt`:
-```cmake
-include(packaging/ubuntu_20.04.cmake)
-```
-przed wywołaniem CMake i zbudowaniem programu (lista możliwych pakietów - zob. podkatalog `packaging`). Po udanej kompilacji pakiet można stworzyć poleceniem:
-```bash
-$ cpack
-```
 Uwaga: kompilacja musi być przeprowadzona w środowisku odpowiadającym wybranemu rodzajowi pakietu, tak by dołączone zostały właściwe biblioteki dynamiczne („środowisko” = pełna instalacja systemu, obraz Dockera itp.).
 
-#### 12.1.3. Budowanie pod macOS
+#### 12.1.4. Budowanie pod macOS
 
 *Uwaga: Budowanie pod macOS nie jest jeszcze w pełni ukończone.*
 
@@ -387,7 +394,7 @@ W podkatalogu `build` pojawi się plik wykonywalny `imppg.exe`. Można go urucho
 $ build/imppg.exe
 ```
 
-By uruchomić ImPPG z Eksploratora Windowa, podkatalogi `images`, `pl`, `shaders` i wszystkie niezbędne pliki DLL muszą znajdować się w tym samym miejscu, co `imppg.exe`. Przykład: dystrybucja binarna dla MS Windows (`imppg-win64.zip`).
+By uruchomić ImPPG z Eksploratora Windows, podkatalogi `images`, `pl`, `shaders` i wszystkie niezbędne pliki DLL muszą znajdować się w tym samym miejscu, co `imppg.exe`. Przykład: dystrybucja binarna dla MS Windows (`imppg-win64.zip`).
 
 
 
@@ -424,6 +431,13 @@ Tłumaczenie na jęz. niemiecki: Marcel Hoffmann.
 
 ----------------------------------------
 ## 14. Historia zmian
+
+**1.9.1-beta** (2023-04-22)
+
+  - **Poprawki błędów**
+    - Zła kolejność kanałów po załadowaniu 8-bitowego obrazu RGB
+    - Niemożność aktywacji trybu adaptatywnego unsharp mask
+    - Błąd podczas używania trybu adaptatywnego unsharp mask w trybie CPU & bitmapy
 
 **1.9.0-beta** (2023-02-15)
 

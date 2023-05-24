@@ -23,13 +23,16 @@ File description:
 
 #pragma once
 
+#include "alignment/align_proc.h"
 #include "common/formats.h"
 #include "common/proc_settings.h"
 #include "image/image.h"
 #include "scripting/script_exceptions.h"
 
+#include <filesystem>
 #include <future>
 #include <memory>
+#include <optional>
 #include <variant>
 
 namespace scripting
@@ -68,9 +71,21 @@ struct ProcessImage
     ProcessingSettings settings;
 };
 
+struct AlignImages
+{
+    std::vector<std::filesystem::path> inputFiles;
+    AlignmentMethod alignMode;
+    CropMode cropMode;
+    bool subpixelAlignment;
+    std::filesystem::path outputDir;
+    std::optional<std::string> outputFNameSuffix;
+    std::function<void(double)> progressCallback;
+};
+
 }
 
 using MessageContents = std::variant<
+    contents::AlignImages,
     contents::AlignRGB,
     contents::Error,
     contents::None,
