@@ -205,6 +205,15 @@ void c_MainWindow::LoadSettingsFromFile(wxString settingsFile, bool moveToMruLis
         m_LastChosenSettingsFileName = wxFileName(settingsFile).GetName();
         m_LastChosenSettings->SetLabel(m_LastChosenSettingsFileName);
 
+        if (s.processing.normalization.enabled)
+        {
+            if (std::optional<c_Image> image = m_BackEnd->GetImage())
+            {
+                NormalizeFpImage(image.value(), s.processing.normalization.min, s.processing.normalization.max);
+                m_BackEnd->SetImage(std::move(image.value()), std::nullopt);
+            }
+        }
+
         OnUpdateLucyRichardsonSettings(); // Perform all processing steps, starting with L-R deconvolution
     }
 }
