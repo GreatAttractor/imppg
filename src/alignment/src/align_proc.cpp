@@ -148,7 +148,7 @@ bool c_ImageAlignmentWorkerThread::SaveTranslatedOutputImage(const wxString& inp
     //-----------------------
 
     wxFileName fnInput(inputFileName);
-    wxFileName outputFileName(m_Parameters.outputDir, fnInput.GetName() + "_aligned", fnInput.GetExt());
+    wxFileName outputFileName(m_Parameters.outputDir, fnInput.GetName() +  m_Parameters.outputFNameSuffix.value_or(""), fnInput.GetExt());
     bool saved = false;
 
 #if USE_CFITSIO
