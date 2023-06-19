@@ -304,8 +304,6 @@ void c_OpenGLProcessing::IssueLRCommandBatch()
 
 void c_OpenGLProcessing::StartLRDeconvolution()
 {
-    m_LRSync.abortRequested = false;
-
     if (m_ProgressTextHandler)
     {
         m_ProgressTextHandler(std::move(wxString::Format(_(L"L\u2013R deconvolution: %d%%"), 0)));
@@ -326,6 +324,7 @@ void c_OpenGLProcessing::StartLRDeconvolution()
 
     if (m_ProcessingSettings.LucyRichardson.iterations == 0)
     {
+        m_LRSync.abortRequested = true;
         m_VBOs.wholeSelection.Bind();
         gl::SpecifyVertexAttribPointers();
         auto& prog = m_GLPrograms.copy;
@@ -395,6 +394,7 @@ void c_OpenGLProcessing::StartLRDeconvolution()
         m_LRSync.next = &m_TexFBOs.LR.buf2;
         m_LRSync.numIterationsLeft = m_ProcessingSettings.LucyRichardson.iterations;
 
+        m_LRSync.abortRequested = false;
         IssueLRCommandBatch();
     }
 }
@@ -674,6 +674,8 @@ void c_OpenGLProcessing::SetTexturesLinearInterpolation(bool enable)
 
 void c_OpenGLProcessing::SetProcessingSettings(ProcessingSettings settings)
 {
+    m_LRSync.abortRequested = true;
+
     if (m_ProcessingSettings.LucyRichardson.sigma != settings.LucyRichardson.sigma)
     {
         m_LRGaussian = GetGaussianKernel(settings.LucyRichardson.sigma);

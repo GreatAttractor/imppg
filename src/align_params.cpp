@@ -127,6 +127,7 @@ void c_ImageAlignmentParams::GetAlignmentParameters(AlignmentParameters_t& param
     m_FileList.GetStrings(newInputs);
     params.inputs = std::move(newInputs);
     params.outputDir = m_Parameters.outputDir = m_OutputDirCtrl->GetPath();
+    params.outputFNameSuffix = "_aligned";
 }
 
 void c_ImageAlignmentParams::OnOutputDirChanged(wxFileDirPickerEvent& event)
