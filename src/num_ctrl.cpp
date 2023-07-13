@@ -117,8 +117,11 @@ void c_NumericalCtrl::OnSliderEndScroll(wxScrollEvent&)
 }
 
 
-void c_NumericalCtrl::OnSliderScroll(wxScrollEvent&)
+void c_NumericalCtrl::OnSliderScroll(wxScrollEvent& event)
 {
+    // do nothing if this method is called e.g. due to EVT_SCROLL_THUMBTRACK sent by the spin button
+    if (event.GetEventObject() != m_SliderCtrl) { return; }
+
     if (!Scrolling.grabbed)
     {
         Scrolling.grabbed = true;
