@@ -26,6 +26,7 @@ File description:
 #include "common/proc_settings.h"
 #include "scripting/script_image_processor.h"
 
+#include <filesystem>
 #include <memory>
 #include <tuple>
 #include <wx/intl.h>
@@ -151,6 +152,14 @@ void ScriptImageProcessor::OnAlignImages(const contents::AlignImages& call, Comp
     if (m_AlignmentWorker)
     {
         m_AlignmentWorker->Wait();
+    }
+
+    if (!std::filesystem::exists(call.outputDir))
+    {
+        onCompletion(call_result::Error{
+            wxString::Format(_("output directory %s does not exist"), call.outputDir.generic_string()).ToStdString()
+        });
+        return;
     }
 
     m_AlignmentEvtHandler = std::make_unique<wxEvtHandler>();

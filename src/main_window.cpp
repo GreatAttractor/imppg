@@ -1484,9 +1484,6 @@ wxStaticBoxSizer* c_MainWindow::CreateControlsOfSingleUnsharpMask(
         true,
         maxfreq ? 1000/maxfreq : 0
     );
-    umCtrls.amountMax->Bind(EVT_NUMERICAL_CTRL, [this, maskIdx](wxCommandEvent& event) {
-        OnUnsharpMaskingControlChanged(event, maskIdx);
-    });
     box->Add(umCtrls.amountMax, 0, wxGROW | wxALL, BORDER);
 
     umCtrls.threshold = new c_NumericalCtrl(

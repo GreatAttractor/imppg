@@ -292,7 +292,10 @@ void c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment()
 
         if (const auto* fnames = std::get_if<wxArrayString>(&m_Parameters.inputs))
         {
-            SaveTranslatedOutputImage((*fnames)[i], output);
+            if (!SaveTranslatedOutputImage((*fnames)[i], output))
+            {
+                return;
+            }
         }
 
         SendMessageToParent(EID_SAVED_OUTPUT_IMAGE, i);
