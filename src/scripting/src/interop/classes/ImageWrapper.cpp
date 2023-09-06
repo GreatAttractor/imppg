@@ -66,4 +66,9 @@ void ImageWrapper::align_rgb()
     ));
 }
 
+void ImageWrapper::auto_white_balance()
+{
+    m_Image = std::make_shared<const c_Image>(m_Image->AutomaticWhiteBalance());
+}
+
 }
