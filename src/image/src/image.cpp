@@ -670,6 +670,12 @@ static c_SimpleBuffer GetConvertedPixelFormatFragment(
             width, inPtr, inPtrStep, outPtr, outPtrStep);
             break;
 
+            case PixelFormat::PIX_RGB32F: ConvertWholeLine<float, float>([](const float* src, float* dest) {
+                dest[0] = dest[1] = dest[2] = src[0];
+            },
+            width, inPtr, inPtrStep, outPtr, outPtrStep);
+            break;
+
             default: IMPPG_ABORT();
             }
         } break;

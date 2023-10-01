@@ -25,16 +25,16 @@ File description:
 #include "../../imppg_assert.h"
 #include "math_utils/math_utils.h"
 
-#include <cstdint>
-#include <cstdlib>
 #include <algorithm>
-#include <map>
-#include <cmath>
-#include <cfloat>
-#include <set>
+#include <boost/math/special_functions/fpclassify.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/operation.hpp>
-#include <boost/math/special_functions/fpclassify.hpp>
+#include <cfloat>
+#include <cmath>
+#include <cstdint>
+#include <cstdlib>
+#include <map>
+#include <set>
 
 using namespace boost::numeric::ublas;
 
@@ -188,12 +188,12 @@ void CullToConvexHull(std::vector<Point_t>& points)
 
 //TODO: add header comment
 float GetSumSqrDiffsFromHistogram(
-        const uint32_t histogram[], ///< 256 elements
-        size_t iMin, size_t iMax)
+        const std::size_t histogram[], ///< 256 elements
+        std::size_t iMin, std::size_t iMax)
 {
     float avg = 0.0f;
     int numPix = 0;
-    for (size_t i = iMin; i <= iMax; i++)
+    for (std::size_t i = iMin; i <= iMax; i++)
     {
         avg += histogram[i] * i;
         numPix += histogram[i];
@@ -201,25 +201,32 @@ float GetSumSqrDiffsFromHistogram(
     avg /= numPix;
 
     float sumSqrDiffs = 0.0f;
-    for (size_t i = iMin; i <= iMax; i++)
+    for (std::size_t i = iMin; i <= iMax; i++)
         sumSqrDiffs += histogram[i] * sqr(i - avg);
 
     return sumSqrDiffs;
 }
 
-/// Finds the brightness threshold separating the disc from the background
-uint8_t FindDiscBackgroundThreshold(const c_Image& img,
-    uint8_t* avgDisc,  ///< If not null, receives average disc brightness
-    uint8_t* avgBkgrnd ///< If not null, receives average background brightness
+/// Finds the brightness threshold separating the disc from the background.
+std::optional<std::uint8_t> FindDiscBackgroundThreshold(
+    const c_Image& img,
+    std::uint8_t* avgDisc,  ///< If not null, receives average disc brightness
+    std::uint8_t* avgBkgrnd ///< If not null, receives average background brightness
 )
 {
     IMPPG_ASSERT(img.GetPixelFormat() == PixelFormat::PIX_MONO8);
 
-    // Determine the histogram
-    uint32_t histogram[256] = { 0 };
-    for (unsigned i = 0; i < img.GetHeight(); i++)
-        for (unsigned j = 0; j < img.GetWidth(); j++)
-            histogram[img.GetRowAs<uint8_t>(i)[j]] += 1;
+    constexpr std::size_t NUM_HISTOGRAM_BINS = 256;
+
+    std::size_t histogram[NUM_HISTOGRAM_BINS]{0};
+    const unsigned width = img.GetWidth();
+    const unsigned height = img.GetHeight();
+    for (unsigned i = 0; i < height; i++)
+    {
+        const std::uint8_t* row = img.GetRowAs<uint8_t>(i);
+        for (unsigned j = 0; j < width; j++)
+            histogram[row[j]] += 1;
+    }
 
     // Use bisection to find the value 'currDivPos' in histogram which has
     // the lowest sum of squared pixel value differences from the average
@@ -229,8 +236,18 @@ uint8_t FindDiscBackgroundThreshold(const c_Image& img,
     // which separates two groups of "similar" values: those belonging
     // to the disc and to the background.
 
-    unsigned iLow = 0, iHigh = 255;
-    unsigned currDivPos = (iHigh - iLow) / 2;
+    std::size_t iLow = 0;
+    std::size_t iHigh = [&]() {
+        std::size_t index = NUM_HISTOGRAM_BINS - 1;
+        while (index > 0 && histogram[index] == 0)
+        {
+            --index;
+        }
+        return index;
+    }();
+    if (0 == iHigh) { return std::nullopt; }
+
+    std::size_t currDivPos = (iHigh - iLow) / 2;
 
     while (iHigh - iLow > 1)
     {
@@ -263,7 +280,7 @@ uint8_t FindDiscBackgroundThreshold(const c_Image& img,
         totalBkgrnd += i * histogram[i];
         bkgrndCount += histogram[i];
     }
-    for (unsigned i = currDivPos; i < 256; i++)
+    for (unsigned i = currDivPos; i < NUM_HISTOGRAM_BINS; i++)
     {
         totalDisc += i * histogram[i];
         discCount += histogram[i];

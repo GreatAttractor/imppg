@@ -292,7 +292,10 @@ void c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment()
 
         if (const auto* fnames = std::get_if<wxArrayString>(&m_Parameters.inputs))
         {
-            SaveTranslatedOutputImage((*fnames)[i], output);
+            if (!SaveTranslatedOutputImage((*fnames)[i], output))
+            {
+                return;
+            }
         }
 
         SendMessageToParent(EID_SAVED_OUTPUT_IMAGE, i);
@@ -648,7 +651,12 @@ bool c_ImageAlignmentWorkerThread::FindRadii(
         //      the disc from the background.
 
         uint8_t avgDisc, avgBkgrnd;
-        uint8_t threshold = FindDiscBackgroundThreshold(img, &avgDisc, &avgBkgrnd);
+        const std::optional<std::uint8_t> threshold = FindDiscBackgroundThreshold(img, &avgDisc, &avgBkgrnd);
+        if (!threshold.has_value())
+        {
+            m_ErrorMessage = wxString::Format(_("Could not find solar disc in %s."), fnames[i]);
+            return false;
+        }
 
         // 2. Calculate the image centroid
 
@@ -675,7 +683,7 @@ bool c_ImageAlignmentWorkerThread::FindRadii(
         for (int j = 0; j < NUM_RAYS; j++)
         {
             Point_t limbPt;
-            int varSum = FindLimbCrossing(rays[j], threshold, limbPt);
+            int varSum = FindLimbCrossing(rays[j], threshold.value(), limbPt);
             limbPointsCandidates.insert(std::pair<int, Point_t>(varSum, limbPt));
         }
 
@@ -716,7 +724,7 @@ bool c_ImageAlignmentWorkerThread::FindRadii(
         {
             size_t numTotal, numAbove;
             int radius = DIFF_SIZE;
-            CountNeighborsAboveThreshold(limbPoints[i][j], img, radius, threshold, numAbove, numTotal);
+            CountNeighborsAboveThreshold(limbPoints[i][j], img, radius, threshold.value(), numAbove, numTotal);
 
             float fraction = static_cast<float>(numAbove)/numTotal;
             aboveThFraction.push_back(fraction);
