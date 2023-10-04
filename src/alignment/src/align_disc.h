@@ -24,11 +24,12 @@ File description:
 #ifndef IMPPG_DISC_HEADER
 #define IMPPG_DISC_HEADER
 
-#include <cstdint>
-#include <vector>
-
 #include "common/common.h"
 #include "image/image.h"
+
+#include <cstdint>
+#include <optional>
+#include <vector>
 
 typedef struct strPointVal
 {
@@ -54,9 +55,10 @@ void GetRayPoints(const Point_t& origin, const Point_t& dir, const c_Image& img,
 int FindLimbCrossing(Ray_t& ray, uint8_t threshold, Point_t& result);
 
 /// Finds the brightness threshold separating the disc from the background
-uint8_t FindDiscBackgroundThreshold(const c_Image& img,
-    uint8_t* avgDisc = 0,  ///< If not null, receives average disc brightness
-    uint8_t* avgBkgrnd = 0 ///< If not null, receives average background brightness
+std::optional<std::uint8_t> FindDiscBackgroundThreshold(
+    const c_Image& img,
+    std::uint8_t* avgDisc = 0,  ///< If not null, receives average disc brightness
+    std::uint8_t* avgBkgrnd = 0 ///< If not null, receives average background brightness
 );
 
 /// Removes elements from 'points' which do not belong to their convex hull
