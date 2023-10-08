@@ -817,7 +817,8 @@ static c_SimpleBuffer GetConvertedPixelFormatFragment(
             }
         } break;
 
-        case PixelFormat::PIX_RGB16: {
+        case PixelFormat::PIX_RGB16:
+        case PixelFormat::PIX_RGBA16: {
             switch (destPixFmt)
             {
             case PixelFormat::PIX_MONO8: ConvertWholeLine<uint16_t, uint8_t>([](const uint16_t* src, uint8_t* dest) {
@@ -858,7 +859,8 @@ static c_SimpleBuffer GetConvertedPixelFormatFragment(
             }
         } break;
 
-        case PixelFormat::PIX_RGB32F: {
+        case PixelFormat::PIX_RGB32F:
+        case PixelFormat::PIX_RGBA32F: {
             switch (destPixFmt)
             {
             case PixelFormat::PIX_MONO8: ConvertWholeLine<float, uint8_t>([](const float* src, uint8_t* dest) {
