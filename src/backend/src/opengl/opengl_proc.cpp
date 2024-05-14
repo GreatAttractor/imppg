@@ -285,7 +285,7 @@ void c_OpenGLProcessing::IssueLRCommandBatch()
         {
             const int iters = m_ProcessingSettings.LucyRichardson.iterations;
             const int percentage = 100 * (iters - m_LRSync.numIterationsLeft) / iters;
-            m_ProgressTextHandler(std::move(wxString::Format(_(L"L\u2013R deconvolution: %d%%"), percentage)));
+            m_ProgressTextHandler(wxString::Format(_(L"L\u2013R deconvolution: %d%%"), percentage));
         }
     }
 
@@ -306,7 +306,7 @@ void c_OpenGLProcessing::StartLRDeconvolution()
 {
     if (m_ProgressTextHandler)
     {
-        m_ProgressTextHandler(std::move(wxString::Format(_(L"L\u2013R deconvolution: %d%%"), 0)));
+        m_ProgressTextHandler(wxString::Format(_(L"L\u2013R deconvolution: %d%%"), 0));
     }
 
     m_ProcessingOutputValid.sharpening = false;
@@ -543,7 +543,7 @@ void c_OpenGLProcessing::StartToneMapping()
 
     if (m_ProgressTextHandler)
     {
-        m_ProgressTextHandler(std::move(_("Idle")));
+        m_ProgressTextHandler(_("Idle"));
     }
 }
 
