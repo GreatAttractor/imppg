@@ -27,7 +27,7 @@ File description:
 #include "opengl/uniforms.h"
 #include "math_utils/gauss.h"
 #include "cpu_bmp/lrdeconv.h" //TODO: move BlurThresholdVicinity elsewhere
-#include "../../imppg_assert.h"
+#include "common/imppg_assert.h"
 
 namespace imppg::backend {
 

@@ -67,7 +67,7 @@ File description:
 #include "common/common.h"
 #include "ctrl_ids.h"
 #include "common/formats.h"
-#include "imppg_assert.h"
+#include "common/imppg_assert.h"
 #include "logging.h"
 #include "main_window.h"
 #include "normalize.h"
@@ -963,7 +963,7 @@ void c_MainWindow::OpenFile(wxFileName path, bool resetSelection)
     }
     else
     {
-        c_Image newImg = std::move(loadResult.value());
+        c_Image newImg = loadResult.value();
 
         auto& s = m_CurrentSettings;
 

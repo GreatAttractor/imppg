@@ -24,7 +24,7 @@ File description:
 #include <cassert>
 
 #include "common/common.h"
-#include "imppg_assert.h"
+#include "common/imppg_assert.h"
 #include "scrollable_dlg.h"
 
 

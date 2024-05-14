@@ -24,8 +24,12 @@ File description:
 #ifndef ImPPG_ASSERT_H
 #define ImPPG_ASSERT_H
 
+#include "common/dirs.h"
+
 #include <cstdlib>
-#include <iostream>
+#include <fstream>
+#include <iostream> //TODO: REMOVE
+
 
 #define IMPPG_ASSERT(condition)                                             \
 {                                                                           \

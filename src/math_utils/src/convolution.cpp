@@ -21,14 +21,13 @@ File description:
     Convolution implementation.
 */
 
+#include "common/imppg_assert.h"
 #include "math_utils/convolution.h"
 #include "math_utils/gauss.h"
 
 #include <cmath>
 #include <cstring>
 #include <memory>
-
-#include "../../imppg_assert.h"
 
 /// Performs a single step of 1D convolution using the middle kernel value 'kernelVal'
 inline void Convolve1Dstep_OfsZero(const float input[], float output[], int len, float kernelVal)

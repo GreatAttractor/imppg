@@ -34,7 +34,7 @@ File description:
 #include <wx/gdicmn.h>
 
 #include "common/formats.h"
-#include "../../imppg_assert.h"
+#include "common/imppg_assert.h"
 
 
 /// Conditionally swaps a 32-bit value

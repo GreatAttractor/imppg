@@ -31,8 +31,7 @@ File description:
 #include <optional>
 #include <boost/format.hpp>
 
-#include "../../imppg_assert.h"
-
+#include "common/imppg_assert.h"
 #include "image/image.h"
 #if (USE_FREEIMAGE)
   #include "FreeImage.h"

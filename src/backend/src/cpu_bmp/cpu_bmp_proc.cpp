@@ -21,8 +21,8 @@ File description:
     CPU & bitmaps processing back end implementation.
 */
 
-#include "../../imppg_assert.h"
 #include "common/common.h"
+#include "common/imppg_assert.h"
 #include "cpu_bmp_proc.h"
 #include "cpu_bmp/message_ids.h"
 #include "logging/logging.h"
