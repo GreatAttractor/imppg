@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2016-2019 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2016-2024 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -24,9 +24,10 @@ File description:
 #ifndef IMPGG_COMMON_HEADER
 #define IMPGG_COMMON_HEADER
 
-#include "../../imppg_assert.h"
+#include "common/imppg_assert.h"
 
 #include <array>
+#include <filesystem>
 #include <variant>
 #include <vector>
 #include <wx/bitmap.h>
@@ -217,7 +218,5 @@ inline wxString FromDir(const wxFileName& dir, wxString fname)
 }
 
 wxString GetBackEndText(BackEnd backEnd);
-
-wxFileName GetImagesDirectory();
 
 #endif //  IMPGG_COMMON_HEADER

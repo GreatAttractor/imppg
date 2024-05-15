@@ -21,7 +21,7 @@ File description:
     Progress bar widget implementation.
 */
 
-#include "imppg_assert.h"
+#include "common/imppg_assert.h"
 #include "progress_bar.h"
 
 #include <wx/dcclient.h>

@@ -33,7 +33,7 @@ File description:
 #include <vector>
 #include <wx/filename.h>
 
-#include "../../imppg_assert.h"
+#include "common/imppg_assert.h"
 #include "align_common.h"
 #include "align_disc.h"
 #include "align_phasecorr.h"
@@ -390,7 +390,7 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
 
         // Scan the first image's intersection portion for the highest-contrast area
         IMPPG_ASSERT(!fnames->IsEmpty());
-        const auto loadResult = LoadImageFileAsMono32f(
+        auto loadResult = LoadImageFileAsMono32f(
             (*fnames)[0].ToStdString(),
             m_Parameters.normalizeFitsValues
         );

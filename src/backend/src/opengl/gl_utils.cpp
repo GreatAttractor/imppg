@@ -33,7 +33,7 @@ File description:
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
 
-#include "../../imppg_assert.h"
+#include "common/imppg_assert.h"
 #include "logging/logging.h"
 #include "opengl/gl_utils.h"
 
