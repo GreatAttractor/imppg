@@ -67,7 +67,6 @@ std::filesystem::path GetUserDataDir()
         return {};
     }
 #else
-    // $XDG_DATA_HOME` or `$HOME`/.local/share
     if (const auto* env = std::getenv("XDG_DATA_HOME"))
     {
         return fs::path{env};

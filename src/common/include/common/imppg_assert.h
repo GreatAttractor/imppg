@@ -28,35 +28,35 @@ File description:
 
 #include <cstdlib>
 #include <fstream>
-#include <iostream> //TODO: REMOVE
 
+#define CRASH_LOG std::fstream{GetUserDataDir() / "imppg-crash.log", std::ios_base::app}
 
-#define IMPPG_ASSERT(condition)                                             \
-{                                                                           \
-    if (!(condition))                                                       \
-    {                                                                       \
-        std::cerr << "Assertion failed at " << __FILE__ << ":" << __LINE__  \
-                  << " inside " << __FUNCTION__ << "\n"                     \
-                  << "Condition: " << #condition << "\n";                   \
-        std::abort();                                                       \
-    }                                                                       \
+#define IMPPG_ASSERT(condition)                                              \
+{                                                                            \
+    if (!(condition))                                                        \
+    {                                                                        \
+        { CRASH_LOG << "Assertion failed at " << __FILE__ << ":" << __LINE__ \
+                << " inside " << __FUNCTION__ << "\n"                        \
+                << "Condition: " << #condition << "\n"; }                    \
+        std::abort();                                                        \
+    }                                                                        \
 }
 
-#define IMPPG_ASSERT_MSG(condition, msg)                  \
-{                                                         \
-    if (!(condition))                                     \
-    {                                                     \
-        std::cerr << "Assertion failed: " << msg << "\n"; \
-        std::abort();                                     \
-    }                                                     \
+#define IMPPG_ASSERT_MSG(condition, msg)                      \
+{                                                             \
+    if (!(condition))                                         \
+    {                                                         \
+        { CRASH_LOG << "Assertion failed: " << msg << "\n"; } \
+        std::abort();                                         \
+    }                                                         \
 }
 
 
-#define IMPPG_ABORT()                                                               \
-{                                                                                   \
-    std::cerr << "Abnormal program state detected: " << __FILE__ << ":" << __LINE__ \
-                << " inside " << __FUNCTION__ << "\nExiting.\n";                    \
-    std::abort();                                                                   \
+#define IMPPG_ABORT()                                                                 \
+{                                                                                     \
+    { CRASH_LOG << "Abnormal program state detected: " << __FILE__ << ":" << __LINE__ \
+        << " inside " << __FUNCTION__ << "\nExiting.\n"; }                            \
+    std::abort();                                                                     \
 }
 
 #define IMPPG_ABORT_MSG(msg)                                                        \
