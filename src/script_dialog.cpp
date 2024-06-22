@@ -25,7 +25,7 @@ File description:
 #include "common/common.h"
 #include "common/proc_settings.h"
 #include "ctrl_ids.h"
-#include "imppg_assert.h"
+#include "common/imppg_assert.h"
 #include "progress_bar.h"
 #include "scripting/interop.h"
 #include "script_dialog.h"

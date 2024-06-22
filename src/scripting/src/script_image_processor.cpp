@@ -21,7 +21,7 @@ File description:
     Script image processor implementation.
 */
 
-#include "../../imppg_assert.h"
+#include "common/imppg_assert.h"
 #include "alignment/align_proc.h"
 #include "common/proc_settings.h"
 #include "scripting/script_image_processor.h"

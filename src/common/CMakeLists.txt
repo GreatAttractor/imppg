@@ -1,5 +1,6 @@
 add_library(common STATIC
     src/common.cpp
+    src/dirs.cpp
     src/formats.cpp
     src/num_formatter.cpp
     src/proc_settings.cpp

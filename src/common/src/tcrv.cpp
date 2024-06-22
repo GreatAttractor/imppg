@@ -21,7 +21,7 @@ File description:
     Tone curve class implementation.
 */
 
-#include "../../imppg_assert.h"
+#include "common/imppg_assert.h"
 #include "common/tcrv.h"
 #include "common/common.h"
 #include "math_utils/math_utils.h"

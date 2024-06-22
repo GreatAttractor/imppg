@@ -31,6 +31,10 @@ public:
                 return MethodNoResult<ImageWrapper>(lua, &ImageWrapper::align_rgb);
             }},
 
+            {"awb", [](lua_State* lua) -> int {
+                return MethodNoResult<ImageWrapper>(lua, &ImageWrapper::auto_white_balance);
+            }},
+
             {nullptr, nullptr} // end-of-data marker
         };
 
@@ -42,6 +46,8 @@ public:
     void save(const std::string& path, int outputFormat) const;
 
     void align_rgb();
+
+    void auto_white_balance();
 
 private:
     std::shared_ptr<const c_Image> m_Image;

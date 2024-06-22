@@ -40,7 +40,7 @@ File description:
 #include "batch.h"
 #include "ctrl_ids.h"
 #include "image/image.h"
-#include "imppg_assert.h"
+#include "common/imppg_assert.h"
 #include "logging.h"
 #include "common/proc_settings.h"
 
@@ -350,7 +350,7 @@ void BatchProcessing(
     {
         c_BatchDialog batchDlg(
             parent,
-            std::move(batchParamsDlg.GetInputFileNames()),
+            batchParamsDlg.GetInputFileNames(),
             batchParamsDlg.GetSettingsFileName(),
             batchParamsDlg.GetOutputDirectory(),
             batchParamsDlg.GetOutputFormat());

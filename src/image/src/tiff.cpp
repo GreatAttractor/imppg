@@ -25,7 +25,7 @@ File description:
 #include <fstream>
 #include <boost/format.hpp>
 
-#include "../../imppg_assert.h"
+#include "common/imppg_assert.h"
 #include "tiff.h"
 
 

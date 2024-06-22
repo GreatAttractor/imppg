@@ -1,4 +1,4 @@
-#include "../../imppg_assert.h"
+#include "common/imppg_assert.h"
 #include "alignment/align_proc.h"
 #include "interop/classes/ImageWrapper.h"
 #include "scripting/script_exceptions.h"
@@ -64,6 +64,11 @@ void ImageWrapper::align_rgb()
     m_Image = std::make_shared<const c_Image>(alignedImg->image->GetConvertedPixelFormatSubImage(
         m_Image->GetPixelFormat(), 0, 0, m_Image->GetWidth(), m_Image->GetHeight()
     ));
+}
+
+void ImageWrapper::auto_white_balance()
+{
+    m_Image = std::make_shared<const c_Image>(m_Image->AutomaticWhiteBalance());
 }
 
 }

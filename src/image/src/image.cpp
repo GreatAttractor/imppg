@@ -31,8 +31,7 @@ File description:
 #include <optional>
 #include <boost/format.hpp>
 
-#include "../../imppg_assert.h"
-
+#include "common/imppg_assert.h"
 #include "image/image.h"
 #if (USE_FREEIMAGE)
   #include "FreeImage.h"
@@ -1846,4 +1845,61 @@ c_Image c_Image::Blend(const c_Image& img1, double weight1, const c_Image& img2,
     }
 
     return blended;
+}
+
+c_Image c_Image::AutomaticWhiteBalance() const
+{
+    // using the Gray World algorithm
+
+    const unsigned width = GetWidth();
+    const unsigned height = GetHeight();
+
+    const auto imgf32 = ConvertPixelFormat(PixelFormat::PIX_RGB32F);
+
+    // do we need these? not much difference when used
+    // const auto linear = [](double value) { return pow(value, 2.2); };
+    // const auto sRGB = [](double value) { return pow(value, 1/2.2); };
+    const auto linear = [](double value) { return value; };
+    const auto sRGB = [](double value) { return value; };
+
+    const auto clamp = [](double value) { if (value > 1.0) { return 1.0; } else { return value; } };
+
+    const auto getChannelAvg = [=](const c_Image& img, int channel) {
+        IMPPG_ASSERT(img.GetPixelFormat() == PixelFormat::PIX_RGB32F);
+        IMPPG_ASSERT(channel >= 0 && channel < 3);
+
+        double sum{0.0};
+        for (unsigned y = 0; y < height; ++y)
+        {
+            const float* line = img.GetBuffer().GetRowAs<float>(y);
+            for (unsigned x = 0; x < width; ++x)
+            {
+                sum += linear(line[3 * x + channel]);
+            }
+        }
+
+        return sum / (img.GetWidth() * img.GetHeight());
+    };
+
+    const double avgR = getChannelAvg(imgf32, 0);
+    const double avgG = getChannelAvg(imgf32, 1);
+    const double avgB = getChannelAvg(imgf32, 2);
+
+    auto result = c_Image{width, height, PixelFormat::PIX_RGB32F};
+
+    for (unsigned y = 0; y < height; ++y)
+    {
+        const float* srcLine = imgf32.GetRowAs<float>(y);
+        float* destLine = result.GetRowAs<float>(y);
+
+        for (unsigned x = 0; x < width; ++x)
+        {
+            const auto i = 3 * x;
+            destLine[i + 0] = clamp(sRGB(linear(srcLine[i + 0]) * avgG / avgR));
+            destLine[i + 1] = clamp(sRGB(linear(srcLine[i + 1])              ));
+            destLine[i + 2] = clamp(sRGB(linear(srcLine[i + 2]) * avgG / avgB));
+        }
+    }
+
+    return result;
 }

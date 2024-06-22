@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2016-2020 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2016-2024 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -27,7 +27,7 @@ File description:
 #include "opengl/uniforms.h"
 #include "math_utils/gauss.h"
 #include "cpu_bmp/lrdeconv.h" //TODO: move BlurThresholdVicinity elsewhere
-#include "../../imppg_assert.h"
+#include "common/imppg_assert.h"
 
 namespace imppg::backend {
 
@@ -110,15 +110,15 @@ c_OpenGLProcessing::c_OpenGLProcessing(unsigned lRCmdBatchSizeMpixIters)
 {
     auto shaderDir = gl::GetShadersDirectory();
 
-    m_GLShaders.frag.copy             = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "copy.frag"));
-    m_GLShaders.frag.toneCurve        = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "tone_curve.frag"));
-    m_GLShaders.frag.gaussianHorz     = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "gaussian_horz.frag"));
-    m_GLShaders.frag.gaussianVert     = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "gaussian_vert.frag"));
-    m_GLShaders.frag.unsharpMask      = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "unsharp_mask.frag"));
-    m_GLShaders.frag.divide           = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "divide.frag"));
-    m_GLShaders.frag.multiply         = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "multiply.frag"));
+    m_GLShaders.frag.copy             = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "copy.frag").c_str());
+    m_GLShaders.frag.toneCurve        = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "tone_curve.frag").c_str());
+    m_GLShaders.frag.gaussianHorz     = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "gaussian_horz.frag").c_str());
+    m_GLShaders.frag.gaussianVert     = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "gaussian_vert.frag").c_str());
+    m_GLShaders.frag.unsharpMask      = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "unsharp_mask.frag").c_str());
+    m_GLShaders.frag.divide           = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "divide.frag").c_str());
+    m_GLShaders.frag.multiply         = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "multiply.frag").c_str());
 
-    m_GLShaders.vert.passthrough = gl::c_Shader(GL_VERTEX_SHADER, FromDir(shaderDir, "pass-through.vert"));
+    m_GLShaders.vert.passthrough = gl::c_Shader(GL_VERTEX_SHADER, FromDir(shaderDir, "pass-through.vert").c_str());
 
     m_GLPrograms.copy = gl::c_Program(
         { &m_GLShaders.frag.copy,
@@ -285,7 +285,7 @@ void c_OpenGLProcessing::IssueLRCommandBatch()
         {
             const int iters = m_ProcessingSettings.LucyRichardson.iterations;
             const int percentage = 100 * (iters - m_LRSync.numIterationsLeft) / iters;
-            m_ProgressTextHandler(std::move(wxString::Format(_(L"L\u2013R deconvolution: %d%%"), percentage)));
+            m_ProgressTextHandler(wxString::Format(_(L"L\u2013R deconvolution: %d%%"), percentage));
         }
     }
 
@@ -306,7 +306,7 @@ void c_OpenGLProcessing::StartLRDeconvolution()
 {
     if (m_ProgressTextHandler)
     {
-        m_ProgressTextHandler(std::move(wxString::Format(_(L"L\u2013R deconvolution: %d%%"), 0)));
+        m_ProgressTextHandler(wxString::Format(_(L"L\u2013R deconvolution: %d%%"), 0));
     }
 
     m_ProcessingOutputValid.sharpening = false;
@@ -543,7 +543,7 @@ void c_OpenGLProcessing::StartToneMapping()
 
     if (m_ProgressTextHandler)
     {
-        m_ProgressTextHandler(std::move(_("Idle")));
+        m_ProgressTextHandler(_("Idle"));
     }
 }
 

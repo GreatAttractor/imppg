@@ -1,11 +1,34 @@
-#include <cfloat>
-#include <wx/defs.h> // For some reason, this is needed before display.h, otherwise there are a lot of WXDLLIMPEXP_FWD_CORE undefined errors
-#include <wx/display.h>
-#include <wx/filename.h>
-#include <wx/stdpaths.h>
+/*
+ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
+Copyright (C) 2016-2024 Filip Szczerek <ga.software@yahoo.com>
+
+This file is part of ImPPG.
+
+ImPPG is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+ImPPG is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with ImPPG.  If not, see <http://www.gnu.org/licenses/>.
+
+File description:
+    Common utils implementation.
+*/
 
 #include "common/common.h"
+#include "common/dirs.h"
 #include "image/image.h"
+
+#include <cfloat>
+#include <cstdlib>
+#include <wx/defs.h> // For some reason, this is needed before display.h, otherwise there are a lot of WXDLLIMPEXP_FWD_CORE undefined errors
+#include <wx/display.h>
 
 /// Checks if a window is visible on any display; if not, sets its size and position to default
 void FixWindowPosition(wxWindow& wnd)
@@ -18,24 +41,6 @@ void FixWindowPosition(wxWindow& wnd)
         wnd.SetPosition(wxPoint(0, 0)); // Using wxDefaultPosition does not work under Windows
         wnd.SetSize(wxDefaultSize);
     }
-}
-
-wxFileName GetImagesDirectory()
-{
-    auto imgDir = wxFileName(wxStandardPaths::Get().GetExecutablePath());
-    imgDir.AppendDir("images");
-
-    if (!imgDir.Exists())
-    {
-        imgDir.AssignCwd();
-        imgDir.AppendDir("images");
-        if (!imgDir.Exists())
-        {
-            imgDir.AssignDir(IMPPG_IMAGES_DIR); // defined in CMakeLists.txt
-        }
-    }
-
-    return imgDir;
 }
 
 /// Loads a bitmap from the "images" subdirectory, optionally scaling it
