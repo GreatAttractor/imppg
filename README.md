@@ -354,7 +354,8 @@ $ imppg
 
 To enable OpenMP with Homebrew toolchain invoke `cmake` with following variables:
 ```bash
-CC=/usr/local/opt/llvm/bin/clang CXX=/usr/local/opt/llvm/bin/clang++ LDFLAGS="-L/usr/local/opt/llvm/lib" CPPFLAGS="-I/usr/local/opt/llvm/include" cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
+CC=/usr/local/opt/llvm/bin/clang CXX=/usr/local/opt/llvm/bin/clang++ LDFLAGS="-L/usr/local/opt/llvm/lib -L/usr/local/opt/llvm/lib/c++" CPPFLAGS="-I/usr/local/opt/llvm/include" \
+cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
 ```
 
 ----------------------------------------
