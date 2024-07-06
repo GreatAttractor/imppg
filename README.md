@@ -1,7 +1,7 @@
 # ImPPG (Image Post-Processor)
-Copyright (C) 2015-2023 Filip Szczerek (ga.software@yahoo.com)
+Copyright (C) 2015-2024 Filip Szczerek (ga.software@yahoo.com)
 
-version 1.9.1-beta (2023-04-22)
+version 1.9.2-beta (2024-07-06)
 
 *This program comes with ABSOLUTELY NO WARRANTY. This is free software, licensed under GNU General Public License v3 or any later version and you are welcome to redistribute it under certain conditions. See the LICENSE file for details.*
 
@@ -365,7 +365,7 @@ The provided `CMakeLists.txt` supports the [MSYS2](http://www.msys2.org/) build 
 
 In order to build ImPPG (64-bit) under MSYS2, follow its installation instructions at http://www.msys2.org/. Then open the MSYS2/MinGW64 shell (after default installation: `c:\msys64\mingw64.exe`) and install the ImPPG’s dependencies by running:
 ```bash
-$ pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage mingw64/mingw-w64-x86_64-glew mingw64/mingw-w64-x86_64-wxmsw3.1 mingw64/mingw-w64-x86_64-lua
+$ pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage mingw64/mingw-w64-x86_64-glew mingw64/mingw-w64-x86_64-wxwidgets3.2-msw mingw64/mingw-w64-x86_64-lua
 ```
 
 Download the ImPPG’s source code manually or clone it with Git:
@@ -428,6 +428,20 @@ German translation: Marcel Hoffmann.
 
 ----------------------------------------
 ## 14. Change log
+
+**1.9.2-beta** (2024-07-06)
+
+  - **New features**
+    - Automatic white balance (only via scripting)
+
+  - **Enhancements**
+    - Build scripts for creating Linux packages under Docker
+    - Image alignment accessible via scripting
+    - Log crashes to file
+
+  - **Bug fixes**
+    - Crash during editing of tone curve
+    - Crash during image alignment in solar limb mode
 
 **1.9.1-beta** (2023-04-22)
 

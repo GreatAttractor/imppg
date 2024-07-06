@@ -18,4 +18,4 @@ endif()
 target_include_directories(alignment PUBLIC include)
 target_include_directories(alignment PRIVATE src ${Boost_INCLUDE_DIRS})
 
-target_link_libraries(alignment PRIVATE ${wxWidgets_LIBRARIES} common logging) # image  math_utils)
+target_link_libraries(alignment PRIVATE ${wxWidgets_LIBRARIES} common logging)

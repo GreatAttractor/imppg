@@ -1,7 +1,7 @@
 # ImPPG (Image Post-Processor)
-Copyright (C) 2015-2023 Filip Szczerek (ga.software@yahoo.com)
+Copyright (C) 2015-2024 Filip Szczerek (ga.software@yahoo.com)
 
-wersja 1.9.1-beta (2023-04-22)
+wersja 1.9.2-beta (2024-07-06)
 
 *Niniejszy program ABSOLUTNIE nie jest objęty JAKĄKOLWIEK GWARANCJĄ. Jest to wolne oprogramowanie na licencji GNU GPL w wersji 3 (lub dowolnej późniejszej) i można je swobodnie rozpowszechniać pod pewnymi warunkami: zob. pełny tekst licencji w pliku LICENSE.*
 
@@ -369,7 +369,7 @@ Dostarczony plik `CMakeLists.txt` umożliwia budowanie w środowisku [MSYS2](htt
 
 By zbudować z użyciem MSYS2, należy zainstalować środowisko zgodnie z instrukcją na http://www.msys2.org/. Następnie otworzyć konsolę MSYS2/MinGW64 (przy domyślnej instalacji: `c:\msys64\mingw64.exe`) i zainstalować narzędzia i biblioteki wymagane przez ImPPG:
 ```bash
-$ pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage mingw64/mingw-w64-x86_64-glew mingw64/mingw-w64-x86_64-wxmsw3.1
+$ pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage mingw64/mingw-w64-x86_64-glew mingw64/mingw-w64-x86_64-wxwidgets3.2-msw mingw64/mingw-w64-x86_64-lua
 ```
 
 Kod źródłowy ImPPG można pobrać ręcznie lub sklonować Gitem:
@@ -432,6 +432,20 @@ Tłumaczenie na jęz. niemiecki: Marcel Hoffmann.
 ----------------------------------------
 ## 14. Historia zmian
 
+**1.9.2-beta** (2024-07-06)
+
+  - **Nowe funkcje**
+    - Automatyczny balans bieli (tylko z poziomu skryptów)
+
+  - **Ulepszenia**
+    - Skrypty do budowania pakietów linuksowych pod Dockerem
+    - Wyrównywanie sekwencji dostępne z poziomu skryptów
+    - Logowanie przyczyn nagłego zamknięcia do pliku
+
+  - **Poprawki błędów**
+    - Błąd i nagłe zamknięcie podczas edytowania krzywej tonalnej
+    - Błąd i nagłe zamknięcie podczas wyrównywania sekwencji do krawędzi tarczy słonecznej
+
 **1.9.1-beta** (2023-04-22)
 
   - **Poprawki błędów**
@@ -457,7 +471,7 @@ Tłumaczenie na jęz. niemiecki: Marcel Hoffmann.
   - **Nowe funkcje**
     - Tłumaczenie na jęz. niemiecki
 
-  - **Enhancements**
+  - **Ulepszenia**
     - Zapamiętywanie wybranego typu plików przy wczytywaniu i zapisywaniu obrazów
 
 **0.6.3** (2021-04-13)
