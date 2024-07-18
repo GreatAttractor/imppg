@@ -10,13 +10,16 @@
 set -e
 
 # select package types to build (see possible distributions under `packaging`)
+
 PKG_TYPES="\
     ubuntu-18.04 \
     ubuntu-20.04 \
     ubuntu-22.04 \
-    fedora-36 \
+    ubuntu-24.04 \
     fedora-37 \
     fedora-38 \
+    fedora-39 \
+    fedora-40
 "
 
 MAPPED_IMPPG_REPO=/imppg_src
