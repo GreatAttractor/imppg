@@ -330,19 +330,24 @@ Note that building needs to be performed in an environment corresponding to the 
 
 #### 12.1.4. Building for macOS
 
-*Note: macOS build and support is still work-in-progress*
+*Note: macOS build and support is still work-in-progress. If you have Anaconda Python environment activated in your shell it must be deactivated with: `conda deactivate`. Otherwise CMake will detect Anaconda's LLVM toolchain and libraries.*
 
 To build ImPPG for macOS you will need Xcode and [Homebrew](https://brew.sh) installed.
 
-OpenMP is currently supported with 3rd party LLVM toolchain installed with Homebrew as Apple disabled OpenMP in clang toolchain distributed with Xcode. As of July 2022 the build method was verified on macOS Monterey 12.5 and Xcode 13.4.1.
+OpenMP is currently only supported with custom built LLVM toolchain installed with Homebrew. Apple has disabled OpenMP in its LLVM toolchain distributed with Xcode. 
 
-Install following libraries with Homebrew:
+As of July 2024 the build method was verified on:
+
+  - 2023 MacBook Air M2 (arm64 target) with macOS Sonoma 14.5, Xcode 15.4, Homebrew 4.3.10.
+  - 2015 MacBook Pro (x64 target) with macOS Monterey 12.7.5, Xcode 14.2, Homebrew 4.3.10.
+
+Install following libraries and tools with Homebrew:
 ```bash
  $ brew update
  $ brew install boost cfitsio cmake freeimage glew mesa pkg-config wxwidgets llvm libomp lua
- ```
+```
 
- Now follow Linux build steps:
+Now follow similar Linux build steps. This will use native Xcode toolchain (no OpenMP) and Homebrew libraries:
 ```bash
 $ mkdir build
 $ cd build
@@ -352,9 +357,14 @@ $ make install
 $ imppg
 ```
 
-To enable OpenMP with Homebrew toolchain invoke `cmake` with following variables:
+To enable OpenMP with Homebrew LLVM toolchain invoke `cmake` as follows. Note, Homebrew nowadays is installed under `/opt/homebrew` container directory than as previously at common `/usr/local`. If you have Homebrew installed under the old path, please adjust `$HB_ROOT` accordingly. OpenMP build will also use Homebrew LLVM C++ runtime rather than macOS native C++ runtime. 
 ```bash
-CC=/usr/local/opt/llvm/bin/clang CXX=/usr/local/opt/llvm/bin/clang++ LDFLAGS="-L/usr/local/opt/llvm/lib -L/usr/local/opt/llvm/lib/c++" CPPFLAGS="-I/usr/local/opt/llvm/include" \
+HB_ROOT=/opt/homebrew \
+LLVM_ROOT=${HB_ROOT}/opt/llvm \
+CC="${LLVM_ROOT}/bin/clang" \
+CXX="${LLVM_ROOT}/bin/clang++" \
+LDFLAGS="-L${LLVM_ROOT}/lib -L${LLVM_ROOT}/lib/c++ -Wl,-rpath,${LLVM_ROOT}/lib/c++" \
+CPPFLAGS="-I${HB_ROOT}/include -I${LLVM_ROOT}/include" \
 cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
 ```
 
