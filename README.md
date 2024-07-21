@@ -239,7 +239,7 @@ Solution: change the GTK theme to "Raleigh" (e.g. in Fedora use the "GTK+ Appear
 ----------------------------------------
 ## 11. Downloading
 
-ImPPG source code and binaries for MS Windows and Ubuntu 20.04 (x86-64) can be downloaded from:
+ImPPG source code and binaries (x86-64) for MS Windows and several Linux distributions can be downloaded from:
     https://github.com/GreatAttractor/imppg/releases
 
 
@@ -300,18 +300,18 @@ To use a different installation prefix, add `-DCMAKE_INSTALL_PREFIX=<my_dir>` to
 
 *Note:* under Ubuntu 18.04, the default GCC version (7.x) is too old. Install and enable GCC 8 (example instructions: `https://linuxize.com/post/how-to-install-gcc-compiler-on-ubuntu-18-04/`). (Do not choose GCC 9, otherwise the built binary will not run on a clean Ubuntu 18.04 due to too old a version of `libstdc++`.)
 
-The following packages are needed for building under Ubuntu:
+The following packages are needed for building under Ubuntu 24.04:
 ```
-git cmake build-essential libboost-dev libboost-test-dev libwxgtk3.0-gtk3-dev libglew-dev pkg-config libccfits-dev libfreeimage-dev liblua5.3-dev
+git cmake build-essential libboost-dev libboost-test-dev libwxgtk3.2-dev libglew-dev pkg-config libccfits-dev libfreeimage-dev liblua5.3-dev
 ```
 
 After building `imppg`, it can be either installed as in section 12.1, or a Debian package can be created and installed with `apt` (see 12.1.3).
 
 #### 12.1.2. Building under Fedora
 
-The following packages are needed for building under Fedora:
+The following packages are needed for building under Fedora 40:
 ```
-git cmake g++ pkgconf-pkg-config boost-devel wxGTK3-devel cfitsio-devel glew-devel lua-devel freeimage-devel rpm-build
+git cmake g++ pkgconf-pkg-config boost-devel wxGTK-devel cfitsio-devel glew-devel lua-devel freeimage-devel rpm-build
 ```
 
 After building `imppg`, it can be either installed as in section 12.1, or an RPM package can be created and installed with `dnf` (see 12.1.3).
@@ -334,7 +334,7 @@ Note that building needs to be performed in an environment corresponding to the 
 
 To build ImPPG for macOS you will need Xcode and [Homebrew](https://brew.sh) installed.
 
-OpenMP is currently only supported with custom built LLVM toolchain installed with Homebrew. Apple has disabled OpenMP in its LLVM toolchain distributed with Xcode. 
+OpenMP is currently only supported with custom built LLVM toolchain installed with Homebrew. Apple has disabled OpenMP in its LLVM toolchain distributed with Xcode.
 
 As of July 2024 the build method was verified on:
 
@@ -357,7 +357,7 @@ $ make install
 $ imppg
 ```
 
-To enable OpenMP with Homebrew LLVM toolchain invoke `cmake` as follows. Note, Homebrew nowadays is installed under `/opt/homebrew` container directory than as previously at common `/usr/local`. If you have Homebrew installed under the old path, please adjust `$HB_ROOT` accordingly. OpenMP build will also use Homebrew LLVM C++ runtime rather than macOS native C++ runtime. 
+To enable OpenMP with Homebrew LLVM toolchain invoke `cmake` as follows. Note, Homebrew nowadays is installed under `/opt/homebrew` container directory than as previously at common `/usr/local`. If you have Homebrew installed under the old path, please adjust `$HB_ROOT` accordingly. OpenMP build will also use Homebrew LLVM C++ runtime rather than macOS native C++ runtime.
 ```bash
 HB_ROOT=/opt/homebrew \
 LLVM_ROOT=${HB_ROOT}/opt/llvm \
@@ -401,7 +401,7 @@ You will find `imppg.exe` executable in the `build` folder. It can be run from M
 $ build/imppg.exe
 ```
 
-To run ImPPG from Windows Explorer, the subfolders `images`, `pl`, `shaders` and all the necessary DLLs must be placed at the same location as `imppg.exe`. See the MS Windows binary distribution (`imppg-win64.zip`) for an example.
+To run ImPPG from Windows Explorer, the subfolders `images`, `lang` (`*.mo` files only), `shaders` and all the necessary DLLs must be placed at the same location as `imppg.exe`. See the MS Windows binary distribution (`imppg-win64.zip`) for an example.
 
 
 ----------------------------------------

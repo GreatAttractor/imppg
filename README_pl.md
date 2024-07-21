@@ -243,7 +243,7 @@ Rozwiązanie: zmienić motyw GTK na „Raleigh” (np. w Fedorze użyć narzędz
 ----------------------------------------
 ## 11. Pobieranie
 
-Kod źródłowy ImPPG oraz pliki wykonywalne dla MS Windows i Ubuntu 18.04 (x86-64) można pobrać pod adresem:
+Kod źródłowy ImPPG oraz pliki wykonywalne (x86-64) dla MS Windows i kilku dystrybucji Linuksa można pobrać pod adresem:
     https://github.com/GreatAttractor/imppg/releases
 
 
@@ -303,9 +303,9 @@ $ cat install_manifest.txt | sudo xargs rm
 
 *Uwaga:* domyślna wersja GCC (7.x) w Ubuntu 18.04 jest zbyt stara. Należy zainstalować i uaktywnić GCC 8 (przykładowa instrukcja: `https://linuxize.com/post/how-to-install-gcc-compiler-on-ubuntu-18-04/`). (Nie należy wybierać GCC 9, w przeciwnym razie zbudowany plik wykonywalny nie będzie działał na czystej instalacji Ubuntu 18.04 z powodu przestarzałej wersji `libstdc++`).
 
-Następujące pakiety są konieczne, by zbudować ImPPG pod Ubuntu:
+Następujące pakiety są konieczne, by zbudować ImPPG pod Ubuntu 24.04:
 ```
-git cmake build-essential libboost-dev libwxgtk3.0-gtk3-dev libglew-dev pkg-config libccfits-dev libfreeimage-dev liblua5.3-dev
+git cmake build-essential libboost-dev libboost-test-dev libwxgtk3.2-dev libglew-dev pkg-config libccfits-dev libfreeimage-dev liblua5.3-dev
 ```
 
 Po zbudowaniu można zainstalować ImPPG jak w p. 12.1; można też stworzyć pakiet debianowski i zainstalować go poprzez `apt` (zob. 12.1.3).
@@ -313,9 +313,9 @@ Po zbudowaniu można zainstalować ImPPG jak w p. 12.1; można też stworzyć pa
 
 #### 12.1.2. Budowanie pod Fedorą
 
-Następujące pakiety są konieczne, by zbudować ImPPG pod Fedorą:
+Następujące pakiety są konieczne, by zbudować ImPPG pod Fedorą 40:
 ```
-git cmake g++ pkgconf-pkg-config boost-devel wxGTK3-devel cfitsio-devel glew-devel lua-devel freeimage-devel rpm-build
+git cmake g++ pkgconf-pkg-config boost-devel wxGTK-devel cfitsio-devel glew-devel lua-devel freeimage-devel rpm-build
 ```
 
 Po zbudowaniu można zainstalować ImPPG jak w p. 12.1; można też stworzyć pakiet RPM i zainstalować go poprzez `dnf` (zob. 12.1.3).
@@ -394,7 +394,7 @@ W podkatalogu `build` pojawi się plik wykonywalny `imppg.exe`. Można go urucho
 $ build/imppg.exe
 ```
 
-By uruchomić ImPPG z Eksploratora Windows, podkatalogi `images`, `pl`, `shaders` i wszystkie niezbędne pliki DLL muszą znajdować się w tym samym miejscu, co `imppg.exe`. Przykład: dystrybucja binarna dla MS Windows (`imppg-win64.zip`).
+By uruchomić ImPPG z Eksploratora Windows, podkatalogi `images`, `lang` (tylko pliki `*.mo`), `shaders` i wszystkie niezbędne pliki DLL muszą znajdować się w tym samym miejscu, co `imppg.exe`. Przykład: dystrybucja binarna dla MS Windows (`imppg-win64.zip`).
 
 
 
