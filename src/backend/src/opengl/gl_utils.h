@@ -31,7 +31,7 @@ File description:
 #include <utility>
 #include <wx/filename.h>
 
-#include "../../imppg_assert.h"
+#include "common/imppg_assert.h"
 
 namespace imppg::backend::gl {
 

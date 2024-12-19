@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2015-2023 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2015-2024 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -47,12 +47,6 @@ File description:
 #include <wx/utils.h>
 #include <wx/wfstream.h>
 #include <wx/window.h>
-#if (USE_FREEIMAGE)
-#include <FreeImage.h>
-#ifdef __APPLE__
-    #undef _WINDOWS_
-#endif
-#endif
 #if USE_CFITSIO
 #include <fitsio.h>
 #endif
@@ -60,7 +54,11 @@ File description:
 #include "common/common.h"
 #include "ctrl_ids.h"
 
-const char* DATE_STR = "2023-04-22"; ///< Release date of the current version
+#if (USE_FREEIMAGE)
+#include <FreeImage.h> // must be the last #include, since it defined _WINDOWS_ and breaks WxW headers
+#endif
+
+const char* DATE_STR = "2024-07-06"; ///< Release date of the current version
 
 #if !defined(_OPENMP)
 int omp_get_num_procs() { return 1; }
@@ -268,7 +266,7 @@ c_AboutDialog::c_AboutDialog(wxWindow* parent)
     szContents->Add(title, 0, wxALIGN_LEFT | (wxLEFT | wxRIGHT | wxTOP), 5);
 
     wxStaticText* info = new wxStaticText(this, wxID_ANY,
-        wxString::Format(wxString(L"Copyright \u00A9 2015-2023 Filip Szczerek (ga.software@yahoo.com)\n") +
+        wxString::Format(wxString(L"Copyright \u00A9 2015-2024 Filip Szczerek (ga.software@yahoo.com)\n") +
             _("version %d.%d.%d-beta ") + " (%s)\n\n" +
 
             _("This program comes with ABSOLUTELY NO WARRANTY. This is free software,\n"

@@ -163,14 +163,14 @@ void c_ToneCurveEditor::OnReset(wxCommandEvent&)
 
 float c_ToneCurveEditor::CorrectLogicalXPosition(std::size_t pointIdx, float x)
 {
-    if (pointIdx > 0 && x <= m_Curve->GetPoint(pointIdx).x)
+    if (pointIdx > 0 && x <= m_Curve->GetPoint(pointIdx - 1).x)
     {
-        x += std::numeric_limits<float>::epsilon();
+        x = m_Curve->GetPoint(pointIdx - 1).x + std::numeric_limits<float>::epsilon();
     }
     else if (pointIdx < m_Curve->GetNumPoints() - 1 &&
         x >= m_Curve->GetPoint(pointIdx + 1).x)
     {
-        x -= std::numeric_limits<float>::epsilon();
+        x = m_Curve->GetPoint(pointIdx + 1).x - std::numeric_limits<float>::epsilon();
     }
 
     return x;

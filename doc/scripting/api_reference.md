@@ -284,6 +284,19 @@ Methods:
   rgb:save("/path/to/output.png", imppg.PNG_8)
   ```
 
+- `awb`
+
+  Performs automatic white balancing using the “gray world” method.
+
+  *Parameters:*: none
+
+  ----
+  *Example*
+  ```Lua
+  image = imppg.load_image("/path/to/rgb_image.tif")
+  image:awb()
+  ```
+
 - `save`
   Saves image to file.
 

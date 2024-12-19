@@ -1,7 +1,7 @@
 # ImPPG (Image Post-Processor)
-Copyright (C) 2015-2023 Filip Szczerek (ga.software@yahoo.com)
+Copyright (C) 2015-2024 Filip Szczerek (ga.software@yahoo.com)
 
-version 1.9.1-beta (2023-04-22)
+version 1.9.2-beta (2024-07-06)
 
 *This program comes with ABSOLUTELY NO WARRANTY. This is free software, licensed under GNU General Public License v3 or any later version and you are welcome to redistribute it under certain conditions. See the LICENSE file for details.*
 
@@ -239,7 +239,7 @@ Solution: change the GTK theme to "Raleigh" (e.g. in Fedora use the "GTK+ Appear
 ----------------------------------------
 ## 11. Downloading
 
-ImPPG source code and binaries for MS Windows and Ubuntu 20.04 (x86-64) can be downloaded from:
+ImPPG source code and binaries (x86-64) for MS Windows and several Linux distributions can be downloaded from:
     https://github.com/GreatAttractor/imppg/releases
 
 
@@ -300,18 +300,18 @@ To use a different installation prefix, add `-DCMAKE_INSTALL_PREFIX=<my_dir>` to
 
 *Note:* under Ubuntu 18.04, the default GCC version (7.x) is too old. Install and enable GCC 8 (example instructions: `https://linuxize.com/post/how-to-install-gcc-compiler-on-ubuntu-18-04/`). (Do not choose GCC 9, otherwise the built binary will not run on a clean Ubuntu 18.04 due to too old a version of `libstdc++`.)
 
-The following packages are needed for building under Ubuntu:
+The following packages are needed for building under Ubuntu 24.04:
 ```
-git cmake build-essential libboost-dev libboost-test-dev libwxgtk3.0-gtk3-dev libglew-dev pkg-config libccfits-dev libfreeimage-dev liblua5.3-dev
+git cmake build-essential libboost-dev libboost-test-dev libwxgtk3.2-dev libglew-dev pkg-config libccfits-dev libfreeimage-dev liblua5.3-dev
 ```
 
 After building `imppg`, it can be either installed as in section 12.1, or a Debian package can be created and installed with `apt` (see 12.1.3).
 
 #### 12.1.2. Building under Fedora
 
-The following packages are needed for building under Fedora:
+The following packages are needed for building under Fedora 40:
 ```
-git cmake g++ pkgconf-pkg-config boost-devel wxGTK3-devel cfitsio-devel glew-devel lua-devel freeimage-devel rpm-build
+git cmake g++ pkgconf-pkg-config boost-devel wxGTK-devel cfitsio-devel glew-devel lua-devel freeimage-devel rpm-build
 ```
 
 After building `imppg`, it can be either installed as in section 12.1, or an RPM package can be created and installed with `dnf` (see 12.1.3).
@@ -330,19 +330,24 @@ Note that building needs to be performed in an environment corresponding to the 
 
 #### 12.1.4. Building for macOS
 
-*Note: macOS build and support is still work-in-progress*
+*Note: macOS build and support is still work-in-progress. If you have Anaconda Python environment activated in your shell it must be deactivated with: `conda deactivate`. Otherwise CMake will detect Anaconda's LLVM toolchain and libraries.*
 
 To build ImPPG for macOS you will need Xcode and [Homebrew](https://brew.sh) installed.
 
-OpenMP is currently supported with 3rd party LLVM toolchain installed with Homebrew as Apple disabled OpenMP in clang toolchain distributed with Xcode. As of July 2022 the build method was verified on macOS Monterey 12.5 and Xcode 13.4.1.
+OpenMP is currently only supported with custom built LLVM toolchain installed with Homebrew. Apple has disabled OpenMP in its LLVM toolchain distributed with Xcode.
 
-Install following libraries with Homebrew:
+As of July 2024 the build method was verified on:
+
+  - 2023 MacBook Air M2 (arm64 target) with macOS Sonoma 14.5, Xcode 15.4, Homebrew 4.3.10.
+  - 2015 MacBook Pro (x64 target) with macOS Monterey 12.7.5, Xcode 14.2, Homebrew 4.3.10.
+
+Install following libraries and tools with Homebrew:
 ```bash
  $ brew update
  $ brew install boost cfitsio cmake freeimage glew mesa pkg-config wxwidgets llvm libomp lua
- ```
+```
 
- Now follow Linux build steps:
+Now follow similar Linux build steps. This will use native Xcode toolchain (no OpenMP) and Homebrew libraries:
 ```bash
 $ mkdir build
 $ cd build
@@ -352,9 +357,15 @@ $ make install
 $ imppg
 ```
 
-To enable OpenMP with Homebrew toolchain invoke `cmake` with following variables:
+To enable OpenMP with Homebrew LLVM toolchain invoke `cmake` as follows. Note, Homebrew nowadays is installed under `/opt/homebrew` container directory than as previously at common `/usr/local`. If you have Homebrew installed under the old path, please adjust `$HB_ROOT` accordingly. OpenMP build will also use Homebrew LLVM C++ runtime rather than macOS native C++ runtime.
 ```bash
-CC=/usr/local/opt/llvm/bin/clang CXX=/usr/local/opt/llvm/bin/clang++ LDFLAGS="-L/usr/local/opt/llvm/lib" CPPFLAGS="-I/usr/local/opt/llvm/include" cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
+HB_ROOT=/opt/homebrew \
+LLVM_ROOT=${HB_ROOT}/opt/llvm \
+CC="${LLVM_ROOT}/bin/clang" \
+CXX="${LLVM_ROOT}/bin/clang++" \
+LDFLAGS="-L${LLVM_ROOT}/lib -L${LLVM_ROOT}/lib/c++ -Wl,-rpath,${LLVM_ROOT}/lib/c++" \
+CPPFLAGS="-I${HB_ROOT}/include -I${LLVM_ROOT}/include" \
+cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
 ```
 
 ----------------------------------------
@@ -364,7 +375,7 @@ The provided `CMakeLists.txt` supports the [MSYS2](http://www.msys2.org/) build 
 
 In order to build ImPPG (64-bit) under MSYS2, follow its installation instructions at http://www.msys2.org/. Then open the MSYS2/MinGW64 shell (after default installation: `c:\msys64\mingw64.exe`) and install the ImPPG’s dependencies by running:
 ```bash
-$ pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage mingw64/mingw-w64-x86_64-glew mingw64/mingw-w64-x86_64-wxmsw3.1 mingw64/mingw-w64-x86_64-lua
+$ pacman -S git mingw-w64-x86_64-cmake base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-boost mingw-w64-x86_64-cfitsio mingw-w64-x86_64-freeimage mingw64/mingw-w64-x86_64-glew mingw64/mingw-w64-x86_64-wxwidgets3.2-msw mingw64/mingw-w64-x86_64-lua
 ```
 
 Download the ImPPG’s source code manually or clone it with Git:
@@ -390,7 +401,7 @@ You will find `imppg.exe` executable in the `build` folder. It can be run from M
 $ build/imppg.exe
 ```
 
-To run ImPPG from Windows Explorer, the subfolders `images`, `pl`, `shaders` and all the necessary DLLs must be placed at the same location as `imppg.exe`. See the MS Windows binary distribution (`imppg-win64.zip`) for an example.
+To run ImPPG from Windows Explorer, the subfolders `images`, `lang` (`*.mo` files only), `shaders` and all the necessary DLLs must be placed at the same location as `imppg.exe`. See the MS Windows binary distribution (`imppg-win64.zip`) for an example.
 
 
 ----------------------------------------
@@ -427,6 +438,20 @@ German translation: Marcel Hoffmann.
 
 ----------------------------------------
 ## 14. Change log
+
+**1.9.2-beta** (2024-07-06)
+
+  - **New features**
+    - Automatic white balance (only via scripting)
+
+  - **Enhancements**
+    - Build scripts for creating Linux packages under Docker
+    - Image alignment accessible via scripting
+    - Log crashes to file
+
+  - **Bug fixes**
+    - Crash during editing of tone curve
+    - Crash during image alignment in solar limb mode
 
 **1.9.1-beta** (2023-04-22)
 

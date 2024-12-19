@@ -21,8 +21,8 @@ File description:
     CPU & bitmaps processing back end implementation.
 */
 
-#include "../../imppg_assert.h"
 #include "common/common.h"
+#include "common/imppg_assert.h"
 #include "cpu_bmp_proc.h"
 #include "cpu_bmp/message_ids.h"
 #include "logging/logging.h"
@@ -156,7 +156,7 @@ void c_CpuAndBitmapsProcessing::OnThreadEvent(wxThreadEvent& event)
 
                 if (m_ProgressTextHandler)
                 {
-                    m_ProgressTextHandler(std::move(wxString::Format(action + ": %d%%", event.GetPayload<WorkerEventPayload>().percentageComplete)));
+                    m_ProgressTextHandler(wxString::Format(action + ": %d%%", event.GetPayload<WorkerEventPayload>().percentageComplete));
                 }
             }
 
@@ -247,7 +247,7 @@ void c_CpuAndBitmapsProcessing::OnProcessingStepCompleted(CompletionStatus statu
 {
     if (m_ProgressTextHandler)
     {
-        m_ProgressTextHandler(std::move(_("Idle")));
+        m_ProgressTextHandler(_("Idle"));
     }
 
     if (status == CompletionStatus::COMPLETED)
@@ -373,7 +373,7 @@ void c_CpuAndBitmapsProcessing::StartLRDeconvolution()
 
         if (m_ProgressTextHandler)
         {
-            m_ProgressTextHandler(std::move(wxString::Format(_(L"L\u2013R deconvolution") + ": %d%%", 0)));
+            m_ProgressTextHandler(wxString::Format(_(L"L\u2013R deconvolution") + ": %d%%", 0));
         }
 
         m_Worker->Run();
@@ -457,7 +457,7 @@ void c_CpuAndBitmapsProcessing::StartUnsharpMasking(std::size_t maskIdx)
 
         if (m_ProgressTextHandler)
         {
-            m_ProgressTextHandler(std::move(wxString(_("Unsharp masking..."))));
+            m_ProgressTextHandler(wxString(_("Unsharp masking...")));
         }
 
         m_Worker->Run();
@@ -532,7 +532,7 @@ void c_CpuAndBitmapsProcessing::StartToneCurve()
 
         if (m_ProgressTextHandler)
         {
-            m_ProgressTextHandler(std::move(wxString::Format(_("Applying tone curve: %d%%"), 0)));
+            m_ProgressTextHandler(wxString::Format(_("Applying tone curve: %d%%"), 0));
         }
 
         m_Worker->Run();

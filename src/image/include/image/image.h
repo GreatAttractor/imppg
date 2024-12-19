@@ -34,7 +34,7 @@ File description:
 #include <wx/gdicmn.h>
 
 #include "common/formats.h"
-#include "../../imppg_assert.h"
+#include "common/imppg_assert.h"
 
 
 /// Conditionally swaps a 32-bit value
@@ -239,6 +239,8 @@ public:
 
     //TESTING ####
     static c_Image Blend(const c_Image& img1, double weight1, const c_Image& img2, double weight2);
+
+    c_Image AutomaticWhiteBalance() const;
 };
 
 /// Lightweight wrapper of a fragment of an image buffer; does not allocate any pixels memory itself.

@@ -1,0 +1,13 @@
+# Package generator for Ubuntu 24.04 LTS
+set(CPACK_GENERATOR "DEB")
+set(CPACK_PACKAGE_VERSION_MAJOR ${IMPPG_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${IMPPG_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${IMPPG_VERSION_SUBMINOR})
+set(CPACK_PACKAGE_FILE_NAME "imppg-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}-Ubuntu_24.04")
+set(CPACK_PACKAGE_CONTACT "Filip Szczerek <ga.software@yahoo.com>")
+set(CPACK_PACKAGE_VENDOR "Filip Szczerek <ga.software@yahoo.com>")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Filip Szczerek <ga.software@yahoo.com>")
+set(CPACK_PACKAGE_DESCRIPTION "Image Post-Processor")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Image Post-Processor")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libglew2.2, libfreeimage3, libcfitsio10t64, libwxgtk3.2-1t64, libwxgtk-gl3.2-1t64, wx3.2-i18n, liblua5.3-0")
+include(CPack)

@@ -28,7 +28,7 @@ File description:
 #include <optional>
 
 #include "image/image.h"
-#include "../../imppg_assert.h"
+#include "common/imppg_assert.h"
 
 bool IsMachineBigEndian();
 

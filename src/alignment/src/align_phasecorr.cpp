@@ -35,7 +35,7 @@ File description:
 #include "common/common.h"
 #include "fft.h"
 #include "image/image.h"
-#include "../../imppg_assert.h"
+#include "common/imppg_assert.h"
 #include "logging/logging.h"
 #include "math_utils/math_utils.h"
 

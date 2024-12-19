@@ -17,4 +17,9 @@ target_link_libraries(common_tests PRIVATE
     common
 )
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
+    target_link_libraries(common_tests PRIVATE stdc++fs)
+endif()
+
+
 add_test(NAME common COMMAND common_tests)

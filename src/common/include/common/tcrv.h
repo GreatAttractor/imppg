@@ -29,7 +29,7 @@ File description:
 #include <vector>
 
 #include "common/common.h"
-#include "../../imppg_assert.h"
+#include "common/imppg_assert.h"
 
 /// Represents a tone curve and associated data. NOTE: LUT contents are not copied by copy constructor and assignment operator.
 class c_ToneCurve
