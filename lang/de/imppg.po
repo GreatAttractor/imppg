@@ -1,39 +1,39 @@
 # ImPPG: German translation
 # Copyright (C) Marcel Hoffmann <github@pastsecurity.com>
 # This file is distributed under the same license as the ImPPG package.
-#
+
 msgid ""
 msgstr ""
-"Project-Id-Version: ImPPG\n"
+"Project-Id-Version: imppg-1.9.2-beta\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-10-13 10:16-0700\n"
-"PO-Revision-Date: 2022-04-02 19:47+0100\n"
-"Language: de\n"
+"POT-Creation-Date: 2024-12-18 18:42-0800\n"
+"PO-Revision-Date: 2024-12-19 17:07-0800\n"
+"Last-Translator: \n"
+"Language-Team: Marcel Hoffmann\n"
+"Language: de_DE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Last-Translator: \n"
-"Language-Team: Marcel Hoffmann\n"
-"X-Generator: Poedit 2.2.4\n"
+"X-Generator: Poedit 3.5\n"
 
-#: src/about.cpp:191
+#: src/about.cpp:194
 msgid "Library versions:"
 msgstr "Bibliotheksversionen:"
 
-#: src/about.cpp:205
+#: src/about.cpp:208
 msgid "Libraries"
 msgstr "Bibliotheken"
 
-#: src/about.cpp:224
+#: src/about.cpp:227
 msgid "About ImPPG"
 msgstr "Über ImPPG"
 
-#: src/about.cpp:267
+#: src/about.cpp:270
 #, c-format
-msgid "version %d.%d.%d "
-msgstr "Version %d.%d.%d "
+msgid "version %d.%d.%d-beta "
+msgstr "Version %d.%d.%d-beta "
 
-#: src/about.cpp:269
+#: src/about.cpp:272
 msgid ""
 "This program comes with ABSOLUTELY NO WARRANTY. This is free software,\n"
 "licensed under GNU General Public License v3 or any later version.\n"
@@ -43,12 +43,12 @@ msgstr ""
 "lizenziert unter der GNU General Public License v3 oder höher.\n"
 "Mehr Informationen gibt es in der LICENSE Datei."
 
-#: src/about.cpp:280
+#: src/about.cpp:283
 #, c-format
 msgid "Using %d logical CPU(s)."
 msgstr "%d logische CPU(s) in Benutzung."
 
-#: src/about.cpp:284
+#: src/about.cpp:287
 msgid "Libraries..."
 msgstr "Bibliotheken..."
 
@@ -65,8 +65,7 @@ msgid ""
 "Enables normalization of floating-point pixel values of FITS images; the "
 "highest value becomes 1.0."
 msgstr ""
-"Normalisiert Fließkomma-Pixelwerte von FITS Bildern; der größte Wert wird "
-"1.0."
+"Normalisiert Fließkomma-Pixelwerte von FITS Bildern mit 1.0 als Maximalwert."
 
 #: src/align_params.cpp:71
 msgid ""
@@ -84,92 +83,93 @@ msgid ""
 "– no vignetting or limb darkening exaggerated by post-processing\n"
 "– the disc must not be eclipsed by the Moon"
 msgstr ""
-"Fixiert den Sonnenrand. Je mehr Sonne sichtbar ist,\n"
-"desto besser sind die Ergebnisse. Anforderungen:\n"
+"Fixiert den Sonnenrand. Je mehr Rand sichtbar ist, desto besser sind die "
+"Ergebnisse.\n"
+"Anforderungen:\n"
 "– die Scheibe muss heller als der Hintergrund sein\n"
-"– keine durch Nachbearbeitung verstärkte Vignettierung oder "
-"Randverdunkelung\n"
-"– die Scheibe darf nicht durch den Mond verdeckt sein"
+"– keine durch Nachbearbeitung verstärkte Randverdunkelung/Vignettierung\n"
+"– die Sonnenscheibe darf nicht durch den Mond verdeckt sein"
 
-#: src/align_params.cpp:170 src/batch_params.cpp:146
+#: src/align_params.cpp:172 src/batch_params.cpp:146
 msgid "Choose input file(s)"
 msgstr "Wähle Datei(en) aus"
 
-#: src/align_params.cpp:205 src/batch_params.cpp:129
+#: src/align_params.cpp:207 src/batch_params.cpp:129
 msgid "No input files selected."
 msgstr "Keine Dateien ausgewählt."
 
-#: src/align_params.cpp:205 src/align_params.cpp:207 src/batch.cpp:181
-#: src/batch.cpp:199 src/batch.cpp:239 src/batch.cpp:289
+#: src/align_params.cpp:207 src/align_params.cpp:209 src/batch.cpp:183
+#: src/batch.cpp:201 src/batch.cpp:247 src/batch.cpp:298
 #: src/batch_params.cpp:127 src/batch_params.cpp:129 src/batch_params.cpp:131
-#: src/main_window.cpp:195 src/main_window.cpp:265 src/main_window.cpp:394
-#: src/main_window.cpp:602 src/main_window.cpp:930 src/main_window.cpp:1533
+#: src/main_window.cpp:180 src/main_window.cpp:274 src/main_window.cpp:410
+#: src/main_window.cpp:616 src/main_window.cpp:962 src/main_window.cpp:1738
+#: src/normalize.cpp:80
 msgid "Error"
 msgstr "Fehler"
 
-#: src/align_params.cpp:207 src/batch_params.cpp:127
+#: src/align_params.cpp:209 src/batch_params.cpp:127
 msgid "Selected output folder does not exist."
 msgstr "Gewählter Ausgangsordner existiert nicht."
 
-#: src/align_params.cpp:220
+#: src/align_params.cpp:222
 msgid "Image alignment"
 msgstr "Bild ausrichten"
 
-#: src/align_params.cpp:237 src/batch_params.cpp:184
+#: src/align_params.cpp:240 src/batch_params.cpp:184
 msgid "Add files..."
 msgstr "Füge Dateien hinzu..."
 
-#: src/align_params.cpp:238
+#: src/align_params.cpp:241
 msgid "Sort"
 msgstr "Sortiere"
 
-#: src/align_params.cpp:239
+#: src/align_params.cpp:242
 msgid "Remove all"
-msgstr "Entferne alle"
+msgstr "Alle entfernen"
 
-#: src/align_params.cpp:243
+#: src/align_params.cpp:246
 msgid "Input image files"
 msgstr "Ausgewählte Bilddateien"
 
-#: src/align_params.cpp:248
+#: src/align_params.cpp:251
 msgid "Sub-pixel alignment"
 msgstr "Sub-Pixel Ausrichtung"
 
-#: src/align_params.cpp:250
+#: src/align_params.cpp:253
 msgid ""
 "Enable sub-pixel alignment for smoother motion and less drift. Saving of "
 "output files will be somewhat slower; sharp, 1-pixel details (if present) "
 "may get very slightly blurred"
 msgstr ""
 "Aktiviere Sub-Pixel Ausrichtung für eine gleichmäßigere Bewegung und weniger "
-"Abweichung. Das Speichern der Dateien wird etwas langsamer; schärfen, 1-"
-"Pixel Details (falls vorhanden) können etwas verschwimmen"
+"Abweichung. Das Speichern der Dateien wird etwas langsamer; scharfe 1-Pixel "
+"Details (falls vorhanden) können etwas verschwimmen"
 
-#: src/align_params.cpp:257
+#: src/align_params.cpp:260
 msgid "Crop to intersection"
 msgstr "Bild an den inneren Kanten abschneiden"
 
-#: src/align_params.cpp:258
+#: src/align_params.cpp:261
 msgid "Pad to bounding box"
 msgstr "Bild zu den äußeren Kanten hin vergrößern"
 
-#: src/align_params.cpp:268
+#: src/align_params.cpp:271
 msgid "Stabilize high-contrast features"
 msgstr "Stabilisiere kontrastreiche Merkmale"
 
-#: src/align_params.cpp:269
+#: src/align_params.cpp:272
 msgid "Align on the solar limb"
-msgstr "Richte auf den Sonnerand aus"
+msgstr "Richte auf den Sonnenrand aus"
 
-#: src/align_params.cpp:279 src/batch_params.cpp:212
+#: src/align_params.cpp:282 src/batch_params.cpp:212
 msgid "Output folder:"
-msgstr "Ausgangsordner:"
+msgstr "Ausgabeordner:"
 
-#: src/align_params.cpp:280 src/batch_params.cpp:213
+#: src/align_params.cpp:283 src/batch_params.cpp:213
 msgid "Select output folder"
-msgstr "Wähle Ausgangsordner"
+msgstr "Wähle Ausgabeordner"
 
-#: src/align_params.cpp:285
+#: src/align_params.cpp:288
 msgid ""
 "Processed files will be saved under names appended with \"_aligned\".\n"
 "Number of channels and bit depth will be preserved."
@@ -177,63 +177,9 @@ msgstr ""
 "Die Namen von verarbeiteten Dateien werden um \"_aligned\" ergänzt.\n"
 "Die Anzahl der Kanäle und die Bit-Tiefe bleiben erhalten."
 
-#: src/align_params.cpp:293 src/batch_params.cpp:234
+#: src/align_params.cpp:296 src/batch_params.cpp:234
 msgid "Start processing"
 msgstr "Starte Verarbeitung"
-
-#: src/align_proc.cpp:78 src/align_proc.cpp:103 src/align_proc.cpp:169
-#: src/align_proc.cpp:408 src/align_proc.cpp:463 src/align_proc.cpp:645
-#, c-format
-msgid "Could not read %s."
-msgstr "Konnte %s nicht lesen."
-
-#: src/align_proc.cpp:109
-#, c-format
-msgid "Unsupported file or image type: %s"
-msgstr "Nicht unterstütztes Datei- oder Bilderformat: %s"
-
-#: src/align_proc.cpp:128
-#, c-format
-msgid "Unsupported pixel format: %s"
-msgstr "Nicht unterstütztes Pixelformat: %s"
-
-#: src/align_proc.cpp:150
-msgid "FreeImage_AllocateExT failed to allocate an output bitmap."
-msgstr "FreeImage_AllocateExT konnte kein Ausgangsbitmap allozieren."
-
-#: src/align_proc.cpp:230
-#, c-format
-msgid "Failed to save output file: %s"
-msgstr "Konnte Datei %s nicht speichern"
-
-#: src/align_proc.cpp:256
-#, c-format
-msgid "Failed to obtain image dimensions from %s."
-msgstr "Konnte Bilddimension von %s nicht identifizieren."
-
-#: src/align_proc.cpp:528
-msgid "Could not fit a circle to points during final stabilization."
-msgstr ""
-"Konnte keinen Kreis durch die Punkte während der finalen Stabilisierung "
-"finden."
-
-#: src/align_proc.cpp:751 src/align_proc.cpp:761
-#, c-format
-msgid "Could not find the limb in %s."
-msgstr "Konnte keinen Sonnenrand in %s finden."
-
-#: src/align_proc.cpp:814
-msgid "Could not determine valid disc radius in every image."
-msgstr "Konnte keinen korrekten Sonnenradius in allen Bildern finden."
-
-#: src/align_proc.cpp:832
-#, c-format
-msgid "Could not find the limb with forced radius in %s."
-msgstr "Konnte keinen Sonnenrand mit dem erzwungenen Radius %s finden."
-
-#: src/align_proc.cpp:991
-msgid "Aborted per user request."
-msgstr "Abgebrochen durch den Benutzer."
 
 #: src/align_progress.cpp:89
 msgid "Determining translation vectors..."
@@ -243,19 +189,21 @@ msgstr "Bestimme Verschiebungsvektoren..."
 msgid "Aborted"
 msgstr "Abgebrochen"
 
-#: src/align_progress.cpp:132 src/batch.cpp:207
+#: src/align_progress.cpp:132 src/batch.cpp:209
 msgid "Processing completed."
 msgstr "Verarbeitung fertig."
 
-#: src/align_progress.cpp:132 src/batch.cpp:207 src/main_window.cpp:348
-#: src/main_window.cpp:377
+#: src/align_progress.cpp:132 src/batch.cpp:209 src/main_window.cpp:359
+#: src/main_window.cpp:388 src/script_dialog.cpp:225 src/script_dialog.cpp:238
 msgid "Information"
 msgstr "Information"
 
 #: src/align_progress.cpp:140
 #, c-format
 msgid "Image %d/%d: translated by %.2f, %.2f."
-msgstr "Bild %d/%d: verschoben um %.2f, %.2f."
+msgstr ""
+"Bild %d/%d:  um %.2f, %.2f verschoben. Bilder werden verschoben und "
+"gespeichert."
 
 #: src/align_progress.cpp:150
 msgid "Translating and saving output images..."
@@ -273,56 +221,56 @@ msgstr "Benutze durchschnittlichen Radius %.2f."
 
 #: src/align_progress.cpp:171
 msgid "Performing final stabilization..."
-msgstr "Finale Bildstabilisation in Arbeit..."
+msgstr "Finale Bildstabilisation..."
 
 #: src/align_progress.cpp:187
 msgid "Determining disc radius in images..."
-msgstr "Bestimme den Kreisradius in den Bildern..."
+msgstr "Bestimme den Sonnenradius in den Bildern..."
 
 #: src/align_progress.cpp:193
 #, c-format
 msgid "Image %d/%d: disc radius = %.2f"
-msgstr "Bild %d/%d: Kreisradius = %.2f"
+msgstr "Bild %d/%d: Sonnenradius = %.2f"
 
-#: src/align_progress.cpp:211
+#: src/align_progress.cpp:209
 msgid "Image alignment progress"
 msgstr "Bildausrichtung in Arbeit"
 
-#: src/batch.cpp:181
+#: src/batch.cpp:183
 #, c-format
 msgid "Could not save output file: %s"
 msgstr "Konnte Datei %s nicht speichern"
 
-#: src/batch.cpp:195
+#: src/batch.cpp:197
 msgid "Done"
 msgstr "Fertig"
 
-#: src/batch.cpp:238
+#: src/batch.cpp:246
 #, c-format
 msgid "Could not open file: %s."
 msgstr "Konnte Datei %s nicht öffnen."
 
-#: src/batch.cpp:268 src/batch_params.cpp:171
+#: src/batch.cpp:276 src/batch_params.cpp:171
 msgid "Batch processing"
 msgstr "Stapelverarbeitung"
 
-#: src/batch.cpp:289
+#: src/batch.cpp:298
 msgid "Could not load processing settings."
 msgstr "Konnte Verarbeitungseinstellungen nicht laden."
 
-#: src/batch.cpp:313
+#: src/batch.cpp:325
 msgid "File"
 msgstr "Datei"
 
-#: src/batch.cpp:314
+#: src/batch.cpp:326
 msgid "Progress"
 msgstr "Fortschritt"
 
-#: src/batch.cpp:318
+#: src/batch.cpp:330
 msgid "Waiting"
 msgstr "Warte"
 
-#: src/batch.cpp:325
+#: src/batch.cpp:337
 msgid "Close"
 msgstr "Schließen"
 
@@ -332,14 +280,14 @@ msgstr "Einstellungsdatei existiert nicht oder konnte nicht gefunden werden."
 
 #: src/batch_params.cpp:190
 msgid "Remove selected from list"
-msgstr "Entferne ausgewählte Datei aus der Liste"
+msgstr "Entferne ausgewählte Datei(en) aus der Liste"
 
 #: src/batch_params.cpp:191
 msgid ""
 "Use a click, Shift+click, Ctrl+click or Shift+up/down to select list items."
 msgstr ""
-"Benutze Linksklick, Shift+Klick, Ctrl+Klick oder Shift+oben/unten-Taste um "
-"Dateien auszuwählen."
+"Benutze Linksklick, Umschalt+Klick, Strg+Klick oder Umschalt+oben/unten-"
+"Taste um Dateien auszuwählen."
 
 #: src/batch_params.cpp:197
 msgid "Settings file:"
@@ -349,7 +297,7 @@ msgstr "Einstellungen:"
 msgid "Choose the file with processing settings"
 msgstr "Wähle Datei mit Verarbeitungseinstellungen"
 
-#: src/batch_params.cpp:199 src/main_window.cpp:239 src/main_window.cpp:252
+#: src/batch_params.cpp:199 src/main_window.cpp:248 src/main_window.cpp:261
 msgid "XML files (*.xml)"
 msgstr "XML Dateien (*.xml)"
 
@@ -362,8 +310,8 @@ msgid ""
 "A settings file can be created using the main window's \"Save processing "
 "settings\" function."
 msgstr ""
-"Einstellungen können im Hauptmenü mit \"Speichere Verarbeitungseinstellungen"
-"\" in einer Datei gespeichert werden."
+"Einstellungen können im Hauptmenü mit \"Speichere "
+"Verarbeitungseinstellungen\" in einer Datei gespeichert werden."
 
 #: src/batch_params.cpp:217
 msgid "Processed files will be saved under names appended with \"_out\"."
@@ -373,175 +321,127 @@ msgstr "Die Namen von verarbeiteten Dateien werden um \"_out\" ergänzt."
 msgid "Output format:"
 msgstr "Ausgabeformat:"
 
-#: src/common.cpp:114
-msgid "CPU + bitmaps"
-msgstr "CPU + Bitmaps"
-
-#: src/common.cpp:115
-msgid "GPU (OpenGL)"
-msgstr "GPU (OpenGL)"
-
-#: src/formats.cpp:54
-msgid "BMP 8-bit"
-msgstr "BMP 8-Bit"
-
-#: src/formats.cpp:59
-msgid "TIFF 16-bit"
-msgstr "TIFF 16-Bit"
-
-#: src/formats.cpp:66
-msgid "PNG 8-bit"
-msgstr "PNG 8-Bit"
-
-#: src/formats.cpp:71
-msgid "TIFF 8-bit (LZW compression)"
-msgstr "TIFF 8-Bit (LZW Kompression)"
-
-#: src/formats.cpp:76
-msgid "TIFF 16-bit (ZIP compression)"
-msgstr "TIFF 16-Bit (ZIP Kompression)"
-
-#: src/formats.cpp:81
-msgid "TIFF 32-bit floating-point"
-msgstr "TIFF 32-Bit Fließkommazahl"
-
-#: src/formats.cpp:86
-msgid "TIFF 32-bit floating-point (ZIP compression)"
-msgstr "TIFF 32-Bit Fließkommazahl (ZIP Kompression)"
-
-#: src/formats.cpp:94
-msgid "FITS 8-bit"
-msgstr "FITS 8-Bit"
-
-#: src/formats.cpp:99
-msgid "FITS 16-bit"
-msgstr "FITS 16-Bit"
-
-#: src/formats.cpp:104
-msgid "FITS 32-bit floating point"
-msgstr "FITS 32-Bit Fließkommazahl"
-
-#: src/main_window.cpp:164
+#: src/main_window.cpp:148
 #, c-format
 msgid "Mode: %s"
 msgstr "Modus: %s"
 
-#: src/main_window.cpp:195
+#: src/main_window.cpp:180
 msgid "Failed to load processing settings."
 msgstr "Verarbeitungseinstellungen konnten nicht geladen werden."
 
-#: src/main_window.cpp:238 src/main_window.cpp:1465
+#: src/main_window.cpp:247 src/main_window.cpp:1666
 msgid "Load processing settings"
 msgstr "Lade Verarbeitungseinstellungen"
 
-#: src/main_window.cpp:251 src/main_window.cpp:1463
+#: src/main_window.cpp:260 src/main_window.cpp:1664
 msgid "Save processing settings"
 msgstr "Speichere Verarbeitungseinstellungen"
 
-#: src/main_window.cpp:265
+#: src/main_window.cpp:274
 msgid "Failed to save processing settings."
 msgstr "Konnte Verarbeitungseinstellungen nicht speichern."
 
-#: src/main_window.cpp:289
+#: src/main_window.cpp:298
 msgid "Clear list"
 msgstr "Liste löschen"
 
-#: src/main_window.cpp:334
+#: src/main_window.cpp:345
 msgid "Choose the user interface language:"
 msgstr "Wähle die Sprache aus:"
 
-#: src/main_window.cpp:334
+#: src/main_window.cpp:345
 msgid "Language"
 msgstr "Sprache"
 
-#: src/main_window.cpp:348
+#: src/main_window.cpp:359
 msgid "You have to restart ImPPG for the changes to take effect."
 msgstr "Die neuen Einstellungen sind erst nach einem Neustart verfügbar."
 
-#: src/main_window.cpp:359
+#: src/main_window.cpp:370 src/main_window.cpp:1998
 msgid "Processing in progress, abort it?"
 msgstr "Verarbeitung im Gange, wirklich abbrechen?"
 
-#: src/main_window.cpp:359 src/wxapp.cpp:74
+#: src/main_window.cpp:370 src/main_window.cpp:1998 src/wxapp.cpp:78
 msgid "Warning"
 msgstr "Warnung"
 
-#: src/main_window.cpp:377
+#: src/main_window.cpp:388
 msgid "You have not selected and processed the whole image, do it now?"
 msgstr ""
 "Das gesamte Bild wurde noch nicht bearbeitet. Soll es jetzt bearbeitet "
 "werden?"
 
-#: src/main_window.cpp:387
+#: src/main_window.cpp:398
 msgid "Save image"
 msgstr "Speichere Bild"
 
-#: src/main_window.cpp:394
+#: src/main_window.cpp:410
 #, c-format
 msgid "Could not save output file %s."
 msgstr "Konnte Bild %s nicht speichern."
 
-#: src/main_window.cpp:577
+#: src/main_window.cpp:591
 msgid "Idle"
 msgstr "Leerlauf"
 
-#: src/main_window.cpp:602
+#: src/main_window.cpp:616
 msgid ""
 "Failed to initialize OpenGL!\n"
 "Reverting to CPU mode."
 msgstr ""
-"Konnte OpenGL nicht initialisieren!\n"
+"Konnte OpenGL nicht initialisieren! \n"
 "Setze Modus auf CPU zurück."
 
-#: src/main_window.cpp:929
+#: src/main_window.cpp:961
 #, c-format
 msgid "Could not open %s."
 msgstr "Konnte %s nicht öffnen."
 
-#: src/main_window.cpp:980 src/main_window.cpp:1416
+#: src/main_window.cpp:1012 src/main_window.cpp:1617
 msgid "Open image file"
 msgstr "Öffne Bilddatei"
 
-#: src/main_window.cpp:1060
+#: src/main_window.cpp:1097
 msgid "Amount max:"
-msgstr "Wert fürs Maximum:"
+msgstr "Maximum:"
 
-#: src/main_window.cpp:1062 src/main_window.cpp:1346
+#: src/main_window.cpp:1101 src/main_window.cpp:1475
 msgid "Amount:"
 msgstr "Wert:"
 
-#: src/main_window.cpp:1079
+#: src/main_window.cpp:1119
 #, c-format
 msgid "%s <i>(modified)</i>"
 msgstr "%s <i>(modifiziert)</i>"
 
-#: src/main_window.cpp:1267
+#: src/main_window.cpp:1281
 msgid "Enter zoom factor in %"
 msgstr "Zoomfaktor in %"
 
-#: src/main_window.cpp:1267
+#: src/main_window.cpp:1281
 msgid "Custom zoom factor"
-msgstr "Individueller Zoomfaktor"
+msgstr "Benutzerdefinierter Zoomfaktor"
 
-#: src/main_window.cpp:1302 src/main_window.cpp:1336
+#: src/main_window.cpp:1322 src/main_window.cpp:1438
 msgid "Sigma:"
 msgstr "Sigma:"
 
-#: src/main_window.cpp:1307
+#: src/main_window.cpp:1327
 msgid "Iterations:"
 msgstr "Iterationen:"
 
-#: src/main_window.cpp:1310
+#: src/main_window.cpp:1331
 msgid "Suggested value: 30 to 70. Specify 0 to disable L–R deconvolution."
 msgstr ""
 "Empfohlener Wert: 30 bis 70. Setze auf 0 um L-R Dekonvolution zu "
 "deaktivieren."
 
-#: src/main_window.cpp:1313
+#: src/main_window.cpp:1335
 msgid "Prevent ringing"
 msgstr "Verhindere Ringbildung"
 
-#: src/main_window.cpp:1314
+#: src/main_window.cpp:1336
 msgid ""
 "Prevents ringing (halo) around overexposed areas, e.g. a solar disc in a "
 "prominence image (experimental feature)."
@@ -549,248 +449,272 @@ msgstr ""
 "Verhindert Ringbildung (Halo) nahe überbelichteter Stellen, z.B. der "
 "Sonnenscheibe beim Abbilden von Protuberanzen (experimentelle Funktion)"
 
-#: src/main_window.cpp:1317 src/main_window.cpp:1367 src/tcrv_edit.cpp:440
+#: src/main_window.cpp:1339 src/main_window.cpp:1394 src/tcrv_edit.cpp:465
 msgid "reset"
 msgstr "zurücksetzen"
 
-#: src/main_window.cpp:1319
+#: src/main_window.cpp:1341
 msgid "disable"
 msgstr "deaktivieren"
 
-#: src/main_window.cpp:1332
-msgid "Unsharp masking"
-msgstr "Unscharf Maskieren"
+#: src/main_window.cpp:1368
+#, c-format
+msgid "mask %d"
+msgstr "Maske %d"
 
-#: src/main_window.cpp:1340
-msgid "Amount min:"
-msgstr "Wert fürs Minimum:"
-
-#: src/main_window.cpp:1341 src/main_window.cpp:1347
-msgid "Value 1.0: no effect, <1.0: blur, >1.0: sharpen"
-msgstr "Wert = 1.0: Kein Effekt, <1.0: unschärfer, >1.0: schärfer"
-
-#: src/main_window.cpp:1351
-msgid "Threshold:"
-msgstr "Übergangsschwelle:"
-
-#: src/main_window.cpp:1352
-msgid "Input brightness threshold of transition from amount min to amount max"
-msgstr ""
-"Helligkeitsschwelle um vom minimalen Wert zum maximalen Wert zu wechseln"
-
-#: src/main_window.cpp:1357
-msgid "Transition width:"
-msgstr "Breite des Übergangs:"
-
-#: src/main_window.cpp:1358
-msgid ""
-"Amount will be set to amount min for input brightness <= threshold-width and "
-"amount max for brightness >= threshold+width"
-msgstr ""
-"Der Prozess nutzt den Wert fürs Minimum wenn <= Schwelle - Breite und den "
-"Wert für Maximum wenn >= Schwelle + Breite"
-
-#: src/main_window.cpp:1362
+#: src/main_window.cpp:1378
 msgid "Adaptive"
 msgstr "Adaptiv"
 
-#: src/main_window.cpp:1365
+#: src/main_window.cpp:1385
 msgid ""
 "Enable adaptive mode: amount changes from min to max depending on input "
 "brightness"
 msgstr ""
-"Aktivere den adaptiven Modus: Der Wert ändert sich vom Wert fürs Minimum zum "
-"Wert fürs Maximum basierend auf der Einganghelligkeit"
+"Aktivere den adaptiven Modus: Der Wert ändert sich vom Minimum zum Maximum "
+"basierend auf der Einganghelligkeit"
 
-#: src/main_window.cpp:1380
+#: src/main_window.cpp:1416
+msgid "remove"
+msgstr "löschen"
+
+#: src/main_window.cpp:1422
+msgid "Remove unsharp mask"
+msgstr "Maske löschen"
+
+#: src/main_window.cpp:1452
+msgid "Value 1.0: no effect, <1.0: blur, >1.0: sharpen"
+msgstr "Wert = 1.0: Keine Änderung, <1.0: unschärfer, >1.0: schärfer"
+
+#: src/main_window.cpp:1457
+msgid "Amount min:"
+msgstr "Minimum:"
+
+#: src/main_window.cpp:1492
+msgid "Threshold:"
+msgstr "Übergangsschwelle:"
+
+#: src/main_window.cpp:1504
+msgid "Input brightness threshold of transition from amount min to amount max"
+msgstr "Helligkeitsschwelle um vom minimalen zum maximalen Wert zu wechseln"
+
+#: src/main_window.cpp:1511
+msgid "Transition width:"
+msgstr "Breite des Übergangs:"
+
+#: src/main_window.cpp:1523
+msgid ""
+"Amount will be set to amount min for input brightness <= threshold-width and "
+"amount max for brightness >= threshold+width"
+msgstr ""
+"Der Prozess nutzt den minimalen Wert wenn <= (Schwelle - Breite) und den "
+"maximalen Wert wenn >= (Schwelle + Breite)"
+
+#: src/main_window.cpp:1562
+msgid "add mask"
+msgstr "Neue Maske"
+
+#: src/main_window.cpp:1574
 msgid "Lucy–Richardson deconvolution"
 msgstr "Lucy-Richardson Dekonvolution"
 
-#: src/main_window.cpp:1421
+#: src/main_window.cpp:1580
+msgid "Unsharp masking"
+msgstr "Unscharf Maskieren"
+
+#: src/main_window.cpp:1622
 msgid "Save image file"
 msgstr "Speichere Bilddatei"
 
-#: src/main_window.cpp:1427
+#: src/main_window.cpp:1628
 msgid "Show processing controls"
 msgstr "Zeige Verarbeitungsregler"
 
-#: src/main_window.cpp:1431
+#: src/main_window.cpp:1632
 msgid "Show tone curve editor"
 msgstr "Zeige Tonkurveneditor"
 
-#: src/main_window.cpp:1441
+#: src/main_window.cpp:1642
 msgid "Select and process the whole image"
 msgstr "Wähle und verarbeite das gesamte Bild"
 
-#: src/main_window.cpp:1448 src/main_window.cpp:1595
+#: src/main_window.cpp:1649 src/main_window.cpp:1800
 msgid "Fit image in window"
-msgstr "Passe Bild an Fenster an"
+msgstr "Bild an Fenster anpassen"
 
-#: src/main_window.cpp:1450
+#: src/main_window.cpp:1651
 msgid "Actual size (100%)"
 msgstr "Tatsächliche Größe (100%)"
 
-#: src/main_window.cpp:1452 src/main_window.cpp:1596
+#: src/main_window.cpp:1653 src/main_window.cpp:1801
 msgid "Zoom in"
 msgstr "Heranzoomen"
 
-#: src/main_window.cpp:1454 src/main_window.cpp:1597
+#: src/main_window.cpp:1655 src/main_window.cpp:1802
 msgid "Zoom out"
 msgstr "Herauszoomen"
 
-#: src/main_window.cpp:1456 src/main_window.cpp:1603
+#: src/main_window.cpp:1657 src/main_window.cpp:1808
 msgid "Custom zoom factor..."
-msgstr "Individueller Zoomfaktor..."
+msgstr "Benutzerdefinierter Zoomfaktor..."
 
-#: src/main_window.cpp:1468
+#: src/main_window.cpp:1669
 msgid "Show list of recently used settings"
 msgstr "Zeige Liste der kürzlich verwendeten Einstellungen"
 
-#: src/main_window.cpp:1473
+#: src/main_window.cpp:1674
 msgid "Last chosen settings file"
 msgstr "Letzte gewählte Einstellungsdatei"
 
-#: src/main_window.cpp:1484
+#: src/main_window.cpp:1685
 msgid "Load processing settings..."
 msgstr "Lade Verarbeitungseinstellungen..."
 
-#: src/main_window.cpp:1485
+#: src/main_window.cpp:1686
 msgid "Save processing settings..."
 msgstr "Speichere Verarbeitungseinstellungen..."
 
-#: src/main_window.cpp:1487
+#: src/main_window.cpp:1688
 msgid "Batch processing..."
 msgstr "Stapelverarbeitung..."
 
-#: src/main_window.cpp:1492
-msgid "Select (and process) all\tCtrl+A"
-msgstr "Alles auswählen (und verarbeiten)\tCtrl+A"
+#: src/main_window.cpp:1690
+msgid "Run script..."
+msgstr "Skript ausführen..."
 
-#: src/main_window.cpp:1533
+#: src/main_window.cpp:1696
+msgid "Select (and process) all\tCtrl+A"
+msgstr "Alles auswählen (und verarbeiten)\tStrg+A"
+
+#: src/main_window.cpp:1738
 msgid "Failed to initialize OpenGL!"
 msgstr "Konnte OpenGL nicht initialisieren!"
 
-#: src/main_window.cpp:1551
+#: src/main_window.cpp:1756
 msgid "Processing back end"
 msgstr "Verarbeitungsmodus"
 
-#: src/main_window.cpp:1552
+#: src/main_window.cpp:1757
 msgid "Normalize brightness levels..."
 msgstr "Normalisiere Helligkeitslevel..."
 
-#: src/main_window.cpp:1553
+#: src/main_window.cpp:1758
 msgid "Language..."
 msgstr "Sprache..."
 
-#: src/main_window.cpp:1554
+#: src/main_window.cpp:1759
 msgid "Tool icons’ size..."
 msgstr "Symbolgröße..."
 
-#: src/main_window.cpp:1559
+#: src/main_window.cpp:1764
 msgid "Size of toolbar icons in pixels:"
 msgstr "Größe der Symbole in der Werkzeugleiste in Pixeln:"
 
-#: src/main_window.cpp:1560
+#: src/main_window.cpp:1765
 msgid "Tool Icons’ Size"
 msgstr "Symbolgröße"
 
-#: src/main_window.cpp:1571
+#: src/main_window.cpp:1776
 msgid "Tone curve editor..."
 msgstr "Tonkurveneditor..."
 
-#: src/main_window.cpp:1573
+#: src/main_window.cpp:1778
 msgid "Reset tone curve window position"
 msgstr "Tonkurvenfenster zurücksetzen"
 
-#: src/main_window.cpp:1586
+#: src/main_window.cpp:1791
 msgid "Advanced..."
 msgstr "Erweiterte Optionen..."
 
-#: src/main_window.cpp:1591
+#: src/main_window.cpp:1796
 msgid "Processing settings"
 msgstr "Verarbeitungseinstellungen"
 
-#: src/main_window.cpp:1592 src/main_window.cpp:1710
+#: src/main_window.cpp:1797 src/main_window.cpp:1915
 msgid "Tone curve"
 msgstr "Tonkurve"
 
-#: src/main_window.cpp:1593
+#: src/main_window.cpp:1798
 msgid "Panels"
 msgstr "Fenster"
 
-#: src/main_window.cpp:1598
+#: src/main_window.cpp:1803
 msgid "1:3 (33%)"
 msgstr "1:3 (33%)"
 
-#: src/main_window.cpp:1599
+#: src/main_window.cpp:1804
 msgid "1:2 (50%)"
 msgstr "1:2 (50%)"
 
-#: src/main_window.cpp:1600
+#: src/main_window.cpp:1805
 msgid "1:1 (100%)"
 msgstr "1:1 (100%)"
 
-#: src/main_window.cpp:1601
+#: src/main_window.cpp:1806
 msgid "3:2 (150%)"
 msgstr "3:2 (150%)"
 
-#: src/main_window.cpp:1602
+#: src/main_window.cpp:1807
 msgid "2:1 (200%)"
 msgstr "2:1 (200%)"
 
-#: src/main_window.cpp:1606
+#: src/main_window.cpp:1811
 msgid "Nearest neighbor"
-msgstr "\"Nearest Neighbor\" Interpolation"
+msgstr "Interpolation des nächsten Nachbarn"
 
-#: src/main_window.cpp:1607
+#: src/main_window.cpp:1812
 msgid "Linear"
 msgstr "Lineare Interpolation"
 
-#: src/main_window.cpp:1608
+#: src/main_window.cpp:1813
 msgid "Cubic"
 msgstr "Kubische Interpolation"
 
-#: src/main_window.cpp:1616
+#: src/main_window.cpp:1821
 msgid "Scaling method"
 msgstr "Skalierungsfunktion"
 
-#: src/main_window.cpp:1619
+#: src/main_window.cpp:1824
 msgid "Align image sequence..."
 msgstr "Bildersequenz ausrichten..."
 
-#: src/main_window.cpp:1629
+#: src/main_window.cpp:1834
 msgid "About ImPPG..."
 msgstr "Über ImPPG..."
 
-#: src/main_window.cpp:1632
+#: src/main_window.cpp:1837
 msgid "&File"
 msgstr "&Datei"
 
-#: src/main_window.cpp:1633
+#: src/main_window.cpp:1838
 msgid "&Edit"
 msgstr "&Bearbeiten"
 
-#: src/main_window.cpp:1634
+#: src/main_window.cpp:1839
 msgid "&Settings"
 msgstr "&Einstellungen"
 
-#: src/main_window.cpp:1635
+#: src/main_window.cpp:1840
 msgid "&View"
 msgstr "&Ansicht"
 
-#: src/main_window.cpp:1636
+#: src/main_window.cpp:1841
 msgid "&Tools"
 msgstr "&Werkzeuge"
 
-#: src/main_window.cpp:1637
+#: src/main_window.cpp:1842
 msgid "About"
 msgstr "Über"
 
-#: src/normalize.cpp:43
+#: src/normalize.cpp:44
 msgid "Brightness Normalization"
 msgstr "Normalisiere Helligkeitslevel"
 
-#: src/normalize.cpp:84
+#: src/normalize.cpp:80
+msgid "Invalid number."
+msgstr "Ungültige Zahl."
+
+#: src/normalize.cpp:102
 msgid ""
 "Normalization of image brightness is performed prior\n"
 "to all other processing steps."
@@ -798,19 +722,19 @@ msgstr ""
 "Die Normalisierung der Bildhelligkeit wird vor allen\n"
 "anderen Verarbeitungsschritten durchgeführt."
 
-#: src/normalize.cpp:88
+#: src/normalize.cpp:106
 msgid "Normalization enabled"
 msgstr "Aktiviere Normalisierung"
 
-#: src/normalize.cpp:92
+#: src/normalize.cpp:110
 msgid "Set the darkest input pixels to:"
 msgstr "Prozentsatz für dunkelste Pixel:"
 
-#: src/normalize.cpp:99
+#: src/normalize.cpp:119
 msgid "Set the brightest input pixels to:"
 msgstr "Prozentsatz für hellste Pixel:"
 
-#: src/normalize.cpp:106
+#: src/normalize.cpp:128
 #, c-format
 msgid ""
 "Values below 0% and above 100% are allowed (they may result\n"
@@ -821,53 +745,110 @@ msgstr ""
 "einem abgeschnittenen Histogramm führen). Der zweite Wert kann\n"
 "niedriger als der erste Wert sein (die Helligkeit wird invertiert)."
 
-#: src/tcrv_edit.cpp:432
+#: src/script_dialog.cpp:61
+msgid "Run script"
+msgstr "Skript ausführen"
+
+#: src/script_dialog.cpp:105
+msgid "Script file:"
+msgstr "Skriptdatei:"
+
+#: src/script_dialog.cpp:115
+msgid "Choose the script file to run"
+msgstr "Wähle Skriptdatei zur Ausführung aus"
+
+#: src/script_dialog.cpp:116
+msgid "LUA files (*.lua)"
+msgstr "LUA Dateien (*.lua)"
+
+#: src/script_dialog.cpp:125
+msgid "Select the script file."
+msgstr "Wähle Ausgangsordner."
+
+#: src/script_dialog.cpp:132
+msgid "Run"
+msgstr "Ausführen"
+
+#: src/script_dialog.cpp:137
+msgid "Stop"
+msgstr "Stop"
+
+#: src/script_dialog.cpp:142
+msgid "Pause"
+msgstr "Pause"
+
+#: src/script_dialog.cpp:185
+#, c-format
+msgid "Running script %s..."
+msgstr "Führe Skript %s aus..."
+
+#: src/script_dialog.cpp:214
+msgid "Waiting for the script to stop..."
+msgstr "Warte auf das Skript..."
+
+#: src/script_dialog.cpp:224
+msgid "The script is still running. Do you want to stop it?"
+msgstr "Das Skript läuft noch. Soll es beendet werden?"
+
+#: src/script_dialog.cpp:237
+msgid "The window will be closed after the script ends."
+msgstr "Das Fenster wird nach dem Ende des Skripts geschlossen."
+
+#: src/script_dialog.cpp:271
+msgid "Script execution error:"
+msgstr "Ausführungsfehler:"
+
+#: src/script_dialog.cpp:275
+msgid "Script execution finished."
+msgstr "Scriptausführung beendet."
+
+#: src/tcrv_edit.cpp:457
 msgid "Left click: add/move point, right click: delete point"
 msgstr ""
 "Linksklick: Füge neuen Punkt hinzu/verschiebe Punkt, Rechtsklick: Lösche "
 "Punkt"
 
-#: src/tcrv_edit.cpp:438
+#: src/tcrv_edit.cpp:463
 msgid "log"
-msgstr "log"
+msgstr "Log"
 
-#: src/tcrv_edit.cpp:442
+#: src/tcrv_edit.cpp:467
 msgid "inv"
-msgstr "inv"
+msgstr "Inv"
 
-#: src/tcrv_edit.cpp:444
+#: src/tcrv_edit.cpp:469
 msgid "stretch"
-msgstr "dehnen"
+msgstr "Dehnen"
 
-#: src/tcrv_edit.cpp:446
+#: src/tcrv_edit.cpp:471
 msgid "smooth"
-msgstr "glätten"
+msgstr "Glätten"
 
-#: src/tcrv_edit.cpp:447
+#: src/tcrv_edit.cpp:472
 msgid "gamma"
 msgstr "Gamma"
 
-#: src/tcrv_edit.cpp:452
+#: src/tcrv_edit.cpp:477
 msgid "⚙ conf"
 msgstr "⚙ Einstellungen"
 
-#: src/tcrv_edit.cpp:478
+#: src/tcrv_edit.cpp:503
 msgid "Reset the curve to identity map: a line from (0,0) to (1,1)"
 msgstr "Kurve zurücksetzen: Gerade Linie von (0,0) zu (1,1)"
 
-#: src/tcrv_edit.cpp:479
+#: src/tcrv_edit.cpp:504
 msgid "Smooth curve"
 msgstr "Kurve glätten"
 
-#: src/tcrv_edit.cpp:480
+#: src/tcrv_edit.cpp:505
 msgid "Use logarithmic scale for histogram values"
 msgstr "Benutze logarithmische Skala für das Histogramm"
 
-#: src/tcrv_edit.cpp:481
+#: src/tcrv_edit.cpp:506
 msgid "Use gamma curve (overrules graph)"
-msgstr "Benutze Gammakurve (setzt Graphen zurück)"
+msgstr "Benutze Gammakurve (setzt Tonkurve zurück)"
 
-#: src/tcrv_edit.cpp:482
+#: src/tcrv_edit.cpp:507
 msgid ""
 "Invert brightness levels\n"
 "(reflect curve points horizontally)"
@@ -875,11 +856,11 @@ msgstr ""
 "Invertiere die Helligkeitswerte\n"
 "(spiegelt Kurvenpunkte horizontal)"
 
-#: src/tcrv_edit.cpp:483
+#: src/tcrv_edit.cpp:508
 msgid "Stretch the curve to cover the histogram only"
 msgstr "Dehnt die Kurve um nur das Histogramm abzudecken"
 
-#: src/tcrv_edit.cpp:484
+#: src/tcrv_edit.cpp:509
 msgid "Configure window appearance"
 msgstr "Ändere Einstellungen für den Tonkurveneditor"
 
@@ -897,11 +878,11 @@ msgstr "Systemstandard"
 
 #: src/tcrv_wnd_settings.cpp:87
 msgid "Custom"
-msgstr "Individuell"
+msgstr "Benutzerdefiniert"
 
 #: src/tcrv_wnd_settings.cpp:88
 msgid "Choose tone curve editor colors"
-msgstr "Wähle Farbe für Tonkurveneditor"
+msgstr "Farbauswahl für den Tonkurveneditor"
 
 #: src/tcrv_wnd_settings.cpp:97
 msgid "Curve:"
@@ -931,13 +912,10 @@ msgstr "Kurvenbreite:"
 msgid "Curve point size:"
 msgstr "Punktgröße:"
 
-#: src/wxapp.cpp:74
+#: src/wxapp.cpp:78
 msgid ""
 "OpenGL back end failed to initialize when ImPPG was last started. Reverting "
 "to CPU + bitmaps mode."
 msgstr ""
 "OpenGL konnte beim letzten Start von ImPPG nicht initialisiert werden. Setze "
 "Verarbeitungsmodus auf \"CPU + bitmaps\" Modus zurück."
-
-msgid "Invalid number."
-msgstr "Ungültige Nummer."
