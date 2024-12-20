@@ -1,9 +1,7 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-#
-#, fuzzy
+# ImPPG: German translation
+# Copyright (C) Marcel Hoffmann <github@pastsecurity.com>
+# This file is distributed under the same license as the ImPPG package.
+
 msgid ""
 msgstr ""
 "Project-Id-Version: imppg-1.9.2-beta\n"
