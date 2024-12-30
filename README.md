@@ -220,6 +220,8 @@ ImPPG stores certain settings (e.g. the main window’s size and position) in an
 ----------------------------------------
 ## 10. Known problems
 
+  - When using wxWidgets/GTK3 under Wayland, there may be a segfault when initializing OpenGL back end. As a workaround, force X11 GDK back end when running ImPPG, e.g., `GDK_BACKEND=x11 imppg`.
+
   - Starting with wxWidgets 3.1.5 on Linux, GL Canvas uses EGL by default. If the GLEW library used for building ImPPG is not built with EGL support, the call to `glewInit` will fail. Solution: either use GLEW built with EGL, or build wxWidgets adding `-DwxUSE_GLCANVAS_EGL=OFF` to its CMake invocation.
 
   - ImPPG remembers and restores the positions and sizes of the main program window and the tone curve editor window. It may happen (rarely) the desktop environment interferes with window positioning and e.g. the tone curve window remains off-screen. In that case, use the menu command `Settings`/`Reset tone curve window position`, or delete the ImPPG configuration file (see section 8).

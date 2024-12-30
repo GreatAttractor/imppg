@@ -224,6 +224,8 @@ ImPPG przechowuje pewne ustawienia (np. pozycję i rozmiar okna głównego) w pl
 ----------------------------------------
 ## 10. Znane problemy
 
+  - Jeśli używane są wxWidgets/GTK3 w środowisku Wayland, możliwe jest wystąpienie segfaultu podczas inicjalizacji back endu OpenGL. Można tego uniknąć, wymuszając back end X11 dla GDK podczas uruchamiania ImPPG, np.: `GDK_BACKEND=x11 imppg`.
+
   - Poczynając od wersji 3.1.5, wxWidgets pod Linuksem używają EGL dla GL Canvas. Jeśli używana do zbudowania ImPPG biblioteka GLEW nie została zbudowana z obsługą EGL, wywołanie funkcji `glewInit` nie powiedzie się. Rozwiązanie: użyć GLEW z obsługą EGL lub zbudować wxWidgets dodając `-DwxUSE_GLCANVAS_EGL=OFF` do wywołania CMake.
 
   - ImPPG zapamiętuje i przywraca pozycję i wielkość okna głównego i okna edytora krzywej tonalnej. Może się zdarzyć, że środowisko graficzne rozmieści okna nieprawidłowo i np. okno krzywej tonalnej pozostanie poza ekranem. W takim przypadku należy użyć polecenia menu `Ustawienia`/`Resetuj pozycję okna krzywej tonalej`, lub skasować plik konfiguracyjny ImPPG (zob. pkt. 8).
