@@ -64,22 +64,8 @@ void c_CpuAndBitmapsProcessing::StartProcessing(c_Image img, ProcessingSettings 
 
     m_Img.clear();
 
-    if (img.GetPixelFormat() == PixelFormat::PIX_MONO32F)
+    if (img.GetPixelFormat() == PixelFormat::PIX_RGB32F)
     {
-        if (procSettings.unsharpMask.at(0).adaptive)
-        {
-            m_ImgMonoBlurred = CreateBlurredMonoImage(img);
-        }
-        m_Img.emplace_back(std::move(img));
-    }
-    else
-    {
-        if (procSettings.unsharpMask.at(0).adaptive)
-        {
-            const auto mono = img.ConvertPixelFormat(PixelFormat::PIX_MONO32F);
-            m_ImgMonoBlurred = CreateBlurredMonoImage(mono);
-        }
-
         auto [r, g, b] = img.SplitRGB();
         m_Img.emplace_back(std::move(r));
         m_Img.emplace_back(std::move(g));
@@ -87,7 +73,9 @@ void c_CpuAndBitmapsProcessing::StartProcessing(c_Image img, ProcessingSettings 
     }
 
     SetSelection(m_Img.at(0).GetImageRect());
-    m_ProcSettings = procSettings;
+
+    SetProcessingSettings(procSettings);
+
     m_UsePreciseToneCurveValues = true;
 
     ScheduleProcessing(req_type::Sharpening{});
