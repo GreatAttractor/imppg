@@ -155,7 +155,7 @@ void c_ScriptDialog::DoInitControls()
     m_Console = new wxRichTextCtrl(GetContainer());
     m_Console->SetEditable(false);
     m_Console->SetMinSize(wxSize(0, 2 * m_Console->GetTextExtent("M").y));
-    szTop->Add(m_Console, 1, wxALIGN_CENTER | wxEXPAND, BORDER);
+    szTop->Add(m_Console, 1, wxEXPAND, BORDER);
 
     AssignContainerSizer(szTop);
 
