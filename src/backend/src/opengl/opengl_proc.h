@@ -59,7 +59,7 @@ public:
 
     void SetImage(c_Image img, bool linearInterpolation);
 
-    void SetSelection(wxRect selection);
+    void SetSelection(wxRect selection, bool skipBlurForDeringing = false);
 
     void SetProcessingSettings(ProcessingSettings settings);
 
@@ -254,6 +254,8 @@ private:
     void StartToneMapping();
 
     void FillSelectionVBOs();
+
+    void BlurForDeringing(double sigma);
 };
 
 } // namespace imppg::backend

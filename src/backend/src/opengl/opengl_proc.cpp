@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2016-2024 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2016-2025 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -29,6 +29,9 @@ File description:
 #include "cpu_bmp/lrdeconv.h" //TODO: move BlurThresholdVicinity elsewhere
 #include "common/imppg_assert.h"
 
+#include <array>
+#include <vector>
+
 namespace imppg::backend {
 
 std::unique_ptr<IProcessingBackEnd> CreateOpenGLProcessingBackend(unsigned lRCmdBatchSizeMpixIters)
@@ -48,7 +51,7 @@ void c_OpenGLProcessing::StartProcessing(c_Image img, ProcessingSettings procSet
         img.GetPixelFormat() == PixelFormat::PIX_MONO32F ||
         img.GetPixelFormat() == PixelFormat::PIX_RGB32F
     );
-    SetSelection(img.GetImageRect());
+    SetSelection(img.GetImageRect(), true);
     SetImage(std::move(img), false);
     SetProcessingSettings(procSettings);
     StartProcessing(req_type::Sharpening{});
@@ -338,24 +341,6 @@ void c_OpenGLProcessing::StartLRDeconvolution()
     }
     else
     {
-        if (m_ProcessingSettings.LucyRichardson.deringing.enabled)
-        {
-            BlurThresholdVicinity(
-                c_View<const IImageBuffer>(m_Img.value().GetBuffer(), m_Selection),
-                c_View(m_BlurredForDeringing.image.value().GetBuffer()),
-                m_BlurredForDeringing.workBuf,
-                DERINGING_BRIGHTNESS_THRESHOLD,
-                m_ProcessingSettings.LucyRichardson.sigma
-            );
-            m_BlurredForDeringing.texture = gl::c_Texture::Create(
-                m_BlurredForDeringing.image.value().GetWidth(),
-                m_BlurredForDeringing.image.value().GetHeight(),
-                m_BlurredForDeringing.image.value().GetBuffer().GetRow(0),
-                false,
-                IsMono(m_Img->GetPixelFormat())
-            );
-        }
-
         const gl::c_Texture& inputImg =
             (m_ProcessingSettings.LucyRichardson.deringing.enabled ?
             m_BlurredForDeringing.texture : m_OriginalImg);
@@ -573,7 +558,7 @@ void c_OpenGLProcessing::FillSelectionVBOs()
     m_VBOs.wholeSelectionAtZero.SetData(vertexDataAtZero, sizeof(vertexDataAtZero), GL_DYNAMIC_DRAW);
 }
 
-void c_OpenGLProcessing::SetSelection(wxRect selection)
+void c_OpenGLProcessing::SetSelection(wxRect selection, bool skipBlurForDeringing)
 {
     m_Selection = selection;
     FillSelectionVBOs();
@@ -598,6 +583,11 @@ void c_OpenGLProcessing::SetSelection(wxRect selection)
             0,
             0
         );
+
+        if (m_ProcessingSettings.LucyRichardson.deringing.enabled && !skipBlurForDeringing)
+        {
+            BlurForDeringing(m_ProcessingSettings.LucyRichardson.sigma);
+        }
     }
 }
 
@@ -644,9 +634,13 @@ void c_OpenGLProcessing::SetImage(c_Image img, bool linearInterpolation)
     gl::SpecifyVertexAttribPointers();
     GaussianConvolution(m_OriginalImg, m_TexFBOs.inputBlurred.fbo, gaussian);
 
-    if (!m_BlurredForDeringing.image || m_BlurredForDeringing.image->GetPixelFormat() != m_Img->GetPixelFormat())
+    auto& blurredImg = m_BlurredForDeringing.image;
+
+    if (!blurredImg || blurredImg->GetPixelFormat() != m_Img->GetPixelFormat()
+        || blurredImg->GetWidth() != static_cast<unsigned>(m_Selection.width)
+        || blurredImg->GetHeight() != static_cast<unsigned>(m_Selection.height))
     {
-        m_BlurredForDeringing.image = c_Image(
+        blurredImg = c_Image(
             m_Selection.width,
             m_Selection.height,
             IsMono(m_Img->GetPixelFormat()) ? PixelFormat::PIX_MONO32F : PixelFormat::PIX_RGB32F
@@ -663,6 +657,11 @@ void c_OpenGLProcessing::SetImage(c_Image img, bool linearInterpolation)
         0,
         0
     );
+
+    if (m_ProcessingSettings.LucyRichardson.deringing.enabled)
+    {
+        BlurForDeringing(m_ProcessingSettings.LucyRichardson.sigma);
+    }
 }
 
 void c_OpenGLProcessing::SetTexturesLinearInterpolation(bool enable)
@@ -676,9 +675,18 @@ void c_OpenGLProcessing::SetProcessingSettings(ProcessingSettings settings)
 {
     m_LRSync.abortRequested = true;
 
-    if (m_ProcessingSettings.LucyRichardson.sigma != settings.LucyRichardson.sigma)
+    const bool lrSigmaChanged = m_ProcessingSettings.LucyRichardson.sigma != settings.LucyRichardson.sigma;
+    const bool deringingSwitchedOn = !m_ProcessingSettings.LucyRichardson.deringing.enabled
+        && settings.LucyRichardson.deringing.enabled;
+
+    if (lrSigmaChanged)
     {
         m_LRGaussian = GetGaussianKernel(settings.LucyRichardson.sigma);
+    }
+
+    if (lrSigmaChanged && settings.LucyRichardson.deringing.enabled || deringingSwitchedOn)
+    {
+        BlurForDeringing(settings.LucyRichardson.sigma);
     }
 
     if (settings.unsharpMask.size() != m_ProcessingSettings.unsharpMask.size())
@@ -747,6 +755,59 @@ c_Image c_OpenGLProcessing::GetProcessedSelection()
     glGetTexImage(GL_TEXTURE_RECTANGLE, 0, IsMono(pixFmt) ? GL_RED : GL_RGB, GL_FLOAT, img.GetRow(0));
 
     return img;
+}
+
+void c_OpenGLProcessing::BlurForDeringing(double sigma)
+{
+    IMPPG_ASSERT(m_Img.has_value());
+
+    if (IsMono(m_Img->GetPixelFormat()))
+    {
+        BlurThresholdVicinity(
+            c_View<const IImageBuffer>(m_Img->GetBuffer(), m_Selection),
+            c_View(m_BlurredForDeringing.image.value().GetBuffer()),
+            m_BlurredForDeringing.workBuf,
+            DERINGING_BRIGHTNESS_THRESHOLD,
+            sigma
+        );
+    }
+    else
+    {
+        std::vector<c_Image> outChannel;
+        for (int i = 0; i < 3; ++i)
+        {
+            outChannel.emplace_back(
+                static_cast<unsigned>(m_Selection.width),
+                static_cast<unsigned>(m_Selection.height),
+                PixelFormat::PIX_MONO32F
+            );
+        };
+
+        auto [inR, inG, inB] = m_Img->SplitRGB();
+        std::array<c_Image, 3> inChannel{ std::move(inR), std::move(inG), std::move(inB) };
+
+        #pragma omp parallel for
+        for (int i = 0; i < 3; ++i)
+        {
+            BlurThresholdVicinity(
+                c_View<const IImageBuffer>(inChannel.at(i).GetBuffer(), m_Selection),
+                c_View(outChannel.at(i).GetBuffer()),
+                m_BlurredForDeringing.workBuf,
+                DERINGING_BRIGHTNESS_THRESHOLD,
+                sigma
+            );
+        }
+
+        m_BlurredForDeringing.image = c_Image::CombineRGB(outChannel.at(0), outChannel.at(1), outChannel.at(2));
+    }
+
+    m_BlurredForDeringing.texture = gl::c_Texture::Create(
+        m_BlurredForDeringing.image.value().GetWidth(),
+        m_BlurredForDeringing.image.value().GetHeight(),
+        m_BlurredForDeringing.image.value().GetBuffer().GetRow(0),
+        false,
+        IsMono(m_Img->GetPixelFormat())
+    );
 }
 
 } // namespace imppg::backend
