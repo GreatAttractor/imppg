@@ -1,14 +1,14 @@
 # ImPPG: Russian translation
-# Copyright (C) Rusłan Pazenko 2020 <rpazenko@gmail.com>
+# Copyright (C) Rusłan Pazenko 2025 <rpazenko@gmail.com>
 # This file is distributed under the same license as the ImPPG package.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: ImPPG 0.6\n"
+"Project-Id-Version: ImPPG 1.9.2 beta\n"
 "Report-Msgid-Bugs-To: Filip Szczerek <ga.software@yahoo.com>\n"
 "POT-Creation-Date: 2020-06-12 10:00+0100\n"
-"PO-Revision-Date: 2022-04-02 19:47+0100\n"
+"PO-Revision-Date: 2025-01-27 12:13+0100\n"
 "Last-Translator: Rusłan Pazenko <rpazenko@gmail.com>\n"
 "Language-Team: \n"
 "Language: Russian\n"
@@ -162,7 +162,7 @@ msgstr ""
 
 #: src/align_params.cpp:293 src/batch_params.cpp:234
 msgid "Start processing"
-msgstr "Старт процесса оброботки"
+msgstr "Старт оброботки"
 
 #: src/align_proc.cpp:77 src/align_proc.cpp:102 src/align_proc.cpp:168
 #: src/align_proc.cpp:407 src/align_proc.cpp:462 src/align_proc.cpp:644
@@ -245,7 +245,7 @@ msgstr "Выравнивание и сохранение результата...
 #: src/align_progress.cpp:158
 #, c-format
 msgid "Translated and saved image %d/%d.\n"
-msgstr "Выровнено и  сохранено изображение %d/%d.\n"
+msgstr "Выровнено и сохранено изображение %d/%d.\n"
 
 #: src/align_progress.cpp:165
 #, c-format
@@ -348,7 +348,7 @@ msgstr "Обработанные файлы будут сохранены с с�
 
 #: src/batch_params.cpp:220
 msgid "Output format:"
-msgstr "Исходящий формат:"
+msgstr "Выходной формат:"
 
 #: src/common.cpp:114
 msgid "CPU + bitmaps"
@@ -528,7 +528,7 @@ msgstr "сброс"
 
 #: src/main_window.cpp:1303
 msgid "disable"
-msgstr "отключить"
+msgstr "откл."
 
 #: src/main_window.cpp:1316
 msgid "Unsharp masking"
@@ -569,8 +569,8 @@ msgstr "Дополнительно"
 msgid ""
 "Enable adaptive mode: amount changes from min to max depending on input "
 "brightness"
-msgstr "Включите расширенный режим: уровень можна менять от мин. до макс. в зависимости "
-"от входящей яркости"
+msgstr "Включите расширенный режим: уровень можна менять от мин. до макс."
+"в зависимости от входящей яркости"
 
 #: src/main_window.cpp:1364
 msgid "Lucy–Richardson deconvolution"
@@ -586,7 +586,7 @@ msgstr "Показать панель параметров обработки"
 
 #: src/main_window.cpp:1415
 msgid "Show tone curve editor"
-msgstr "Показать панель редактора кривой цвета"
+msgstr "Показать редактор кривой цвета"
 
 #: src/main_window.cpp:1425
 msgid "Select and process the whole image"
@@ -634,7 +634,7 @@ msgstr "Пакетная обработка..."
 
 #: src/main_window.cpp:1476
 msgid "Select (and process) all\tCtrl+A"
-msgstr "Обработка всех выбранных\tCtrl+A"
+msgstr "Выбрать (и обработать) все\tCtrl+A"
 
 #: src/main_window.cpp:1517
 msgid "Failed to initialize OpenGL!"
@@ -642,7 +642,7 @@ msgstr "Ошибка инициализации OpenGL!"
 
 #: src/main_window.cpp:1535
 msgid "Processing back end"
-msgstr "Завершающая обработка"
+msgstr "Обработка"
 
 #: src/main_window.cpp:1536
 msgid "Normalize brightness levels..."
@@ -714,7 +714,7 @@ msgstr "Кубический"
 
 #: src/main_window.cpp:1584
 msgid "Scaling method"
-msgstr "Спосов масштабирования"
+msgstr "Способ масштабирования"
 
 #: src/main_window.cpp:1587
 msgid "Align image sequence..."
@@ -801,7 +801,7 @@ msgstr "растянуть"
 
 #: src/tcrv_edit.cpp:446
 msgid "smooth"
-msgstr "сглажевание"
+msgstr "сглаживание"
 
 #: src/tcrv_edit.cpp:447
 msgid "gamma"
@@ -832,7 +832,7 @@ msgid ""
 "Invert brightness levels\n"
 "(reflect curve points horizontally)"
 msgstr ""
-"Инвертировать уросни яркости\n"
+"Инвертировать уровни яркости\n"
 "(отзеркаливает точки кривой относительно горизонтали)"
 
 #: src/tcrv_edit.cpp:483
@@ -857,7 +857,7 @@ msgstr "По умолчанию – система"
 
 #: src/tcrv_wnd_settings.cpp:87
 msgid "Custom"
-msgstr "Изменено пользователем"
+msgstr "Пользователь (custom)"
 
 #: src/tcrv_wnd_settings.cpp:88
 msgid "Choose tone curve editor colors"
@@ -912,7 +912,69 @@ msgid "Normalize FITS pixel values"
 msgstr "Нормализация значений пикселей FITS"
 
 msgid "Enables normalization of floating-point pixel values of FITS images; the highest value becomes 1.0."
-msgstr "Позволяет нормализировать значения пикселей с плавающей запятой для изображений FITS; самое высокое значение будет до 1,0."
+msgstr "Позволяет нормализировать значения пикселей с плавающей запятой для изображений FITS;"
+"самое высокое значение будет до 1,0."
 
 msgid "Invalid number."
 msgstr "Неправильный номер."
+
+#: src/script_dialog.cpp:61
+msgid "Run script"
+msgstr "Запуск скрипта"
+
+#: src/script_dialog.cpp:105
+msgid "Script file:"
+msgstr "Файл скрипта:"
+
+#: src/script_dialog.cpp:115
+msgid "Choose the script file to run"
+msgstr "Виберите файл скрипта для запуска"
+
+#: src/script_dialog.cpp:116
+msgid "LUA files (*.lua)"
+msgstr "LUA файл (*.lua)"
+
+#: src/script_dialog.cpp:125
+msgid "Select the script file."
+msgstr "Виберите файл скрипта."
+
+#: src/script_dialog.cpp:132
+msgid "Run"
+msgstr "Пуск"
+
+#: src/script_dialog.cpp:137
+msgid "Stop"
+msgstr "Стоп"
+
+#: src/script_dialog.cpp:142
+msgid "Pause"
+msgstr "Пауза"
+
+#: src/script_dialog.cpp:185
+#, c-format
+msgid "Running script %s..."
+msgstr "Запущен скрипт %s..."
+
+#: src/script_dialog.cpp:214
+msgid "Waiting for the script to stop..."
+msgstr "Ожидание остановки скрипта..."
+
+#: src/script_dialog.cpp:224
+msgid "The script is still running. Do you want to stop it?"
+msgstr "Скрипт все еще выполняется. Хотите остановить его?"
+
+#: src/script_dialog.cpp:237
+msgid "The window will be closed after the script ends."
+msgstr "Окно будет закрыто после завершения скрипта."
+
+#: src/script_dialog.cpp:271
+msgid "Script execution error:"
+msgstr "Ошибка выполнения скрипта:"
+
+#: src/script_dialog.cpp:275
+msgid "Script execution finished."
+msgstr "Выполнение скрипта завершено."
+
+#: src/main_window.cpp:1690
+msgid "Run script..."
+msgstr "Запуск скрипта..."
