@@ -5,10 +5,10 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: ImPPG 0.6\n"
+"Project-Id-Version: ImPPG 1.9.2-beta\n"
 "Report-Msgid-Bugs-To: Filip Szczerek <ga.software@yahoo.com>\n"
 "POT-Creation-Date: 2016-10-01 22:00+0100\n"
-"PO-Revision-Date: 2022-04-02 19:47+0100\n"
+"PO-Revision-Date: 2025-01-27 12:38+0100\n"
 "Last-Translator: Rusłan Pazenko <rpazenko@gmail.com>\n"
 "Language-Team: \n"
 "Language: Ukrainian\n"
@@ -39,9 +39,9 @@ msgid ""
 "licensed under GNU General Public License v3 or any later version.\n"
 "See the LICENSE file for details."
 msgstr ""
-"Ви користуєтеся цією програмою БЕЗ БУДЬ ЯКИХ ГАРАНТІЙ на її роботу.\n"
-"Це вільне програмне забезпечення під ліцензією GNU GPL версії 3\n"
-"або іншої, пізнішої. Деталі в посиланні ЛІЦЕНЗІЯ."
+"Ви користуєтеся цією програмою БЕЗ БУДЬ ЯКИХ ГАРАНТІЙ щодо її роботи.\n"
+"Це вільне програмне забезпечення під ліцензією GNU GPL версії 3 або пізнішою\n"
+"Деталі в посиланні ЛІЦЕНЗІЯ."
 
 #: src/about.cpp:278
 #, c-format
@@ -110,6 +110,14 @@ msgstr "Сортування"
 msgid "Remove all"
 msgstr "Видалити все"
 
+#: src/main_window.cpp:1416
+msgid "remove"
+msgstr "Видалити"
+
+#: src/main_window.cpp:1422
+msgid "Remove unsharp mask"
+msgstr "Видалити нечітку маску"
+
 #: src/align_params.cpp:243
 msgid "Input image files"
 msgstr "Вхідні файли зображень"
@@ -124,9 +132,9 @@ msgid ""
 "output files will be somewhat slower; sharp, 1-pixel details (if present) "
 "may get very slightly blurred"
 msgstr ""
-"Увімкніть субпіксельне вирівнювання для плавнішого руху та зменшення дрейфу зображення. "
-"Збереження вихідних зображень буде трохи повільнішим; чіткіше, 1-піксельні деталі "
-"(іноді) може бути трохи розмитим."
+"Увімкніть субпіксельне вирівнювання для плавнішого руху та зменшення зміщення зображення. "
+"Збереження вихідних зображень буде трохи повільнішим; чіткішим, 1-піксельні деталі "
+"(іноді) можуть бути трохи розмитими."
 
 #: src/align_params.cpp:257
 msgid "Crop to intersection"
@@ -162,7 +170,7 @@ msgstr ""
 
 #: src/align_params.cpp:293 src/batch_params.cpp:234
 msgid "Start processing"
-msgstr "Старт процесу обробки"
+msgstr "Початок процесу обробки"
 
 #: src/align_proc.cpp:77 src/align_proc.cpp:102 src/align_proc.cpp:168
 #: src/align_proc.cpp:407 src/align_proc.cpp:462 src/align_proc.cpp:644
@@ -196,7 +204,7 @@ msgstr "Не вдалося перевірити розмір зображенн
 
 #: src/align_proc.cpp:527
 msgid "Could not fit a circle to points during final stabilization."
-msgstr "Не вдалося зіставити коло з точками під час остаточної стабілізації."
+msgstr "Не вдалося підігнати коло до точок під час остаточної стабілізації."
 
 #: src/align_proc.cpp:750 src/align_proc.cpp:760
 #, c-format
@@ -267,7 +275,7 @@ msgstr "Зображення %d/%d: радіус диску = %.2f"
 
 #: src/align_progress.cpp:211
 msgid "Image alignment progress"
-msgstr "Хід вирівнювання зображень"
+msgstr "Процес вирівнювання зображень"
 
 #: src/batch.cpp:181
 #, c-format
@@ -340,7 +348,8 @@ msgstr "Вибір файлу XML з налаштуваннями обробки
 msgid ""
 "A settings file can be created using the main window's \"Save processing "
 "settings\" function."
-msgstr "Файл налаштувань можна створити за допомогою функції \"Зберегти налаштування обробки\" в головному вікні."
+msgstr "Файл налаштувань можна створити за допомогою "
+"функції \"Зберегти налаштування обробки\" в головному вікні."
 
 #: src/batch_params.cpp:217
 msgid "Processed files will be saved under names appended with \"_out\"."
@@ -519,8 +528,9 @@ msgid ""
 "Prevents ringing (halo) around overexposed areas, e.g. a solar disc in a "
 "prominence image (experimental feature)."
 msgstr ""
-"Зменшує сяйво (ореол) навколо надмірно засвічених ділянок, наприклад сонячного диска "
-"на знімках протуберанців (експериментальна функція)."
+"Зменшує сяйво (ореол) навколо надмірно засвічених ділянок,"
+"наприклад сонячного диска на знімках протуберанців"
+"(експериментальна функція)."
 
 #: src/main_window.cpp:1301 src/main_window.cpp:1351 src/tcrv_edit.cpp:440
 msgid "reset"
@@ -540,7 +550,7 @@ msgstr "Мінімальний рівень:"
 
 #: src/main_window.cpp:1325 src/main_window.cpp:1331
 msgid "Value 1.0: no effect, <1.0: blur, >1.0: sharpen"
-msgstr "Значення 1: без змін, <1: розмиття, >1: різкість"
+msgstr "Значення 1: без змін, <1.0: розмиття, >1.0: різкість"
 
 #: src/main_window.cpp:1335
 msgid "Threshold:"
@@ -558,19 +568,24 @@ msgstr "Ширина межі:"
 msgid ""
 "Amount will be set to amount min for input brightness <= threshold-width and "
 "amount max for brightness >= threshold+width"
-msgstr "Рівень буде встановлений на мінімальний рівень для вхідної яскравості <= поріг - ширина межі "
+msgstr "Рівень буде встановлений на мінімальний рівень для вхідної"
+"яскравості <= поріг - ширина межі "
 "та на макс. рівні для яскравості> = поріг + ширина межі"
 
 #: src/main_window.cpp:1346
 msgid "Adaptive"
-msgstr "Розширено"
+msgstr "Додатково"
 
 #: src/main_window.cpp:1349
 msgid ""
 "Enable adaptive mode: amount changes from min to max depending on input "
 "brightness"
-msgstr "Увімкніть розширений режим: рівень можна змінити від мін. до макс. в залежності "
+msgstr "Увімкніть додаткові параметри: рівень можна змінити від мін. до макс. в залежності "
 "від вхідної яскравості"
+
+#: src/main_window.cpp:1562
+msgid "add mask"
+msgstr "додавання маски"
 
 #: src/main_window.cpp:1364
 msgid "Lucy–Richardson deconvolution"
@@ -634,7 +649,7 @@ msgstr "Пакетна обробка..."
 
 #: src/main_window.cpp:1476
 msgid "Select (and process) all\tCtrl+A"
-msgstr "Обробка всіх вибраних\tCtrl+A"
+msgstr "Вибір (і обробка) всього\tCtrl+A"
 
 #: src/main_window.cpp:1517
 msgid "Failed to initialize OpenGL!"
@@ -857,7 +872,7 @@ msgstr "за замовчуванням - система"
 
 #: src/tcrv_wnd_settings.cpp:87
 msgid "Custom"
-msgstr "змінено користавачем"
+msgstr "змінено користавачем (custom)"
 
 #: src/tcrv_wnd_settings.cpp:88
 msgid "Choose tone curve editor colors"
@@ -912,7 +927,69 @@ msgid "Normalize FITS pixel values"
 msgstr "Нормалізація значень пікселів FITS"
 
 msgid "Enables normalization of floating-point pixel values of FITS images; the highest value becomes 1.0."
-msgstr "Дозволяє нормалізувати значення пікселів з плаваючою комою для зображень FITS; найвище значення буде масштабуватися до 1,0."
+msgstr "Дозволяє нормалізувати значення пікселів з плаваючою комою для зображень FITS;"
+"найвище значення буде масштабуватися до 1.0."
 
 msgid "Invalid number."
 msgstr "Недійсний номер."
+
+#: src/script_dialog.cpp:61
+msgid "Run script"
+msgstr "Запуск сценарію (скрипта)"
+
+#: src/script_dialog.cpp:105
+msgid "Script file:"
+msgstr "Файл сценарію (скрипта):"
+
+#: src/script_dialog.cpp:115
+msgid "Choose the script file to run"
+msgstr "Виберіть файл сценарію (скрипта) для запуску"
+
+#: src/script_dialog.cpp:116
+msgid "LUA files (*.lua)"
+msgstr "LUA файл (*.lua)"
+
+#: src/script_dialog.cpp:125
+msgid "Select the script file."
+msgstr "Виберіть файл сценарію (скрипта)."
+
+#: src/script_dialog.cpp:132
+msgid "Run"
+msgstr "Пуск"
+
+#: src/script_dialog.cpp:137
+msgid "Stop"
+msgstr "Стоп"
+
+#: src/script_dialog.cpp:142
+msgid "Pause"
+msgstr "Пауза"
+
+#: src/script_dialog.cpp:185
+#, c-format
+msgid "Running script %s..."
+msgstr "Запущений сценарій (скрипт) %s..."
+
+#: src/script_dialog.cpp:214
+msgid "Waiting for the script to stop..."
+msgstr "Очікування зупинки сценарію..."
+
+#: src/script_dialog.cpp:224
+msgid "The script is still running. Do you want to stop it?"
+msgstr "Сценарій все ще виконується. Хочете зупинити?"
+
+#: src/script_dialog.cpp:237
+msgid "The window will be closed after the script ends."
+msgstr "Вікно буде закрито після завершення сценарію."
+
+#: src/script_dialog.cpp:271
+msgid "Script execution error:"
+msgstr "Помилка виконання сценарію (скрипта):"
+
+#: src/script_dialog.cpp:275
+msgid "Script execution finished."
+msgstr "Виконання сценарію (скрипта) завершено."
+
+#: src/main_window.cpp:1690
+msgid "Run script..."
+msgstr "Запуск сценарію (скрипта)..."
