@@ -1,5 +1,5 @@
 # ImPPG: Ukrainian translation
-# Copyright (C) Rusłan Pazenko 2020 <rpazenko@gmail.com>
+# Copyright (C) Rusłan Pazenko 2025 <rpazenko@gmail.com>
 # This file is distributed under the same license as the ImPPG package.
 #
 #, fuzzy
@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: ImPPG 0.6\n"
 "Report-Msgid-Bugs-To: Filip Szczerek <ga.software@yahoo.com>\n"
 "POT-Creation-Date: 2016-10-01 22:00+0100\n"
-"PO-Revision-Date: 2022-04-02 19:47+0100\n"
+"PO-Revision-Date: 2025-01-27 11:42+0100\n"
 "Last-Translator: Rusłan Pazenko <rpazenko@gmail.com>\n"
 "Language-Team: \n"
 "Language: Ukrainian\n"
@@ -340,7 +340,8 @@ msgstr "Вибір файлу XML з налаштуваннями обробки
 msgid ""
 "A settings file can be created using the main window's \"Save processing "
 "settings\" function."
-msgstr "Файл налаштувань можна створити за допомогою функції \"Зберегти налаштування обробки\" в головному вікні."
+msgstr "Файл налаштувань можна створити за допомогою "
+"функції \"Зберегти налаштування обробки\" в головному вікні."
 
 #: src/batch_params.cpp:217
 msgid "Processed files will be saved under names appended with \"_out\"."
@@ -519,8 +520,9 @@ msgid ""
 "Prevents ringing (halo) around overexposed areas, e.g. a solar disc in a "
 "prominence image (experimental feature)."
 msgstr ""
-"Зменшує сяйво (ореол) навколо надмірно засвічених ділянок, наприклад сонячного диска "
-"на знімках протуберанців (експериментальна функція)."
+"Зменшує сяйво (ореол) навколо надмірно засвічених ділянок,"
+"наприклад сонячного диска на знімках протуберанців"
+"(експериментальна функція)."
 
 #: src/main_window.cpp:1301 src/main_window.cpp:1351 src/tcrv_edit.cpp:440
 msgid "reset"
@@ -558,7 +560,8 @@ msgstr "Ширина межі:"
 msgid ""
 "Amount will be set to amount min for input brightness <= threshold-width and "
 "amount max for brightness >= threshold+width"
-msgstr "Рівень буде встановлений на мінімальний рівень для вхідної яскравості <= поріг - ширина межі "
+msgstr "Рівень буде встановлений на мінімальний рівень для вхідної"
+"яскравості <= поріг - ширина межі "
 "та на макс. рівні для яскравості> = поріг + ширина межі"
 
 #: src/main_window.cpp:1346
@@ -571,6 +574,10 @@ msgid ""
 "brightness"
 msgstr "Увімкніть розширений режим: рівень можна змінити від мін. до макс. в залежності "
 "від вхідної яскравості"
+
+#: src/main_window.cpp:1562
+msgid "add mask"
+msgstr "додавання маски"
 
 #: src/main_window.cpp:1364
 msgid "Lucy–Richardson deconvolution"
@@ -912,7 +919,69 @@ msgid "Normalize FITS pixel values"
 msgstr "Нормалізація значень пікселів FITS"
 
 msgid "Enables normalization of floating-point pixel values of FITS images; the highest value becomes 1.0."
-msgstr "Дозволяє нормалізувати значення пікселів з плаваючою комою для зображень FITS; найвище значення буде масштабуватися до 1,0."
+msgstr "Дозволяє нормалізувати значення пікселів з плаваючою комою для зображень FITS;"
+"найвище значення буде масштабуватися до 1,0."
 
 msgid "Invalid number."
 msgstr "Недійсний номер."
+
+#: src/script_dialog.cpp:61
+msgid "Run script"
+msgstr "Запуск сценарію (скрипта)"
+
+#: src/script_dialog.cpp:105
+msgid "Script file:"
+msgstr "Файл сценарію (скрипта):"
+
+#: src/script_dialog.cpp:115
+msgid "Choose the script file to run"
+msgstr "Виберіть файл сценарію (скрипта) для запуску"
+
+#: src/script_dialog.cpp:116
+msgid "LUA files (*.lua)"
+msgstr "LUA файл (*.lua)"
+
+#: src/script_dialog.cpp:125
+msgid "Select the script file."
+msgstr "Виберіть файл сценарію (скрипта)."
+
+#: src/script_dialog.cpp:132
+msgid "Run"
+msgstr "Пуск"
+
+#: src/script_dialog.cpp:137
+msgid "Stop"
+msgstr "Стоп"
+
+#: src/script_dialog.cpp:142
+msgid "Pause"
+msgstr "Пауза"
+
+#: src/script_dialog.cpp:185
+#, c-format
+msgid "Running script %s..."
+msgstr "Запущений сценарій (скрипт) %s..."
+
+#: src/script_dialog.cpp:214
+msgid "Waiting for the script to stop..."
+msgstr "Очікування зупинки сценарію..."
+
+#: src/script_dialog.cpp:224
+msgid "The script is still running. Do you want to stop it?"
+msgstr "Сценарій все ще виконується. Хочете зупинити?"
+
+#: src/script_dialog.cpp:237
+msgid "The window will be closed after the script ends."
+msgstr "Вікно буде закрито після завершення сценарію."
+
+#: src/script_dialog.cpp:271
+msgid "Script execution error:"
+msgstr "Помилка виконання сценарію (скрипта):"
+
+#: src/script_dialog.cpp:275
+msgid "Script execution finished."
+msgstr "Виконання сценарію (скрипта) завершено."
+
+#: src/main_window.cpp:1690
+msgid "Run script..."
+msgstr "Запуск сценарію (скрипта)..."
