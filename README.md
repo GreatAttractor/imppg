@@ -424,7 +424,7 @@ $ xgettext -k_ src/*.cpp src/*.h -o imppg.po
 $ msgfmt imppg.po -o imppg.mo
 ```
 
-- placing `imppg.mo` in a subdirectory with name equal to the language code (e.g. `pl`, `fr-ca`)
+- placing `imppg.mo` in a subdirectory with name equal to the ISO 639 language code (e.g., `pl`, `de`)
 
 - adding the language to the arrays inside `c_MainWindow::SelectLanguage()` (`main_window.cpp`)
 

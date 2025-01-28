@@ -417,7 +417,7 @@ ImPPG obsługuje wielojęzyczny interfejs użytkownika poprzez wbudowane funkcje
     $ msgfmt imppg.po -o imppg.mo
 ```
 
-- umieszczenie `imppg.mo` w podkatalogu o nazwie będącej kodem języka (np. `pl`, `fr-ca`)
+- umieszczenie `imppg.mo` w podkatalogu o nazwie będącej kodem ISO 639 języka (np. `pl`, `de`)
 
 - dopisanie języka do tablic w `c_MainWindow::SelectLanguage()` (`main_window.cpp`)
 
