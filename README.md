@@ -1,7 +1,7 @@
 # ImPPG (Image Post-Processor)
-Copyright (C) 2015-2024 Filip Szczerek (ga.software@yahoo.com)
+Copyright (C) 2015-2025 Filip Szczerek (ga.software@yahoo.com)
 
-version 1.9.2-beta (2024-07-06)
+version 2.0.0 (2025-01-30)
 
 *This program comes with ABSOLUTELY NO WARRANTY. This is free software, licensed under GNU General Public License v3 or any later version and you are welcome to redistribute it under certain conditions. See the LICENSE file for details.*
 
@@ -440,6 +440,15 @@ German translation: Marcel Hoffmann.
 
 ----------------------------------------
 ## 14. Change log
+
+**2.0.0** (2025-01-30)
+
+  - **Bug fixes**
+    - Crash when deringing RGB image in OpenGL mode
+    - Only first unsharp mask applied in CPU & bitmaps mode
+
+  - **Enhancements**
+    - Updated German, Ukrainian and Russian translations
 
 **1.9.2-beta** (2024-07-06)
 
