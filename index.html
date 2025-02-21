@@ -21,15 +21,15 @@
 <body>
 
 <h1>ImPPG (Image Post-Processor)</h1>
-<p>Copyright &copy; 2015-2024 Filip Szczerek</p>
+<p>Copyright &copy; 2015-2025 Filip Szczerek</p>
 
-<p><i>last update: 2024-07-18</i></p>
+<p><i>last update: 2025-02-21</i></p>
 
 <br>
 
 <p>ImPPG performs Lucy-Richardson deconvolution, unsharp masking, brightness normalization and tone curve adjustment. It can also apply previously specified processing settings to multiple images. All operations are performed using 32-bit floating-point arithmetic.</p>
 
-<p>Supported input formats: FITS, BMP, JPEG, PNG, TIFF (most of bit depths and compression methods), TGA and more. Images are processed in grayscale and can be saved as: BMP 8-bit; PNG 8-bit; TIFF 8-bit, 16-bit, 32-bit floating-point (no compression, LZW- or ZIP-compressed), FITS 8-bit, 16-bit, 32-bit floating-point.</p>
+<p>Supported input formats: FITS, BMP, JPEG, PNG, TIFF (most of bit depths and compression methods), TGA and more. Processed images can be saved as: BMP 8-bit; PNG 8-bit; TIFF 8-bit, 16-bit, 32-bit floating-point (no compression, LZW- or ZIP-compressed), FITS 8-bit, 16-bit, 32-bit floating-point.</p>
 
 <p>ImPPG can also align an image sequence, with possibly large and chaotic translations between images (aligned output images preserve number of channels and bit depth). This can be useful, for example, when preparing a solar time-lapse animation, where subsequent frames are offset due to inaccurate tracking of the telescope mount. Other possible applications are smoothing out of terrestrial landscape time-lapses or preparing raw frames (with serious image jitter) for stacking.</p>
 
@@ -87,6 +87,24 @@ Screenshots:
 <h2>Downloads</h2>
 
 <ul>
+    <li><strong><a href="https://github.com/GreatAttractor/imppg/releases/tag/v2.0.0">version 2.0.0</a> (2025-02-04)</strong><br>
+        <ul>
+            <li>Enhancements
+                <ul>
+                    <li>Updated German, Ukrainian and Russian translations</li>
+                </ul>
+            </li>
+            <li>Bug fixes
+                <ul>
+                    <li>Crash when deringing RGB image in OpenGL mode</li>
+                    <li>Only the first unsharp mask applied in CPU & bitmaps mode</li>
+                </ul>
+            </li>
+        </ul>
+    </li>
+
+    <br/>
+
     <li><strong><a href="https://github.com/GreatAttractor/imppg/releases/tag/v1.9.2-beta">version 1.9.2-beta</a> (2024-07-06)</strong><br>
         <ul>
             <li>New features
