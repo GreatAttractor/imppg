@@ -116,7 +116,7 @@ using FunctionCallResult = std::variant<
 
 /// Payload of messages sent by script runner's worker thread to parent.
 ///
-/// The default constructor and fake copying - which in fact moves - are required due to `wxThreadEvent`'s needs.
+/// Using `std::shared_ptr` for `m_Completion` is required due to `wxThreadEvent`'s needs.
 ///
 class ScriptMessagePayload
 {
@@ -125,39 +125,23 @@ public:
     : m_Contents(contents::None{})
     {}
 
-    ScriptMessagePayload(MessageContents&& contents, std::promise<FunctionCallResult>&& completion = {})
+    ScriptMessagePayload(MessageContents&& contents, std::shared_ptr<std::promise<FunctionCallResult>> completion = {})
     : m_Contents(std::move(contents)), m_Completion(std::move(completion))
     {}
 
-    ScriptMessagePayload(const ScriptMessagePayload& other)
-    {
-        if (&other != this)
-        {
-            *this = std::move(other);
-        }
-    }
-
-    ScriptMessagePayload& operator=(const ScriptMessagePayload& other)
-    {
-        if (&other != this)
-        {
-            *this = std::move(const_cast<ScriptMessagePayload&>(other));
-        }
-        return *this;
-    }
-
-    ScriptMessagePayload(ScriptMessagePayload&& other) = default;
-    ScriptMessagePayload& operator=(ScriptMessagePayload&& other) = default;
-
     const MessageContents& GetContents() const { return m_Contents; }
 
-    void SignalCompletion(FunctionCallResult&& result) { m_Completion.set_value(std::move(result)); }
+    void SignalCompletion(FunctionCallResult&& result)
+    {
+        if (!m_Completion) { throw std::logic_error{"no completion associated with this message payload"}; }
+        m_Completion->set_value(std::move(result));
+    }
 
 private:
     MessageContents m_Contents;
 
-    /// Empty for certain kinds of `MessageContents`; the receiver must then not call `SignalCompletion`.
-    std::promise<FunctionCallResult> m_Completion;
+    /// Unused for certain kinds of `MessageContents`.
+    std::shared_ptr<std::promise<FunctionCallResult>> m_Completion;
 };
 
 }

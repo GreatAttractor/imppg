@@ -63,7 +63,14 @@ void ScriptImageProcessor::StartProcessing(
         [](auto) { IMPPG_ABORT_MSG("invalid message passed to ScriptImageProcessor"); },
     };
 
-    std::visit(handler, request);
+    try
+    {
+        std::visit(handler, request);
+    }
+    catch(const std::exception& e)
+    {
+        onCompletion(call_result::Error{e.what()});
+    }
 }
 
 void ScriptImageProcessor::OnIdle(wxIdleEvent& event)

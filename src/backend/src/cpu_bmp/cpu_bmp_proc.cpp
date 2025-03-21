@@ -64,12 +64,20 @@ void c_CpuAndBitmapsProcessing::StartProcessing(c_Image img, ProcessingSettings 
 
     m_Img.clear();
 
-    if (img.GetPixelFormat() == PixelFormat::PIX_RGB32F)
+    if (img.GetPixelFormat() == PixelFormat::PIX_MONO32F)
+    {
+        m_Img.emplace_back(std::move(img));
+    }
+    else if (img.GetPixelFormat() == PixelFormat::PIX_RGB32F)
     {
         auto [r, g, b] = img.SplitRGB();
         m_Img.emplace_back(std::move(r));
         m_Img.emplace_back(std::move(g));
         m_Img.emplace_back(std::move(b));
+    }
+    else
+    {
+        IMPPG_ABORT_MSG("unexpected pixel format");
     }
 
     SetSelection(m_Img.at(0).GetImageRect());

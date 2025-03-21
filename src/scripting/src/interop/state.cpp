@@ -5,6 +5,8 @@
 #include <wx/event.h>
 #include <wx/intl.h>
 
+using namespace std::chrono_literals;
+
 namespace scripting
 {
 
@@ -36,10 +38,16 @@ void State::SendMessage(MessageContents&& message)
 FunctionCallResult State::CallFunctionAndAwaitCompletion(MessageContents&& functionCall)
 {
     auto* event = new wxThreadEvent(wxEVT_THREAD);
-    std::promise<FunctionCallResult> completionSend;
-    std::future<FunctionCallResult> completionRecv = completionSend.get_future();
-    event->SetPayload(ScriptMessagePayload{std::move(functionCall), std::move(completionSend)});
+    auto completionSend = std::make_shared<std::promise<FunctionCallResult>>();
+    std::future<FunctionCallResult> completionRecv = completionSend->get_future();
+    event->SetPayload(ScriptMessagePayload{std::move(functionCall), completionSend});
     m_Parent.QueueEvent(event);
+
+    if (completionRecv.wait_for(10s) != std::future_status::ready)
+    {
+        throw ScriptExecutionError{"timed out waiting for command completion"};
+    }
+
     const FunctionCallResult result = completionRecv.get();
     if (auto* error = std::get_if<call_result::Error>(&result))
     {
