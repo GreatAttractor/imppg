@@ -1,5 +1,6 @@
 #include "common/imppg_assert.h"
 #include "alignment/align_proc.h"
+#include "image/image.h"
 #include "interop/classes/ImageWrapper.h"
 #include "scripting/script_exceptions.h"
 

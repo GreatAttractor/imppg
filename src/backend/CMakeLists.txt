@@ -43,4 +43,4 @@ if(USE_OPENGL_BACKEND)
     target_compile_definitions(backend PRIVATE IMPPG_SHADERS_DIR="${IMPPG_SHADERS_DIR}")
 endif()
 
-target_link_libraries(backend PRIVATE ${wxWidgets_LIBRARIES} common image logging math_utils)
+target_link_libraries(backend PUBLIC image PRIVATE ${wxWidgets_LIBRARIES} common logging math_utils)

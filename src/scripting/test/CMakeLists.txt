@@ -15,9 +15,13 @@ find_package(Boost REQUIRED
 )
 target_include_directories(scripting_tests PRIVATE ${Boost_INCLUDE_DIRS})
 
-target_link_libraries(scripting_tests PRIVATE
+target_link_libraries(scripting_tests
+PUBLIC
+    common
+PRIVATE
     ${Boost_LIBRARIES}
     ${wxWidgets_LIBRARIES}
+    backend
     scripting
 )
 

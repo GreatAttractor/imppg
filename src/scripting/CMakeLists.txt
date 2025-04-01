@@ -35,7 +35,12 @@ target_include_directories(scripting PRIVATE src ${Boost_INCLUDE_DIRS} ${LUA_INC
 
 #TODO check which minimal version of Lua we need and enforce it here (initial implementation uses 5.4)
 
-target_link_libraries(scripting PRIVATE ${wxWidgets_LIBRARIES} ${LUA_LIBRARIES} alignment backend common)
+target_link_libraries(scripting
+    PUBLIC
+        alignment
+    PRIVATE
+        ${wxWidgets_LIBRARIES} ${LUA_LIBRARIES} backend common image
+)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
     target_link_libraries(scripting PRIVATE stdc++fs)

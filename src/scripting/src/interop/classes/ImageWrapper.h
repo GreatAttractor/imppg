@@ -1,12 +1,13 @@
 #pragma once
 
-#include "image/image.h"
 #include "interop/classes/method.h"
 
 #include <lua.hpp>
 #include <memory>
 #include <optional>
 #include <string>
+
+class c_Image;
 
 namespace scripting
 {

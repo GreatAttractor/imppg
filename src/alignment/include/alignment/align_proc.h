@@ -25,13 +25,15 @@ File description:
 #define IMPPG_IMAGE_ALIGNMENT_THREAD_HEADER
 
 #include <memory>
+#include <optional>
 #include <variant>
 #include <vector>
 #include <wx/arrstr.h>
 #include <wx/thread.h>
 
 #include "common/common.h"
-#include "image/image.h"
+
+class c_Image;
 
 enum class CropMode: int
 {

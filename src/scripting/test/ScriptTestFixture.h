@@ -1,7 +1,6 @@
 #pragma once
 
 #include "common/proc_settings.h"
-#include "image/image.h"
 #include "scripting/script_image_processor.h"
 
 #include <filesystem>
@@ -12,6 +11,7 @@
 #include <vector>
 
 namespace scripting { class ScriptMessagePayload; }
+class c_Image;
 class wxAppConsole;
 class wxThreadEvent;
 
