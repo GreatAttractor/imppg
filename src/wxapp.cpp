@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2016-2019 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2016-2025 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -29,6 +29,7 @@ File description:
 #include <wx/sysopt.h>
 #endif
 
+#include "common/imppg_assert.h"
 #include "wxapp.h"
 #include "appconfig.h"
 #include "cursors.h"
@@ -139,9 +140,9 @@ int c_MyApp::OnExit()
 void c_MyApp::OnUnhandledException()
 {
     try { throw; }
-    catch(std::runtime_error& exc)
+    catch(std::exception& exc)
     {
-        std::cerr << "Runtime error: " << exc.what() << std::endl;
+        CRASH_LOG << "Exception: " << exc.what() << std::endl;
         wxMessageBox(wxString("Fatal exception:\n\n") + exc.what(), "Error", wxICON_ERROR | wxCLOSE);
         throw;
     }
