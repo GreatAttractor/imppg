@@ -686,7 +686,7 @@ void c_OpenGLProcessing::SetProcessingSettings(ProcessingSettings settings)
 
     if (lrSigmaChanged && settings.LucyRichardson.deringing.enabled || deringingSwitchedOn)
     {
-        BlurForDeringing(settings.LucyRichardson.sigma);
+        if (m_Img.has_value()) { BlurForDeringing(settings.LucyRichardson.sigma); }
     }
 
     if (settings.unsharpMask.size() != m_ProcessingSettings.unsharpMask.size())
