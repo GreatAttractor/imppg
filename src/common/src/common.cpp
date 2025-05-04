@@ -27,6 +27,9 @@ File description:
 
 #include <cfloat>
 #include <cstdlib>
+#include <fstream>
+#include <mutex>
+#include <wx/datetime.h>
 #include <wx/defs.h> // For some reason, this is needed before display.h, otherwise there are a lot of WXDLLIMPEXP_FWD_CORE undefined errors
 #include <wx/display.h>
 
@@ -161,4 +164,14 @@ wxString GetBackEndText(BackEnd backEnd)
 
     default: IMPPG_ABORT();
     }
+}
+
+void LogEntry(const char* msg)
+{
+    static std::mutex guard;
+
+    std::unique_lock lock(guard);
+
+    std::ofstream logfile{"imppg.log", std::ios_base::app};
+    logfile << wxDateTime::UNow().Format("%H:%M:%S.%l") << " " << msg << "\n";
 }

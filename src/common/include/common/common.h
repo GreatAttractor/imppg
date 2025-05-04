@@ -219,4 +219,6 @@ inline wxString FromDir(const wxFileName& dir, wxString fname)
 
 wxString GetBackEndText(BackEnd backEnd);
 
+void LogEntry(const char* msg);
+
 #endif //  IMPGG_COMMON_HEADER
