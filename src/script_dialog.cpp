@@ -292,6 +292,8 @@ void c_ScriptDialog::OnRunnerMessage(wxThreadEvent& event)
                     payload.SignalCompletion(std::move(result));
                 }
             );
+            // Some processors may rely on idle events, e.g., the OpenGL back end for driving L-R deconvolution.
+            QueueEvent(new wxIdleEvent{}); 
         }
     };
 
