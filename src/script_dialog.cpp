@@ -30,10 +30,7 @@ File description:
 #include "scripting/interop.h"
 #include "script_dialog.h"
 
-#include <chrono> //TESTING ##########
 #include <fstream>
-#include <iostream> //TESTING ###########
-#include <thread> //TESTING ###########
 #include <wx/button.h>
 #include <wx/filename.h>
 #include <wx/filepicker.h>
@@ -41,8 +38,6 @@ File description:
 #include <wx/richtext/richtextctrl.h>
 #include <wx/statline.h>
 #include <wx/stattext.h>
-
-using namespace std::chrono_literals; // TESTING ############
 
 namespace scripting
 {
