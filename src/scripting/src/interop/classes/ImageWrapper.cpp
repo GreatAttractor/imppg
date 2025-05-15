@@ -72,4 +72,13 @@ void ImageWrapper::auto_white_balance()
     m_Image = std::make_shared<const c_Image>(m_Image->AutomaticWhiteBalance());
 }
 
+void ImageWrapper::multiply(double factor)
+{
+    if (factor < 0.0) { throw ScriptExecutionError{"negative factor to multiply pixel values"}; }
+
+    auto multiplied = c_Image(*m_Image);
+    multiplied.MultiplyPixelValues(factor);
+    m_Image = std::make_shared<c_Image>(multiplied);
+}
+
 }

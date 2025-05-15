@@ -1903,3 +1903,21 @@ c_Image c_Image::AutomaticWhiteBalance() const
 
     return result;
 }
+
+void c_Image::MultiplyPixelValues(double factor)
+{
+    IMPPG_ASSERT(GetPixelFormat() == PixelFormat::PIX_MONO32F || GetPixelFormat() == PixelFormat::PIX_RGB32F);
+    IMPPG_ASSERT(factor >= 0.0);
+
+    const unsigned width = GetWidth();
+    const std::size_t numChannels = NumChannels[static_cast<std::size_t>(GetPixelFormat())];
+
+    for (unsigned y = 0; y < GetHeight(); ++y)
+    {
+        float* row = GetRowAs<float>(y);
+        for (unsigned i = 0; i < width * numChannels; ++i)
+        {
+            row[i] *= factor;
+        }
+    }
+}

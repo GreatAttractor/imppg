@@ -297,6 +297,21 @@ Methods:
   image:awb()
   ```
 
+- `multiply`
+  Multiplies all pixel values by given factor.
+
+  Can be useful when the raw stacks of a sequence are too bright (and sharpening them overflows the histogram), but normalization cannot be used (e.g., it introduces animation flicker).
+
+  *Parameters:*
+  - factor (non-negative)
+
+  ----
+  *Example*
+  ```Lua
+  image = imppg.load_image("/path/to/image.tif")
+  image:multiply(0.8)
+  ```
+
 - `save`
   Saves image to file.
 

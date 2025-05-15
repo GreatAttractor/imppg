@@ -241,6 +241,8 @@ public:
     static c_Image Blend(const c_Image& img1, double weight1, const c_Image& img2, double weight2);
 
     c_Image AutomaticWhiteBalance() const;
+
+    void MultiplyPixelValues(double factor);
 };
 
 /// Lightweight wrapper of a fragment of an image buffer; does not allocate any pixels memory itself.
