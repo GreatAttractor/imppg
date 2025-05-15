@@ -11,9 +11,9 @@
 #         sudo ln -s /usr/bin/wx-config-3.0 /usr/bin/wx-config
 #
 
-project("imppg")
+cmake_minimum_required(VERSION 2.8...3.5)
 
-cmake_minimum_required(VERSION 2.8)
+project("imppg")
 
 enable_testing()
 
