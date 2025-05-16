@@ -49,6 +49,7 @@ public:
 
     void StartProcessing(
         MessageContents request,
+        std::shared_ptr<Heartbeat> heartbeat,
         std::function<void(FunctionCallResult)> onCompletion ///< Receives error message on error.
     );
 
@@ -60,7 +61,11 @@ private:
     void OnProcessImageFile(const contents::ProcessImageFile& call, CompletionFunc onCompletion);
     void OnProcessImage(const contents::ProcessImage& call, CompletionFunc onCompletion);
     void OnAlignRGB(const contents::AlignRGB& call, CompletionFunc onCompletion);
-    void OnAlignImages(const contents::AlignImages& call, CompletionFunc onCompletion);
+    void OnAlignImages(
+        const contents::AlignImages& call,
+        std::shared_ptr<Heartbeat> heartbeat,
+        CompletionFunc onCompletion
+    );
 
     std::unique_ptr<imppg::backend::IProcessingBackEnd> m_Processor;
     bool m_NormalizeFitsValues{false};

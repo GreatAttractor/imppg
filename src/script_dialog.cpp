@@ -283,17 +283,19 @@ void c_ScriptDialog::OnRunnerMessage(wxThreadEvent& event)
         },
 
         [&](const auto& contents) {
-            // we need to make a copy first, because in `StartProcessing` invocation we also move from `payload`,
-            // and function argument evaluation order is unspecified
+            // We need to make copies first, because in `StartProcessing` invocation we also move from `payload`,
+            // and function argument evaluation order is unspecified.
             scripting::MessageContents contentsCopy = contents;
+            auto heartbeat = payload.GetHeartbeat();
             m_Processor->StartProcessing(
                 contentsCopy,
+                heartbeat,
                 [payload = std::move(payload)](scripting::FunctionCallResult result) mutable {
                     payload.SignalCompletion(std::move(result));
                 }
             );
             // Some processors may rely on idle events, e.g., the OpenGL back end for driving L-R deconvolution.
-            QueueEvent(new wxIdleEvent{}); 
+            QueueEvent(new wxIdleEvent{});
         }
     };
 

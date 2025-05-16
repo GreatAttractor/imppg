@@ -38,23 +38,27 @@ void State::SendMessage(MessageContents&& message)
 FunctionCallResult State::CallFunctionAndAwaitCompletion(MessageContents&& functionCall)
 {
     auto* event = new wxThreadEvent(wxEVT_THREAD);
-    auto completionSend = std::make_shared<std::promise<FunctionCallResult>>();
-    std::future<FunctionCallResult> completionRecv = completionSend->get_future();
-    event->SetPayload(ScriptMessagePayload{std::move(functionCall), completionSend});
+    auto heartbeat = std::make_shared<Heartbeat>();
+    event->SetPayload(ScriptMessagePayload{std::move(functionCall), heartbeat});
     m_Parent.QueueEvent(event);
 
-    if (completionRecv.wait_for(10s) != std::future_status::ready)
+    std::optional<FunctionCallResult> result;
+    while (true)
     {
-        throw ScriptExecutionError{"timed out waiting for command completion"};
+        if (wxMSGQUEUE_TIMEOUT == heartbeat->ReceiveTimeout(10'000, result))
+        {
+            throw ScriptExecutionError{"timed out waiting for command completion"};
+        }
+
+        if (result.has_value()) { break; }
     }
 
-    const FunctionCallResult result = completionRecv.get();
-    if (auto* error = std::get_if<call_result::Error>(&result))
+    if (auto* error = std::get_if<call_result::Error>(&result.value()))
     {
         throw ScriptExecutionError(error->message);
     }
 
-    return result;
+    return result.value();
 }
 
 void State::OnObjectCreatedImpl(const char* typeName)

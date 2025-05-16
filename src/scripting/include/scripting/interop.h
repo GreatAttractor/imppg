@@ -29,6 +29,8 @@ File description:
 #include "image/image.h"
 #include "scripting/script_exceptions.h"
 
+#include <wx/msgqueue.h>
+
 #include <filesystem>
 #include <future>
 #include <memory>
@@ -114,6 +116,9 @@ using FunctionCallResult = std::variant<
     call_result::Error
 >;
 
+/// Notifies about function still running (by sending `std::nullopt`) or its completion.
+using Heartbeat = wxMessageQueue<std::optional<FunctionCallResult>>;
+
 /// Payload of messages sent by script runner's worker thread to parent.
 ///
 /// Using `std::shared_ptr` for `m_Completion` is required due to `wxThreadEvent`'s needs.
@@ -125,23 +130,31 @@ public:
     : m_Contents(contents::None{})
     {}
 
-    ScriptMessagePayload(MessageContents&& contents, std::shared_ptr<std::promise<FunctionCallResult>> completion = {})
-    : m_Contents(std::move(contents)), m_Completion(std::move(completion))
+    ScriptMessagePayload(MessageContents&& contents, std::shared_ptr<Heartbeat> heartbeat = {})
+    : m_Contents(std::move(contents)), m_Heartbeat(std::move(heartbeat))
     {}
 
     const MessageContents& GetContents() const { return m_Contents; }
 
+    std::shared_ptr<Heartbeat> GetHeartbeat() const { return m_Heartbeat; }
+
+    void SignalOperationInProgress()
+    {
+        if (!m_Heartbeat) { throw std::logic_error{"no heartbeat associated with this message payload"}; }
+        m_Heartbeat->Post(std::nullopt);
+    }
+
     void SignalCompletion(FunctionCallResult&& result)
     {
-        if (!m_Completion) { throw std::logic_error{"no completion associated with this message payload"}; }
-        m_Completion->set_value(std::move(result));
+        if (!m_Heartbeat) { throw std::logic_error{"no heartbeat associated with this message payload"}; }
+        m_Heartbeat->Post(std::move(result));
     }
 
 private:
     MessageContents m_Contents;
 
     /// Unused for certain kinds of `MessageContents`.
-    std::shared_ptr<std::promise<FunctionCallResult>> m_Completion;
+    std::shared_ptr<Heartbeat> m_Heartbeat;
 };
 
 }
