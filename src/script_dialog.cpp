@@ -282,6 +282,10 @@ void c_ScriptDialog::OnRunnerMessage(wxThreadEvent& event)
             m_Progress->SetValue(100 * contents.fraction);
         },
 
+        [&](const contents::PrintMessage& contents) {
+            m_Console->AppendText(contents.message + "\n");
+        },
+
         [&](const auto& contents) {
             // We need to make copies first, because in `StartProcessing` invocation we also move from `payload`,
             // and function argument evaluation order is unspecified.

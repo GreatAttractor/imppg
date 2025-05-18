@@ -229,6 +229,15 @@ const luaL_Reg functions[] = {
         return 0;
     }},
 
+    {"print", [](lua_State* lua) -> int {
+        if (scripting::g_State->CheckStopRequested(lua)) { return 0; }
+
+        CheckNumArgs(lua, "print", 1);
+        std::string message = GetString(lua, 1);
+        scripting::g_State->SendMessage(scripting::contents::PrintMessage{std::move(message)});
+        return 0;
+    }},
+
     {nullptr, nullptr} // end-of-data marker
 };
 

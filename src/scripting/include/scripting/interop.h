@@ -52,6 +52,7 @@ struct NotifyNumber { double number; };
 struct NotifySettings { ProcessingSettings settings; };
 struct NotifyString { std::string s; bool ordered; };
 struct Progress { double fraction; };
+struct PrintMessage { std::string message; };
 
 struct AlignRGB
 {
@@ -100,6 +101,7 @@ using MessageContents = std::variant<
     contents::ProcessImage,
     contents::ProcessImageFile,
     contents::Progress,
+    contents::PrintMessage,
     contents::ScriptFinished
 >;
 

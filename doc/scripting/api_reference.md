@@ -138,6 +138,27 @@
   end
   ```
 
+- `print`
+
+  Prints a message in the "Run script" dialog's console.
+
+  *Parameters:*
+  - message (string)
+
+  ----
+  *Example*
+  ```Lua
+  settings = imppg.load_settings("/path/to/settings.xml")
+  files, num_files = imppg.filesystem.list_files_sorted("/path/to/stack*.tif")
+  for index, file in ipairs(files) do
+      imppg.print(string.format("Processing file %s.", file))
+      image = imppg.load_image(file)
+      processed_image = imppg.process_image(image, settings)
+      processed_image:save(string.format("/path/to/processed/output_%02d.png", index), imppg.PNG_8)
+      imppg.progress(index / num_files)
+  end
+  ```
+
 - `align_images`
 
   Aligns an image sequence (e.g., to create a time-lapse animation).
