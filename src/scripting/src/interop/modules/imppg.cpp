@@ -1,3 +1,26 @@
+/*
+ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
+Copyright (C) 2022-2025 Filip Szczerek <ga.software@yahoo.com>
+
+This file is part of ImPPG.
+
+ImPPG is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+ImPPG is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with ImPPG.  If not, see <http://www.gnu.org/licenses/>.
+
+File description:
+    Lua API functions and constants.
+*/
+
 #include "alignment/align_proc.h"
 #include "common/formats.h"
 #include "interop/classes/DummyObject1.h"
@@ -131,7 +154,7 @@ const luaL_Reg functions[] = {
 
         CheckNumArgs(lua, "progress", 1);
         const double fraction = GetNumber(lua, 1);
-        scripting::g_State->SendMessage(scripting::contents::Progress{fraction});
+        scripting::g_State->Sender().lock()->SendMessage(scripting::contents::Progress{fraction});
         return 0;
     }},
 
@@ -208,13 +231,19 @@ const luaL_Reg functions[] = {
             : std::optional<std::string>{GetString(lua, 6)};
 
         CheckType(lua, 7, LUA_TFUNCTION, true);
-        const auto progressCallback = lua_isnil(lua, 7)
-            ? std::function<void(double)>{}
-            : [lua](double value) {
-                lua_pushvalue(lua, 7);
-                lua_pushnumber(lua, value);
-                lua_call(lua, 1, 0);
-            };
+        if (!lua_isnil(lua, 7))
+        {
+            scripting::g_State->Sender().lock()->SendMessage(scripting::contents::Warning{
+                "custom progress callback for `align_images` is currently unsupported"
+            });
+        }
+
+        const auto progressCallback = [senderWeak = scripting::g_State->Sender()](double value) {
+            if (const auto sender = senderWeak.lock())
+            {
+                sender->SendMessage(scripting::contents::Progress{value});
+            }
+        };
 
         scripting::g_State->CallFunctionAndAwaitCompletion(scripting::contents::AlignImages{
             std::move(inputFiles),
@@ -234,7 +263,7 @@ const luaL_Reg functions[] = {
 
         CheckNumArgs(lua, "print", 1);
         std::string message = GetString(lua, 1);
-        scripting::g_State->SendMessage(scripting::contents::PrintMessage{std::move(message)});
+        scripting::g_State->Sender().lock()->SendMessage(scripting::contents::PrintMessage{std::move(message)});
         return 0;
     }},
 

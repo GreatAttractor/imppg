@@ -170,12 +170,12 @@
   - subpixel alignment (Boolean)
   - output directory
   - output file name suffix (can be `nil`)
-  - progress callback (can be `nil`); a function taking a number (0 to 1) as a parameter
+  - progress callback (can be `nil`); a function taking a number (0 to 1) as a parameter; *note:* currently ignored,
+    the alignment progress is reflected directly in the progress bar
 
   ----
   *Examples*
 
-  Using `imppg.progress` directly as the progress callback:
   ```Lua
   imppg.align_images(
       imppg.filesystem.list_files_sorted("/images/frame*.png"),
@@ -184,51 +184,10 @@
       true,
       "/images/aligned",
       nil,
-      imppg.progress
+      nil
   )
   ```
 
-  Using a custom progress callback, in case the script consists of multiple stages:
-  ```Lua
-  function my_progress(value)
-      imppg.progress((stage - 1 + value) / num_stages)
-  end
-
-  num_stages = 3
-
-  stage = 1
-  imppg.align_images(
-      imppg.filesystem.list_files_sorted("/part1/frame*.png"),
-      imppg.STANDARD,
-      imppg.CROP,
-      true,
-      "/part1/aligned",
-      nil,
-      my_progress
-  )
-
-  stage = 2
-  imppg.align_images(
-      imppg.filesystem.list_files_sorted("/part2/frame*.png"),
-      imppg.STANDARD,
-      imppg.CROP,
-      true,
-      "/part2/aligned",
-      nil,
-      my_progress
-  )
-
-  stage = 3
-  imppg.align_images(
-      imppg.filesystem.list_files_sorted("/part3/frame*.png"),
-      imppg.STANDARD,
-      imppg.CROP,
-      true,
-      "/part3/aligned",
-      nil,
-      my_progress
-  )
-  ```
 
 ### Module `imppg.filesystem`
 

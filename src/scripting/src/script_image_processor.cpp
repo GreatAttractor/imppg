@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2022 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2022-2025 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -342,6 +342,16 @@ void ScriptImageProcessor::OnAlignRGB(const contents::AlignRGB& call, Completion
 
     m_AlignmentWorker = std::make_unique<c_ImageAlignmentWorkerThread>(*m_AlignmentEvtHandler, std::move(alignParams));
     m_AlignmentWorker->Run();
+}
+
+void ScriptImageProcessor::AbortProcessing()
+{
+    m_Processor->AbortProcessing();
+    if (m_AlignmentWorker && m_AlignmentWorker->IsRunning())
+    {
+        m_AlignmentWorker->AbortProcessing();
+        m_AlignmentWorker->Wait();
+    }
 }
 
 }

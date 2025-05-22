@@ -1,3 +1,26 @@
+/*
+ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
+Copyright (C) 2022-2025 Filip Szczerek <ga.software@yahoo.com>
+
+This file is part of ImPPG.
+
+ImPPG is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+ImPPG is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with ImPPG.  If not, see <http://www.gnu.org/licenses/>.
+
+File description:
+    Script state definitions.
+*/
+
 #include "scripting/interop.h"
 #include "interop/state.h"
 
@@ -19,7 +42,6 @@ bool State::CheckStopRequested(lua_State* lua)
         lua_getglobal(lua, "error");
         lua_pushstring(lua, _("script interrupted by user").ToStdString().c_str());
         lua_call(lua, 1, 0);
-
         return true;
     }
     else
@@ -28,11 +50,11 @@ bool State::CheckStopRequested(lua_State* lua)
     }
 }
 
-void State::SendMessage(MessageContents&& message)
+void MessageSender::SendMessage(MessageContents&& message)
 {
     auto* event = new wxThreadEvent(wxEVT_THREAD);
     event->SetPayload(ScriptMessagePayload{std::move(message)});
-    m_Parent.QueueEvent(event);
+    m_EvtHandler.QueueEvent(event);
 }
 
 FunctionCallResult State::CallFunctionAndAwaitCompletion(MessageContents&& functionCall)
@@ -45,7 +67,13 @@ FunctionCallResult State::CallFunctionAndAwaitCompletion(MessageContents&& funct
     std::optional<FunctionCallResult> result;
     while (true)
     {
-        if (wxMSGQUEUE_TIMEOUT == heartbeat->ReceiveTimeout(10'000, result))
+        if (CheckStopRequested(m_Lua))
+        {
+            // TODO Do sth more elegant (e.g., add and use `FunctionCallResult::Aborted`).
+            throw ScriptExecutionError{"aborted by user"};
+        }
+
+        if (wxMSGQUEUE_TIMEOUT == heartbeat->ReceiveTimeout(/*10'000*/999'999, result))
         {
             throw ScriptExecutionError{"timed out waiting for command completion"};
         }

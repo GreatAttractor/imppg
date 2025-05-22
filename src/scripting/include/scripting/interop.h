@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2022 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2022-2025 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -44,7 +44,8 @@ namespace contents
 {
 struct None {};
 struct ScriptFinished {};
-struct Error{ std::string message; };
+struct Error { std::string message; };
+struct Warning { std::string message; };
 struct NotifyBoolean { bool value; };
 struct NotifyImage { std::shared_ptr<const c_Image> image; };
 struct NotifyInteger { int value; };
@@ -91,6 +92,7 @@ using MessageContents = std::variant<
     contents::AlignImages,
     contents::AlignRGB,
     contents::Error,
+    contents::Warning,
     contents::None,
     contents::NotifyBoolean,
     contents::NotifyImage,

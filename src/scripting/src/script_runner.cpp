@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2022 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2022-2025 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -22,12 +22,12 @@ File description:
 */
 
 #include "interop/interop_impl.h"
+#include "interop/state.h"
 #include "scripting/script_exceptions.h"
 #include "scripting/interop.h"
 #include "scripting/script_runner.h"
 
 #include <array>
-#include <iostream> //TESTING ############
 #include <lua.hpp>
 #include <thread>
 #include <sstream>
@@ -107,9 +107,6 @@ wxThread::ExitCode ScriptRunner::Entry()
         auto readerState = StreamReaderState{std::move(m_Script)};
         CHECKED_CALL(lua_load(lua, &StreamReader, &readerState, "script", nullptr));
         lua_call(lua, 0, 0);
-
-        lua_close(lua);
-        scripting::Finish();
     }
     catch (const std::exception& exc)
     {
@@ -117,6 +114,9 @@ wxThread::ExitCode ScriptRunner::Entry()
         event->SetPayload(ScriptMessagePayload{contents::Error{exc.what()}});
         m_Parent.QueueEvent(event);
     }
+
+    lua_close(lua);
+    scripting::Finish();
 
     auto* event = new wxThreadEvent(wxEVT_THREAD);
     event->SetPayload(ScriptMessagePayload{contents::ScriptFinished{}});

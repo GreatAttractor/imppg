@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2022 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2022-2025 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -156,7 +156,7 @@ public:
 
 void Prepare(lua_State* lua, wxEvtHandler& parent, std::future<void>&& stopRequested)
 {
-    g_State = std::make_unique<State>(parent, std::move(stopRequested));
+    g_State = std::make_unique<State>(lua, parent, std::move(stopRequested));
 
     BEGIN_MODULE("imppg", scripting::modules::imppg);
         BEGIN_SUBMODULE("filesystem", scripting::modules::imppg::filesystem);

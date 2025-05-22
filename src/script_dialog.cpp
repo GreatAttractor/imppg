@@ -1,6 +1,6 @@
 /*
 ImPPG (Image Post-Processor) - common operations for astronomical stacks and other images
-Copyright (C) 2022 Filip Szczerek <ga.software@yahoo.com>
+Copyright (C) 2022-2025 Filip Szczerek <ga.software@yahoo.com>
 
 This file is part of ImPPG.
 
@@ -264,6 +264,11 @@ void c_ScriptDialog::OnRunnerMessage(wxThreadEvent& event)
 
         [&](const contents::Error& contents) {
             m_Console->AppendText(_("Script execution error:") + " " + contents.message + ".\n");
+            m_Processor->AbortProcessing();
+        },
+
+        [&](const contents::Warning& contents) {
+            m_Console->AppendText(_("Warning:") + " " + contents.message + ".\n");
         },
 
         [&](const contents::ScriptFinished&) {
