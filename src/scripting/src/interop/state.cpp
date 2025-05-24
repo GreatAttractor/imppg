@@ -52,9 +52,18 @@ bool State::CheckStopRequested(lua_State* lua)
 
 void MessageSender::SendMessage(MessageContents&& message)
 {
+    std::shared_lock lock(m_Valid.guard);
+    if (!m_Valid.valid) { return; }
+
     auto* event = new wxThreadEvent(wxEVT_THREAD);
     event->SetPayload(ScriptMessagePayload{std::move(message)});
     m_EvtHandler.QueueEvent(event);
+}
+
+void MessageSender::Invalidate()
+{
+    std::unique_lock lock(m_Valid.guard);
+    m_Valid.valid = false;
 }
 
 FunctionCallResult State::CallFunctionAndAwaitCompletion(MessageContents&& functionCall)

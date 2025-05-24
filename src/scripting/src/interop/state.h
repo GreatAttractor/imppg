@@ -28,6 +28,7 @@ File description:
 #include <lua.hpp>
 #include <future>
 #include <memory>
+#include <shared_mutex>
 #include <string>
 #include <typeinfo>
 #include <unordered_map>
@@ -47,7 +48,14 @@ public:
 private:
     MessageSender(wxEvtHandler& handler): m_EvtHandler(handler) {}
 
+    void Invalidate();
+
     wxEvtHandler& m_EvtHandler;
+    struct
+    {
+        std::shared_mutex guard;
+        bool valid{true};
+    } m_Valid{};
 
     friend class State;
 };
@@ -63,8 +71,9 @@ public:
     , m_MsgSender{std::shared_ptr<MessageSender>(new MessageSender(m_Parent))}
     {}
 
+    ~State() { m_MsgSender->Invalidate(); }
+
     std::weak_ptr<MessageSender> Sender() const { return m_MsgSender; }
-    //void SendMessage(MessageContents&& message);
 
     /// If the result is `Error`, throws automatically.
     FunctionCallResult CallFunctionAndAwaitCompletion(MessageContents&& functionCall);
