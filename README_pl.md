@@ -421,6 +421,8 @@ ImPPG obsługuje wielojęzyczny interfejs użytkownika poprzez wbudowane funkcje
 
 - dopisanie języka do tablic w `c_MainWindow::SelectLanguage()` (`main_window.cpp`)
 
+- dopisanie odpowiedniej komendy `install(FILES lang...` w głównym pliku `CMakeLists.txt`
+
 Dystrybucja binarna ImPPG potrzebuje jedynie plików MO (binarnych). Oprócz pliku(ów) `imppg.mo` potrzebny jest również plik językowy wxWidgets (z napisami takimi jak standardowe pozycje menu, np. „Otwórz”, etykiety elementów kontrolnych, np. „Przeglądaj” itd.). Pliki te znajdują się w katalogu `<źródła_wxWidgets>/locale`. Pod Windows plik `<język>.mo` z wxWidgets musi być dostępny jako `<katalog_imppg>/<język>/wxstd3.mo`. W przypadku systemów operacyjnych, które przechowują pliki językowe MO w jednym miejscu (np. Linux), wystarczy posiadać instalację wxWidgets.
 
 
@@ -429,6 +431,7 @@ Dystrybucja binarna ImPPG potrzebuje jedynie plików MO (binarnych). Oprócz pli
 
 Tłumaczenie na jęz. rosyjski i ukraiński: Rusłan Pazenko.
 Tłumaczenie na jęz. niemiecki: Marcel Hoffmann.
+Tłumaczenie na jęz. włoski: Carlo Moisè.
 
 
 ----------------------------------------

@@ -428,6 +428,8 @@ $ msgfmt imppg.po -o imppg.mo
 
 - adding the language to the arrays inside `c_MainWindow::SelectLanguage()` (`main_window.cpp`)
 
+- adding a `install(FILES lang...` entry in the top-level `CMakeLists.txt`
+
 Binary distribution of ImPPG needs only the MO (binary) language files. Beside the `imppg.mo` file(s), also the wxWidgets translation is needed (for strings like standard menu items, e.g. “Open”; control captions, e.g. “Browse” etc.). Those can be found in `<wxWidgets_source_root>/locale`. On Windows, the wxWidgets file `<language>.mo` has to be available as `<imppg_root_folder>/<language>/wxstd3.mo`. On operating systems with a common location for all `.mo` files (e.g., Linux), it is sufficient to have a wxWidgets installation.
 
 
@@ -436,6 +438,7 @@ Binary distribution of ImPPG needs only the MO (binary) language files. Beside t
 
 Russian and Ukrainian translations: Rusłan Pazenko.
 German translation: Marcel Hoffmann.
+Italian translation: Carlo Moisè.
 
 
 ----------------------------------------
