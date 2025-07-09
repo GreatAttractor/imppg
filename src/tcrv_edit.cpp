@@ -62,7 +62,7 @@ const int BORDER = 5; ///< Border size (in pixels) between controls
 
 /// Minimum grabbing distance of mouse cursor from a curve control point.
 /** Distance is expressed as a percentage of max(width, height) of the curve view area. */
-const int MIN_GRAB_DIST = 5;
+const int MIN_GRAB_DIST = 2;
 
 void c_ToneCurveEditor::OnStretch(wxCommandEvent&)
 {
