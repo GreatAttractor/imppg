@@ -43,6 +43,8 @@ wxDECLARE_EVENT(EVT_TONE_CURVE, wxCommandEvent);
 class c_ToneCurveEditor: public wxPanel, IDelayedAction
 {
 private:
+    enum class CanAddPointSide { Left, Right };
+
     // Event handlers ----------------------------
     void OnPaintCurveArea(wxPaintEvent& event);
     void OnCurveAreaLeftDown(wxMouseEvent& event);
@@ -90,6 +92,8 @@ private:
     void SignalToneCurveUpdate();
 
     float CorrectLogicalXPosition(std::size_t pointIdx, float x);
+
+    std::optional<CanAddPointSide> CanAddPoint(float x);
 
     wxPanel* m_CurveArea{nullptr};
     c_ToneCurve* m_Curve{nullptr};

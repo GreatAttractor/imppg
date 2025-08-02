@@ -1,6 +1,7 @@
 add_executable(common_tests
-    processing_settings_tests.cpp
     main.cpp
+    processing_settings_tests.cpp
+    tone_curve_tests.cpp
 )
 
 set_compiler_options(common_tests)

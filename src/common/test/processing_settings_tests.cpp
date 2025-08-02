@@ -67,3 +67,91 @@ R"(<?xml version="1.0" encoding="UTF-8"?>
     BOOST_REQUIRE(parsed.has_value());
     BOOST_REQUIRE(*parsed == expected);
 }
+
+BOOST_AUTO_TEST_CASE(GivenInvalidToneCurveWithRepeatedInitialPoints_PointsAreMergedAndLoadSucceeds)
+{
+    const char* xml =
+R"(<?xml version="1.0" encoding="UTF-8"?>
+<imppg>
+    <lucy-richardson sigma="1.5000" iterations="50" deringing="false"/>
+    <unsharp_mask_list>
+        <unsharp_mask adaptive="false" sigma="1.0" amount_min="1.0000" amount_max="1.0" amount_threshold="0.0100" amount_width="0.1000"/>
+    </unsharp_mask_list>
+    <tone_curve smooth="true" is_gamma="false">0.0000;0.0000;0.5;0.1;0.5;0.2;0.5;0.3;1,0000;1,0000;</tone_curve>
+    <normalization enabled="false" min="0.0" max="0.0"/>
+</imppg>
+    )";
+
+    wxStringInputStream sIn(xml);
+    const auto parsed = DeserializeSettings(sIn);
+    BOOST_REQUIRE(parsed.has_value());
+
+    BOOST_REQUIRE_EQUAL(3, parsed->toneCurve.GetNumPoints());
+    BOOST_REQUIRE_CLOSE(0.5,  parsed->toneCurve.GetPoint(1).x, 1.0e-5);
+    BOOST_REQUIRE_CLOSE((0.1 + 0.2 + 0.3) / 3,  parsed->toneCurve.GetPoint(1).y, 1.0e-5);
+}
+
+BOOST_AUTO_TEST_CASE(GivenInvalidToneCurveWithRepeatedMiddlePoints_PointsAreMergedAndLoadSucceeds)
+{
+    const char* xml =
+R"(<?xml version="1.0" encoding="UTF-8"?>
+<imppg>
+    <lucy-richardson sigma="1.5000" iterations="50" deringing="false"/>
+    <unsharp_mask_list>
+        <unsharp_mask adaptive="false" sigma="1.0" amount_min="1.0000" amount_max="1.0" amount_threshold="0.0100" amount_width="0.1000"/>
+    </unsharp_mask_list>
+    <tone_curve smooth="true" is_gamma="false">0.0000;0.0000;0.5;0.1;0.5;0.2;0.5;0.3;1,0000;1,0000;</tone_curve>
+    <normalization enabled="false" min="0.0" max="0.0"/>
+</imppg>
+    )";
+
+    wxStringInputStream sIn(xml);
+    const auto parsed = DeserializeSettings(sIn);
+    BOOST_REQUIRE(parsed.has_value());
+
+    BOOST_REQUIRE_EQUAL(3, parsed->toneCurve.GetNumPoints());
+    BOOST_REQUIRE_CLOSE(0.5,  parsed->toneCurve.GetPoint(1).x, 1.0e-5);
+    BOOST_REQUIRE_CLOSE((0.1 + 0.2 + 0.3) / 3,  parsed->toneCurve.GetPoint(1).y, 1.0e-5);
+}
+
+BOOST_AUTO_TEST_CASE(GivenInvalidToneCurveWithRepeatedFinalPoints_PointsAreMergedAndLoadSucceeds)
+{
+    const char* xml =
+R"(<?xml version="1.0" encoding="UTF-8"?>
+<imppg>
+    <lucy-richardson sigma="1.5000" iterations="50" deringing="false"/>
+    <unsharp_mask_list>
+        <unsharp_mask adaptive="false" sigma="1.0" amount_min="1.0000" amount_max="1.0" amount_threshold="0.0100" amount_width="0.1000"/>
+    </unsharp_mask_list>
+    <tone_curve smooth="true" is_gamma="false">0.0000;0.0000;0.5;0.1;0.5;0.2;0.5;0.3;1,0000;1,0000;</tone_curve>
+    <normalization enabled="false" min="0.0" max="0.0"/>
+</imppg>
+    )";
+
+    wxStringInputStream sIn(xml);
+    const auto parsed = DeserializeSettings(sIn);
+    BOOST_REQUIRE(parsed.has_value());
+
+    BOOST_REQUIRE_EQUAL(3, parsed->toneCurve.GetNumPoints());
+    BOOST_REQUIRE_CLOSE(0.5,  parsed->toneCurve.GetPoint(1).x, 1.0e-5);
+    BOOST_REQUIRE_CLOSE((0.1 + 0.2 + 0.3) / 3,  parsed->toneCurve.GetPoint(1).y, 1.0e-5);
+}
+
+BOOST_AUTO_TEST_CASE(GivenInvalidToneCurveWithOnlyTwoRepeatedPoints_LoadFails)
+{
+    const char* xml =
+R"(<?xml version="1.0" encoding="UTF-8"?>
+<imppg>
+    <lucy-richardson sigma="1.5000" iterations="50" deringing="false"/>
+    <unsharp_mask_list>
+        <unsharp_mask adaptive="false" sigma="1.0" amount_min="1.0000" amount_max="1.0" amount_threshold="0.0100" amount_width="0.1000"/>
+    </unsharp_mask_list>
+    <tone_curve smooth="true" is_gamma="false">0.0;0.0;0.0;0.0;</tone_curve>
+    <normalization enabled="false" min="0.0" max="0.0"/>
+</imppg>
+    )";
+
+    wxStringInputStream sIn(xml);
+    const auto parsed = DeserializeSettings(sIn);
+    BOOST_REQUIRE(!parsed.has_value());
+}

@@ -33,7 +33,7 @@ namespace
 {
 
 const int XML_INDENT = 4;
-const unsigned FLOAT_PREC = 4;
+const unsigned FLOAT_PREC = 5;
 
 /// Names of XML elements in a settings file
 namespace XmlName
@@ -267,16 +267,63 @@ bool ParseToneCurveSettings(const wxXmlNode* node, c_ToneCurve& tcurve)
     }
 
     tcurve.ClearPoints();
-    float lastX = -1.0;
+    std::optional<float> lastX;
+
+    // deals with points with repeated X values (may be present in some settings files saved in older buggy versions);
+    // they will be reduced to one point with averaged Y value
+    struct
+    {
+        double x{0.0};
+        std::size_t count{0};
+        double ySum{0.0};
+
+        void AddPoint(float y)
+        {
+            count += 1;
+            ySum += y;
+        }
+
+        float GetY() const
+        {
+            return static_cast<float>(ySum / count);
+        }
+
+        void Reset(float newX)
+        {
+            x = newX;
+            count = 0;
+            ySum = 0.0;
+        }
+    } accumulator;
+
     for (size_t i = 0; i < points_xy.size(); i += 2)
     {
         const auto x = points_xy[i];
         const auto y = points_xy[i + 1];
-        if (x < 0.0 || x > 1.0 || y < 0.0 || y > 1.0 || x <= lastX) { return false; }
+        if (x < 0.0 || x > 1.0 || y < 0.0 || y > 1.0 || lastX.has_value() && x < *lastX) { return false; }
 
-        tcurve.AddPoint(x, y);
+        if (lastX.has_value() && x > *lastX)
+        {
+            tcurve.AddPoint(accumulator.x, accumulator.GetY());
+            accumulator.Reset(x);
+            accumulator.AddPoint(y);
+            lastX = x;
+        }
+        else if (lastX.has_value() && x == *lastX)
+        {
+            accumulator.AddPoint(y);
+        }
+        else if (!lastX.has_value())
+        {
+            accumulator.Reset(x);
+            accumulator.AddPoint(y);
+            lastX = x;
+        }
+    }
 
-        lastX = x;
+    if (accumulator.count > 0)
+    {
+        tcurve.AddPoint(accumulator.x, accumulator.GetY());
     }
 
     if (tcurve.GetNumPoints() < 2)

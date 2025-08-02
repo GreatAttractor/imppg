@@ -364,3 +364,53 @@ bool c_ToneCurve::IsIdentity() const
 
     return isFrom0To1 && (!m_IsGamma || m_Gamma == 1.0f);
 }
+
+std::pair<float, float> c_ToneCurve::GetNeighbors(float x)
+{
+    const auto numPoints = m_Points.size();
+    IMPPG_ASSERT(numPoints >= 2);
+
+    if (0.0f == x)
+    {
+        if (m_Points.at(0).x == 0) { return {0.0f, m_Points.at(1).x}; }
+        else { return {0.0f, m_Points.at(0).x}; }
+    }
+
+    if (1.0f == x)
+    {
+        if (m_Points.at(numPoints - 1).x == 1.0f) { return {m_Points.at(numPoints - 2).x, 1.0f}; }
+        else { return {m_Points.at(numPoints - 1).x, 1.0f}; }
+    }
+
+    if (x < m_Points.at(0).x)
+    {
+        return {0.0f, m_Points.at(0).x};
+    }
+
+    if (x >= m_Points.at(numPoints - 1).x)
+    {
+        return {m_Points.at(numPoints - 1).x, 1.0f};
+    }
+
+    for (std::size_t i = 0; i <= numPoints - 2; ++i)
+    {
+        const float left = m_Points.at(i).x;
+        const float right = m_Points.at(i + 1).x;
+        if (left <= x && x < right)
+        {
+            return {left, right};
+        }
+    }
+
+    IMPPG_ABORT_MSG("failed to determine neighbors");
+}
+
+bool c_ToneCurve::HasPointAt(float x) const
+{
+    for (const auto& point: m_Points)
+    {
+        if (point.x == x) { return true; }
+    }
+
+    return false;
+}

@@ -64,6 +64,8 @@ const int BORDER = 5; ///< Border size (in pixels) between controls
 /** Distance is expressed as a percentage of max(width, height) of the curve view area. */
 const int MIN_GRAB_DIST = 2;
 
+const double MIN_POINT_X_DIST = 1.0e-4;
+
 void c_ToneCurveEditor::OnStretch(wxCommandEvent&)
 {
     if (m_Histogram.values.size() > 0)
@@ -165,12 +167,12 @@ float c_ToneCurveEditor::CorrectLogicalXPosition(std::size_t pointIdx, float x)
 {
     if (pointIdx > 0 && x <= m_Curve->GetPoint(pointIdx - 1).x)
     {
-        x = m_Curve->GetPoint(pointIdx - 1).x + std::numeric_limits<float>::epsilon();
+        x = m_Curve->GetPoint(pointIdx - 1).x + MIN_POINT_X_DIST;
     }
     else if (pointIdx < m_Curve->GetNumPoints() - 1 &&
         x >= m_Curve->GetPoint(pointIdx + 1).x)
     {
-        x = m_Curve->GetPoint(pointIdx + 1).x - std::numeric_limits<float>::epsilon();
+        x = m_Curve->GetPoint(pointIdx + 1).x - MIN_POINT_X_DIST;
     }
 
     return x;
@@ -234,6 +236,19 @@ void c_ToneCurveEditor::OnCurveAreaRightDown(wxMouseEvent& event)
     }
 }
 
+std::optional<c_ToneCurveEditor::CanAddPointSide> c_ToneCurveEditor::CanAddPoint(float x)
+{
+    const auto [left, right] = m_Curve->GetNeighbors(x);
+    if (right - left > 2 * MIN_POINT_X_DIST)
+    {
+        if (right > x) { return CanAddPointSide::Right; } else { return CanAddPointSide::Left; }
+    }
+    else
+    {
+        return std::nullopt;
+    }
+}
+
 void c_ToneCurveEditor::OnCurveAreaLeftDown(wxMouseEvent& event)
 {
     m_MouseOps.minx = 0.0f;
@@ -250,17 +265,27 @@ void c_ToneCurveEditor::OnCurveAreaLeftDown(wxMouseEvent& event)
         // Grab an existing point
         m_MouseOps.draggedPointIdx = pIdx;
     }
-    else
+    else if (const auto side = CanAddPoint(x))
     {
         // Create and grab a new point
-        if (x == m_Curve->GetPoint(pIdx).x)
+
+        if (m_Curve->HasPointAt(x))
         {
-            x -= std::numeric_limits<float>::epsilon();
+            switch (side.value())
+            {
+            case CanAddPointSide::Left: x -= MIN_POINT_X_DIST; break;
+            case CanAddPointSide::Right: x += MIN_POINT_X_DIST; break;
+            default: IMPPG_ABORT();
+            }
         }
 
         m_MouseOps.draggedPointIdx = m_Curve->AddPoint(x, y);
         m_CurveArea->SetCursor(wxCURSOR_SIZING);
         DeactivateGammaMode();
+    }
+    else
+    {
+        return;
     }
 
     m_MouseOps.dragging = true;

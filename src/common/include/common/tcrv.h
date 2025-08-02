@@ -26,6 +26,7 @@ File description:
 
 #include <initializer_list>
 #include <optional>
+#include <utility>
 #include <vector>
 
 #include "common/common.h"
@@ -84,6 +85,8 @@ public:
 
     /// Adds a curve point (keeps all points sorted by their 'x'); returns its index
     std::size_t AddPoint(float x, float y);
+
+    bool HasPointAt(float x) const;
 
     /// Removes the specified point. If there are only 2 points, does nothing.
     void RemovePoint(std::size_t index);
@@ -163,6 +166,9 @@ public:
             && m_IsGamma == other.m_IsGamma
             && m_Gamma == other.m_Gamma;
     }
+
+    /// Returns X coordinates of the closest curve points to the left and right of `x`.
+    std::pair<float, float> GetNeighbors(float x);
 };
 
 #endif
