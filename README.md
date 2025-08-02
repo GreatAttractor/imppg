@@ -220,6 +220,8 @@ ImPPG stores certain settings (e.g. the main window’s size and position) in an
 ----------------------------------------
 ## 10. Known problems
 
+  - Under MS Windows 11, on some machines it might be necessary to run ImPPG as administrator to be able to use OpenGL mode.
+
   - When using wxWidgets/GTK3 under Wayland, there may be a segfault when initializing OpenGL back end. As a workaround, force X11 GDK back end when running ImPPG, e.g., `GDK_BACKEND=x11 imppg`.
 
   - Starting with wxWidgets 3.1.5 on Linux, GL Canvas uses EGL by default. If the GLEW library used for building ImPPG is not built with EGL support, the call to `glewInit` will fail. Solution: either use GLEW built with EGL, or build wxWidgets adding `-DwxUSE_GLCANVAS_EGL=OFF` to its CMake invocation.
