@@ -23,8 +23,6 @@ File description:
 
 #include "alignment/align_proc.h"
 #include "common/formats.h"
-#include "interop/classes/DummyObject1.h"
-#include "interop/classes/DummyObject2.h"
 #include "interop/classes/ImageWrapper.h"
 #include "interop/classes/SettingsWrapper.h"
 #include "interop/modules/common.h"
@@ -40,17 +38,6 @@ namespace scripting::modules::imppg
 {
 
 const luaL_Reg functions[] = {
-    {"create_dummy1", [](lua_State* lua) -> int {
-        /*DummyObject1* object =*/ new(PrepareObject<DummyObject1>(lua)) DummyObject1();
-        return 1;
-    }},
-
-    {"create_dummy2", [](lua_State* lua) -> int {
-        int i = luaL_checkinteger(lua, 1);
-        new(PrepareObject<DummyObject2>(lua)) DummyObject2(i);
-        return 1;
-    }},
-
     {"new_settings", [](lua_State* lua) -> int {
         if (scripting::g_State->CheckStopRequested(lua)) { return 0; }
 

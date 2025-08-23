@@ -3,10 +3,6 @@ include(FindLua)
 add_library(scripting STATIC
     src/interop/classes/DirectoryIterator.cpp
     src/interop/classes/DirectoryIterator.h
-    src/interop/classes/DummyObject1.cpp
-    src/interop/classes/DummyObject1.h
-    src/interop/classes/DummyObject2.cpp
-    src/interop/classes/DummyObject2.h
     src/interop/classes/SettingsWrapper.cpp
     src/interop/classes/SettingsWrapper.h
     src/interop/classes/ImageWrapper.cpp

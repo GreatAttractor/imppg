@@ -24,8 +24,6 @@ File description:
 #include "interop/classes/DirectoryIterator.h"
 #include "interop/classes/ImageWrapper.h"
 #include "interop/classes/SettingsWrapper.h"
-#include "interop/classes/DummyObject1.h"
-#include "interop/classes/DummyObject2.h"
 #include "interop/modules/imppg_filesystem.h"
 #include "interop/modules/imppg_test.h"
 #include "interop/modules/imppg.h"
@@ -168,8 +166,6 @@ void Prepare(lua_State* lua, wxEvtHandler& parent, std::future<void>&& stopReque
         END_SUBMODULE();
     END_MODULE();
 
-    RegisterClass<DummyObject1>(lua);
-    RegisterClass<DummyObject2>(lua);
     RegisterClass<ImageWrapper>(lua);
     RegisterClass<SettingsWrapper>(lua);
 
