@@ -38,6 +38,11 @@ std::string ConvertFileNamePatternToRegEx(std::string_view input)
 namespace scripting
 {
 
+DirectoryIterator DirectoryIterator::Create(std::string fileNamePattern)
+{
+    return DirectoryIterator(fileNamePattern);
+}
+
 DirectoryIterator::DirectoryIterator(std::string fileNamePattern)
 {
     const auto patternPath = fs::path{fileNamePattern};

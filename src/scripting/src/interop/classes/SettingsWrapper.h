@@ -3,6 +3,7 @@
 #include "common/proc_settings.h"
 #include "interop/classes/method.h"
 
+#include <filesystem>
 #include <lua.hpp>
 #include <memory>
 #include <string>
@@ -15,7 +16,7 @@ class SettingsWrapper
 public:
     SettingsWrapper() = default;
 
-    SettingsWrapper(const std::string& path);
+    static SettingsWrapper FromPath(const std::filesystem::path& path);
 
     bool get_normalization_enabled() const;
     void normalization_enabled(bool enabled);
@@ -183,6 +184,8 @@ public:
     const ProcessingSettings& GetSettings() const;
 
 private:
+    SettingsWrapper(const std::filesystem::path& path);
+
     ProcessingSettings m_Settings{};
 };
 

@@ -51,7 +51,11 @@ const luaL_Reg functions[] = {
 
         CheckNumArgs(lua, "load_settings", 1);
         const std::string path = GetString(lua, 1);
-        new(PrepareObject<SettingsWrapper>(lua)) SettingsWrapper(path);
+
+        auto object = SettingsWrapper::FromPath(path);
+
+        new(PrepareObject<SettingsWrapper>(lua)) SettingsWrapper(std::move(object));
+
         return 1;
     }},
 
@@ -60,7 +64,8 @@ const luaL_Reg functions[] = {
 
         CheckNumArgs(lua, "load_image", 1);
         const std::string imagePath = GetString(lua, 1);
-        new(PrepareObject<ImageWrapper>(lua)) ImageWrapper(imagePath);
+        auto object = ImageWrapper::FromPath(imagePath);
+        new(PrepareObject<ImageWrapper>(lua)) ImageWrapper(std::move(object));
         return 1;
     }},
 

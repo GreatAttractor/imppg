@@ -10,6 +10,23 @@ namespace scripting
 {
 
 /// Returns pointer to be used for placement-new constructor call.
+/// NOTE: Must not be called if the subsequently called constructor may throw. In that case,
+/// the failed-construction object would destroy its members, and then they would be destroyed again
+/// via `scripting::GarbageCollectHandler` (leading to possible memory corruption.)
+///
+/// Example:
+///
+/// GOOD:
+/// ```c++
+/// auto object = MyClass::Create(param1, param2); // may throw
+/// new(PrepareObject<MyClass>(lua)) MyClass(std::move(object)); // move ctor does not throw
+/// ```
+///
+/// BAD:
+/// ```c++
+/// new(PrepareObject<MyClass>(lua)) MyClass(param1, param2); // may throw
+/// ```
+///
 template<typename T>
 void* PrepareObject(lua_State* lua)
 {

@@ -13,7 +13,8 @@ const luaL_Reg functions[] = {
     {"list_files", [](lua_State* lua) -> int {
         CheckNumArgs(lua, "list_files", 1);
         const auto fileNamePattern = scripting::GetString(lua, 1);
-        new(PrepareObject<DirectoryIterator>(lua)) DirectoryIterator(std::move(fileNamePattern));
+        auto object = DirectoryIterator::Create(std::move(fileNamePattern));
+        new(PrepareObject<DirectoryIterator>(lua)) DirectoryIterator(std::move(object));
         lua_pushcclosure(lua, [](lua_State* lua) {
             auto* object = static_cast<DirectoryIterator*>(
                 luaL_checkudata(lua, lua_upvalueindex(1), typeid(DirectoryIterator).name())
@@ -36,7 +37,7 @@ const luaL_Reg functions[] = {
         CheckNumArgs(lua, "list_files_sorted", 1);
         const auto fileNamePattern = scripting::GetString(lua, 1);
 
-        DirectoryIterator dirIter{std::move(fileNamePattern)};
+        DirectoryIterator dirIter = DirectoryIterator::Create(std::move(fileNamePattern));
 
         std::vector<std::string> files;
         while (const auto file = dirIter.Next())

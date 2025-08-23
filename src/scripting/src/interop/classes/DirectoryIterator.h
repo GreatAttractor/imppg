@@ -12,11 +12,13 @@ namespace scripting
 class DirectoryIterator
 {
 public:
-    DirectoryIterator(std::string fileNamePattern);
+    static DirectoryIterator Create(std::string fileNamePattern);
 
     std::optional<std::string> Next();
 
 private:
+    DirectoryIterator(std::string fileNamePattern);
+
     std::filesystem::directory_iterator m_DirIter;
 
     std::regex m_RegEx;

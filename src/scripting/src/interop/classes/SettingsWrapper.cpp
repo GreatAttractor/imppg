@@ -15,12 +15,17 @@ std::string blc(const T& t) { return boost::lexical_cast<std::string>(t); }
 
 }
 
-SettingsWrapper::SettingsWrapper(const std::string& path)
+SettingsWrapper SettingsWrapper::FromPath(const std::filesystem::path& path)
 {
-    const auto settings = LoadSettings(path);
+    return SettingsWrapper(path);
+}
+
+SettingsWrapper::SettingsWrapper(const std::filesystem::path& path)
+{
+    const auto settings = LoadSettings(path.native());
     if (!settings.has_value())
     {
-        throw ScriptExecutionError(wxString::Format("failed to load settings from %s", path).ToStdString());
+        throw ScriptExecutionError(wxString::Format("failed to load settings from %s", path.generic_string()).ToStdString());
     }
     m_Settings = *settings;
 }

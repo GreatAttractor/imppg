@@ -2,6 +2,7 @@
 
 #include "interop/classes/method.h"
 
+#include <filesystem>
 #include <lua.hpp>
 #include <memory>
 #include <optional>
@@ -15,7 +16,7 @@ namespace scripting
 class ImageWrapper
 {
 public:
-    ImageWrapper(const std::string& imagePath);
+    static ImageWrapper FromPath(const std::filesystem::path& imagePath);
 
     ImageWrapper(const std::shared_ptr<const c_Image>& image);
 
@@ -57,6 +58,8 @@ public:
     void multiply(double factor);
 
 private:
+    ImageWrapper(const std::filesystem::path& imagePath);
+
     std::shared_ptr<const c_Image> m_Image;
 };
 
