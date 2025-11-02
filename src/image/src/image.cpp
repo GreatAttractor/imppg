@@ -31,6 +31,20 @@ File description:
 #include <optional>
 #include <boost/format.hpp>
 
+//FIXME
+//
+// On Windows, it's unreliable to use `std::filesystem::path.string().c_str()` for file operations with libs that only
+// accept `const char*`. Instead:
+//
+// - load FITS files separately and parse using `fits_open_memfile`
+// - create FITS files in memory (how?) and save in a separate step
+// - FreeImage: use `FreeImage_LoadU` & friends (? - check that) or `*_FromMemory` funcs
+// - all paths stored as wxString
+//   - reading paths from scripts: assume UTF-8, use wxString::FromUTF8 (check success)
+//   - file dialog(s): already return wxString
+//   - file I/O using wxFileStream & friends (they do the right thing when doing low-level opening)
+
+
 #include "common/imppg_assert.h"
 #include "image/image.h"
 #if (USE_FREEIMAGE)
