@@ -292,7 +292,7 @@ c_BatchDialog::c_BatchDialog(wxWindow* parent, wxArrayString fileNames,
 
     m_FileNames = std::move(fileNames);
 
-    const auto settings = LoadSettings(settingsFileName.ToStdString());
+    const auto settings = LoadSettings(settingsFileName);
     if (!settings.has_value())
     {
         wxMessageBox(_("Could not load processing settings."), _("Error"), wxICON_ERROR, parent);

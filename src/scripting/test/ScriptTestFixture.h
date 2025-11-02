@@ -44,7 +44,7 @@ public:
 
     void CheckIntegerNotifications(std::initializer_list<int> expected) const;
 
-    const std::vector<std::string>& GetStringNotifications() const { return m_StringNotifications; }
+    const std::vector<wxString>& GetStringNotifications() const { return m_StringNotifications; }
 
 private:
     void OnIdle(wxIdleEvent& event);
@@ -56,8 +56,8 @@ private:
     std::promise<void> m_StopScript;
     std::vector<std::filesystem::path> m_TemporaryFiles;
     // value: occurrence count
-    std::unordered_map<std::string, std::size_t> m_StringNotificationsUnordered;
-    std::vector<std::string> m_StringNotifications;
+    std::unordered_map<wxString, std::size_t> m_StringNotificationsUnordered;
+    std::vector<wxString> m_StringNotifications;
     std::optional<ProcessingSettings> m_SettingsNotification;
     std::shared_ptr<const c_Image> m_ImageNotification;
     std::vector<double> m_NumberNotifications;

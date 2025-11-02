@@ -121,7 +121,7 @@ std::optional<ProcessingSettings> DeserializeSettings(wxInputStream& stream);
 bool SaveSettings(const std::string& filePath, const ProcessingSettings& settings);
 
 /// Loads the settings of Lucy-Richardson deconvolution, unsharp masking, tone curve and deringing; returns 'false' on error.
-std::optional<ProcessingSettings> LoadSettings(const std::string& filePath);
+std::optional<ProcessingSettings> LoadSettings(const wxString& filePath);
 
 /// Returns the coefficients a, b, c, d of the cubic curve defining the "amount" value
 /// for adaptive unsharp masking. The amount is a function of local brightness

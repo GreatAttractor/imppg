@@ -66,14 +66,14 @@ const std::shared_ptr<const c_Image>& ImageWrapper::GetImage() const
     return m_Image;
 }
 
-void ImageWrapper::save(const std::string& path, int outputFormat) const
+void ImageWrapper::save(const wxString& path, int outputFormat) const
 {
     if (outputFormat < 0 || outputFormat >= static_cast<int>(OutputFormat::LAST))
     {
         throw ScriptExecutionError{"invalid output format"};
     }
 
-    if (!m_Image->SaveToFile(path, static_cast<OutputFormat>(outputFormat)))
+    if (!m_Image->SaveToFile(path.ToStdWstring(), static_cast<OutputFormat>(outputFormat)))
     {
         throw ScriptExecutionError{wxString::Format(_("failed to save image as %s"), path).ToStdString()};
     }

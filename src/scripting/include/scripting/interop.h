@@ -51,9 +51,9 @@ struct NotifyImage { std::shared_ptr<const c_Image> image; };
 struct NotifyInteger { int value; };
 struct NotifyNumber { double number; };
 struct NotifySettings { ProcessingSettings settings; };
-struct NotifyString { std::string s; bool ordered; };
+struct NotifyString { wxString s; bool ordered; };
 struct Progress { double fraction; };
-struct PrintMessage { std::string message; };
+struct PrintMessage { wxString message; };
 
 struct AlignRGB
 {
@@ -63,9 +63,9 @@ struct AlignRGB
 
 struct ProcessImageFile
 {
-    std::string imagePath;
-    std::string settingsPath;
-    std::string outputImagePath;
+    std::filesystem::path imagePath;
+    std::filesystem::path settingsPath; //FIXME std::fs::path
+    std::filesystem::path outputImagePath;
     OutputFormat outputFormat;
 };
 

@@ -86,17 +86,17 @@ void ScriptImageProcessor::OnProcessImageFile(const contents::ProcessImageFile& 
     if (!loadResult)
     {
         onCompletion(call_result::Error{
-            wxString::Format(_("failed to load image from %s; %s"), call.imagePath, loadErrorMsg).ToStdString()
+            wxString::Format(_("failed to load image from %s; %s"), call.imagePath.native(), loadErrorMsg).ToStdString()
         });
         return;
     }
     c_Image image = std::move(loadResult.value());
 
-    const auto settings = LoadSettings(call.settingsPath);
+    const auto settings = LoadSettings(call.settingsPath.native());
     if (!settings.has_value())
     {
         onCompletion(call_result::Error{
-            wxString::Format(_("failed to load processing settings from %s"), call.settingsPath).ToStdString()
+            wxString::Format(_("failed to load processing settings from %s"), call.settingsPath.native()).ToStdString()
         });
         return;
     }
@@ -113,7 +113,7 @@ void ScriptImageProcessor::OnProcessImageFile(const contents::ProcessImageFile& 
                 if (!m_Processor->GetProcessedOutput().SaveToFile(outPath, outFmt))
                 {
                     onCompletion(call_result::Error{
-                        wxString::Format(_("failed to save output file %s"), outPath).ToStdString()
+                        wxString::Format(_("failed to save output file %s"), outPath.native()).ToStdString()
                     });
                 }
                 else

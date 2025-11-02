@@ -31,7 +31,7 @@ File description:
 namespace
 {
 
-void NotifyString(std::string s, bool ordered)
+void NotifyString(wxString s, bool ordered)
 {
     scripting::g_State->CallFunctionAndAwaitCompletion(scripting::contents::NotifyString{std::move(s), ordered});
 }

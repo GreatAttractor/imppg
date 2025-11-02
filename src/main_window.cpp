@@ -174,7 +174,7 @@ void c_MainWindow::LoadSettingsFromFile(wxString settingsFile, bool moveToMruLis
 {
     auto& s = m_CurrentSettings;
 
-    const auto loaded = LoadSettings(settingsFile.ToStdString());
+    const auto loaded = LoadSettings(settingsFile);
     if (!loaded.has_value())
     {
         wxMessageBox(_("Failed to load processing settings."), _("Error"), wxOK | wxCENTRE | wxICON_ERROR);

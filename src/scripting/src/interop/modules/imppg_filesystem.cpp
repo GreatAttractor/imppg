@@ -44,7 +44,7 @@ const luaL_Reg functions[] = {
             );
             if (const auto result = object->Next())
             {
-                lua_pushstring(lua, result->c_str());
+                lua_pushstring(lua, result->GetFullPath());
                 return 1;
             }
             else
@@ -62,10 +62,10 @@ const luaL_Reg functions[] = {
 
         DirectoryIterator dirIter = DirectoryIterator::Create(std::move(fileNamePattern));
 
-        std::vector<std::string> files;
+        std::vector<wxString> files;
         while (const auto file = dirIter.Next())
         {
-            files.emplace_back(std::move(file.value()));
+            files.emplace_back(file.value().GetFullPath());
         }
         std::sort(files.begin(), files.end());
 

@@ -341,7 +341,7 @@ bool SaveSettings(const std::string& filePath, const ProcessingSettings& setting
     return file.IsOk();
 }
 
-std::optional<ProcessingSettings> LoadSettings(const std::string& filePath)
+std::optional<ProcessingSettings> LoadSettings(const wxString& filePath)
 {
     wxFileInputStream stream{filePath};
     return DeserializeSettings(stream);

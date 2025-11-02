@@ -72,7 +72,7 @@ public:
 
     const std::shared_ptr<const c_Image>& GetImage() const;
 
-    void save(const std::string& path, int outputFormat) const;
+    void save(const wxString& path, int outputFormat) const;
 
     void align_rgb();
 

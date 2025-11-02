@@ -47,6 +47,8 @@ File description:
 #include <fitsio.h>
 #endif
 
+namespace fs = std::filesystem;
+
 /// Conditionally swaps a 32-bit value
 uint32_t SWAP32cnd(uint32_t x, bool swap)
 {
@@ -74,7 +76,7 @@ bool IsMachineBigEndian()
     return (ptr[0] == 0x11);
 }
 
-static std::string GetExtension(const std::string& filePath)
+static std::string GetExtension(const fs::path& filePath)
 {
     const auto extension = std::filesystem::path(filePath).extension().string();
     if (extension.size() >= 1 && extension[0] == '.')
@@ -89,7 +91,7 @@ static std::string GetExtension(const std::string& filePath)
 
 #if USE_CFITSIO
 // Only saving as mono is supported.
-static bool SaveAsFits(const IImageBuffer& buf, const std::string& fname)
+static bool SaveAsFits(const IImageBuffer& buf, const fs::path& fname)
 {
     IMPPG_ASSERT(NumChannels[static_cast<size_t>(buf.GetPixelFormat())] == 1);
 
@@ -108,7 +110,8 @@ static bool SaveAsFits(const IImageBuffer& buf, const std::string& fname)
     row_filler(buf.GetBytesPerPixel());
 
     int status = 0;
-    fits_create_file(&fptr, (std::string("!") + fname).c_str(), &status); // a leading "!" overwrites an existing file
+    fs::remove(fname);
+    fits_create_file(&fptr, fname.c_str(), &status); // a leading "!" overwrites an existing file
 
     int bitPix, datatype;
     switch (buf.GetPixelFormat())
@@ -286,7 +289,7 @@ static std::tuple<FREE_IMAGE_FORMAT, int> GetFiFormatAndFlags(OutputFileType out
     }
 }
 
-static bool SaveAsFreeImage(const IImageBuffer& buf, const std::string& fname, OutputFileType outpFileType)
+static bool SaveAsFreeImage(const IImageBuffer& buf, const fs::path& fname, OutputFileType outpFileType)
 {
 #if USE_CFITSIO
     IMPPG_ASSERT(outpFileType != OutputFileType::FITS);
@@ -443,7 +446,7 @@ public:
     }
 
 private:
-    bool SaveToFile(const std::string& fname, OutputFileType outpFileType) const override
+    bool SaveToFile(const std::filesystem::path& fname, OutputFileType outpFileType) const override
     {
 #if USE_CFITSIO
         if (outpFileType == OutputFileType::FITS)
@@ -466,7 +469,7 @@ private:
 };
 
 #if USE_FREEIMAGE
-bool c_FreeImageBuffer::SaveToFile(const std::string& fname, OutputFileType outpFileType) const
+bool c_FreeImageBuffer::SaveToFile(const std::filesystem::path& fname, OutputFileType outpFileType) const
 {
 #if USE_CFITSIO
     if (outpFileType == OutputFileType::FITS)
@@ -1237,7 +1240,7 @@ void NormalizeFpImage(c_Image& img, float minLevel, float maxLevel)
 }
 
 #if USE_CFITSIO
-std::optional<c_Image> LoadFitsImage(const std::string& fname, bool normalize)
+std::optional<c_Image> LoadFitsImage(const fs::path& fname, bool normalize)
 {
     fitsfile* fptr{nullptr};
     int status = 0;
@@ -1373,7 +1376,7 @@ std::optional<c_Image> LoadFitsImage(const std::string& fname, bool normalize)
 #endif
 
 std::optional<c_Image> LoadImage(
-    const std::string& fname,
+    const fs::path& fname,
     std::optional<PixelFormat> destFmt, ///< Pixel format to convert to; can be one of PIX_MONO8, PIX_MONO32F.
     std::string* errorMsg, ///< If not null, may receive an error message (if any).
     /// If true, floating-points values read from a FITS file are normalized, so that the highest becomes 1.0.
@@ -1465,7 +1468,7 @@ std::optional<c_Image> LoadImage(
 }
 
 std::optional<c_Image> LoadImageFileAs32f(
-    const std::string& fname,
+    const fs::path& fname,
     bool normalizeFITSvalues,
     std::string* errorMsg
 )
@@ -1484,7 +1487,7 @@ std::optional<c_Image> LoadImageFileAs32f(
 }
 
 std::optional<c_Image> LoadImageFileAsMono32f(
-    const std::string& fname,
+    const fs::path& fname,
     bool normalizeFITSvalues,
     std::string* errorMsg
 )
@@ -1493,7 +1496,7 @@ std::optional<c_Image> LoadImageFileAsMono32f(
 }
 
 std::optional<c_Image> LoadImageFileAsMono8(
-    const std::string& fname,
+    const fs::path& fname,
     bool normalizeFITSvalues,
     std::string* errorMsg
 )
@@ -1517,7 +1520,7 @@ void c_Image::Multiply(const c_Image& mult)
 }
 
 /// Returns 'true' if image's width and height were successfully read; returns 'false' on error
-std::optional<std::tuple<unsigned, unsigned>> GetImageSize(const std::string& fname)
+std::optional<std::tuple<unsigned, unsigned>> GetImageSize(const fs::path& fname)
 {
     const auto extension = GetExtension(fname);
 #if USE_CFITSIO
@@ -1621,7 +1624,7 @@ static PixelFormat GetOutputPixelFormat(PixelFormat srcFmt, OutputBitDepth outpB
     return srcFmt; // never happens
 }
 
-bool c_Image::SaveToFile(const std::string& fname, OutputBitDepth outpBitDepth, OutputFileType outpFileType) const
+bool c_Image::SaveToFile(const fs::path& fname, OutputBitDepth outpBitDepth, OutputFileType outpFileType) const
 {
     IMPPG_ASSERT(m_Buffer->GetPixelFormat() != PixelFormat::PIX_PAL8);
 
@@ -1661,7 +1664,7 @@ static std::tuple<OutputBitDepth, OutputFileType> DecodeOutputFormat(OutputForma
     }
 }
 
-bool c_Image::SaveToFile(const std::string& fname, OutputFormat outpFormat) const
+bool c_Image::SaveToFile(const fs::path& fname, OutputFormat outpFormat) const
 {
     IMPPG_ASSERT(m_Buffer->GetPixelFormat() != PixelFormat::PIX_PAL8);
 

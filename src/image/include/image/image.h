@@ -26,6 +26,7 @@ File description:
 
 #include <array>
 #include <cstdint>
+#include <filesystem>
 #include <memory>
 #include <optional>
 #include <string>
@@ -138,7 +139,7 @@ public:
     virtual ~IImageBuffer() = default;
 
 private:
-    virtual bool SaveToFile(const std::string& fname, OutputFileType outFileType) const = 0;
+    virtual bool SaveToFile(const std::filesystem::path& fname, OutputFileType outFileType) const = 0;
 
     friend class c_Image;
 };
@@ -222,13 +223,13 @@ public:
     void Multiply(const c_Image& mult);
 
     bool SaveToFile(
-        const std::string& fname, ///< Full destination path
+        const std::filesystem::path& fname,
         OutputBitDepth outpBitDepth,
         OutputFileType outpFileType
     ) const;
 
     bool SaveToFile(
-        const std::string& fname, ///< Full destination path
+        const std::filesystem::path& fname,
         OutputFormat outpFormat
     ) const;
 
@@ -376,7 +377,7 @@ public:
     std::unique_ptr<IImageBuffer> GetCopy() const override { IMPPG_ABORT(); }
 
 private:
-    bool SaveToFile(const std::string& fname, OutputFileType outFileType) const override;
+    bool SaveToFile(const std::filesystem::path& fname, OutputFileType outFileType) const override;
 };
 #endif // USE_FREEIMAGE
 
@@ -384,28 +385,28 @@ void NormalizeFpImage(c_Image& img, float minLevel, float maxLevel);
 
 /// Loads image and converts it to PIX_MONO32F or PIX_RGB32F.
 std::optional<c_Image> LoadImageFileAs32f(
-    const std::string& fname,
+    const std::filesystem::path& fname,
     bool normalizeFITSvalues,
     std::string* errorMsg = nullptr  ///< If not null, may receive an error message (if any).
 );
 
 /// Loads the specified image file and converts it to PIX_MONO32F.
 std::optional<c_Image> LoadImageFileAsMono32f(
-    const std::string& fname,        ///< Full path (including file name and extension)
+    const std::filesystem::path& fname,        ///< Full path (including file name and extension)
     bool normalizeFITSvalues,
     std::string* errorMsg = nullptr  ///< If not null, may receive an error message (if any)
 );
 
 /// Loads the specified image file and converts it to PIX_MONO8.
 std::optional<c_Image> LoadImageFileAsMono8(
-    const std::string& fname,       ///< Full path (including file name and extension)
+    const std::filesystem::path& fname,       ///< Full path (including file name and extension)
     bool normalizeFITSvalues,
     std::string* errorMsg = nullptr ///< If not null, may receive an error message (if any)
 );
 
 std::optional<c_Image> LoadImage(
     /// Full path (including file name and extension).
-    const std::string& fname,
+    const std::filesystem::path& fname,
     /// Pixel format to convert to; can be one of PIX_MONO8, PIX_MONO32F.
     std::optional<PixelFormat> destFmt = std::nullopt,
     ///If not null, may receive an error message (if any).
@@ -417,14 +418,14 @@ std::optional<c_Image> LoadImage(
 #if USE_CFITSIO
 /// Loads an image from a FITS file; the result's pixel format will be PIX_MONO8, PIX_MONO16 or PIX_MONO32F.
 std::optional<c_Image> LoadFitsImage(
-    const std::string& fname,
+    const std::filesystem::path& fname,
     bool normalize ///< If true, floating-point pixel values will be normalized so that the highest value becomes 1.0.
 );
 #endif
 
 /// Returns (width, height).
 std::optional<std::tuple<unsigned, unsigned>> GetImageSize(
-    const std::string& fname     ///< Full path (including file name and extension).
+    const std::filesystem::path& fname     ///< Full path (including file name and extension).
 );
 
 #endif // ImPPG_HEADER_H
