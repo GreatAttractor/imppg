@@ -21,6 +21,8 @@ File description:
     Image-handling code.
 */
 
+#include <boost/format.hpp>
+
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
@@ -29,7 +31,7 @@ File description:
 #include <cstring>
 #include <filesystem>
 #include <optional>
-#include <boost/format.hpp>
+#include <stdio.h>
 
 //FIXME
 //
@@ -107,55 +109,99 @@ static std::string GetExtension(const fs::path& filePath)
 // Only saving as mono is supported.
 static bool SaveAsFits(const IImageBuffer& buf, const fs::path& fname)
 {
-    IMPPG_ASSERT(NumChannels[static_cast<size_t>(buf.GetPixelFormat())] == 1);
+    return false;
 
-    fitsfile* fptr{nullptr};
-    long dimensions[2] = { static_cast<long>(buf.GetWidth()), static_cast<long>(buf.GetHeight()) };
-    const auto num_pixels = buf.GetWidth() * buf.GetHeight();
-    // contents of the output FITS file
-    auto array = std::make_unique<uint8_t[]>(num_pixels * buf.GetBytesPerPixel());
+    // TODO:
 
-    const auto row_filler = [&](size_t bytesPerPixel)
-    {
-        for (unsigned row = 0; row < buf.GetHeight(); row++)
-            memcpy(array.get() + row * buf.GetWidth() * bytesPerPixel, buf.GetRow(row), buf.GetWidth() * bytesPerPixel);
-    };
+    // IMPPG_ASSERT(NumChannels[static_cast<size_t>(buf.GetPixelFormat())] == 1);
 
-    row_filler(buf.GetBytesPerPixel());
+    // fitsfile* fptr{nullptr};
+    // long dimensions[2] = { static_cast<long>(buf.GetWidth()), static_cast<long>(buf.GetHeight()) };
+    // const auto num_pixels = buf.GetWidth() * buf.GetHeight();
+    // // contents of the output FITS file
+    // auto array = std::make_unique<uint8_t[]>(num_pixels * buf.GetBytesPerPixel());
 
-    int status = 0;
-    fs::remove(fname);
-    fits_create_file(&fptr, fname.c_str(), &status); // a leading "!" overwrites an existing file
+    // const auto row_filler = [&](size_t bytesPerPixel)
+    // {
+    //     for (unsigned row = 0; row < buf.GetHeight(); row++)
+    //         memcpy(array.get() + row * buf.GetWidth() * bytesPerPixel, buf.GetRow(row), buf.GetWidth() * bytesPerPixel);
+    // };
 
-    int bitPix, datatype;
-    switch (buf.GetPixelFormat())
-    {
-    case PixelFormat::PIX_MONO32F:
-        bitPix = FLOAT_IMG;
-        datatype = TFLOAT;
-        break;
-    case PixelFormat::PIX_MONO16:
-        bitPix = USHORT_IMG;
-        datatype = TUSHORT;
-        break;
-    case PixelFormat::PIX_MONO8:
-        bitPix = BYTE_IMG;
-        datatype = TBYTE;
-        break;
+    // row_filler(buf.GetBytesPerPixel());
 
-    default: IMPPG_ABORT();
-    }
+    // int status = 0;
+    // fs::remove(fname);
+    // fits_create_file(&fptr, fname.c_str(), &status); // a leading "!" overwrites an existing file
 
-    fits_create_img(fptr, bitPix, 2, dimensions, &status);
-    fits_write_history(fptr, "Processed in ImPPG.", &status);
-    fits_write_img(fptr, datatype, 1, dimensions[0] * dimensions[1], array.get(), &status);
+    // int bitPix, datatype;
+    // switch (buf.GetPixelFormat())
+    // {
+    // case PixelFormat::PIX_MONO32F:
+    //     bitPix = FLOAT_IMG;
+    //     datatype = TFLOAT;
+    //     break;
+    // case PixelFormat::PIX_MONO16:
+    //     bitPix = USHORT_IMG;
+    //     datatype = TUSHORT;
+    //     break;
+    // case PixelFormat::PIX_MONO8:
+    //     bitPix = BYTE_IMG;
+    //     datatype = TBYTE;
+    //     break;
 
-    fits_close_file(fptr, &status);
-    return (status == 0);
+    // default: IMPPG_ABORT();
+    // }
+
+    // fits_create_img(fptr, bitPix, 2, dimensions, &status);
+    // fits_write_history(fptr, "Processed in ImPPG.", &status);
+    // fits_write_img(fptr, datatype, 1, dimensions[0] * dimensions[1], array.get(), &status);
+
+    // fits_close_file(fptr, &status);
+    // return (status == 0);
 }
 #endif // if USE_CFITSIO
 
 #if USE_FREEIMAGE
+
+#pragma region Private definitions
+namespace
+{
+
+enum class AccessMode { Read, Write };
+
+FILE* OpenFile(const fs::path& path, AccessMode mode)
+{
+#ifdef __WXMSW__
+    return _wfopen(path.c_str(), mode == AccessMode::Read ? L"rb" : L"wb");
+#else
+    return fopen(path.c_str(), mode == AccessMode::Read ? "rb" : "wb");
+#endif
+}
+
+unsigned FIIO_read(void* buffer, unsigned size, unsigned count, fi_handle handle)
+{
+    return fread(buffer, size, count, static_cast<FILE*>(handle));
+}
+
+unsigned FIIO_write(void* buffer, unsigned size, unsigned count, fi_handle handle)
+{
+    return fwrite(buffer, size, count, static_cast<FILE*>(handle));
+}
+
+int FIIO_seek(fi_handle handle, long offset, int origin)
+{
+    return fseek(static_cast<FILE*>(handle), offset, origin);
+}
+
+long FIIO_tell(fi_handle handle)
+{
+    return ftell(static_cast<FILE*>(handle));
+}
+
+FreeImageIO g_FIIO{ FIIO_read, FIIO_write, FIIO_seek, FIIO_tell };
+
+}
+#pragma endregion
 
 c_FreeImageHandleWrapper::c_FreeImageHandleWrapper(c_FreeImageHandleWrapper&& rhs) noexcept
 {
@@ -394,7 +440,11 @@ static bool SaveAsFreeImage(const IImageBuffer& buf, const fs::path& fname, Outp
     }
 
     const auto [fiFmt, fiFlags] = GetFiFormatAndFlags(outpFileType);
-    result = FreeImage_Save(fiFmt, outputFiBmp.get(), fname.c_str(), fiFlags);
+
+    FILE* file = OpenFile(fname, AccessMode::Write);
+    if (!file) { return false; }
+    result = FreeImage_SaveToHandle(fiFmt, outputFiBmp.get(), &g_FIIO, file, fiFlags);
+    fclose(file);
 
     return result;
 }
