@@ -1483,7 +1483,10 @@ std::optional<c_Image> LoadImage(
         return std::nullopt;
     }
 
-    c_FreeImageHandleWrapper fibmp(FreeImage_Load(fif, fname.c_str()));
+    FILE* file = OpenFile(fname, AccessMode::Read);
+    if (!file) { return std::nullopt; }
+    c_FreeImageHandleWrapper fibmp(FreeImage_LoadFromHandle(fif, &g_FIIO, file));
+    fclose(file);
     if (!fibmp) { return std::nullopt; }
 
     auto buf = c_FreeImageBuffer::Create(std::move(fibmp));
@@ -1615,9 +1618,11 @@ std::optional<std::tuple<unsigned, unsigned>> GetImageSize(const fs::path& fname
 
     if (fif != FIF_UNKNOWN && FreeImage_FIFSupportsReading(fif))
     {
+        FILE* file = OpenFile(fname, AccessMode::Read);
+        if (!file) { return std::nullopt; }
         c_FreeImageHandleWrapper fibmp = FreeImage_Load(fif, fname.c_str(), FIF_LOAD_NOPIXELS);
-        if (!fibmp)
-            return std::nullopt;
+        fclose(file);
+        if (!fibmp) { return std::nullopt; }
 
         return std::make_tuple(FreeImage_GetWidth(fibmp.get()), FreeImage_GetHeight(fibmp.get()));
     }
