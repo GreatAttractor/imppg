@@ -543,7 +543,12 @@ bool c_FreeImageBuffer::SaveToFile(const std::filesystem::path& fname, OutputFil
 #endif
 
     const auto [fiFormat, fiFlags] = GetFiFormatAndFlags(outpFileType);
-    return FreeImage_Save(fiFormat, m_FiBmp.get(), fname.c_str(), fiFlags);
+
+    FILE* file = OpenFile(fname, AccessMode::Write);
+    if (!file) { return false; }
+    const auto result = FreeImage_SaveToHandle(fiFormat, m_FiBmp.get(), &g_FIIO, file, fiFlags);
+    fclose(file);
+    return result;
 }
 #endif
 
