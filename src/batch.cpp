@@ -178,7 +178,7 @@ bool c_BatchDialog::SaveOutputFile()
     }
 
     wxString destPath = wxFileName(m_Settings.outputDir, fn.GetName() + "_out", fn.GetExt()).GetFullPath();
-    if (!m_Processor->GetProcessedOutput().SaveToFile(destPath.ToStdString(), m_Settings.outputFmt))
+    if (!m_Processor->GetProcessedOutput().SaveToFile(ToFsPath(destPath), m_Settings.outputFmt))
     {
         wxMessageBox(wxString::Format(_("Could not save output file: %s"), destPath), _("Error"), wxICON_ERROR, this);
         m_FileOperationFailure = true;
@@ -237,7 +237,7 @@ void c_BatchDialog::ProcessNextFile()
     std::string errorMsg;
 
     auto img = LoadImageFileAs32f(
-        path.GetFullPath().ToStdString(),
+        ToFsPath(path.GetFullPath()),
         Configuration::NormalizeFITSValues,
         &errorMsg
     );

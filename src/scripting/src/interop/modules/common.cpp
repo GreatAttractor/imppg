@@ -32,7 +32,7 @@ wxString GetString(lua_State* lua, int stackPos)
     luaL_checktype(lua, stackPos, LUA_TSTRING);
     std::size_t length{0};
     const char* contents = lua_tolstring(lua, stackPos, &length);
-    wxString result = wxString::FromUTF8(contents, length); // TODO can we assume scripts are always UTF-8?
+    wxString result = wxString::FromUTF8(contents, length);
     if (length != 0 && result.IsEmpty())
     {
         throw ScriptExecutionError{_("invalid UTF8 string")};

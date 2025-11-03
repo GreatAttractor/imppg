@@ -88,7 +88,12 @@ ImageAccessor GetInputImageByIndex(
 {
     return std::visit(Overload{
         [&](const wxArrayString& fnames) {
-            auto loadResult = LoadImage(fnames[index].ToStdString(), std::nullopt, fileLoadErrorMsg, false);
+            auto loadResult = LoadImage(
+                ToFsPath(fnames[index]),
+                std::nullopt,
+                fileLoadErrorMsg,
+                false
+            );
             if (!loadResult) { return ImageAccessor{}; }
             c_Image srcImage{std::move(loadResult.value())};
             return ImageAccessor{std::move(srcImage)};
@@ -129,7 +134,7 @@ std::optional<std::tuple<c_Image, c_Image>> PrepareInputAndOutputImages(
     bool normalizeFitsValues
 )
 {
-    auto loadResult = LoadImage(inputFileName.ToStdString(), std::nullopt, &errorMsg, normalizeFitsValues);
+    auto loadResult = LoadImage(ToFsPath(inputFileName), std::nullopt, &errorMsg, normalizeFitsValues);
     if (!loadResult) { return std::nullopt; }
     c_Image srcImage{std::move(loadResult.value())};
     // subpixel translation of palettised images is not supported, so convert to RGB8

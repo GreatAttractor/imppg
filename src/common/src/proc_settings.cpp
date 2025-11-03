@@ -334,7 +334,7 @@ bool ParseToneCurveSettings(const wxXmlNode* node, c_ToneCurve& tcurve)
 
 } // end of private definitions
 
-bool SaveSettings(const std::string& filePath, const ProcessingSettings& settings)
+bool SaveSettings(const AAAAA fix this and others (all occurrences of ToStdString are likely wrong)& filePath, const ProcessingSettings& settings)
 {
     wxFileOutputStream file{filePath};
     SerializeSettings(settings, file);

@@ -219,4 +219,10 @@ inline wxString FromDir(const wxFileName& dir, wxString fname)
 
 wxString GetBackEndText(BackEnd backEnd);
 
+inline std::filesystem::path ToFsPath(const wxString& wxs)
+{
+    using fspath = std::filesystem::path;
+    return fspath{static_cast<const fspath::value_type*>(wxs.fn_str())};
+}
+
 #endif //  IMPGG_COMMON_HEADER
