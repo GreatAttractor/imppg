@@ -63,6 +63,8 @@ const luaL_Reg functions[] = {
         if (scripting::g_State->CheckStopRequested(lua)) { return 0; }
 
         CheckNumArgs(lua, "load_image", 1);
+        //FIXME: wrong, list_files_sorted must push paths in the native format, and we should get it here w/out any conversions!
+        //Currently scripting::GetString will fail, 'cuz it assumes UTF-8 (but in general native paths cannot be converted to UTF-8.)
         const wxString imagePath = GetString(lua, 1);
         auto object = ImageWrapper::FromPath(imagePath.ToStdWstring());
         new(PrepareObject<ImageWrapper>(lua)) ImageWrapper(std::move(object));
