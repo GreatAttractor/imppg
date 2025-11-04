@@ -40,13 +40,12 @@ File description:
 //
 // - load FITS files separately and parse using `fits_open_memfile`
 // - create FITS files in memory (how?) and save in a separate step
-// - FreeImage: use `FreeImage_LoadU` & friends (? - check that) or `*_FromMemory` funcs
 // - all paths stored as wxString
-//   - reading paths from scripts: assume UTF-8, use wxString::FromUTF8 (check success)
 //   - file dialog(s): already return wxString
 //   - file I/O using wxFileStream & friends (they do the right thing when doing low-level opening)
 //
-// TODO (!): test everything on Linux and Windows (single, batch, alignment, script w/the above)
+// TODO (!):
+//  - test everything on Linux and Windows (single, batch, alignment, script w/the above, load script)
 
 
 #include "common/imppg_assert.h"

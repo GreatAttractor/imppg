@@ -30,6 +30,7 @@ File description:
 #include <string>
 #include <vector>
 #include <wx/stream.h>
+#include <wx/string.h>
 
 namespace Default
 {
@@ -118,7 +119,7 @@ void SerializeSettings(const ProcessingSettings& settings, wxOutputStream& strea
 std::optional<ProcessingSettings> DeserializeSettings(wxInputStream& stream);
 
 /// Saves the settings of Lucy-Richardson deconvolution, unsharp masking, tone curve and deringing; returns 'false' on error.
-bool SaveSettings(const std::string& filePath, const ProcessingSettings& settings);
+bool SaveSettings(const wxString& filePath, const ProcessingSettings& settings);
 
 /// Loads the settings of Lucy-Richardson deconvolution, unsharp masking, tone curve and deringing; returns 'false' on error.
 std::optional<ProcessingSettings> LoadSettings(const wxString& filePath);
