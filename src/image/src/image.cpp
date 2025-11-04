@@ -139,7 +139,7 @@ static bool SaveAsFits(const IImageBuffer& buf, const fs::path& fname)
 
     int status = 0;
     fs::remove(fname);
-    fits_create_file(&fptr, fname.c_str(), &status); // a leading "!" overwrites an existing file
+    fits_create_file(&fptr, fname.c_str(), &status);
 
     int bitPix, datatype;
     switch (buf.GetPixelFormat())
