@@ -30,6 +30,7 @@ File description:
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
+#include <memory>
 #include <optional>
 #include <stdio.h>
 
@@ -138,8 +139,24 @@ static bool SaveAsFits(const IImageBuffer& buf, const fs::path& fname)
     row_filler(buf.GetBytesPerPixel());
 
     int status = 0;
-    fs::remove(fname);
-    fits_create_file(&fptr, fname.c_str(), &status);
+
+    constexpr std::size_t BUF_SIZE_DELTA = 512 * 1024;
+    void* buffer{std::malloc(BUF_SIZE_DELTA)};
+    class BufferDeleter
+    {
+    public:
+        BufferDeleter(void*& bufPtr): m_BufPtr(bufPtr) {}
+        ~BufferDeleter() { if (m_BufPtr) { std::free(m_BufPtr); } }
+
+    private:
+        void*& m_BufPtr;
+    } bufferDeleter{buffer};
+
+    std::size_t bufSize{BUF_SIZE_DELTA};
+    fits_create_memfile(&fptr, &buffer, &bufSize, BUF_SIZE_DELTA, std::realloc, &status);
+    if (!buffer) { return false; }
+
+    if (status) { return false; }
 
     int bitPix, datatype;
     switch (buf.GetPixelFormat())
@@ -165,7 +182,15 @@ static bool SaveAsFits(const IImageBuffer& buf, const fs::path& fname)
     fits_write_img(fptr, datatype, 1, dimensions[0] * dimensions[1], array.get(), &status);
 
     fits_close_file(fptr, &status);
-    return (status == 0);
+
+    if (status) { return false; }
+
+    fs::remove(fname);
+    std::ofstream file{fname, std::ios::binary};
+    if (!file.is_open()) { return false; }
+    file.write(static_cast<const char*>(buffer), bufSize);
+
+    return true;
 }
 #endif // if USE_CFITSIO
 
