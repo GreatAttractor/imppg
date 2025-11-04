@@ -44,7 +44,7 @@ const luaL_Reg functions[] = {
             );
             if (const auto result = object->Next())
             {
-                lua_pushstring(lua, result->GetFullPath());
+                lua_pushstring(lua, result->GetFullPath().utf8_str());
                 return 1;
             }
             else
@@ -74,7 +74,7 @@ const luaL_Reg functions[] = {
         for (const auto& file: files)
         {
             lua_pushinteger(lua, index + 1);
-            lua_pushstring(lua, file.c_str());
+            lua_pushstring(lua, file.utf8_str());
             lua_settable(lua, 2); // returned table is at 2 (1 contains the argument (file name pattern))
             ++index;
         }

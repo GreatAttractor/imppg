@@ -44,6 +44,11 @@ File description:
 //   - file dialog(s): already return wxString
 //   - file I/O using wxFileStream & friends (they do the right thing when doing low-level opening)
 //   - check and fix usages of c_str()
+//  - scripting: list_files/sorted must return native path(s) as some "custom user blob" Lua type; load_settings etc.
+//     can take either a string (assumed UTF-8) or such a blob.
+//    OR NOT? If we do that, then the blob wouldn't be printable from script (which may be useful.) Maybe let's just
+//    accept a limitation - we only operate on paths which are UTF-8 representable (no internal NULs, etc.)
+//      TODO: mention it in the docs.
 //
 // TODO (!):
 //  - test everything on Linux and Windows:
