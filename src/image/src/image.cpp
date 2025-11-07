@@ -39,7 +39,6 @@ File description:
 // On Windows, it's unreliable to use `std::filesystem::path.string().c_str()` for file operations with libs that only
 // accept `const char*`. Instead:
 //
-// - load FITS files separately and parse using `fits_open_memfile`
 // - all paths stored as wxString
 //   - file dialog(s): already return wxString
 //   - file I/O using wxFileStream & friends (they do the right thing when doing low-level opening)
@@ -58,6 +57,7 @@ File description:
 //    - alignment
 //    - script w/the above (alignment, non-/sorted file listing, opening settings, imgs, etc.)
 //    - load script
+//    - appconfig behavior (OK if it only works with UTF-8-representable paths)
 
 
 #include "common/imppg_assert.h"
@@ -1346,27 +1346,50 @@ void NormalizeFpImage(c_Image& img, float minLevel, float maxLevel)
 #if USE_CFITSIO
 std::optional<c_Image> LoadFitsImage(const fs::path& fname, bool normalize)
 {
+    constexpr std::size_t BUF_SIZE_DELTA = 512 * 1024;
+    void* buffer{nullptr};
+    std::size_t bufferSize{0};
+
+    class BufferDeleter
+    {
+    public:
+        BufferDeleter(void*& bufPtr): m_BufPtr(bufPtr) {}
+        ~BufferDeleter() { if (m_BufPtr) { std::free(m_BufPtr); } }
+
+    private:
+        void*& m_BufPtr;
+    } bufferDeleter{buffer};
+
+    {
+        std::ifstream file{fname, std::ios::binary};
+        if (!file.is_open()) { return std::nullopt; }
+        file.seekg(0, std::ios_base::end);
+        bufferSize = static_cast<std::size_t>(file.tellg());
+        buffer = std::malloc(bufferSize);
+        file.seekg(0, std::ios_base::beg);
+        file.read(static_cast<char*>(buffer), bufferSize);
+    }
+
     fitsfile* fptr{nullptr};
+
     int status = 0;
     long dimensions[3] = { 0 };
     int naxis;
     int bitsPerPixel;
-    int imgIndex = 0;
+
+    fits_open_memfile(&fptr, "(ignored)", READONLY, &buffer, &bufferSize, BUF_SIZE_DELTA, &std::realloc, &status);
+
     while (0 == status)
     {
-        // The i-th image in FITS file is accessed by appending [i] to file name; try image [0] first
-        fits_open_file(&fptr, boost::str(boost::format("%s[%d]") % fname % imgIndex).c_str(), READONLY, &status);
         fits_read_imghdr(fptr, 3, 0, &bitsPerPixel, &naxis, dimensions, 0, 0, 0, &status);
         if (0 == status && (naxis > 3 || naxis <= 0))
         {
-            // Try opening a subsequent image; sometimes image [0] has 0 size (e.g. in some files from SDO)
-            fits_close_file(fptr, &status);
-            imgIndex++;
+            int hduType{0};
+            fits_movrel_hdu(fptr, 1, &hduType, &status);
             continue;
         }
         else if (status)
         {
-            fits_close_file(fptr, &status);
             return std::nullopt;
         }
         else
@@ -1415,67 +1438,66 @@ std::optional<c_Image> LoadFitsImage(const fs::path& fname, bool normalize)
         destType = TFLOAT;
         pixFmt = PixelFormat::PIX_MONO32F;
         fits_read_img(fptr, destType, 1, numPixels, 0, fitsPixels.get(), 0, &status);
+        if (status) { return std::nullopt; }
     }
 
     fits_close_file(fptr, &status);
 
-    if (!status)
+    if (status) { return std::nullopt; }
+
+
+    if (destType == TFLOAT)
     {
-        if (destType == TFLOAT)
-        {
-            // If any value is < 0, set it to 0. If all remaining values are <= 1.0,
-            // leave them unchanged. If the maximum value is > 1.0, scale everything down
-            // so that maximum is 1.0.
+        // If any value is < 0, set it to 0. If all remaining values are <= 1.0,
+        // leave them unchanged. If the maximum value is > 1.0, scale everything down
+        // so that maximum is 1.0.
 
-            float maxval = 0.0f;
-            for (unsigned long y = 0; y < static_cast<unsigned long>(dimensions[1]); y++)
-                for (unsigned long  x = 0; x < static_cast<unsigned long>(dimensions[0]); x++)
-                {
-                    float& val = reinterpret_cast<float*>(fitsPixels.get())[x + y*dimensions[0]];
-                    if (val < 0.0f)
-                        val = 0.0f;
-                    else if (val > maxval)
-                        maxval = val;
-                }
-
-            if (maxval > 1.0f)
+        float maxval = 0.0f;
+        for (unsigned long y = 0; y < static_cast<unsigned long>(dimensions[1]); y++)
+            for (unsigned long  x = 0; x < static_cast<unsigned long>(dimensions[0]); x++)
             {
-                if (normalize)
+                float& val = reinterpret_cast<float*>(fitsPixels.get())[x + y*dimensions[0]];
+                if (val < 0.0f)
+                    val = 0.0f;
+                else if (val > maxval)
+                    maxval = val;
+            }
+
+        if (maxval > 1.0f)
+        {
+            if (normalize)
+            {
+                float maxvalinv = 1.0f/maxval;
+                for (int y = 0; y < dimensions[1]; y++)
+                    for (int x = 0; x < dimensions[0]; x++)
+                        reinterpret_cast<float*>(fitsPixels.get())[x + y*dimensions[0]] *= maxvalinv;
+            }
+            else
+            {
+                for (int y = 0; y < dimensions[1]; y++)
                 {
-                    float maxvalinv = 1.0f/maxval;
-                    for (int y = 0; y < dimensions[1]; y++)
-                        for (int x = 0; x < dimensions[0]; x++)
-                            reinterpret_cast<float*>(fitsPixels.get())[x + y*dimensions[0]] *= maxvalinv;
-                }
-                else
-                {
-                    for (int y = 0; y < dimensions[1]; y++)
+                    for (int x = 0; x < dimensions[0]; x++)
                     {
-                        for (int x = 0; x < dimensions[0]; x++)
-                        {
-                            float& val = reinterpret_cast<float*>(fitsPixels.get())[x + y*dimensions[0]];
-                            if (val > 1.0) val = 1.0;
-                        }
+                        float& val = reinterpret_cast<float*>(fitsPixels.get())[x + y*dimensions[0]];
+                        if (val > 1.0) val = 1.0;
                     }
                 }
             }
         }
-
-        auto result = c_Image(dimensions[0], dimensions[1], pixFmt);
-        const auto bpp = BytesPerPixel[static_cast<size_t>(pixFmt)];
-        for (unsigned row = 0; row < result.GetHeight(); row++)
-        {
-            memcpy(
-                result.GetRow(row),
-                fitsPixels.get() + row * dimensions[0] * bpp,
-                dimensions[0] * bpp
-            );
-        }
-
-        return result;
     }
-    else
-        return std::nullopt;
+
+    auto result = c_Image(dimensions[0], dimensions[1], pixFmt);
+    const auto bpp = BytesPerPixel[static_cast<size_t>(pixFmt)];
+    for (unsigned row = 0; row < result.GetHeight(); row++)
+    {
+        memcpy(
+            result.GetRow(row),
+            fitsPixels.get() + row * dimensions[0] * bpp,
+            dimensions[0] * bpp
+        );
+    }
+
+    return result;
 }
 #endif
 
