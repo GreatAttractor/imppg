@@ -49,6 +49,7 @@ File description:
 //    OR NOT? If we do that, then the blob wouldn't be printable from script (which may be useful.) Maybe let's just
 //    accept a limitation - we only operate on paths which are UTF-8 representable (no internal NULs, etc.)
 //      TODO: mention it in the docs.
+//  - verify usages of c_str() (e.g., shader loading, non-FreeImage img operations)
 //
 // TODO (!):
 //  - test everything on Linux and Windows:
@@ -193,8 +194,8 @@ static bool SaveAsFits(const IImageBuffer& buf, const fs::path& fname)
 }
 #endif // if USE_CFITSIO
 
-#if USE_FREEIMAGE
 
+#if USE_FREEIMAGE
 #pragma region Private definitions
 namespace
 {
@@ -559,8 +560,8 @@ private:
 #else
         switch (outpFileType)
         {
-            case OutputFileType::BMP: return SaveBmp(fname.c_str(), *this);
-            case OutputFileType::TIFF: return SaveTiff(fname.c_str(), *this);
+            case OutputFileType::BMP: return SaveBmp(fname, *this);
+            case OutputFileType::TIFF: return SaveTiff(fname, *this);
             default: IMPPG_ABORT();
         }
 #endif
@@ -1556,9 +1557,9 @@ std::optional<c_Image> LoadImage(
 
         std::optional<c_Image> newImg;
         if (extension == "tif" || extension == "tiff")
-            newImg = ReadTiff(fname.c_str(), errorMsg);
+            newImg = ReadTiff(fname, errorMsg);
         else if (extension == "bmp")
-            newImg = ReadBmp(fname.c_str());
+            newImg = ReadBmp(fname);
 
         if (!newImg)
         {
@@ -1673,9 +1674,9 @@ std::optional<std::tuple<unsigned, unsigned>> GetImageSize(const fs::path& fname
         return std::nullopt;
 #else
     if (extension == "tif" || extension == "tiff")
-        return GetTiffDimensions(fname.c_str());
+        return GetTiffDimensions(fname);
     else if (extension == "bmp")
-        return GetBmpDimensions(fname.c_str());
+        return GetBmpDimensions(fname);
     else
         return std::nullopt;
 #endif

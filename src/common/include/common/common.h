@@ -212,17 +212,17 @@ Histogram DetermineHistogram(const c_Image& img, const wxRect& selection);
 
 Histogram DetermineHistogramFromChannels(const std::vector<c_Image>& channels, const wxRect& selection);
 
-inline wxString FromDir(const wxFileName& dir, wxString fname)
-{
-    return wxFileName(dir.GetFullPath(), fname).GetFullPath();
-}
-
 wxString GetBackEndText(BackEnd backEnd);
 
 inline std::filesystem::path ToFsPath(const wxString& wxs)
 {
     using fspath = std::filesystem::path;
     return fspath{static_cast<const fspath::value_type*>(wxs.fn_str())};
+}
+
+inline std::filesystem::path FromDir(const wxFileName& dir, wxString fname)
+{
+    return ToFsPath(wxFileName(dir.GetFullPath(), fname).GetFullPath());
 }
 
 #endif //  IMPGG_COMMON_HEADER
