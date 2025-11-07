@@ -40,7 +40,6 @@ File description:
 // accept `const char*`. Instead:
 //
 // - load FITS files separately and parse using `fits_open_memfile`
-// - create FITS files in memory (how?) and save in a separate step
 // - all paths stored as wxString
 //   - file dialog(s): already return wxString
 //   - file I/O using wxFileStream & friends (they do the right thing when doing low-level opening)

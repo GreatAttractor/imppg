@@ -195,6 +195,8 @@
 
   Returns an iterator over all files matching the file path mask. The iteration is performed in an unspecified order. *Note:* typically `list_files_sorted` is more convenient.
 
+  Can only operate on paths which are convertible to UTF-8.
+
   *Parameters:*
   - file path mask (wildcards are supported)
 
@@ -222,6 +224,8 @@
 - `list_files_sorted`
 
   Returns a sorted table (and its length) of files matching the file path mask (see `list_files` for examples of masks).
+
+  Can only operate on paths which are convertible to UTF-8.
 
   *Parameters:*
   - file path mask (wildcards are supported)
