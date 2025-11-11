@@ -53,6 +53,7 @@ File description:
 //
 // TODO (!):
 //  - test everything on Linux and Windows:
+//    - all FITS operations due to refactoring there
 //    - single
 //    - batch
 //    - alignment
