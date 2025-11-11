@@ -33,6 +33,7 @@ File description:
 #include <memory>
 #include <optional>
 #include <stdio.h>
+#include <tuple>
 
 //FIXME
 //
@@ -77,6 +78,75 @@ File description:
 #endif
 
 namespace fs = std::filesystem;
+
+#if USE_CFITSIO
+class ModifiableUniquePtr
+{
+public:
+    ModifiableUniquePtr(std::size_t numBytes = 0)
+    {
+        if (numBytes > 0)
+        {
+            m_Buffer = std::malloc(numBytes);
+        }
+    }
+
+    ModifiableUniquePtr(const ModifiableUniquePtr&) = delete;
+
+    ModifiableUniquePtr& operator=(const ModifiableUniquePtr&) = delete;
+
+    ModifiableUniquePtr(ModifiableUniquePtr&& other)
+    {
+        *this = std::move(other);
+    }
+
+    ModifiableUniquePtr& operator=(ModifiableUniquePtr&& other)
+    {
+        if (m_Buffer) { std::free(m_Buffer); }
+        m_Buffer = other.m_Buffer;
+        other.m_Buffer = nullptr;
+        return *this;
+    }
+
+    ~ModifiableUniquePtr()
+    {
+        if (m_Buffer) { std::free(m_Buffer); }
+    }
+
+    void Alloc(std::size_t numBytes)
+    {
+        if (m_Buffer) { std::free(m_Buffer); }
+        m_Buffer = std::malloc(numBytes);
+    }
+
+    void* GetData() const { return m_Buffer; }
+
+    void** GetBufPtr() { return &m_Buffer; }
+
+private:
+    void* m_Buffer{nullptr};
+};
+
+class FitsFileFinalizer
+{
+public:
+    fitsfile* GetFile() const { return m_FPtr; }
+    fitsfile** GetFilePtr() { return &m_FPtr; }
+
+    ~FitsFileFinalizer()
+    {
+        if (m_FPtr)
+        {
+            int status{};
+            fits_close_file(m_FPtr, &status);
+        }
+    }
+
+private:
+
+    fitsfile* m_FPtr{nullptr};
+};
+#endif
 
 /// Conditionally swaps a 32-bit value
 uint32_t SWAP32cnd(uint32_t x, bool swap)
@@ -124,7 +194,7 @@ static bool SaveAsFits(const IImageBuffer& buf, const fs::path& fname)
 {
     IMPPG_ASSERT(NumChannels[static_cast<size_t>(buf.GetPixelFormat())] == 1);
 
-    fitsfile* fptr{nullptr};
+    FitsFileFinalizer fptr;
     long dimensions[2] = { static_cast<long>(buf.GetWidth()), static_cast<long>(buf.GetHeight()) };
     const auto num_pixels = buf.GetWidth() * buf.GetHeight();
     // contents of the output FITS file
@@ -141,20 +211,11 @@ static bool SaveAsFits(const IImageBuffer& buf, const fs::path& fname)
     int status = 0;
 
     constexpr std::size_t BUF_SIZE_DELTA = 512 * 1024;
-    void* buffer{std::malloc(BUF_SIZE_DELTA)};
-    class BufferDeleter
-    {
-    public:
-        BufferDeleter(void*& bufPtr): m_BufPtr(bufPtr) {}
-        ~BufferDeleter() { if (m_BufPtr) { std::free(m_BufPtr); } }
-
-    private:
-        void*& m_BufPtr;
-    } bufferDeleter{buffer};
+    ModifiableUniquePtr buffer{BUF_SIZE_DELTA};
 
     std::size_t bufSize{BUF_SIZE_DELTA};
-    fits_create_memfile(&fptr, &buffer, &bufSize, BUF_SIZE_DELTA, std::realloc, &status);
-    if (!buffer) { return false; }
+    fits_create_memfile(fptr.GetFilePtr(), buffer.GetBufPtr(), &bufSize, BUF_SIZE_DELTA, std::realloc, &status);
+    if (buffer.GetData() == nullptr) { return false; }
 
     if (status) { return false; }
 
@@ -177,18 +238,16 @@ static bool SaveAsFits(const IImageBuffer& buf, const fs::path& fname)
     default: IMPPG_ABORT();
     }
 
-    fits_create_img(fptr, bitPix, 2, dimensions, &status);
-    fits_write_history(fptr, "Processed in ImPPG.", &status);
-    fits_write_img(fptr, datatype, 1, dimensions[0] * dimensions[1], array.get(), &status);
-
-    fits_close_file(fptr, &status);
+    fits_create_img(fptr.GetFile(), bitPix, 2, dimensions, &status);
+    fits_write_history(fptr.GetFile(), "Processed in ImPPG.", &status);
+    fits_write_img(fptr.GetFile(), datatype, 1, dimensions[0] * dimensions[1], array.get(), &status);
 
     if (status) { return false; }
 
     fs::remove(fname);
     std::ofstream file{fname, std::ios::binary};
     if (!file.is_open()) { return false; }
-    file.write(static_cast<const char*>(buffer), bufSize);
+    file.write(static_cast<const char*>(buffer.GetData()), bufSize);
 
     return true;
 }
@@ -1344,48 +1403,47 @@ void NormalizeFpImage(c_Image& img, float minLevel, float maxLevel)
 }
 
 #if USE_CFITSIO
+static std::optional<std::tuple<std::size_t, ModifiableUniquePtr>> LoadFileIntoBuffer(const fs::path& path)
+{
+    ModifiableUniquePtr buffer;
+    std::size_t bufferSize{0};
+    std::ifstream file{path, std::ios::binary};
+    if (!file.is_open()) { return std::nullopt; }
+    file.seekg(0, std::ios_base::end);
+    bufferSize = static_cast<std::size_t>(file.tellg());
+    buffer.Alloc(bufferSize);
+    file.seekg(0, std::ios_base::beg);
+    file.read(static_cast<char*>(buffer.GetData()), bufferSize);
+    if (!file.good()) { return std::nullopt; }
+    std::tuple<std::size_t, ModifiableUniquePtr> result{bufferSize, std::move(buffer)};
+    return result;
+}
+
 std::optional<c_Image> LoadFitsImage(const fs::path& fname, bool normalize)
 {
     constexpr std::size_t BUF_SIZE_DELTA = 512 * 1024;
-    void* buffer{nullptr};
-    std::size_t bufferSize{0};
 
-    class BufferDeleter
-    {
-    public:
-        BufferDeleter(void*& bufPtr): m_BufPtr(bufPtr) {}
-        ~BufferDeleter() { if (m_BufPtr) { std::free(m_BufPtr); } }
+    auto file_load_result = LoadFileIntoBuffer(fname);
+    if (!file_load_result.has_value()) { return std::nullopt; }
 
-    private:
-        void*& m_BufPtr;
-    } bufferDeleter{buffer};
+    auto [bufferSize, buffer] = std::move(file_load_result.value());
 
-    {
-        std::ifstream file{fname, std::ios::binary};
-        if (!file.is_open()) { return std::nullopt; }
-        file.seekg(0, std::ios_base::end);
-        bufferSize = static_cast<std::size_t>(file.tellg());
-        buffer = std::malloc(bufferSize);
-        file.seekg(0, std::ios_base::beg);
-        file.read(static_cast<char*>(buffer), bufferSize);
-    }
-
-    fitsfile* fptr{nullptr};
+    FitsFileFinalizer fptr;
 
     int status = 0;
     long dimensions[3] = { 0 };
     int naxis;
     int bitsPerPixel;
 
-    fits_open_memfile(&fptr, "(ignored)", READONLY, &buffer, &bufferSize, BUF_SIZE_DELTA, &std::realloc, &status);
+    fits_open_memfile(fptr.GetFilePtr(), "(ignored)", READONLY, buffer.GetBufPtr(), &bufferSize, BUF_SIZE_DELTA, &std::realloc, &status);
 
     while (0 == status)
     {
-        fits_read_imghdr(fptr, 3, 0, &bitsPerPixel, &naxis, dimensions, 0, 0, 0, &status);
+        fits_read_imghdr(fptr.GetFile(), 3, 0, &bitsPerPixel, &naxis, dimensions, 0, 0, 0, &status);
         if (0 == status && (naxis > 3 || naxis <= 0))
         {
             int hduType{0};
-            fits_movrel_hdu(fptr, 1, &hduType, &status);
+            fits_movrel_hdu(fptr.GetFile(), 1, &hduType, &status);
             continue;
         }
         else if (status)
@@ -1428,7 +1486,7 @@ std::optional<c_Image> LoadFitsImage(const fs::path& fname, bool normalize)
         break;
     }
 
-    fits_read_img(fptr, destType, 1, numPixels, 0, fitsPixels.get(), 0, &status);
+    fits_read_img(fptr.GetFile(), destType, 1, numPixels, 0, fitsPixels.get(), 0, &status);
 
     if (NUM_OVERFLOW == status && (bitsPerPixel == BYTE_IMG || bitsPerPixel == SHORT_IMG))
     {
@@ -1437,11 +1495,9 @@ std::optional<c_Image> LoadFitsImage(const fs::path& fname, bool normalize)
         fitsPixels.reset(new uint8_t[numPixels * sizeof(float)]);
         destType = TFLOAT;
         pixFmt = PixelFormat::PIX_MONO32F;
-        fits_read_img(fptr, destType, 1, numPixels, 0, fitsPixels.get(), 0, &status);
+        fits_read_img(fptr.GetFile(), destType, 1, numPixels, 0, fitsPixels.get(), 0, &status);
         if (status) { return std::nullopt; }
     }
-
-    fits_close_file(fptr, &status);
 
     if (status) { return std::nullopt; }
 
@@ -1650,25 +1706,45 @@ void c_Image::Multiply(const c_Image& mult)
     }
 }
 
-/// Returns 'true' if image's width and height were successfully read; returns 'false' on error
+/// Returns `std::nullopt` on error.
 std::optional<std::tuple<unsigned, unsigned>> GetImageSize(const fs::path& fname)
 {
     const auto extension = GetExtension(fname);
 #if USE_CFITSIO
     if (extension == "fit" || extension == "fits")
     {
-        fitsfile* fptr{nullptr};
-        int status = 0;
-        fits_open_file(&fptr, fname.c_str(), READONLY, &status);
-        long dimensions[2] = { 0 }; //TODO: support 3-axis files too
-        int naxis = 0;
-        fits_read_imghdr(fptr, 2, 0, 0, &naxis, dimensions, 0, 0, 0, &status);
-        fits_close_file(fptr, &status);
+        auto file_load_result = LoadFileIntoBuffer(fname);
+        if (!file_load_result.has_value()) { return std::nullopt; }
 
-        if (naxis != 2 || status)
-            return std::nullopt;
-        else
-            return std::make_tuple(dimensions[0], dimensions[1]);
+        auto [bufferSize, buffer] = std::move(file_load_result.value());
+
+        FitsFileFinalizer fptr;
+
+        int status = 0;
+        long dimensions[3] = { 0 };
+        int naxis;
+        int bitsPerPixel;
+        constexpr std::size_t BUF_SIZE_DELTA = 512 * 1024;
+
+        fits_open_memfile(fptr.GetFilePtr(), "(ignored)", READONLY, buffer.GetBufPtr(), &bufferSize,
+            BUF_SIZE_DELTA, &std::realloc, &status);
+
+        while (true)
+        {
+            fits_read_imghdr(fptr.GetFile(), 3, 0, &bitsPerPixel, &naxis, dimensions, 0, 0, 0, &status);
+            if (0 == status && (naxis > 3 || naxis <= 0))
+            {
+                int hduType{0};
+                fits_movrel_hdu(fptr.GetFile(), 1, &hduType, &status);
+                continue;
+            }
+            else if (status)
+            {
+                return std::nullopt;
+            }
+            else
+                return std::make_tuple(dimensions[0], dimensions[1]);
+        }
     }
 #endif
 #if USE_FREEIMAGE
