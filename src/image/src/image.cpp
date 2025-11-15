@@ -193,7 +193,7 @@ static std::string GetExtension(const fs::path& filePath)
 // Only saving as mono is supported.
 static bool SaveAsFits(const IImageBuffer& buf, const fs::path& fname)
 {
-    IMPPG_ASSERT(NumChannels[static_cast<size_t>(buf.GetPixelFormat())] == 1);
+    if (NumChannels[static_cast<size_t>(buf.GetPixelFormat())] != 1) { return false; }
 
     FitsFileFinalizer fptr;
     long dimensions[2] = { static_cast<long>(buf.GetWidth()), static_cast<long>(buf.GetHeight()) };
