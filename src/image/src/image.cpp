@@ -21,6 +21,8 @@ File description:
     Image-handling code.
 */
 
+#include <boost/format.hpp>
+
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
@@ -28,8 +30,10 @@ File description:
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
+#include <memory>
 #include <optional>
-#include <boost/format.hpp>
+#include <stdio.h>
+#include <tuple>
 
 #include "common/imppg_assert.h"
 #include "image/image.h"
@@ -45,6 +49,86 @@ File description:
 
 #if USE_CFITSIO
 #include <fitsio.h>
+#endif
+
+namespace fs = std::filesystem;
+
+#if USE_CFITSIO
+class ModifiableUniquePtr
+{
+public:
+    ModifiableUniquePtr(std::size_t numBytes = 0)
+    {
+        if (numBytes > 0)
+        {
+            m_Buffer = std::malloc(numBytes);
+            // required (but as of `cfitsio` 4.6.0 undocumented!) by `fits_write_img` when using memory file;
+            // otherwise, an internal check by `fits_is_compressed_image` will use uninitialized data
+            std::memset(m_Buffer, 0, numBytes);
+        }
+    }
+
+    ModifiableUniquePtr(const ModifiableUniquePtr&) = delete;
+
+    ModifiableUniquePtr& operator=(const ModifiableUniquePtr&) = delete;
+
+    ModifiableUniquePtr(ModifiableUniquePtr&& other)
+    {
+        *this = std::move(other);
+    }
+
+    ModifiableUniquePtr& operator=(ModifiableUniquePtr&& other)
+    {
+        if (m_Buffer) { std::free(m_Buffer); }
+        m_Buffer = other.m_Buffer;
+        other.m_Buffer = nullptr;
+        return *this;
+    }
+
+    ~ModifiableUniquePtr()
+    {
+        if (m_Buffer) { std::free(m_Buffer); }
+    }
+
+    void Alloc(std::size_t numBytes)
+    {
+        if (m_Buffer) { std::free(m_Buffer); }
+        m_Buffer = std::malloc(numBytes);
+    }
+
+    void* GetData() const { return m_Buffer; }
+
+    void** GetBufPtr() { return &m_Buffer; }
+
+private:
+    void* m_Buffer{nullptr};
+};
+
+class FitsFileFinalizer
+{
+public:
+    fitsfile* GetFile() const { return m_FPtr; }
+    fitsfile** GetFilePtr() { return &m_FPtr; }
+
+    int Finalize()
+    {
+        if (!m_FPtr) { return 0; }
+
+        int status{};
+        fits_close_file(m_FPtr, &status);
+        m_FPtr = nullptr;
+        return status;
+    }
+
+    ~FitsFileFinalizer()
+    {
+        Finalize();
+    }
+
+private:
+
+    fitsfile* m_FPtr{nullptr};
+};
 #endif
 
 /// Conditionally swaps a 32-bit value
@@ -74,7 +158,7 @@ bool IsMachineBigEndian()
     return (ptr[0] == 0x11);
 }
 
-static std::string GetExtension(const std::string& filePath)
+static std::string GetExtension(const fs::path& filePath)
 {
     const auto extension = std::filesystem::path(filePath).extension().string();
     if (extension.size() >= 1 && extension[0] == '.')
@@ -89,11 +173,16 @@ static std::string GetExtension(const std::string& filePath)
 
 #if USE_CFITSIO
 // Only saving as mono is supported.
-static bool SaveAsFits(const IImageBuffer& buf, const std::string& fname)
+static bool SaveAsFits(const IImageBuffer& buf, const fs::path& fname)
 {
-    IMPPG_ASSERT(NumChannels[static_cast<size_t>(buf.GetPixelFormat())] == 1);
+    if (NumChannels[static_cast<size_t>(buf.GetPixelFormat())] != 1) { return false; }
 
-    fitsfile* fptr{nullptr};
+    constexpr std::size_t BUF_SIZE_DELTA = 128 * 1024;
+    // must be constructed before `fptr`, so that `fptr`'s dtor runs first (it might write something to `buffer`)
+    ModifiableUniquePtr buffer{BUF_SIZE_DELTA};
+    std::size_t bufSize{BUF_SIZE_DELTA};
+
+    FitsFileFinalizer fptr;
     long dimensions[2] = { static_cast<long>(buf.GetWidth()), static_cast<long>(buf.GetHeight()) };
     const auto num_pixels = buf.GetWidth() * buf.GetHeight();
     // contents of the output FITS file
@@ -108,7 +197,12 @@ static bool SaveAsFits(const IImageBuffer& buf, const std::string& fname)
     row_filler(buf.GetBytesPerPixel());
 
     int status = 0;
-    fits_create_file(&fptr, (std::string("!") + fname).c_str(), &status); // a leading "!" overwrites an existing file
+
+
+    fits_create_memfile(fptr.GetFilePtr(), buffer.GetBufPtr(), &bufSize, BUF_SIZE_DELTA, std::realloc, &status);
+    if (buffer.GetData() == nullptr) { return false; }
+
+    if (status) { return false; }
 
     int bitPix, datatype;
     switch (buf.GetPixelFormat())
@@ -129,16 +223,70 @@ static bool SaveAsFits(const IImageBuffer& buf, const std::string& fname)
     default: IMPPG_ABORT();
     }
 
-    fits_create_img(fptr, bitPix, 2, dimensions, &status);
-    fits_write_history(fptr, "Processed in ImPPG.", &status);
-    fits_write_img(fptr, datatype, 1, dimensions[0] * dimensions[1], array.get(), &status);
+    fits_create_img(fptr.GetFile(), bitPix, 2, dimensions, &status);
+    fits_write_history(fptr.GetFile(), "Processed in ImPPG.", &status);
+    fits_write_img(fptr.GetFile(), datatype, 1, dimensions[0] * dimensions[1], array.get(), &status);
 
-    fits_close_file(fptr, &status);
-    return (status == 0);
+    if (status) { return false; }
+
+    fptr.Finalize();
+
+    fs::remove(fname);
+    std::ofstream file{fname, std::ios::binary};
+    if (!file.is_open()) { return false; }
+    // TODO (Fedora 42, cfitsio 4.6.0-1) `bufSize` does not get updated to the final file size (which might be smaller
+    // than k*`BUF_SIZE_DELTA`); consider using `FITSfile::io_pos`
+    file.write(static_cast<const char*>(buffer.GetData()), bufSize);
+
+    return true;
 }
 #endif // if USE_CFITSIO
 
+
 #if USE_FREEIMAGE
+#pragma region Private definitions
+namespace
+{
+
+void close_file(FILE* file) { fclose(file); }
+
+using UniqueFilePtr = std::unique_ptr<FILE, decltype(&close_file)>;
+
+enum class AccessMode { Read, Write };
+
+UniqueFilePtr OpenFile(const fs::path& path, AccessMode mode)
+{
+#ifdef __WXMSW__
+    return UniqueFilePtr(_wfopen(path.c_str(), mode == AccessMode::Read ? L"rb" : L"wb"), &close_file);
+#else
+    return UniqueFilePtr(fopen(path.c_str(), mode == AccessMode::Read ? "rb" : "wb"), &close_file);
+#endif
+}
+
+unsigned FIIO_read(void* buffer, unsigned size, unsigned count, fi_handle handle)
+{
+    return fread(buffer, size, count, static_cast<FILE*>(handle));
+}
+
+unsigned FIIO_write(void* buffer, unsigned size, unsigned count, fi_handle handle)
+{
+    return fwrite(buffer, size, count, static_cast<FILE*>(handle));
+}
+
+int FIIO_seek(fi_handle handle, long offset, int origin)
+{
+    return fseek(static_cast<FILE*>(handle), offset, origin);
+}
+
+long FIIO_tell(fi_handle handle)
+{
+    return ftell(static_cast<FILE*>(handle));
+}
+
+FreeImageIO g_FIIO{ FIIO_read, FIIO_write, FIIO_seek, FIIO_tell };
+
+}
+#pragma endregion
 
 c_FreeImageHandleWrapper::c_FreeImageHandleWrapper(c_FreeImageHandleWrapper&& rhs) noexcept
 {
@@ -286,7 +434,7 @@ static std::tuple<FREE_IMAGE_FORMAT, int> GetFiFormatAndFlags(OutputFileType out
     }
 }
 
-static bool SaveAsFreeImage(const IImageBuffer& buf, const std::string& fname, OutputFileType outpFileType)
+static bool SaveAsFreeImage(const IImageBuffer& buf, const fs::path& fname, OutputFileType outpFileType)
 {
 #if USE_CFITSIO
     IMPPG_ASSERT(outpFileType != OutputFileType::FITS);
@@ -377,7 +525,10 @@ static bool SaveAsFreeImage(const IImageBuffer& buf, const std::string& fname, O
     }
 
     const auto [fiFmt, fiFlags] = GetFiFormatAndFlags(outpFileType);
-    result = FreeImage_Save(fiFmt, outputFiBmp.get(), fname.c_str(), fiFlags);
+
+    auto file = OpenFile(fname, AccessMode::Write);
+    if (!file) { return false; }
+    result = FreeImage_SaveToHandle(fiFmt, outputFiBmp.get(), &g_FIIO, file.get(), fiFlags);
 
     return result;
 }
@@ -443,7 +594,7 @@ public:
     }
 
 private:
-    bool SaveToFile(const std::string& fname, OutputFileType outpFileType) const override
+    bool SaveToFile(const std::filesystem::path& fname, OutputFileType outpFileType) const override
     {
 #if USE_CFITSIO
         if (outpFileType == OutputFileType::FITS)
@@ -457,8 +608,8 @@ private:
 #else
         switch (outpFileType)
         {
-            case OutputFileType::BMP: return SaveBmp(fname.c_str(), *this);
-            case OutputFileType::TIFF: return SaveTiff(fname.c_str(), *this);
+            case OutputFileType::BMP: return SaveBmp(fname, *this);
+            case OutputFileType::TIFF: return SaveTiff(fname, *this);
             default: IMPPG_ABORT();
         }
 #endif
@@ -466,7 +617,7 @@ private:
 };
 
 #if USE_FREEIMAGE
-bool c_FreeImageBuffer::SaveToFile(const std::string& fname, OutputFileType outpFileType) const
+bool c_FreeImageBuffer::SaveToFile(const std::filesystem::path& fname, OutputFileType outpFileType) const
 {
 #if USE_CFITSIO
     if (outpFileType == OutputFileType::FITS)
@@ -476,7 +627,11 @@ bool c_FreeImageBuffer::SaveToFile(const std::string& fname, OutputFileType outp
 #endif
 
     const auto [fiFormat, fiFlags] = GetFiFormatAndFlags(outpFileType);
-    return FreeImage_Save(fiFormat, m_FiBmp.get(), fname.c_str(), fiFlags);
+
+    auto file = OpenFile(fname, AccessMode::Write);
+    if (!file) { return false; }
+    const auto result = FreeImage_SaveToHandle(fiFormat, m_FiBmp.get(), &g_FIIO, file.get(), fiFlags);
+    return result;
 }
 #endif
 
@@ -1237,29 +1392,51 @@ void NormalizeFpImage(c_Image& img, float minLevel, float maxLevel)
 }
 
 #if USE_CFITSIO
-std::optional<c_Image> LoadFitsImage(const std::string& fname, bool normalize)
+static std::optional<std::tuple<std::size_t, ModifiableUniquePtr>> LoadFileIntoBuffer(const fs::path& path)
 {
-    fitsfile* fptr{nullptr};
+    ModifiableUniquePtr buffer;
+    std::size_t bufferSize{0};
+    std::ifstream file{path, std::ios::binary};
+    if (!file.is_open()) { return std::nullopt; }
+    file.seekg(0, std::ios_base::end);
+    bufferSize = static_cast<std::size_t>(file.tellg());
+    buffer.Alloc(bufferSize);
+    file.seekg(0, std::ios_base::beg);
+    file.read(static_cast<char*>(buffer.GetData()), bufferSize);
+    if (!file.good()) { return std::nullopt; }
+    std::tuple<std::size_t, ModifiableUniquePtr> result{bufferSize, std::move(buffer)};
+    return result;
+}
+
+std::optional<c_Image> LoadFitsImage(const fs::path& fname, bool normalize)
+{
+    constexpr std::size_t BUF_SIZE_DELTA = 512 * 1024;
+
+    auto file_load_result = LoadFileIntoBuffer(fname);
+    if (!file_load_result.has_value()) { return std::nullopt; }
+
+    auto [bufferSize, buffer] = std::move(file_load_result.value());
+
+    FitsFileFinalizer fptr;
+
     int status = 0;
     long dimensions[3] = { 0 };
     int naxis;
     int bitsPerPixel;
-    int imgIndex = 0;
+
+    fits_open_memfile(fptr.GetFilePtr(), "(ignored)", READONLY, buffer.GetBufPtr(), &bufferSize, BUF_SIZE_DELTA, &std::realloc, &status);
+
     while (0 == status)
     {
-        // The i-th image in FITS file is accessed by appending [i] to file name; try image [0] first
-        fits_open_file(&fptr, boost::str(boost::format("%s[%d]") % fname % imgIndex).c_str(), READONLY, &status);
-        fits_read_imghdr(fptr, 3, 0, &bitsPerPixel, &naxis, dimensions, 0, 0, 0, &status);
+        fits_read_imghdr(fptr.GetFile(), 3, 0, &bitsPerPixel, &naxis, dimensions, 0, 0, 0, &status);
         if (0 == status && (naxis > 3 || naxis <= 0))
         {
-            // Try opening a subsequent image; sometimes image [0] has 0 size (e.g. in some files from SDO)
-            fits_close_file(fptr, &status);
-            imgIndex++;
+            int hduType{0};
+            fits_movrel_hdu(fptr.GetFile(), 1, &hduType, &status);
             continue;
         }
         else if (status)
         {
-            fits_close_file(fptr, &status);
             return std::nullopt;
         }
         else
@@ -1298,7 +1475,7 @@ std::optional<c_Image> LoadFitsImage(const std::string& fname, bool normalize)
         break;
     }
 
-    fits_read_img(fptr, destType, 1, numPixels, 0, fitsPixels.get(), 0, &status);
+    fits_read_img(fptr.GetFile(), destType, 1, numPixels, 0, fitsPixels.get(), 0, &status);
 
     if (NUM_OVERFLOW == status && (bitsPerPixel == BYTE_IMG || bitsPerPixel == SHORT_IMG))
     {
@@ -1307,73 +1484,70 @@ std::optional<c_Image> LoadFitsImage(const std::string& fname, bool normalize)
         fitsPixels.reset(new uint8_t[numPixels * sizeof(float)]);
         destType = TFLOAT;
         pixFmt = PixelFormat::PIX_MONO32F;
-        fits_read_img(fptr, destType, 1, numPixels, 0, fitsPixels.get(), 0, &status);
+        fits_read_img(fptr.GetFile(), destType, 1, numPixels, 0, fitsPixels.get(), 0, &status);
+        if (status) { return std::nullopt; }
     }
 
-    fits_close_file(fptr, &status);
+    if (status) { return std::nullopt; }
 
-    if (!status)
+
+    if (destType == TFLOAT)
     {
-        if (destType == TFLOAT)
-        {
-            // If any value is < 0, set it to 0. If all remaining values are <= 1.0,
-            // leave them unchanged. If the maximum value is > 1.0, scale everything down
-            // so that maximum is 1.0.
+        // If any value is < 0, set it to 0. If all remaining values are <= 1.0,
+        // leave them unchanged. If the maximum value is > 1.0, scale everything down
+        // so that maximum is 1.0.
 
-            float maxval = 0.0f;
-            for (unsigned long y = 0; y < static_cast<unsigned long>(dimensions[1]); y++)
-                for (unsigned long  x = 0; x < static_cast<unsigned long>(dimensions[0]); x++)
-                {
-                    float& val = reinterpret_cast<float*>(fitsPixels.get())[x + y*dimensions[0]];
-                    if (val < 0.0f)
-                        val = 0.0f;
-                    else if (val > maxval)
-                        maxval = val;
-                }
-
-            if (maxval > 1.0f)
+        float maxval = 0.0f;
+        for (unsigned long y = 0; y < static_cast<unsigned long>(dimensions[1]); y++)
+            for (unsigned long  x = 0; x < static_cast<unsigned long>(dimensions[0]); x++)
             {
-                if (normalize)
+                float& val = reinterpret_cast<float*>(fitsPixels.get())[x + y*dimensions[0]];
+                if (val < 0.0f)
+                    val = 0.0f;
+                else if (val > maxval)
+                    maxval = val;
+            }
+
+        if (maxval > 1.0f)
+        {
+            if (normalize)
+            {
+                float maxvalinv = 1.0f/maxval;
+                for (int y = 0; y < dimensions[1]; y++)
+                    for (int x = 0; x < dimensions[0]; x++)
+                        reinterpret_cast<float*>(fitsPixels.get())[x + y*dimensions[0]] *= maxvalinv;
+            }
+            else
+            {
+                for (int y = 0; y < dimensions[1]; y++)
                 {
-                    float maxvalinv = 1.0f/maxval;
-                    for (int y = 0; y < dimensions[1]; y++)
-                        for (int x = 0; x < dimensions[0]; x++)
-                            reinterpret_cast<float*>(fitsPixels.get())[x + y*dimensions[0]] *= maxvalinv;
-                }
-                else
-                {
-                    for (int y = 0; y < dimensions[1]; y++)
+                    for (int x = 0; x < dimensions[0]; x++)
                     {
-                        for (int x = 0; x < dimensions[0]; x++)
-                        {
-                            float& val = reinterpret_cast<float*>(fitsPixels.get())[x + y*dimensions[0]];
-                            if (val > 1.0) val = 1.0;
-                        }
+                        float& val = reinterpret_cast<float*>(fitsPixels.get())[x + y*dimensions[0]];
+                        if (val > 1.0) val = 1.0;
                     }
                 }
             }
         }
-
-        auto result = c_Image(dimensions[0], dimensions[1], pixFmt);
-        const auto bpp = BytesPerPixel[static_cast<size_t>(pixFmt)];
-        for (unsigned row = 0; row < result.GetHeight(); row++)
-        {
-            memcpy(
-                result.GetRow(row),
-                fitsPixels.get() + row * dimensions[0] * bpp,
-                dimensions[0] * bpp
-            );
-        }
-
-        return result;
     }
-    else
-        return std::nullopt;
+
+    auto result = c_Image(dimensions[0], dimensions[1], pixFmt);
+    const auto bpp = BytesPerPixel[static_cast<size_t>(pixFmt)];
+    for (unsigned row = 0; row < result.GetHeight(); row++)
+    {
+        memcpy(
+            result.GetRow(row),
+            fitsPixels.get() + row * dimensions[0] * bpp,
+            dimensions[0] * bpp
+        );
+    }
+
+    return result;
 }
 #endif
 
 std::optional<c_Image> LoadImage(
-    const std::string& fname,
+    const fs::path& fname,
     std::optional<PixelFormat> destFmt, ///< Pixel format to convert to; can be one of PIX_MONO8, PIX_MONO32F.
     std::string* errorMsg, ///< If not null, may receive an error message (if any).
     /// If true, floating-points values read from a FITS file are normalized, so that the highest becomes 1.0.
@@ -1404,11 +1578,15 @@ std::optional<c_Image> LoadImage(
 #if USE_FREEIMAGE
     //TODO: add handling of FreeImage's error message (if any)
 
+    auto file = OpenFile(fname, AccessMode::Read);
+    if (!file) { return std::nullopt; }
+
     FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;
-    fif = FreeImage_GetFileType(fname.c_str());
+    fif = FreeImage_GetFileTypeFromHandle(&g_FIIO, file.get());
     if (FIF_UNKNOWN == fif)
     {
-        fif = FreeImage_GetFIFFromFilename(fname.c_str());
+        // using dummy name to avoid non-POSIX path problems
+        fif = FreeImage_GetFIFFromFilename((wxString{"dummy_name"} + fname.extension().generic_string()).ToAscii());
     }
 
     if (fif == FIF_UNKNOWN || !FreeImage_FIFSupportsReading(fif))
@@ -1416,7 +1594,8 @@ std::optional<c_Image> LoadImage(
         return std::nullopt;
     }
 
-    c_FreeImageHandleWrapper fibmp(FreeImage_Load(fif, fname.c_str()));
+    c_FreeImageHandleWrapper fibmp(FreeImage_LoadFromHandle(fif, &g_FIIO, file.get()));
+    file.reset();
     if (!fibmp) { return std::nullopt; }
 
     auto buf = c_FreeImageBuffer::Create(std::move(fibmp));
@@ -1445,9 +1624,9 @@ std::optional<c_Image> LoadImage(
 
         std::optional<c_Image> newImg;
         if (extension == "tif" || extension == "tiff")
-            newImg = ReadTiff(fname.c_str(), errorMsg);
+            newImg = ReadTiff(fname, errorMsg);
         else if (extension == "bmp")
-            newImg = ReadBmp(fname.c_str());
+            newImg = ReadBmp(fname);
 
         if (!newImg)
         {
@@ -1465,7 +1644,7 @@ std::optional<c_Image> LoadImage(
 }
 
 std::optional<c_Image> LoadImageFileAs32f(
-    const std::string& fname,
+    const fs::path& fname,
     bool normalizeFITSvalues,
     std::string* errorMsg
 )
@@ -1484,7 +1663,7 @@ std::optional<c_Image> LoadImageFileAs32f(
 }
 
 std::optional<c_Image> LoadImageFileAsMono32f(
-    const std::string& fname,
+    const fs::path& fname,
     bool normalizeFITSvalues,
     std::string* errorMsg
 )
@@ -1493,7 +1672,7 @@ std::optional<c_Image> LoadImageFileAsMono32f(
 }
 
 std::optional<c_Image> LoadImageFileAsMono8(
-    const std::string& fname,
+    const fs::path& fname,
     bool normalizeFITSvalues,
     std::string* errorMsg
 )
@@ -1516,41 +1695,65 @@ void c_Image::Multiply(const c_Image& mult)
     }
 }
 
-/// Returns 'true' if image's width and height were successfully read; returns 'false' on error
-std::optional<std::tuple<unsigned, unsigned>> GetImageSize(const std::string& fname)
+/// Returns `std::nullopt` on error.
+std::optional<std::tuple<unsigned, unsigned>> GetImageSize(const fs::path& fname)
 {
     const auto extension = GetExtension(fname);
 #if USE_CFITSIO
     if (extension == "fit" || extension == "fits")
     {
-        fitsfile* fptr{nullptr};
-        int status = 0;
-        fits_open_file(&fptr, fname.c_str(), READONLY, &status);
-        long dimensions[2] = { 0 }; //TODO: support 3-axis files too
-        int naxis = 0;
-        fits_read_imghdr(fptr, 2, 0, 0, &naxis, dimensions, 0, 0, 0, &status);
-        fits_close_file(fptr, &status);
+        auto file_load_result = LoadFileIntoBuffer(fname);
+        if (!file_load_result.has_value()) { return std::nullopt; }
 
-        if (naxis != 2 || status)
-            return std::nullopt;
-        else
-            return std::make_tuple(dimensions[0], dimensions[1]);
+        auto [bufferSize, buffer] = std::move(file_load_result.value());
+
+        FitsFileFinalizer fptr;
+
+        int status = 0;
+        long dimensions[3] = { 0 };
+        int naxis;
+        int bitsPerPixel;
+        constexpr std::size_t BUF_SIZE_DELTA = 512 * 1024;
+
+        fits_open_memfile(fptr.GetFilePtr(), "(ignored)", READONLY, buffer.GetBufPtr(), &bufferSize,
+            BUF_SIZE_DELTA, &std::realloc, &status);
+
+        while (true)
+        {
+            fits_read_imghdr(fptr.GetFile(), 3, 0, &bitsPerPixel, &naxis, dimensions, 0, 0, 0, &status);
+            if (0 == status && (naxis > 3 || naxis <= 0))
+            {
+                int hduType{0};
+                fits_movrel_hdu(fptr.GetFile(), 1, &hduType, &status);
+                continue;
+            }
+            else if (status)
+            {
+                return std::nullopt;
+            }
+            else
+                return std::make_tuple(dimensions[0], dimensions[1]);
+        }
     }
 #endif
 #if USE_FREEIMAGE
     (void)extension; // avoid unused parameter warning when USE_CFITSIO is 0
+
+    auto file = OpenFile(fname, AccessMode::Read);
+    if (!file) { return std::nullopt; }
+
     FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;
-    fif = FreeImage_GetFileType(fname.c_str());
+    fif = FreeImage_GetFileTypeFromHandle(&g_FIIO, file.get());
     if (FIF_UNKNOWN == fif)
     {
-        fif = FreeImage_GetFIFFromFilename(fname.c_str());
+        // using dummy name to avoid non-POSIX path problems
+        fif = FreeImage_GetFIFFromFilename((wxString{"dummy_name"} + fname.extension().generic_string()).ToAscii());
     }
 
     if (fif != FIF_UNKNOWN && FreeImage_FIFSupportsReading(fif))
     {
-        c_FreeImageHandleWrapper fibmp = FreeImage_Load(fif, fname.c_str(), FIF_LOAD_NOPIXELS);
-        if (!fibmp)
-            return std::nullopt;
+        c_FreeImageHandleWrapper fibmp = FreeImage_LoadFromHandle(fif, &g_FIIO, file.get(), FIF_LOAD_NOPIXELS);
+        if (!fibmp) { return std::nullopt; }
 
         return std::make_tuple(FreeImage_GetWidth(fibmp.get()), FreeImage_GetHeight(fibmp.get()));
     }
@@ -1558,9 +1761,9 @@ std::optional<std::tuple<unsigned, unsigned>> GetImageSize(const std::string& fn
         return std::nullopt;
 #else
     if (extension == "tif" || extension == "tiff")
-        return GetTiffDimensions(fname.c_str());
+        return GetTiffDimensions(fname);
     else if (extension == "bmp")
-        return GetBmpDimensions(fname.c_str());
+        return GetBmpDimensions(fname);
     else
         return std::nullopt;
 #endif
@@ -1621,7 +1824,7 @@ static PixelFormat GetOutputPixelFormat(PixelFormat srcFmt, OutputBitDepth outpB
     return srcFmt; // never happens
 }
 
-bool c_Image::SaveToFile(const std::string& fname, OutputBitDepth outpBitDepth, OutputFileType outpFileType) const
+bool c_Image::SaveToFile(const fs::path& fname, OutputBitDepth outpBitDepth, OutputFileType outpFileType) const
 {
     IMPPG_ASSERT(m_Buffer->GetPixelFormat() != PixelFormat::PIX_PAL8);
 
@@ -1661,7 +1864,7 @@ static std::tuple<OutputBitDepth, OutputFileType> DecodeOutputFormat(OutputForma
     }
 }
 
-bool c_Image::SaveToFile(const std::string& fname, OutputFormat outpFormat) const
+bool c_Image::SaveToFile(const fs::path& fname, OutputFormat outpFormat) const
 {
     IMPPG_ASSERT(m_Buffer->GetPixelFormat() != PixelFormat::PIX_PAL8);
 

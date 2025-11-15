@@ -21,83 +21,78 @@ File description:
     Directory iterator implementation.
 */
 
+#include "common/common.h"
 #include "interop/classes/DirectoryIterator.h"
 #include "scripting/script_exceptions.h"
 
+#include <wx/filename.h>
 #include <wx/intl.h>
 
+#include <filesystem>
+
 namespace fs = std::filesystem;
-
-// private definitions
-namespace
-{
-
-std::string ConvertFileNamePatternToRegEx(std::string_view input)
-{
-    static const std::string charsToEscape{"[\\^$.|?+(){}"};
-
-    std::string result;
-    for (const char c: input)
-    {
-        if ('*' == c)
-        {
-            result += ".*";
-        }
-        else if (charsToEscape.find(c) != std::string_view::npos)
-        {
-            result = result + "\\" + c;
-        }
-        else
-        {
-            result += c;
-        }
-    }
-
-    return result;
-}
-
-}
 
 namespace scripting
 {
 
-DirectoryIterator DirectoryIterator::Create(std::string fileNamePattern)
+DirectoryIterator DirectoryIterator::Create(wxString filePathPattern)
 {
-    return DirectoryIterator(fileNamePattern);
+    return DirectoryIterator(filePathPattern);
 }
 
-DirectoryIterator::DirectoryIterator(std::string fileNamePattern)
+DirectoryIterator::DirectoryIterator(wxString filePathPattern)
+: m_DirIter{std::make_unique<wxDir>()}
 {
-    const auto patternPath = fs::path{fileNamePattern};
+    const auto patternPath = wxFileName{filePathPattern};
 
-    auto dirToIterateIn = patternPath;
+    const bool isDirectory = (fs::status(ToFsPath(patternPath.GetFullPath())).type() == fs::file_type::directory);
 
-    if (fs::status(patternPath).type() == fs::file_type::directory)
+    auto fileNamePattern = patternPath.GetFullName();
+
+    if (isDirectory)
     {
-        fileNamePattern = (patternPath / "*").generic_string<char>();
+        fileNamePattern = "*";
+        m_Dir.SetPath(filePathPattern);
     }
     else
     {
-        dirToIterateIn = patternPath.parent_path();
+        m_Dir.SetPath(wxFileName{filePathPattern}.GetPath());
     }
-    m_RegEx = std::regex{ConvertFileNamePatternToRegEx(fileNamePattern)};
-    std::error_code ec{};
-    m_DirIter = std::filesystem::directory_iterator{dirToIterateIn, ec};
-    if (ec)
+
+    if (!m_DirIter->Open(m_Dir.GetPath()))
     {
-        throw ScriptExecutionError{wxString::Format(_("cannot access directory %s"), dirToIterateIn.generic_string())};
+        throw ScriptExecutionError{wxString::Format(_("cannot access directory %s"), m_Dir.GetPath())};
+    }
+
+    wxString f;
+    if (m_DirIter->GetFirst(&f, fileNamePattern, wxDIR_FILES))
+    {
+        wxFileName fn{m_Dir};
+        fn.SetFullName(f);
+        m_FirstResult = fn;
     }
 }
 
-std::optional<std::string> DirectoryIterator::Next()
+std::optional<wxFileName> DirectoryIterator::Next()
 {
-    while (m_DirIter != std::filesystem::end(m_DirIter))
+    if (m_FirstResult.has_value())
     {
-        const std::string item = m_DirIter->path().generic_string<char>();
-        ++m_DirIter;
-        if (std::regex_match(item, m_RegEx))
+        const auto result = std::move(m_FirstResult.value());
+        m_FirstResult = std::nullopt;
+        return result;
+    }
+    else
+    {
+        wxString f;
+        if (m_DirIter->GetNext(&f))
         {
-            return item;
+            wxFileName fn{m_Dir};
+            fn.SetFullName(f);
+            return fn;
+        }
+        else
+        {
+            return std::nullopt;
         }
     }
 

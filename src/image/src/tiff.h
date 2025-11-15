@@ -24,20 +24,21 @@ File description:
 #ifndef ImPPG_TIFF_H
 #define ImPPG_TIFF_H
 
+#include <filesystem>
 #include <optional>
 #include <string>
 
 #include "image/image.h"
 
 /// Returns (width, height).
-std::optional<std::tuple<unsigned, unsigned>> GetTiffDimensions(const std::string& fileName);
+std::optional<std::tuple<unsigned, unsigned>> GetTiffDimensions(const std::filesystem::path& fileName);
 
 std::optional<c_Image> ReadTiff(
-    const std::string& fileName,
+    const std::filesystem::path& fileName,
     std::string* errorMsg = nullptr ///< If not null, receives error message (if any)
 );
 
 /// Returns `false` on error.
-bool SaveTiff(const std::string& fileName, const IImageBuffer& img);
+bool SaveTiff(const std::filesystem::path& fileName, const IImageBuffer& img);
 
 #endif // ImPPG_TIFF_H

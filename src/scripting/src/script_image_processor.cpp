@@ -86,17 +86,17 @@ void ScriptImageProcessor::OnProcessImageFile(const contents::ProcessImageFile& 
     if (!loadResult)
     {
         onCompletion(call_result::Error{
-            wxString::Format(_("failed to load image from %s; %s"), call.imagePath, loadErrorMsg).ToStdString()
+            wxString::Format(_("failed to load image from %s; %s"), call.imagePath.native(), loadErrorMsg)
         });
         return;
     }
     c_Image image = std::move(loadResult.value());
 
-    const auto settings = LoadSettings(call.settingsPath);
+    const auto settings = LoadSettings(call.settingsPath.native());
     if (!settings.has_value())
     {
         onCompletion(call_result::Error{
-            wxString::Format(_("failed to load processing settings from %s"), call.settingsPath).ToStdString()
+            wxString::Format(_("failed to load processing settings from %s"), call.settingsPath.native())
         });
         return;
     }
@@ -113,7 +113,7 @@ void ScriptImageProcessor::OnProcessImageFile(const contents::ProcessImageFile& 
                 if (!m_Processor->GetProcessedOutput().SaveToFile(outPath, outFmt))
                 {
                     onCompletion(call_result::Error{
-                        wxString::Format(_("failed to save output file %s"), outPath).ToStdString()
+                        wxString::Format(_("failed to save output file %s"), outPath.native())
                     });
                 }
                 else
@@ -171,7 +171,7 @@ void ScriptImageProcessor::OnAlignImages(
     if (!std::filesystem::exists(call.outputDir))
     {
         onCompletion(call_result::Error{
-            wxString::Format(_("output directory %s does not exist"), call.outputDir.generic_string()).ToStdString()
+            wxString::Format(_("output directory %s does not exist"), call.outputDir.generic_string())
         });
         return;
     }
@@ -192,7 +192,7 @@ void ScriptImageProcessor::OnAlignImages(
             switch (event.GetId())
             {
             case EID_ABORTED:
-                onCompletion(call_result::Error{event.GetString().ToStdString()});
+                onCompletion(call_result::Error{event.GetString()});
                 break;
 
             case EID_PHASECORR_IMG_TRANSLATION:
@@ -231,7 +231,7 @@ void ScriptImageProcessor::OnAlignImages(
                 }
                 else
                 {
-                    onCompletion(call_result::Error{event.GetString().ToStdString()});
+                    onCompletion(call_result::Error{event.GetString()});
                 }
                 break;
 
@@ -249,12 +249,12 @@ void ScriptImageProcessor::OnAlignImages(
         wxArrayString files;
         for (const auto& path: call.inputFiles)
         {
-            files.Add(path.generic_string());
+            files.Add(path.native());
         }
         return files;
     }();
     alignParams.normalizeFitsValues = false;
-    alignParams.outputDir = call.outputDir.generic_string();
+    alignParams.outputDir = call.outputDir.native();
     alignParams.outputFNameSuffix = call.outputFNameSuffix;
 
     m_AlignmentWorker = std::make_unique<c_ImageAlignmentWorkerThread>(*m_AlignmentEvtHandler, std::move(alignParams));
@@ -325,7 +325,7 @@ void ScriptImageProcessor::OnAlignRGB(const contents::AlignRGB& call, Completion
         }
         else if (eid == EID_ABORTED)
         {
-            onCompletion(call_result::Error{_("RGB alignment aborted").ToStdString()});
+            onCompletion(call_result::Error{_("RGB alignment aborted")});
         }
     });
 

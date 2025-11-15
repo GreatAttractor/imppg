@@ -27,12 +27,17 @@ File description:
 namespace scripting
 {
 
-std::string GetString(lua_State* lua, int stackPos)
+wxString GetString(lua_State* lua, int stackPos)
 {
     luaL_checktype(lua, stackPos, LUA_TSTRING);
     std::size_t length{0};
     const char* contents = lua_tolstring(lua, stackPos, &length);
-    return std::string{contents, length};
+    wxString result = wxString::FromUTF8(contents, length);
+    if (length != 0 && result.IsEmpty())
+    {
+        throw ScriptExecutionError{_("invalid UTF8 string")};
+    }
+    return result;
 }
 
 int GetInteger(lua_State* lua, int stackPos)
@@ -55,11 +60,11 @@ bool GetBoolean(lua_State* lua, int stackPos)
     return lua_toboolean(lua, stackPos);
 }
 
-std::vector<std::string> GetStringTable(lua_State* lua, int stackPos)
+std::vector<wxString> GetStringTable(lua_State* lua, int stackPos)
 {
     luaL_checktype(lua, stackPos, LUA_TTABLE);
     const std::size_t len = lua_rawlen(lua, stackPos);
-    std::vector<std::string> result;
+    std::vector<wxString> result;
     result.reserve(len);
     for (std::size_t i = 1; i <= len; ++i)
     {

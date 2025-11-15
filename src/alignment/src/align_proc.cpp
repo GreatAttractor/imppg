@@ -88,7 +88,13 @@ ImageAccessor GetInputImageByIndex(
 {
     return std::visit(Overload{
         [&](const wxArrayString& fnames) {
-            auto loadResult = LoadImage(fnames[index].ToStdString(), std::nullopt, fileLoadErrorMsg, false);
+            //FIXME: on empty error message, put sth generic there
+            auto loadResult = LoadImage(
+                ToFsPath(fnames[index]),
+                std::nullopt,
+                fileLoadErrorMsg,
+                false
+            );
             if (!loadResult) { return ImageAccessor{}; }
             c_Image srcImage{std::move(loadResult.value())};
             return ImageAccessor{std::move(srcImage)};
@@ -129,7 +135,7 @@ std::optional<std::tuple<c_Image, c_Image>> PrepareInputAndOutputImages(
     bool normalizeFitsValues
 )
 {
-    auto loadResult = LoadImage(inputFileName.ToStdString(), std::nullopt, &errorMsg, normalizeFitsValues);
+    auto loadResult = LoadImage(ToFsPath(inputFileName), std::nullopt, &errorMsg, normalizeFitsValues);
     if (!loadResult) { return std::nullopt; }
     c_Image srcImage{std::move(loadResult.value())};
     // subpixel translation of palettised images is not supported, so convert to RGB8
@@ -156,13 +162,13 @@ bool c_ImageAlignmentWorkerThread::SaveTranslatedOutputImage(const wxString& inp
     if (extension == "fit" || extension == "fits")
     {
         outputFileName.SetExt("fit");
-        saved = image.SaveToFile(outputFileName.GetFullPath().ToStdString(), OutputBitDepth::Unchanged, OutputFileType::FITS);
+        saved = image.SaveToFile(ToFsPath(outputFileName.GetFullPath()), OutputBitDepth::Unchanged, OutputFileType::FITS);
     }
     else
 #endif
     {
         outputFileName.SetExt("tif");
-        saved = image.SaveToFile(outputFileName.GetFullPath().ToStdString(), OutputBitDepth::Unchanged, OutputFileType::TIFF/* TODO: make it configurable */);
+        saved = image.SaveToFile(ToFsPath(outputFileName.GetFullPath()), OutputBitDepth::Unchanged, OutputFileType::TIFF/* TODO: make it configurable */);
     }
 
     Log::Print("Saved output image.\n");
@@ -190,7 +196,7 @@ void c_ImageAlignmentWorkerThread::PhaseCorrelationAlignment()
         [&](const wxArrayString& fnames) {
             for (const auto& fname: fnames)
             {
-                const auto result = GetImageSize(fname.ToStdString());
+                const auto result = GetImageSize(ToFsPath(fname));
 
                 if (!result)
                 {
@@ -391,7 +397,7 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
         // Scan the first image's intersection portion for the highest-contrast area
         IMPPG_ASSERT(!fnames->IsEmpty());
         auto loadResult = LoadImageFileAsMono32f(
-            (*fnames)[0].ToStdString(),
+            ToFsPath((*fnames)[0]),
             m_Parameters.normalizeFitsValues
         );
         if (!loadResult)
@@ -449,7 +455,7 @@ bool c_ImageAlignmentWorkerThread::StabilizeLimbAlignment(
             SendMessageToParent(EID_LIMB_STABILIZATION_PROGRESS, i);
 
             const auto loadResult = LoadImageFileAsMono32f(
-                (*fnames)[i].ToStdString(),
+                ToFsPath((*fnames)[i]),
                 m_Parameters.normalizeFitsValues
             );
             if (!loadResult)
@@ -635,7 +641,7 @@ bool c_ImageAlignmentWorkerThread::FindRadii(
             return false;
 
         const auto loadResult = LoadImageFileAsMono8(
-            fnames[i].ToStdString(),
+            ToFsPath(fnames[i]),
             m_Parameters.normalizeFitsValues
         );
         if (!loadResult)
@@ -928,7 +934,7 @@ void c_ImageAlignmentWorkerThread::LimbAlignment()
             Ty = boost::math::round(Ty);
         }
 
-        auto loadResult = LoadImage((*fnames)[i].ToStdString(), std::nullopt, &m_ErrorMessage, false);
+        auto loadResult = LoadImage(ToFsPath((*fnames)[i]), std::nullopt, &m_ErrorMessage, false);
         if (!loadResult) { return; }
 
         const c_Image output = CreateTranslatedOutput(loadResult.value(), outputWidth, outputHeight, Tx, Ty);

@@ -70,9 +70,9 @@ const int BMP_PALETTE_SIZE = 256*4;
 #define UP4MULT(x) (((x) + 3) / 4 * 4)
 
 /// Reads a BMP image; returns 0 on error
-std::optional<c_Image> ReadBmp(const std::string& fileName)
+std::optional<c_Image> ReadBmp(const std::filesystem::path& fileName)
 {
-    std::ifstream file(fileName.c_str(), std::ios_base::in | std::ios_base::binary);
+    std::ifstream file(fileName, std::ios_base::in | std::ios_base::binary);
     if (file.fail())
         return std::nullopt;
 
@@ -212,7 +212,7 @@ std::optional<c_Image> ReadBmp(const std::string& fileName)
     return img;
 }
 
-bool SaveBmp(const std::string& fileName, const IImageBuffer& img)
+bool SaveBmp(const std::filesystem::path& fileName, const IImageBuffer& img)
 {
     const PixelFormat pixFmt = img.GetPixelFormat();
     IMPPG_ASSERT(pixFmt == PixelFormat::PIX_PAL8 ||
@@ -320,9 +320,9 @@ bool SaveBmp(const std::string& fileName, const IImageBuffer& img)
     return true;
 }
 
-std::optional<std::tuple<unsigned, unsigned>> GetBmpDimensions(const std::string& fileName)
+std::optional<std::tuple<unsigned, unsigned>> GetBmpDimensions(const std::filesystem::path& fileName)
 {
-    std::ifstream file(fileName.c_str(), std::ios_base::in | std::ios_base::binary);
+    std::ifstream file(fileName, std::ios_base::in | std::ios_base::binary);
     if (file.fail())
         return std::nullopt;
 

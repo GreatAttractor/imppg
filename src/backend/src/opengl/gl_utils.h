@@ -211,7 +211,7 @@ public:
     c_Shader(c_Shader&&)                 = default;
     c_Shader& operator=(c_Shader&&)      = default;
 
-    c_Shader(GLenum type, const char *srcFileName);
+    c_Shader(GLenum type, const std::filesystem::path& srcFileName);
 
     GLuint Get() const { return m_Shader.GetConst(); }
 };

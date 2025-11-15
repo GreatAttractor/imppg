@@ -40,7 +40,7 @@ bool State::CheckStopRequested(lua_State* lua)
     if (m_StopRequested.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
     {
         lua_getglobal(lua, "error");
-        lua_pushstring(lua, _("script interrupted by user").ToStdString().c_str());
+        lua_pushstring(lua, _("script interrupted by user").utf8_str());
         lua_call(lua, 1, 0);
         return true;
     }

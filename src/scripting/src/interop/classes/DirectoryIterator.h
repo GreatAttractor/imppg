@@ -23,11 +23,14 @@ File description:
 
 #pragma once
 
+#include <wx/dir.h>
+#include <wx/filename.h>
+
 #include <filesystem>
 #include <lua.hpp>
+#include <memory>
 #include <optional>
 #include <string>
-#include <regex>
 
 namespace scripting
 {
@@ -35,16 +38,18 @@ namespace scripting
 class DirectoryIterator
 {
 public:
-    static DirectoryIterator Create(std::string fileNamePattern);
+    static DirectoryIterator Create(wxString filePathPattern);
 
-    std::optional<std::string> Next();
+    std::optional<wxFileName> Next();
 
 private:
-    DirectoryIterator(std::string fileNamePattern);
+    DirectoryIterator(wxString filePathPattern);
 
-    std::filesystem::directory_iterator m_DirIter;
+    std::unique_ptr<wxDir> m_DirIter;
 
-    std::regex m_RegEx;
+    wxFileName m_Dir;
+
+    std::optional<wxFileName> m_FirstResult;
 };
 
 }

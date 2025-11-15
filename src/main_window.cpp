@@ -174,7 +174,7 @@ void c_MainWindow::LoadSettingsFromFile(wxString settingsFile, bool moveToMruLis
 {
     auto& s = m_CurrentSettings;
 
-    const auto loaded = LoadSettings(settingsFile.ToStdString());
+    const auto loaded = LoadSettings(settingsFile);
     if (!loaded.has_value())
     {
         wxMessageBox(_("Failed to load processing settings."), _("Error"), wxOK | wxCENTRE | wxICON_ERROR);
@@ -269,7 +269,7 @@ void c_MainWindow::OnSettingsFile(wxCommandEvent& event)
                     fname.SetExt("xml");
 
 
-                if (!SaveSettings(fname.GetFullPath().ToStdString(), s.processing))
+                if (!SaveSettings(fname.GetFullPath(), s.processing))
                 {
                     wxMessageBox(_("Failed to save processing settings."), _("Error"), wxOK | wxCENTRE | wxICON_ERROR);
                 }
@@ -407,7 +407,7 @@ void c_MainWindow::OnSaveFile()
         Configuration::FileSavePath = wxFileName(dlg.GetPath()).GetPath();
         Configuration::FileOutputFormat = static_cast<OutputFormat>(dlg.GetFilterIndex());
         const c_Image processedImg = m_BackEnd->GetProcessedSelection();
-        if (!processedImg.SaveToFile(dlg.GetPath().ToStdString(), static_cast<OutputFormat>(dlg.GetFilterIndex())))
+        if (!processedImg.SaveToFile(ToFsPath(dlg.GetPath()), static_cast<OutputFormat>(dlg.GetFilterIndex())))
         {
             wxMessageBox(wxString::Format(_("Could not save output file %s."), dlg.GetFilename()), _("Error"), wxICON_ERROR, this);
         }
@@ -953,7 +953,7 @@ void c_MainWindow::OpenFile(wxFileName path, bool resetSelection)
     std::string errorMsg;
 
     const auto loadResult = LoadImageFileAs32f(
-        path.GetFullPath().ToStdString(),
+        ToFsPath(path.GetFullPath()),
         Configuration::NormalizeFITSValues,
         &errorMsg
     );

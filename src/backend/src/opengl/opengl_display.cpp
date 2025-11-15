@@ -102,11 +102,11 @@ c_OpenGLDisplay::c_OpenGLDisplay(c_ScrolledView& imgView, unsigned lRCmdBatchSiz
 
     wxFileName shaderDir = gl::GetShadersDirectory();
 
-    m_GLShaders.frag.monoOutput       = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "mono_output.frag").c_str());
-    m_GLShaders.frag.monoOutputCubic  = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "mono_output_cubic.frag").c_str());
-    m_GLShaders.frag.selectionOutline = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "selection_outline.frag").c_str());
+    m_GLShaders.frag.monoOutput       = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "mono_output.frag"));
+    m_GLShaders.frag.monoOutputCubic  = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "mono_output_cubic.frag"));
+    m_GLShaders.frag.selectionOutline = gl::c_Shader(GL_FRAGMENT_SHADER, FromDir(shaderDir, "selection_outline.frag"));
 
-    m_GLShaders.vert.vertex      = gl::c_Shader(GL_VERTEX_SHADER, FromDir(shaderDir, "vertex.vert").c_str());
+    m_GLShaders.vert.vertex      = gl::c_Shader(GL_VERTEX_SHADER, FromDir(shaderDir, "vertex.vert"));
 
     m_GLPrograms.monoOutput = gl::c_Program(
         { &m_GLShaders.frag.monoOutput,

@@ -44,7 +44,7 @@ const luaL_Reg functions[] = {
             );
             if (const auto result = object->Next())
             {
-                lua_pushstring(lua, result->c_str());
+                lua_pushstring(lua, result->GetFullPath().utf8_str());
                 return 1;
             }
             else
@@ -62,10 +62,10 @@ const luaL_Reg functions[] = {
 
         DirectoryIterator dirIter = DirectoryIterator::Create(std::move(fileNamePattern));
 
-        std::vector<std::string> files;
+        std::vector<wxString> files;
         while (const auto file = dirIter.Next())
         {
-            files.emplace_back(std::move(file.value()));
+            files.emplace_back(file.value().GetFullPath());
         }
         std::sort(files.begin(), files.end());
 
@@ -74,7 +74,7 @@ const luaL_Reg functions[] = {
         for (const auto& file: files)
         {
             lua_pushinteger(lua, index + 1);
-            lua_pushstring(lua, file.c_str());
+            lua_pushstring(lua, file.utf8_str());
             lua_settable(lua, 2); // returned table is at 2 (1 contains the argument (file name pattern))
             ++index;
         }

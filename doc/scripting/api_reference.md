@@ -1,5 +1,9 @@
 # ImPPG scripting API reference
 
+## Remarks
+
+Scripts can only operate on file paths which are convertible to UTF-8.
+
 ## Modules
 
 - [imppg](#moduleimppg)

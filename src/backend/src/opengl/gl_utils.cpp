@@ -43,7 +43,7 @@ namespace imppg::backend::gl
 std::unordered_map<GLenum, GLuint> c_Buffer::m_LastBoundBuffer;
 
 /// Returns (file contents, file length).
-static std::tuple<std::unique_ptr<GLchar[]>, GLint> ReadTextFile(const char* filename)
+static std::tuple<std::unique_ptr<GLchar[]>, GLint> ReadTextFile(const std::filesystem::path& filename)
 {
     std::ifstream file(filename, std::ios_base::in | std::ios_base::binary);
     if (file.fail())
@@ -59,12 +59,12 @@ static std::tuple<std::unique_ptr<GLchar[]>, GLint> ReadTextFile(const char* fil
     return { std::move(contents), std::move(length) };
 }
 
-c_Shader::c_Shader(GLenum type, const char* srcFileName)
+c_Shader::c_Shader(GLenum type, const std::filesystem::path& srcFileName)
 {
     auto [source, srcLength] = ReadTextFile(srcFileName);
     if (!source)
     {
-        const wxString msg = wxString::Format("Could not load shader: %s", srcFileName);
+        const wxString msg = wxString::Format("Could not load shader: %s", srcFileName.generic_string());
         Log::Print(msg);
         throw std::runtime_error(msg);
     }
@@ -82,7 +82,7 @@ c_Shader::c_Shader(GLenum type, const char* srcFileName)
             glGetShaderiv(m_Shader.Get(), GL_INFO_LOG_LENGTH, &logLength);
             auto infoLog = std::make_unique<char[]>(logLength);
             glGetShaderInfoLog(m_Shader.Get(), logLength, nullptr, infoLog.get());
-            Log::Print(wxString::Format("Could not create shader from source file %s", srcFileName));
+            Log::Print(wxString::Format("Could not create shader from source file %s", srcFileName.generic_string()));
             std::cerr << "Shader compilation failed:\n\n" << infoLog.get() << std::endl;
             throw std::runtime_error("Could not create shader.");
         }
