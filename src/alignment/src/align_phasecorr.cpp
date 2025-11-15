@@ -281,7 +281,7 @@ bool DetermineTranslationVectors(
         Log::Print(wxString::Format("Loading %s... ", fnames[idx]));
         std::string localErrorMsg;
         const auto loadResult = LoadImageFileAsMono32f(
-            fnames[idx].ToStdString(),
+            ToFsPath(fnames[idx]),
             normalizeFitsValues,
             &localErrorMsg
         );

@@ -111,7 +111,7 @@ namespace call_result
 {
 struct Success {};
 struct ImageProcessed { std::shared_ptr<c_Image> image; };
-struct Error { std::string message; };
+struct Error { wxString message; };
 }
 
 using FunctionCallResult = std::variant<
