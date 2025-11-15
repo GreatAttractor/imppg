@@ -60,6 +60,8 @@ File description:
 //    - script w/the above (alignment, non-/sorted file listing, opening settings, imgs, etc.)
 //    - load script
 //    - appconfig behavior (OK if it only works with UTF-8-representable paths)
+//    - shaders: launch ImPPG from non-ASCII path
+//    - load/save settings
 
 
 #include "common/imppg_assert.h"
@@ -89,6 +91,9 @@ public:
         if (numBytes > 0)
         {
             m_Buffer = std::malloc(numBytes);
+            // required (but as of `cfitsio` 4.6.0 undocumented!) by `fits_write_img` when using memory file;
+            // otherwise, an internal check by `fits_is_compressed_image` will use uninitialized data
+            std::memset(m_Buffer, 0, numBytes);
         }
     }
 
@@ -134,13 +139,19 @@ public:
     fitsfile* GetFile() const { return m_FPtr; }
     fitsfile** GetFilePtr() { return &m_FPtr; }
 
+    int Finalize()
+    {
+        if (!m_FPtr) { return 0; }
+
+        int status{};
+        fits_close_file(m_FPtr, &status);
+        m_FPtr = nullptr;
+        return status;
+    }
+
     ~FitsFileFinalizer()
     {
-        if (m_FPtr)
-        {
-            int status{};
-            fits_close_file(m_FPtr, &status);
-        }
+        Finalize();
     }
 
 private:
@@ -195,6 +206,11 @@ static bool SaveAsFits(const IImageBuffer& buf, const fs::path& fname)
 {
     if (NumChannels[static_cast<size_t>(buf.GetPixelFormat())] != 1) { return false; }
 
+    constexpr std::size_t BUF_SIZE_DELTA = 128 * 1024;
+    // must be constructed before `fptr`, so that `fptr`'s dtor runs first (it might write something to `buffer`)
+    ModifiableUniquePtr buffer{BUF_SIZE_DELTA};
+    std::size_t bufSize{BUF_SIZE_DELTA};
+
     FitsFileFinalizer fptr;
     long dimensions[2] = { static_cast<long>(buf.GetWidth()), static_cast<long>(buf.GetHeight()) };
     const auto num_pixels = buf.GetWidth() * buf.GetHeight();
@@ -211,10 +227,7 @@ static bool SaveAsFits(const IImageBuffer& buf, const fs::path& fname)
 
     int status = 0;
 
-    constexpr std::size_t BUF_SIZE_DELTA = 512 * 1024;
-    ModifiableUniquePtr buffer{BUF_SIZE_DELTA};
 
-    std::size_t bufSize{BUF_SIZE_DELTA};
     fits_create_memfile(fptr.GetFilePtr(), buffer.GetBufPtr(), &bufSize, BUF_SIZE_DELTA, std::realloc, &status);
     if (buffer.GetData() == nullptr) { return false; }
 
@@ -245,9 +258,13 @@ static bool SaveAsFits(const IImageBuffer& buf, const fs::path& fname)
 
     if (status) { return false; }
 
+    fptr.Finalize();
+
     fs::remove(fname);
     std::ofstream file{fname, std::ios::binary};
     if (!file.is_open()) { return false; }
+    // TODO `bufSize` does not get updated to the final file size (which might be smaller than k*`BUF_SIZE_DELTA`);
+    // consider using `FITSfile::io_pos`
     file.write(static_cast<const char*>(buffer.GetData()), bufSize);
 
     return true;

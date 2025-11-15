@@ -21,6 +21,7 @@ File description:
     Directory iterator implementation.
 */
 
+#include "common/common.h"
 #include "interop/classes/DirectoryIterator.h"
 #include "scripting/script_exceptions.h"
 
@@ -44,7 +45,7 @@ DirectoryIterator::DirectoryIterator(wxString filePathPattern)
 {
     const auto patternPath = wxFileName{filePathPattern};
 
-    const bool isDirectory = (fs::status(patternPath.GetFullPath().ToStdWstring()).type() == fs::file_type::directory);
+    const bool isDirectory = (fs::status(ToFsPath(patternPath.GetFullPath())).type() == fs::file_type::directory);
 
     auto fileNamePattern = patternPath.GetFullName();
 

@@ -73,7 +73,7 @@ void ImageWrapper::save(const wxString& path, int outputFormat) const
         throw ScriptExecutionError{"invalid output format"};
     }
 
-    if (!m_Image->SaveToFile(path.ToStdWstring(), static_cast<OutputFormat>(outputFormat)))
+    if (!m_Image->SaveToFile(ToFsPath(path), static_cast<OutputFormat>(outputFormat)))
     {
         throw ScriptExecutionError{wxString::Format(_("failed to save image as %s"), path).ToStdString()};
     }

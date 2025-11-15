@@ -64,7 +64,7 @@ struct AlignRGB
 struct ProcessImageFile
 {
     std::filesystem::path imagePath;
-    std::filesystem::path settingsPath; //FIXME std::fs::path
+    std::filesystem::path settingsPath;
     std::filesystem::path outputImagePath;
     OutputFormat outputFormat;
 };
