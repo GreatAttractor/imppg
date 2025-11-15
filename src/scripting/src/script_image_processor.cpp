@@ -249,12 +249,12 @@ void ScriptImageProcessor::OnAlignImages(
         wxArrayString files;
         for (const auto& path: call.inputFiles)
         {
-            files.Add(path.generic_string());
+            files.Add(path.native());
         }
         return files;
     }();
     alignParams.normalizeFitsValues = false;
-    alignParams.outputDir = call.outputDir.generic_string();
+    alignParams.outputDir = call.outputDir.native();
     alignParams.outputFNameSuffix = call.outputFNameSuffix;
 
     m_AlignmentWorker = std::make_unique<c_ImageAlignmentWorkerThread>(*m_AlignmentEvtHandler, std::move(alignParams));

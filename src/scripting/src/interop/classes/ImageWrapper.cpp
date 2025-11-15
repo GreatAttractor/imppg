@@ -45,7 +45,7 @@ ImageWrapper::ImageWrapper(const std::shared_ptr<const c_Image>& image)
 ImageWrapper::ImageWrapper(const std::filesystem::path& imagePath)
 {
     std::string internalErrorMsg;
-    auto image = LoadImageFileAs32f(imagePath.native(), false, &internalErrorMsg);
+    auto image = LoadImageFileAs32f(imagePath, false, &internalErrorMsg);
     if (!image.has_value())
     {
         auto message = std::string{"failed to load image from "} + imagePath.generic_string();
