@@ -1431,6 +1431,7 @@ std::optional<c_Image> LoadFitsImage(const fs::path& fname, bool normalize)
         fits_read_imghdr(fptr.GetFile(), 3, 0, &bitsPerPixel, &naxis, dimensions, 0, 0, 0, &status);
         if (0 == status && (naxis > 3 || naxis <= 0))
         {
+            // try opening a subsequent HDU; sometimes HDU [0] has 0 size (e.g., in some files from SDO)
             int hduType{0};
             fits_movrel_hdu(fptr.GetFile(), 1, &hduType, &status);
             continue;
@@ -1723,6 +1724,7 @@ std::optional<std::tuple<unsigned, unsigned>> GetImageSize(const fs::path& fname
             fits_read_imghdr(fptr.GetFile(), 3, 0, &bitsPerPixel, &naxis, dimensions, 0, 0, 0, &status);
             if (0 == status && (naxis > 3 || naxis <= 0))
             {
+                // try opening a subsequent HDU; sometimes HDU [0] has 0 size (e.g., in some files from SDO)
                 int hduType{0};
                 fits_movrel_hdu(fptr.GetFile(), 1, &hduType, &status);
                 continue;
