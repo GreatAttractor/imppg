@@ -58,7 +58,7 @@ File description:
 #include <FreeImage.h> // must be the last #include, since it defined _WINDOWS_ and breaks WxW headers
 #endif
 
-const char* DATE_STR = "2025-01-30"; ///< Release date of the current version
+const char* DATE_STR = "2025-11-18"; ///< Release date of the current version
 
 #if !defined(_OPENMP)
 int omp_get_num_procs() { return 1; }

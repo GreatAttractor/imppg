@@ -1,7 +1,7 @@
 # ImPPG (Image Post-Processor)
 Copyright (C) 2015-2025 Filip Szczerek (ga.software@yahoo.com)
 
-wersja 2.0.0 (2025-01-30)
+wersja 2.1.0 (2025-11-18)
 
 *Niniejszy program ABSOLUTNIE nie jest objęty JAKĄKOLWIEK GWARANCJĄ. Jest to wolne oprogramowanie na licencji GNU GPL w wersji 3 (lub dowolnej późniejszej) i można je swobodnie rozpowszechniać pod pewnymi warunkami: zob. pełny tekst licencji w pliku LICENSE.*
 
@@ -438,6 +438,20 @@ Tłumaczenie na jęz. włoski: Carlo Moisè.
 
 ----------------------------------------
 ## 14. Historia zmian
+
+**2.1.0** (2025-11-18)
+
+  - **Nowe funkcje**
+    - Tłumaczenie na język włoski
+
+  - **Poprawki błędów**
+    - Błędy obsługi ścieżek ze znakami spoza ASCII pod MS Windows
+    - Błąd przy ładowaniu niektórych plików ustawień
+    - Błąd i nagłe zamknięcie po niektórych błędach skryptów
+    - Powolne wykonywanie niektórych skryptów pod MS Windows
+
+  - **Ulepszenia**
+    - Logowanie błędów krytycznych do pliku
 
 **2.0.0** (2025-01-30)
 

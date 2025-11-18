@@ -47,7 +47,7 @@ target_include_directories(imppg PRIVATE src)
 set(IMPPG_SHADERS_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/imppg/shaders)
 set(IMPPG_IMAGES_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/imppg/images)
 set(IMPPG_VERSION_MAJOR 2)
-set(IMPPG_VERSION_MINOR 0)
+set(IMPPG_VERSION_MINOR 1)
 set(IMPPG_VERSION_SUBMINOR 0)
 
 target_compile_definitions(imppg PRIVATE
