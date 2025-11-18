@@ -26,11 +26,12 @@ File description:
 #include "common/proc_settings.h"
 #include "scripting/script_image_processor.h"
 
+#include <wx/hashmap.h>
+
 #include <filesystem>
 #include <future>
 #include <initializer_list>
 #include <memory>
-#include <unordered_map>
 #include <vector>
 
 namespace scripting { class ScriptMessagePayload; }
@@ -70,6 +71,8 @@ public:
     const std::vector<wxString>& GetStringNotifications() const { return m_StringNotifications; }
 
 private:
+    WX_DECLARE_STRING_HASH_MAP(std::size_t, StringNotificationsMap);
+
     void OnIdle(wxIdleEvent& event);
     void OnRunnerMessage(wxThreadEvent& event);
     void OnScriptMessageContents(scripting::ScriptMessagePayload& payload);
@@ -79,7 +82,7 @@ private:
     std::promise<void> m_StopScript;
     std::vector<std::filesystem::path> m_TemporaryFiles;
     // value: occurrence count
-    std::unordered_map<wxString, std::size_t> m_StringNotificationsUnordered;
+    StringNotificationsMap m_StringNotificationsUnordered;
     std::vector<wxString> m_StringNotifications;
     std::optional<ProcessingSettings> m_SettingsNotification;
     std::shared_ptr<const c_Image> m_ImageNotification;
