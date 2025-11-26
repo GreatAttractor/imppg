@@ -19,7 +19,10 @@ PKG_TYPES="\
     fedora-37 \
     fedora-38 \
     fedora-39 \
-    fedora-40
+    fedora-40 \
+    fedora-41 \
+    fedora-42 \
+    fedora-43
 "
 
 MAPPED_IMPPG_REPO=/imppg_src
