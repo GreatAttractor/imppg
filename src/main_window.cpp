@@ -1613,12 +1613,12 @@ void c_MainWindow::InitToolbar()
     // File operations controls ------------------------------
 
 	tb->AddTool(wxID_OPEN, wxEmptyString,
-	        LoadBitmap("open_file", true, iconSize),
+	        LoadBitmap("open_file", iconSize),
 	        wxNullBitmap,
 	        wxITEM_NORMAL,
 	        _("Open image file"));
     tb->AddTool(wxID_SAVE, wxEmptyString,
-        LoadBitmap("save_file", true, iconSize),
+        LoadBitmap("save_file", iconSize),
         wxNullBitmap,
         wxITEM_NORMAL,
         _("Save image file"));
@@ -1626,11 +1626,11 @@ void c_MainWindow::InitToolbar()
 
     // User interface controls ------------------------------
 
-    tb->AddCheckTool(ID_ToggleProcessingPanel, wxEmptyString, LoadBitmap("toggle_proc", true, iconSize),
+    tb->AddCheckTool(ID_ToggleProcessingPanel, wxEmptyString, LoadBitmap("toggle_proc", iconSize),
         wxNullBitmap, _("Show processing controls"));
     tb->FindById(ID_ToggleProcessingPanel)->Toggle(true);
 
-    tb->AddCheckTool(ID_ToggleToneCurveEditor, wxEmptyString, LoadBitmap("toggle_tcrv", true, iconSize),
+    tb->AddCheckTool(ID_ToggleToneCurveEditor, wxEmptyString, LoadBitmap("toggle_tcrv", iconSize),
         wxNullBitmap, _("Show tone curve editor"));
 
     tb->AddSeparator();
@@ -1638,7 +1638,7 @@ void c_MainWindow::InitToolbar()
     // Processing controls ------------------------------
 
     tb->AddTool(ID_SelectAndProcessAll, wxEmptyString,
-                LoadBitmap("select_all", true, iconSize),
+                LoadBitmap("select_all", iconSize),
                 wxNullBitmap,
                 wxITEM_NORMAL,
                 _("Select and process the whole image"));
@@ -1647,27 +1647,27 @@ void c_MainWindow::InitToolbar()
 
     // Zoom controls ------------------------------
 
-    tb->AddCheckTool(ID_FitInWindow, wxEmptyString, LoadBitmap("fit_wnd", true, iconSize),
+    tb->AddCheckTool(ID_FitInWindow, wxEmptyString, LoadBitmap("fit_wnd", iconSize),
             wxNullBitmap, _("Fit image in window"));
-    tb->AddTool(ID_Zoom100, wxEmptyString, LoadBitmap("zoom_none", true, iconSize),
+    tb->AddTool(ID_Zoom100, wxEmptyString, LoadBitmap("zoom_none", iconSize),
             wxNullBitmap, wxITEM_NORMAL, _("Actual size (100%)"));
-    tb->AddTool(ID_ZoomIn, wxEmptyString, LoadBitmap("zoom_in", true, iconSize),
+    tb->AddTool(ID_ZoomIn, wxEmptyString, LoadBitmap("zoom_in", iconSize),
             wxNullBitmap, wxITEM_NORMAL, _("Zoom in"));
-    tb->AddTool(ID_ZoomOut, wxEmptyString, LoadBitmap("zoom_out", true, iconSize),
+    tb->AddTool(ID_ZoomOut, wxEmptyString, LoadBitmap("zoom_out", iconSize),
             wxNullBitmap, wxITEM_NORMAL, _("Zoom out"));
-    tb->AddTool(ID_ZoomCustom, wxEmptyString, LoadBitmap("zoom_custom", true, iconSize),
+    tb->AddTool(ID_ZoomCustom, wxEmptyString, LoadBitmap("zoom_custom", iconSize),
             wxNullBitmap, wxITEM_NORMAL, _("Custom zoom factor..."));
 
     tb->AddSeparator();
 
     // Settings file controls ------------------------------
 
-    tb->AddTool(ID_SaveSettings, wxEmptyString, LoadBitmap("save_settings", true, iconSize),
+    tb->AddTool(ID_SaveSettings, wxEmptyString, LoadBitmap("save_settings", iconSize),
             wxNullBitmap, wxITEM_NORMAL, _("Save processing settings"));
-    tb->AddTool(ID_LoadSettings, wxEmptyString, LoadBitmap("load_settings", true, iconSize),
+    tb->AddTool(ID_LoadSettings, wxEmptyString, LoadBitmap("load_settings", iconSize),
             wxNullBitmap, wxITEM_NORMAL, _("Load processing settings"));
 
-    tb->AddTool(ID_MruSettings, wxEmptyString, LoadBitmap("mru_settings", true, iconSize),
+    tb->AddTool(ID_MruSettings, wxEmptyString, LoadBitmap("mru_settings", iconSize),
             wxNullBitmap, wxITEM_NORMAL, _("Show list of recently used settings"));
 
     tb->AddSeparator();

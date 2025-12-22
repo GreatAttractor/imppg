@@ -30,16 +30,17 @@ namespace fs = std::filesystem;
 
 wxFileName GetImagesDirectory()
 {
-    auto imgDir = wxFileName(wxStandardPaths::Get().GetExecutablePath());
-    imgDir.AppendDir("images");
-
+    wxFileName imgDir;
+    imgDir.AssignDir(IMPPG_IMAGES_DIR); // defined in CMakeLists.txt
     if (!imgDir.Exists())
     {
-        imgDir.AssignCwd();
+        imgDir = wxFileName{wxStandardPaths::Get().GetExecutablePath()};
         imgDir.AppendDir("images");
+
         if (!imgDir.Exists())
         {
-            imgDir.AssignDir(IMPPG_IMAGES_DIR); // defined in CMakeLists.txt
+            imgDir.AssignCwd();
+            imgDir.AppendDir("images");
         }
     }
 

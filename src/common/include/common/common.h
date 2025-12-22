@@ -28,6 +28,7 @@ File description:
 
 #include <array>
 #include <filesystem>
+#include <optional>
 #include <variant>
 #include <vector>
 #include <wx/bitmap.h>
@@ -179,7 +180,7 @@ public:
 void FixWindowPosition(wxWindow& wnd);
 
 /// Loads a bitmap from the "images" subdirectory, optionally scaling it
-wxBitmap LoadBitmap(wxString name, bool scale = false, wxSize scaledSize = wxDefaultSize);
+wxBitmap LoadBitmap(wxString name, std::optional<wxSize> scaledSize = std::nullopt);
 
 template<class T>
 void BindAllScrollEvents(wxEvtHandler& evtHandler, void(T::* evtFunc)(wxScrollWinEvent&), T* parent)
