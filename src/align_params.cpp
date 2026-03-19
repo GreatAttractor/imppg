@@ -24,7 +24,9 @@ File description:
 #include <wx/artprov.h>
 #include <wx/button.h>
 #include <wx/checkbox.h>
+#include <wx/dataobj.h>
 #include <wx/dialog.h>
+#include <wx/dnd.h>
 #include <wx/editlbox.h>
 #include <wx/event.h>
 #include <wx/filename.h>
@@ -99,6 +101,25 @@ class c_ImageAlignmentParams: public c_ScrollableDialog
     wxStaticText* m_AlignMethodTextCtrl{nullptr};
 
     wxBitmap m_CropBitmaps[2]; ///< Bitmaps illustrating the "pad to bounding box" and "crop to intersection" output modes
+
+    class c_FileListDropTarget : public wxFileDropTarget
+    {
+    public:
+        explicit c_FileListDropTarget(c_ImageAlignmentParams* parent) : m_Parent(parent) {}
+
+        bool OnDropFiles(wxCoord x, wxCoord y, const wxArrayString& filenames) override
+        {
+            wxArrayString files;
+            m_Parent->m_FileList.GetStrings(files);
+            for (size_t i = 0; i < filenames.Count(); i++)
+                files.Add(filenames[i]);
+            m_Parent->m_FileList.SetStrings(files);
+            return true;
+        }
+
+    private:
+        c_ImageAlignmentParams* m_Parent;
+    };
 
 public:
     c_ImageAlignmentParams(wxWindow* parent);
@@ -244,6 +265,7 @@ void c_ImageAlignmentParams::DoInitControls()
 
 
         m_FileList.Create(GetContainer(), ID_FileList, _("Input image files"), wxDefaultPosition, wxDefaultSize, wxEL_ALLOW_DELETE);
+        m_FileList.SetDropTarget(new c_FileListDropTarget(this));
         szContents->Add(&m_FileList, 1, wxALIGN_CENTER | wxGROW | wxALL, BORDER);
 
         wxSizer* szProcSettings = new wxBoxSizer(wxHORIZONTAL);
