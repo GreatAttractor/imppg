@@ -92,6 +92,7 @@ class c_ImageAlignmentParams: public c_ScrollableDialog
     void OnContentsResized(wxSizeEvent& event);
 
     void DoInitControls() override;
+    void AutoSetOutputDir(const wxString& firstFilePath);
 
     AlignmentParameters_t m_Parameters;
 
@@ -101,6 +102,8 @@ class c_ImageAlignmentParams: public c_ScrollableDialog
     wxStaticText* m_AlignMethodTextCtrl{nullptr};
 
     wxBitmap m_CropBitmaps[2]; ///< Bitmaps illustrating the "pad to bounding box" and "crop to intersection" output modes
+
+    bool m_OutputDirEditedByUser{false}; ///< Tracks whether user has manually changed the output directory
 
     class c_FileListDropTarget : public wxFileDropTarget
     {
@@ -114,6 +117,8 @@ class c_ImageAlignmentParams: public c_ScrollableDialog
             for (size_t i = 0; i < filenames.Count(); i++)
                 files.Add(filenames[i]);
             m_Parent->m_FileList.SetStrings(files);
+            if (!m_Parent->m_OutputDirEditedByUser && files.Count() > 0)
+                m_Parent->AutoSetOutputDir(files[0]);
             return true;
         }
 
@@ -153,6 +158,7 @@ void c_ImageAlignmentParams::GetAlignmentParameters(AlignmentParameters_t& param
 
 void c_ImageAlignmentParams::OnOutputDirChanged(wxFileDirPickerEvent& event)
 {
+    m_OutputDirEditedByUser = true;
 #ifdef __WXMSW__
     // There is a bug in Windows in the "FilePicker in Folder Select mode" common dialog,
     // where the deepest selected sub-folder may appear twice at the end of the returned path.
@@ -173,6 +179,13 @@ void c_ImageAlignmentParams::OnOutputDirChanged(wxFileDirPickerEvent& event)
 #else
     (void)event;
 #endif
+}
+
+void c_ImageAlignmentParams::AutoSetOutputDir(const wxString& firstFilePath)
+{
+    wxString dir = wxFileName(firstFilePath).GetPath();
+    if (!dir.IsEmpty() && wxFileName::DirExists(dir))
+        m_OutputDirCtrl->SetPath(dir);
 }
 
 void c_ImageAlignmentParams::OnCommandEvent(wxCommandEvent& event)
@@ -204,6 +217,8 @@ void c_ImageAlignmentParams::OnCommandEvent(wxCommandEvent& event)
                     files.Add(newFiles[i]);
 
                 m_FileList.SetStrings(files);
+                if (!m_OutputDirEditedByUser && newFiles.Count() > 0)
+                    AutoSetOutputDir(newFiles[0]);
             }
             break;
         }
