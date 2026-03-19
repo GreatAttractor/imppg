@@ -181,6 +181,7 @@ void c_ImageAlignmentParams::OnCommandEvent(wxCommandEvent& event)
     {
     case ID_Crop:
         m_CropBitmapCtrl->SetBitmap(m_CropBitmaps[event.GetInt()]);
+        Configuration::AlignCropMode = static_cast<CropMode>(event.GetInt());
         break;
 
     case ID_Method:
@@ -247,7 +248,7 @@ c_ImageAlignmentParams::c_ImageAlignmentParams(wxWindow* parent)
 
 void c_ImageAlignmentParams::DoInitControls()
 {
-    m_Parameters.cropMode = CropMode::CROP_TO_INTERSECTION;
+    m_Parameters.cropMode = Configuration::AlignCropMode;
     m_Parameters.subpixelAlignment = true;
     m_Parameters.alignmentMethod = AlignmentMethod::PHASE_CORRELATION;
     m_Parameters.normalizeFitsValues = Configuration::NormalizeFITSValues;
