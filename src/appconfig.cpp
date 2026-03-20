@@ -96,6 +96,7 @@ namespace Keys
     const char* AlignOutputPath             = UserInterfaceGroup"/AlignOutputPath";
     const char* AlignProgressDialogPosSize  = UserInterfaceGroup"/AlignProgressDlgPosSize";
     const char* AlignParamsDialogPosSize    = UserInterfaceGroup"/AlignParamsDlgPosSize";
+    const char* AlignCropMode               = UserInterfaceGroup"/AlignCropMode";
 
     /// Indicates maximum frequency (in Hz) of issuing new processing requests by tone curve editor and numerical control sliders
     const char* MAX_PROCESSING_REQUESTS_PER_SEC =  UserInterfaceGroup"/MaxProcessingRequestsPerSecond";
@@ -338,5 +339,16 @@ c_Property<ScalingMethod> DisplayScalingMethod(
 PROPERTY_BOOL(NormalizeFITSValues, true);
 
 PROPERTY_STRING(ScriptOpenPath);
+
+c_Property<CropMode> AlignCropMode(
+    []()
+    {
+        long result = appConfig->ReadLong(Keys::AlignCropMode, static_cast<long>(CropMode::CROP_TO_INTERSECTION));
+        if (result < 0 || result >= static_cast<long>(CropMode::NUM))
+            return CropMode::CROP_TO_INTERSECTION;
+        return static_cast<CropMode>(result);
+    },
+    [](const CropMode& val) { appConfig->Write(Keys::AlignCropMode, static_cast<long>(val)); }
+);
 
 }  // namespace Configuration

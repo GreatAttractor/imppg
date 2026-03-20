@@ -28,6 +28,7 @@ File description:
 #include <wx/fileconf.h>
 #include <wx/gdicmn.h>
 
+#include "alignment/align_proc.h"
 #include "common/common.h"
 #include "common/formats.h"
 
@@ -75,6 +76,7 @@ namespace Configuration
     extern c_Property<wxString>              AlignInputPath;
     extern c_Property<wxString>              AlignOutputPath;
     extern c_Property<wxRect>                AlignParamsDialogPosSize;
+    extern c_Property<CropMode>              AlignCropMode;
     /// Code of UI language to use or an empty string (then the system default will used)
     extern c_Property<wxString>              UiLanguage;
     extern c_Property<bool>                  LogHistogram;
