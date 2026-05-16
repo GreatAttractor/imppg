@@ -32,15 +32,29 @@ wxFileName GetImagesDirectory()
 {
     wxFileName imgDir;
     imgDir.AssignDir(IMPPG_IMAGES_DIR); // defined in CMakeLists.txt
-    if (!imgDir.Exists())
+    if (!imgDir.DirExists())
     {
-        imgDir = wxFileName{wxStandardPaths::Get().GetExecutablePath()};
+        // Use a directory-typed wxFileName so AppendDir/DirExists evaluate
+        // against the directory itself, not against a synthesized
+        // "<dir>/images/<exe-name>" path (which would never exist).
+        imgDir = wxFileName::DirName(
+            wxFileName(wxStandardPaths::Get().GetExecutablePath()).GetPath());
         imgDir.AppendDir("images");
 
-        if (!imgDir.Exists())
+        if (!imgDir.DirExists())
         {
-            imgDir.AssignCwd();
+#ifdef __APPLE__
+            // macOS .app bundle: also look in Contents/Resources/.
+            // (Cocoa resets CWD to "/" before wxApp::OnInit, so the CWD
+            // fallback below is unreliable inside a bundle.)
+            imgDir = wxFileName::DirName(wxStandardPaths::Get().GetResourcesDir());
             imgDir.AppendDir("images");
+            if (!imgDir.DirExists())
+#endif
+            {
+                imgDir.AssignCwd();
+                imgDir.AppendDir("images");
+            }
         }
     }
 
