@@ -29,6 +29,7 @@ File description:
 #include <cstdlib>
 #include <wx/defs.h> // For some reason, this is needed before display.h, otherwise there are a lot of WXDLLIMPEXP_FWD_CORE undefined errors
 #include <wx/display.h>
+#include <wx/settings.h>
 
 /// Checks if a window is visible on any display; if not, sets its size and position to default
 void FixWindowPosition(wxWindow& wnd)
@@ -43,28 +44,37 @@ void FixWindowPosition(wxWindow& wnd)
     }
 }
 
-/// Loads a bitmap from the "images" subdirectory, optionally scaling it
+/// Loads a bitmap from the "images" subdirectory, optionally scaling it.
+/// In dark mode the RGB channels are inverted (alpha preserved) so that the
+/// dark-on-transparent source icons remain visible on a dark toolbar.
 wxBitmap LoadBitmap(wxString name, std::optional<wxSize> scaledSize)
 {
     wxFileName fName = GetImagesDirectory();
     fName.SetName(name);
     fName.SetExt("png");
 
-    wxBitmap result(fName.GetFullPath(), wxBITMAP_TYPE_ANY);
-    if (!result.IsOk())
+    wxImage img(fName.GetFullPath(), wxBITMAP_TYPE_ANY);
+    if (!img.IsOk())
+        return wxBitmap(16, 16); //TODO: show some warning/working path suggestion message
+
+    if (wxSystemSettings::GetAppearance().IsDark())
     {
-        result = wxBitmap(16, 16); //TODO: show some warning/working path suggestion message
+        unsigned char* rgb = img.GetData();
+        const int npx = img.GetWidth() * img.GetHeight();
+        for (int i = 0; i < npx * 3; ++i)
+            rgb[i] = static_cast<unsigned char>(255 - rgb[i]);
     }
-    else if (scaledSize.has_value())
+
+    if (scaledSize.has_value())
     {
-        result = wxBitmap(result.ConvertToImage().Scale(
+        img = img.Scale(
             scaledSize->GetWidth(),
             scaledSize->GetHeight(),
             wxIMAGE_QUALITY_BICUBIC
-        ));
+        );
     }
 
-    return result; // Return by value; it's fast, because wxBitmap's copy constructor uses reference counting
+    return wxBitmap(img);
 }
 
 Histogram DetermineHistogram(const c_Image& img, const wxRect& selection)
