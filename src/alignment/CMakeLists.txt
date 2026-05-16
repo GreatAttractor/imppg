@@ -11,6 +11,13 @@ add_library(alignment STATIC
 
 set_compiler_options(alignment)
 
+# Workaround: Apple Clang 21 (Xcode on macOS Tahoe) frontend segfaults compiling
+# align_phasecorr.cpp at -O2/-O3 with Boost 1.90 uBLAS templates. Compile this
+# file at -O1 to avoid the crash.
+if(APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+    set_source_files_properties(src/align_phasecorr.cpp PROPERTIES COMPILE_FLAGS "-O1")
+endif()
+
 if(USE_FREEIMAGE EQUAL 1)
     target_compile_definitions(alignment PRIVATE USE_FREEIMAGE=1)
 endif()
