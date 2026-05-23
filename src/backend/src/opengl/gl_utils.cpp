@@ -204,15 +204,23 @@ void BindProgramTextures(c_Program& program, std::initializer_list<std::pair<con
 
 wxFileName GetShadersDirectory()
 {
-    auto shaderDir = wxFileName(wxStandardPaths::Get().GetExecutablePath());
+    wxFileName shaderDir = wxFileName::DirName(
+        wxFileName(wxStandardPaths::Get().GetExecutablePath()).GetPath());
     shaderDir.AppendDir("shaders");
-    if (!shaderDir.Exists())
+    if (!shaderDir.DirExists())
     {
-        shaderDir.AssignCwd();
+#ifdef __APPLE__
+        shaderDir = wxFileName::DirName(wxStandardPaths::Get().GetResourcesDir());
         shaderDir.AppendDir("shaders");
-        if (!shaderDir.Exists())
+        if (!shaderDir.DirExists())
+#endif
         {
-            shaderDir.AssignDir(IMPPG_SHADERS_DIR); // defined in CMakeLists.txt
+            shaderDir.AssignCwd();
+            shaderDir.AppendDir("shaders");
+            if (!shaderDir.DirExists())
+            {
+                shaderDir.AssignDir(IMPPG_SHADERS_DIR); // defined in CMakeLists.txt
+            }
         }
     }
 
