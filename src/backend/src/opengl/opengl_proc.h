@@ -43,7 +43,7 @@ public:
 
     void SetProcessingCompletedHandler(std::function<void(CompletionStatus)> handler) override;
 
-    void SetProgressTextHandler(std::function<void(wxString)> handler) override;
+    void SetProgressHandler(std::function<void(const ProgressInfo&)> handler) override;
 
     const c_Image& GetProcessedOutput() override;
 
@@ -110,7 +110,7 @@ private:
     /// Does not concern processing, only display by `c_OpenGLDisplay`.
     bool m_LinearInterpolationForDisplay{false};
 
-    std::function<void(wxString)> m_ProgressTextHandler;
+    std::function<void(const ProgressInfo&)> m_ProgressHandler;
 
     std::function<void(CompletionStatus)> m_ProcessingCompletedHandler;
 

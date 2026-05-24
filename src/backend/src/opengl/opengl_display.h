@@ -78,7 +78,7 @@ public:
 
     void OnIdle(wxIdleEvent& event) override;
 
-    void SetProgressTextHandler(std::function<void(wxString)> handler) override { m_ProgressTextHandler = handler; }
+    void SetProgressHandler(std::function<void(const ProgressInfo&)> handler) override { m_ProgressHandler = handler; }
 
     c_Image GetProcessedSelection() override;
 
@@ -110,7 +110,7 @@ private:
 
     std::function<void(CompletionStatus)> m_OnProcessingCompleted;
 
-    std::function<void(wxString)> m_ProgressTextHandler;
+    std::function<void(const ProgressInfo&)> m_ProgressHandler;
 
     struct
     {

@@ -47,6 +47,9 @@ File description:
 #include "tcrv_edit.h"
 #include "common/tcrv.h"
 
+class wxGauge;
+class wxSizeEvent;
+
 class c_MainWindow: public wxFrame
 {
     // Event handlers ----------
@@ -76,8 +79,15 @@ class c_MainWindow: public wxFrame
             wxRect newSelection ///< Logical coordinates in the image
     );
     void OnUpdateLucyRichardsonSettings();
+    void OnStatusBarSize(wxSizeEvent& event);
     void InitToolbar();
     void InitStatusBar();
+    void UpdateProgressGauge(const imppg::backend::ProgressInfo& info);
+    /// Switches the image view into (or out of) fit-in-window mode, syncing
+    /// the toolbar/menu toggle and recomputing the zoom factor. When entering
+    /// fit mode, the zoom is recalculated even if already enabled, so opening
+    /// a new image while in fit mode produces the correct fit for that image.
+    void SetFitImageInWindow(bool enabled);
     void InitControls();
     void InitMenu();
     /// Returns a panel containing the processing controls
@@ -135,6 +145,7 @@ class c_MainWindow: public wxFrame
     wxFrame m_ToneCurveEditorWindow;
     wxString m_LastChosenSettingsFileName;
     wxStaticText* m_LastChosenSettings; ///< Shows the last chosen settings file name in toolbar
+    wxGauge* m_ProgressGauge{nullptr}; ///< Embedded in status bar; visible while a percentage-bearing step is running
 
     struct UnsharpMaskControls
     {

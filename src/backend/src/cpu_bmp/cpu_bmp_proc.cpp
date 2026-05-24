@@ -94,9 +94,9 @@ void c_CpuAndBitmapsProcessing::SetProcessingCompletedHandler(std::function<void
     m_OnProcessingCompleted = handler;
 }
 
-void c_CpuAndBitmapsProcessing::SetProgressTextHandler(std::function<void(wxString)> handler)
+void c_CpuAndBitmapsProcessing::SetProgressHandler(std::function<void(const ProgressInfo&)> handler)
 {
-    m_ProgressTextHandler = handler;
+    m_ProgressHandler = handler;
 }
 
 const c_Image& c_CpuAndBitmapsProcessing::GetProcessedOutput()
@@ -141,19 +141,14 @@ void c_CpuAndBitmapsProcessing::OnThreadEvent(wxThreadEvent& event)
             Log::Print(wxString::Format("Received a processing progress (%d%%) event from threadId = %d\n",
                     event.GetPayload<WorkerEventPayload>().percentageComplete, event.GetInt()));
 
-            if (m_ProcessingRequest.has_value())
+            if (m_ProcessingRequest.has_value() && m_ProgressHandler)
             {
-                wxString action;
+                const int pct = event.GetPayload<WorkerEventPayload>().percentageComplete;
                 std::visit(Overload{
-                    [&](const req_type::Sharpening&) { action = _(L"Lucy\u2013Richardson deconvolution"); },
-                    [&](const req_type::UnsharpMasking&) { action = _("Unsharp masking"); },
-                    [&](const req_type::ToneCurve&) { action = _("Applying tone curve"); },
+                    [&](const req_type::Sharpening&) { m_ProgressHandler(ProgressInfo{true, progress::LucyRichardson{pct}}); },
+                    [&](const req_type::UnsharpMasking&) { m_ProgressHandler(ProgressInfo{false, progress::UnsharpMasking{}}); },
+                    [&](const req_type::ToneCurve&) { m_ProgressHandler(ProgressInfo{false, progress::ToneCurve{pct}}); },
                 }, m_ProcessingRequest.value());
-
-                if (m_ProgressTextHandler)
-                {
-                    m_ProgressTextHandler(wxString::Format(action + ": %d%%", event.GetPayload<WorkerEventPayload>().percentageComplete));
-                }
             }
 
             break;
@@ -241,9 +236,9 @@ void c_CpuAndBitmapsProcessing::ScheduleProcessing(ProcessingRequest request)
 
 void c_CpuAndBitmapsProcessing::OnProcessingStepCompleted(CompletionStatus status)
 {
-    if (m_ProgressTextHandler)
+    if (m_ProgressHandler)
     {
-        m_ProgressTextHandler(_("Idle"));
+        m_ProgressHandler(ProgressInfo{false, progress::Idle{}});
     }
 
     if (status == CompletionStatus::COMPLETED)
@@ -367,9 +362,9 @@ void c_CpuAndBitmapsProcessing::StartLRDeconvolution()
             m_DeringingWorkBuf
         );
 
-        if (m_ProgressTextHandler)
+        if (m_ProgressHandler)
         {
-            m_ProgressTextHandler(wxString::Format(_(L"L\u2013R deconvolution") + ": %d%%", 0));
+            m_ProgressHandler(ProgressInfo{true, progress::LucyRichardson{0}});
         }
 
         m_Worker->Run();
@@ -451,9 +446,9 @@ void c_CpuAndBitmapsProcessing::StartUnsharpMasking(std::size_t maskIdx)
             m_ProcSettings.unsharpMask.at(maskIdx)
         );
 
-        if (m_ProgressTextHandler)
+        if (m_ProgressHandler)
         {
-            m_ProgressTextHandler(wxString(_("Unsharp masking...")));
+            m_ProgressHandler(ProgressInfo{false, progress::UnsharpMasking{}});
         }
 
         m_Worker->Run();
@@ -526,9 +521,9 @@ void c_CpuAndBitmapsProcessing::StartToneCurve()
             m_UsePreciseToneCurveValues
         );
 
-        if (m_ProgressTextHandler)
+        if (m_ProgressHandler)
         {
-            m_ProgressTextHandler(wxString::Format(_("Applying tone curve: %d%%"), 0));
+            m_ProgressHandler(ProgressInfo{false, progress::ToneCurve{0}});
         }
 
         m_Worker->Run();

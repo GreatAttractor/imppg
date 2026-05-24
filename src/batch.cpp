@@ -38,6 +38,7 @@ File description:
 #include "backend/backend.h"
 #include "batch_params.h"
 #include "batch.h"
+#include "common/common.h"
 #include "ctrl_ids.h"
 #include "image/image.h"
 #include "common/imppg_assert.h"
@@ -285,7 +286,15 @@ c_BatchDialog::c_BatchDialog(wxWindow* parent, wxArrayString fileNames,
     default: IMPPG_ABORT();
     }
 
-    m_Processor->SetProgressTextHandler([this](wxString info) { SetProgressInfo(info); });
+    m_Processor->SetProgressHandler([this](const imppg::backend::ProgressInfo& info) {
+        using namespace imppg::backend;
+        SetProgressInfo(std::visit(Overload{
+            [](const progress::LucyRichardson& e) { return wxString::Format(_(L"L–R deconvolution: %d%%"), e.percent); },
+            [](const progress::UnsharpMasking&)   { return wxString(_("Unsharp masking...")); },
+            [](const progress::ToneCurve& e)      { return wxString::Format(_("Applying tone curve: %d%%"), e.percent); },
+            [](const progress::Idle&)             { return wxString(_("Idle")); },
+        }, info.event));
+    });
     m_Processor->SetProcessingCompletedHandler([this](CompletionStatus status) { OnProcessingCompleted(status); });
 
     m_FileOperationFailure = false;

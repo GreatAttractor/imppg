@@ -82,7 +82,7 @@ public:
 
     const std::optional<c_Image>& GetImage() const override { return m_Img; }
 
-    void SetProgressTextHandler(std::function<void(wxString)> handler) override { m_Processor.SetProgressTextHandler(handler); }
+    void SetProgressHandler(std::function<void(const ProgressInfo&)> handler) override { m_Processor.SetProgressHandler(handler); }
 
     c_Image GetProcessedSelection() override;
 

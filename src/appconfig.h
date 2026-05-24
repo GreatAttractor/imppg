@@ -62,6 +62,7 @@ namespace Configuration
     extern c_Property<wxString>              FileOpenPath;
     extern c_Property<wxString>              FileSavePath;
     extern c_Property<bool>                  MainWindowMaximized;
+    extern c_Property<bool>                  FitImageInWindowOnOpen;
     extern c_Property<wxRect>                MainWindowPosSize;
     extern c_Property<wxRect>                ToneCurveEditorPosSize;
     extern c_Property<bool>                  ToneCurveEditorVisible;
