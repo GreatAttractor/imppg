@@ -101,7 +101,8 @@ const wxString processing = "processing";
 namespace StatusBarField
 {
 constexpr int ACTION = 0;
-constexpr int BACK_END = 1;
+constexpr int GAUGE = 1;
+constexpr int BACK_END = 2;
 }
 
 BEGIN_EVENT_TABLE(c_MainWindow, wxFrame)
@@ -1887,6 +1888,7 @@ void c_MainWindow::InitStatusBar()
     // field 1 is a fixed-width slot that holds the progress gauge.
     constexpr int GaugeFieldPx = 180;
     int fieldWidths[3] = { -2, GaugeFieldPx, -1 };
+    static_assert(StatusBarField::GAUGE == 1, "gauge slot width is set at index 1");
     GetStatusBar()->SetStatusWidths(3, fieldWidths);
 
     m_ProgressGauge = new wxGauge(GetStatusBar(), wxID_ANY, 100,
@@ -1901,7 +1903,7 @@ void c_MainWindow::OnStatusBarSize(wxSizeEvent& event)
     if (m_ProgressGauge)
     {
         wxRect r;
-        GetStatusBar()->GetFieldRect(1, r);
+        GetStatusBar()->GetFieldRect(StatusBarField::GAUGE, r);
         // Inset slightly so the gauge does not touch the field borders.
         r.Deflate(2, 2);
         m_ProgressGauge->SetSize(r);
