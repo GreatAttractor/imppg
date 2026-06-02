@@ -33,6 +33,41 @@ File description:
 
 namespace imppg::backend {
 
+namespace {
+
+/// Returns true if a pipeline currently executing `inProgress` will, on
+/// completion, naturally chain forward through the step `target`. When true,
+/// a `ScheduleProcessing(target)` call can safely no-op: each step in the
+/// chain reads the latest `m_ProcSettings` at its start, so settings changes
+/// downstream of `inProgress` take effect when the chain reaches them without
+/// having to restart upstream work. Without this guard, rapid tone-curve or
+/// unsharp-mask changes during a slow L-R deconvolution would abort and
+/// restart the L-R on every change, preventing it from ever completing.
+bool ChainWillReach(const ProcessingRequest& inProgress, const ProcessingRequest& target)
+{
+    return std::visit(Overload{
+        [&](const req_type::Sharpening&) {
+            // Sharpening chains forward through every UnsharpMasking step and
+            // ToneCurve. A new Sharpening request, however, means parameters
+            // changed and the L-R must restart.
+            return !std::holds_alternative<req_type::Sharpening>(target);
+        },
+        [&](const req_type::UnsharpMasking& um) {
+            if (std::holds_alternative<req_type::ToneCurve>(target)) { return true; }
+            if (const auto* umTarget = std::get_if<req_type::UnsharpMasking>(&target))
+            {
+                return umTarget->maskIdx > um.maskIdx;
+            }
+            return false; // target is Sharpening; the chain cannot go backward
+        },
+        [&](const req_type::ToneCurve&) {
+            return false; // tone curve is the terminal step
+        }
+    }, inProgress);
+}
+
+} // namespace
+
 c_Image CreateBlurredMonoImage(const c_Image& source)
 {
     IMPPG_ASSERT(source.GetPixelFormat() == PixelFormat::PIX_MONO32F);
@@ -187,6 +222,8 @@ void c_CpuAndBitmapsProcessing::ScheduleProcessing(ProcessingRequest request)
 {
     if (m_Img.empty()) return;
 
+    const auto originalRequest = request;
+
     // if the previous processing step(s) did not complete, we have to execute it (them) first
     if (std::holds_alternative<req_type::ToneCurve>(request) && !checked_back(m_Output.unsharpMask).valid)
     {
@@ -217,6 +254,18 @@ void c_CpuAndBitmapsProcessing::ScheduleProcessing(ProcessingRequest request)
                 }
             }
         }
+    }
+
+    // If a worker is already running a step that will chain forward through
+    // the originally-requested step, don't interrupt it. The caller already
+    // updated m_ProcSettings via SetProcessingSettings, so when the chain
+    // reaches the relevant step it picks up the new values automatically.
+    // See ChainWillReach() for the rationale.
+    if (IsProcessingInProgress()
+        && m_ProcessingRequest.has_value()
+        && ChainWillReach(*m_ProcessingRequest, originalRequest))
+    {
+        return;
     }
 
     m_ProcessingRequest = request;
