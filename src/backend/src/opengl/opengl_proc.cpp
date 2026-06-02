@@ -62,9 +62,9 @@ void c_OpenGLProcessing::SetProcessingCompletedHandler(std::function<void(Comple
     m_ProcessingCompletedHandler = handler;
 }
 
-void c_OpenGLProcessing::SetProgressTextHandler(std::function<void(wxString)> handler)
+void c_OpenGLProcessing::SetProgressHandler(std::function<void(const ProgressInfo&)> handler)
 {
-    m_ProgressTextHandler = handler;
+    m_ProgressHandler = handler;
 }
 
 const c_Image& c_OpenGLProcessing::GetProcessedOutput()
@@ -284,11 +284,11 @@ void c_OpenGLProcessing::IssueLRCommandBatch()
 
         m_LRSync.numIterationsLeft -= itersInThisBatch;
 
-        if (m_ProgressTextHandler)
+        if (m_ProgressHandler)
         {
             const int iters = m_ProcessingSettings.LucyRichardson.iterations;
             const int percentage = 100 * (iters - m_LRSync.numIterationsLeft) / iters;
-            m_ProgressTextHandler(wxString::Format(_(L"L\u2013R deconvolution: %d%%"), percentage));
+            m_ProgressHandler(ProgressInfo{true, progress::LucyRichardson{percentage}});
         }
     }
 
@@ -307,9 +307,9 @@ void c_OpenGLProcessing::IssueLRCommandBatch()
 
 void c_OpenGLProcessing::StartLRDeconvolution()
 {
-    if (m_ProgressTextHandler)
+    if (m_ProgressHandler)
     {
-        m_ProgressTextHandler(wxString::Format(_(L"L\u2013R deconvolution: %d%%"), 0));
+        m_ProgressHandler(ProgressInfo{true, progress::LucyRichardson{0}});
     }
 
     m_ProcessingOutputValid.sharpening = false;
@@ -526,9 +526,9 @@ void c_OpenGLProcessing::StartToneMapping()
         m_ProcessingCompletedHandler(CompletionStatus::COMPLETED);
     }
 
-    if (m_ProgressTextHandler)
+    if (m_ProgressHandler)
     {
-        m_ProgressTextHandler(_("Idle"));
+        m_ProgressHandler(ProgressInfo{false, progress::Idle{}});
     }
 }
 

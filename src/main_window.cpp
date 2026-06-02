@@ -36,6 +36,7 @@ File description:
 #include <wx/dcmemory.h>
 #include <wx/filedlg.h>
 #include <wx/filename.h>
+#include <wx/gauge.h>
 #include <wx/image.h>
 #include <wx/intl.h>
 #include <wx/menu.h>
@@ -100,7 +101,8 @@ const wxString processing = "processing";
 namespace StatusBarField
 {
 constexpr int ACTION = 0;
-constexpr int BACK_END = 1;
+constexpr int GAUGE = 1;
+constexpr int BACK_END = 2;
 }
 
 BEGIN_EVENT_TABLE(c_MainWindow, wxFrame)
@@ -701,7 +703,25 @@ void c_MainWindow::InitializeBackEnd(std::unique_ptr<T> backEnd, std::optional<c
     }
 
     m_BackEnd->ImageViewZoomChanged(m_CurrentSettings.view.zoomFactor);
-    m_BackEnd->SetProgressTextHandler([this](wxString progressText) { SetStatusText(progressText, StatusBarField::ACTION); });
+    m_BackEnd->SetProgressHandler([this](const imppg::backend::ProgressInfo& info) {
+        using namespace imppg::backend;
+
+        const wxString text = std::visit(Overload{
+            [](const progress::LucyRichardson& e) { return wxString::Format(_(L"L–R deconvolution: %d%%"), e.percent); },
+            [](const progress::UnsharpMasking&)   { return wxString(_("Unsharp masking...")); },
+            [](const progress::ToneCurve& e)      { return wxString::Format(_("Applying tone curve: %d%%"), e.percent); },
+            [](const progress::Idle&)             { return wxString(_("Idle")); },
+        }, info.event);
+
+        // Show only slow steps and the final Idle state in the status bar.
+        // Fast steps (tone curve / unsharp) flicker through in milliseconds and
+        // would only add noise, especially on rapid tone-curve drags.
+        if (info.slow || std::holds_alternative<progress::Idle>(info.event))
+        {
+            SetStatusText(text, StatusBarField::ACTION);
+        }
+        UpdateProgressGauge(info);
+    });
 }
 
 wxRect c_MainWindow::GetPhysicalSelection() const
@@ -1006,7 +1026,38 @@ void c_MainWindow::OpenFile(wxFileName path, bool resetSelection)
         m_ImageView->GetContentsPanel().Refresh(true);
 
         m_ImageLoaded = true;
+
+        // Optionally frame a freshly opened image to the window. Off by
+        // default; enable via the FitImageInWindowOnOpen config setting.
+        if (Configuration::FitImageInWindowOnOpen)
+        {
+            SetFitImageInWindow(true);
+        }
     }
+}
+
+void c_MainWindow::SetFitImageInWindow(bool enabled)
+{
+    m_FitImageInWindow = enabled;
+    // Freeze the image view: Realize() on the toolbar would otherwise force
+    // an undesired, premature refresh.
+    m_ImageView->Freeze();
+    GetToolBar()->FindById(ID_FitInWindow)->Toggle(m_FitImageInWindow);
+    GetToolBar()->Realize();
+    GetMenuBar()->FindItem(ID_FitInWindow)->Check(m_FitImageInWindow);
+
+    if (m_ImageLoaded)
+    {
+        auto& s = m_CurrentSettings;
+        if (m_FitImageInWindow)
+            s.view.zoomFactor = GetViewToImgRatio();
+        else
+            s.view.zoomFactor = ZOOM_NONE;
+
+        OnZoomChanged(wxPoint(0, 0));
+        m_BackEnd->ImageViewZoomChanged(s.view.zoomFactor);
+    }
+    m_ImageView->Thaw();
 }
 
 void c_MainWindow::OnOpenFile(wxCommandEvent&)
@@ -1181,25 +1232,7 @@ void c_MainWindow::OnCommandEvent(wxCommandEvent& event)
         break;
 
     case ID_FitInWindow:
-        m_FitImageInWindow = !m_FitImageInWindow;
-        // Surprisingly, we have to Freeze() here, because GetToolBar()->Realize()
-        // forces an undesired, premature refresh
-        m_ImageView->Freeze();
-        GetToolBar()->FindById(ID_FitInWindow)->Toggle(m_FitImageInWindow);
-        GetToolBar()->Realize();
-        GetMenuBar()->FindItem(ID_FitInWindow)->Check(m_FitImageInWindow);
-
-        if (m_ImageLoaded)
-        {
-            if (m_FitImageInWindow)
-                s.view.zoomFactor = GetViewToImgRatio();
-            else
-                s.view.zoomFactor = ZOOM_NONE;
-
-            OnZoomChanged(wxPoint(0, 0));
-            m_BackEnd->ImageViewZoomChanged(s.view.zoomFactor);
-        }
-        m_ImageView->Thaw();
+        SetFitImageInWindow(!m_FitImageInWindow);
         break;
 
     case wxID_SAVE:
@@ -1850,9 +1883,57 @@ void c_MainWindow::InitMenu()
 
 void c_MainWindow::InitStatusBar()
 {
-    CreateStatusBar(2);
-    int fieldWidths[2] = { -2, -1 };
-    GetStatusBar()->SetStatusWidths(2, fieldWidths);
+    CreateStatusBar(3);
+    // Field 0 (action text) and field 2 (back end) take proportional widths;
+    // field 1 is a fixed-width slot that holds the progress gauge.
+    constexpr int GaugeFieldPx = 180;
+    int fieldWidths[3] = { -2, GaugeFieldPx, -1 };
+    static_assert(StatusBarField::GAUGE == 1, "gauge slot width is set at index 1");
+    GetStatusBar()->SetStatusWidths(3, fieldWidths);
+
+    m_ProgressGauge = new wxGauge(GetStatusBar(), wxID_ANY, 100,
+                                  wxDefaultPosition, wxDefaultSize,
+                                  wxGA_HORIZONTAL | wxGA_SMOOTH);
+    m_ProgressGauge->Hide();
+    GetStatusBar()->Bind(wxEVT_SIZE, &c_MainWindow::OnStatusBarSize, this);
+}
+
+void c_MainWindow::OnStatusBarSize(wxSizeEvent& event)
+{
+    if (m_ProgressGauge)
+    {
+        wxRect r;
+        GetStatusBar()->GetFieldRect(StatusBarField::GAUGE, r);
+        // Inset slightly so the gauge does not touch the field borders.
+        r.Deflate(2, 2);
+        m_ProgressGauge->SetSize(r);
+    }
+    event.Skip();
+}
+
+void c_MainWindow::UpdateProgressGauge(const imppg::backend::ProgressInfo& info)
+{
+    if (!m_ProgressGauge) { return; }
+
+    // Only show the gauge for slow steps carrying a percentage (currently the
+    // L-R deconvolution). Fast steps finish in milliseconds; driving the gauge
+    // from them would cause 0%->100% flicker on every tone-curve drag.
+    if (info.slow)
+    {
+        const int percent = std::visit(Overload{
+            [](const imppg::backend::progress::LucyRichardson& e) { return e.percent; },
+            [](const imppg::backend::progress::ToneCurve& e)      { return e.percent; },
+            [](const auto&)                                       { return -1; },
+        }, info.event);
+
+        if (percent >= 0)
+        {
+            m_ProgressGauge->SetValue(percent);
+            if (!m_ProgressGauge->IsShown()) { m_ProgressGauge->Show(); }
+            return;
+        }
+    }
+    if (m_ProgressGauge->IsShown()) { m_ProgressGauge->Hide(); }
 }
 
 void c_MainWindow::OnImageViewDragScrollStart(wxMouseEvent& event)

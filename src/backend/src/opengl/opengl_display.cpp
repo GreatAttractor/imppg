@@ -179,7 +179,7 @@ c_OpenGLDisplay::c_OpenGLDisplay(c_ScrolledView& imgView, unsigned lRCmdBatchSiz
         }
     });
 
-    m_Processor->SetProgressTextHandler([this](wxString info) { if (m_ProgressTextHandler) { m_ProgressTextHandler(info); } });
+    m_Processor->SetProgressHandler([this](const ProgressInfo& info) { if (m_ProgressHandler) { m_ProgressHandler(info); } });
 }
 
 void c_OpenGLDisplay::OnPaint(wxPaintEvent&)

@@ -30,6 +30,7 @@ File description:
 
 #include <functional>
 #include <optional>
+#include <variant>
 #include <wx/scrolwin.h>
 
 namespace imppg::backend {
@@ -38,6 +39,29 @@ enum class CompletionStatus
 {
     COMPLETED = 0,
     ABORTED
+};
+
+namespace progress {
+
+/// Concrete progress events emitted by a processing back end. The slow steps
+/// (currently only Lucy-Richardson deconvolution) carry a 0..100 percentage.
+struct LucyRichardson { int percent; };
+struct UnsharpMasking {};
+struct ToneCurve { int percent; };
+struct Idle {};
+
+using Event = std::variant<LucyRichardson, UnsharpMasking, ToneCurve, Idle>;
+
+} // namespace progress
+
+/// Progress notification passed to the handler set via SetProgressHandler().
+struct ProgressInfo
+{
+    /// True if the reported step is slow enough that the UI should surface it
+    /// (status text + progress gauge). Fast steps set this to false so the UI
+    /// can avoid transient flicker on rapid updates (e.g. tone-curve drags).
+    bool slow;
+    progress::Event event;
 };
 
 class IDisplayBackEnd
@@ -88,7 +112,7 @@ public:
     virtual const std::optional<c_Image>& GetImage() const = 0;
 
     /// Provides a function to be called when progress text of back end's operations changes.
-    virtual void SetProgressTextHandler(std::function<void(wxString)>) {}
+    virtual void SetProgressHandler(std::function<void(const ProgressInfo&)>) {}
 
     /// Shall be called by the main window from "on idle" handler; the back end may call `event.RequestMore()`.
     virtual void OnIdle(wxIdleEvent& event) { (void)event; }
@@ -118,7 +142,7 @@ public:
     virtual void SetProcessingCompletedHandler(std::function<void(CompletionStatus)> handler) = 0;
 
     /// Provides a function to be called when progress text of back end's operations changes.
-    virtual void SetProgressTextHandler(std::function<void(wxString)>) {}
+    virtual void SetProgressHandler(std::function<void(const ProgressInfo&)>) {}
 
     /// Shall be called by the main window from "on idle" handler; the back end may call `event.RequestMore()`.
     virtual void OnIdle(wxIdleEvent& event) { (void)event; }

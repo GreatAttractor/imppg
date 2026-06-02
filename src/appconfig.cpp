@@ -64,6 +64,7 @@ namespace Keys
     const char* FileSavePath           = UserInterfaceGroup"/FileSavePath";
     const char* MainWindowPosSize      = UserInterfaceGroup"/MainWindowPosSize";
     const char* MainWindowMaximized    = UserInterfaceGroup"/MainWindowMaximized";
+    const char* FitImageInWindowOnOpen = UserInterfaceGroup"/FitImageInWindowOnOpen";
     const char* ToneCurveEditorPosSize = UserInterfaceGroup"/ToneCurveEditorPosSize";
     const char* ToneCurveEditorVisible = UserInterfaceGroup"/ToneCurveEditorVisible";
     const char* SaveSettingsPath       = UserInterfaceGroup"/SaveSettingsPath";
@@ -173,6 +174,7 @@ PROPERTY_STRING(UiLanguage);
     )
 
 PROPERTY_BOOL(MainWindowMaximized, true);
+PROPERTY_BOOL(FitImageInWindowOnOpen, false);
 PROPERTY_BOOL(ToneCurveEditorVisible, true);
 PROPERTY_BOOL(LogHistogram, true);
 

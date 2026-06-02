@@ -43,7 +43,7 @@ public:
 
     void SetProcessingCompletedHandler(std::function<void(CompletionStatus)> handler) override;
 
-    void SetProgressTextHandler(std::function<void(wxString)> handler) override;
+    void SetProgressHandler(std::function<void(const ProgressInfo&)> handler) override;
 
     const c_Image& GetProcessedOutput() override;
 
@@ -107,7 +107,7 @@ private:
 
     wxEvtHandler m_EvtHandler;
 
-    std::function<void(wxString)> m_ProgressTextHandler;
+    std::function<void(const ProgressInfo&)> m_ProgressHandler;
 
     ProcessingSettings m_ProcSettings{};
 
