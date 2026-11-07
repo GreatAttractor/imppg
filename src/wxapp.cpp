@@ -25,6 +25,9 @@ File description:
 #include <wx/tooltip.h>
 #include <wx/filename.h>
 #include <wx/msgdlg.h>
+#ifdef __APPLE__
+#include <wx/stdpaths.h>
+#endif
 #ifdef __WXMSW__
 #include <wx/sysopt.h>
 #endif
@@ -92,6 +95,14 @@ bool c_MyApp::OnInit()
             m_Language = static_cast<wxLanguage>(langInfo->Language);
     }
     wxFileTranslationsLoader::AddCatalogLookupPathPrefix("./lang");
+#ifdef __APPLE__
+    // Inside a macOS .app bundle CWD is "/" (Cocoa resets it before OnInit),
+    // so "./lang" does not resolve. Also add the bundle's Resources dir, where
+    // the build installs "<lang>.lproj/LC_MESSAGES/imppg.mo" (wx appends
+    // the "<lang>.lproj/LC_MESSAGES" part to every lookup prefix).
+    wxFileTranslationsLoader::AddCatalogLookupPathPrefix(
+        wxStandardPaths::Get().GetResourcesDir());
+#endif
     m_Locale.Init(m_Language);
 #ifdef __APPLE__
     // On macOS 27+ natively rendered controls (SwiftUI/RenderBox) crash when
