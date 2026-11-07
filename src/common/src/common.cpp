@@ -57,6 +57,7 @@ wxBitmap LoadBitmap(wxString name, std::optional<wxSize> scaledSize)
     if (!img.IsOk())
         return wxBitmap(16, 16); //TODO: show some warning/working path suggestion message
 
+#if wxCHECK_VERSION(3, 1, 3)
     if (wxSystemSettings::GetAppearance().IsDark())
     {
         unsigned char* rgb = img.GetData();
@@ -64,6 +65,7 @@ wxBitmap LoadBitmap(wxString name, std::optional<wxSize> scaledSize)
         for (int i = 0; i < npx * 3; ++i)
             rgb[i] = static_cast<unsigned char>(255 - rgb[i]);
     }
+#endif
 
     if (scaledSize.has_value())
     {
