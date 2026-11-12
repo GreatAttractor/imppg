@@ -124,10 +124,12 @@ void LucyRichardsonGaussian(
                     kernel.get(), kernelRadius, tempBuf1.get(), tempBuf2.get());
         }
         else
+        {
             ConvolveGaussianRecursiveTranspose(
                     c_PaddedArrayPtr<const float>(inputConvolvedDivT.get(), height, width),
-                    c_PaddedArrayPtr<float>(conv2.get(), width, width),
+                    c_PaddedArrayPtr<float>(conv2.get(), width, height),
                     sigma, tempBuf1.get(), tempBuf2.get());
+        }
 
         #pragma omp parallel for
         for (unsigned j = 0; j < input.GetWidth() * input.GetHeight(); j++)
