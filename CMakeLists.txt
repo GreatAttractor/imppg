@@ -96,6 +96,13 @@ find_package(OpenMP)
 if(OPENMP_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+    # On macOS, AppleClang does not link the OpenMP runtime (libomp) implicitly
+    # (GCC on Linux links libgomp automatically). Add it to the global linker
+    # flags so all executables (imppg and tests) get it.
+    if(APPLE AND OpenMP_libomp_LIBRARY)
+        get_filename_component(IMPPG_OMP_LIB_DIR "${OpenMP_libomp_LIBRARY}" DIRECTORY)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L${IMPPG_OMP_LIB_DIR} -lomp")
+    endif()
 endif()
 
 include(CheckCXXCompilerFlag)
