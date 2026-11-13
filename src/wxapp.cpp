@@ -25,6 +25,9 @@ File description:
 #include <wx/tooltip.h>
 #include <wx/filename.h>
 #include <wx/msgdlg.h>
+#ifdef __APPLE__
+#include <wx/stdpaths.h>
+#endif
 #ifdef __WXMSW__
 #include <wx/sysopt.h>
 #endif
@@ -92,7 +95,26 @@ bool c_MyApp::OnInit()
             m_Language = static_cast<wxLanguage>(langInfo->Language);
     }
     wxFileTranslationsLoader::AddCatalogLookupPathPrefix("./lang");
+#ifdef __APPLE__
+    // Inside a macOS .app bundle CWD is "/" (Cocoa resets it before OnInit),
+    // so "./lang" does not resolve. Also add the bundle's Resources dir, where
+    // the build installs "<lang>.lproj/LC_MESSAGES/imppg.mo" (wx appends
+    // the "<lang>.lproj/LC_MESSAGES" part to every lookup prefix).
+    wxFileTranslationsLoader::AddCatalogLookupPathPrefix(
+        wxStandardPaths::Get().GetResourcesDir());
+#endif
     m_Locale.Init(m_Language);
+#ifdef __APPLE__
+    // On macOS 27+ natively rendered controls (SwiftUI/RenderBox) crash when
+    // LC_NUMERIC uses a comma as the decimal separator (e.g. fr_FR, it_IT,
+    // pl_PL): NSException "Invalid parameter not satisfying:
+    // targetSizeInPoints.width>0 && targetSizeInPoints.height>0" from
+    // CUINamedVectorGlyph (see wxWidgets issue #26977; reproduced with plain
+    // Obj-C + setlocale, i.e. an Apple bug). wxLocale::Init() above calls
+    // setlocale(LC_ALL), so reset LC_NUMERIC to "C" to avoid the crash.
+    // Translations still work (they use LC_MESSAGES).
+    setlocale(LC_NUMERIC, "C");
+#endif
     m_Locale.AddCatalog("wxstd3"); ///< The wxWidgets catalog (translated captions of standard menu items like "Open", control buttons like "Browse" etc.)
     m_Locale.AddCatalog("imppg");
 

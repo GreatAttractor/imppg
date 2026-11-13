@@ -26,8 +26,8 @@ end
     BOOST_REQUIRE(RunScript(script.c_str()));
 
     CheckUnorderedStringNotifications({
-        (root / "file1.tif").generic_string(),
-        (root / "file2.tif").generic_string()
+        (root / "file1.tif").string(),
+        (root / "file2.tif").string()
     });
 }
 
@@ -48,8 +48,8 @@ end
     BOOST_REQUIRE(RunScript(script.c_str()));
 
     CheckUnorderedStringNotifications({
-        (root / "file1.tif").generic_string(),
-        (root / "file2").generic_string()
+        (root / "file1.tif").string(),
+        (root / "file2").string()
     });
 }
 
@@ -71,8 +71,8 @@ end
     BOOST_REQUIRE(RunScript(script.c_str()));
 
     CheckUnorderedStringNotifications({
-        (root / "subdir" / "file1").generic_string(),
-        (root / "subdir" / "file2").generic_string()
+        (root / "subdir" / "file1").string(),
+        (root / "subdir" / "file2").string()
     });
 }
 
@@ -95,8 +95,8 @@ end
     BOOST_REQUIRE(RunScript(script.c_str()));
 
     CheckUnorderedStringNotifications({
-        (root / "file1_suffix.tif").generic_string(),
-        (root / "file20suffix.tif").generic_string()
+        (root / "file1_suffix.tif").string(),
+        (root / "file20suffix.tif").string()
     });
 }
 
@@ -129,8 +129,8 @@ end
     BOOST_REQUIRE(RunScript(script.c_str()));
 
     CheckUnorderedStringNotifications({
-        (root / "file1.tif").generic_string(),
-        (root / "file2.tif").generic_string()
+        (root / "file1.tif").string(),
+        (root / "file2.tif").string()
     });
 }
 
@@ -151,8 +151,8 @@ end
     BOOST_REQUIRE(RunScript(script.c_str()));
 
     CheckUnorderedStringNotifications({
-        (root / "file1.tif").generic_string(),
-        (root / "file2").generic_string()
+        (root / "file1.tif").string(),
+        (root / "file2").string()
     });
 }
 
@@ -174,8 +174,8 @@ end
     BOOST_REQUIRE(RunScript(script.c_str()));
 
     CheckUnorderedStringNotifications({
-        (root / "subdir" / "file1").generic_string(),
-        (root / "subdir" / "file2").generic_string()
+        (root / "subdir" / "file1").string(),
+        (root / "subdir" / "file2").string()
     });
 }
 
@@ -198,8 +198,8 @@ end
     BOOST_REQUIRE(RunScript(script.c_str()));
 
     CheckUnorderedStringNotifications({
-        (root / "file1_suffix.tif").generic_string(),
-        (root / "file20suffix.tif").generic_string()
+        (root / "file1_suffix.tif").string(),
+        (root / "file20suffix.tif").string()
     });
 }
 

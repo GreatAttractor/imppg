@@ -1,0 +1,229 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    name: Linux ${{ matrix.platform }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-22.04, ubuntu-24.04, fedora-43]
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: docker/setup-buildx-action@v3
+      - name: Build packaging environment
+        uses: docker/build-push-action@v6
+        with:
+          context: scripts/docker
+          file: scripts/docker/imppg-${{ matrix.platform }}.Dockerfile
+          tags: imppg-build:latest
+          load: true
+          cache-from: type=gha,scope=linux-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=linux-${{ matrix.platform }}
+      - name: Build, test and package
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/src" -w /src \
+            -e PLATFORM \
+            imppg-build bash -euxo pipefail -c '
+              cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_INSTALL_PREFIX=/usr -DIMPPG_PKG_TYPE="$PLATFORM"
+              cmake --build build --parallel 4
+              ctest --test-dir build --output-on-failure
+              cpack --config build/CPackConfig.cmake -B artifacts
+            '
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: imppg-${{ matrix.platform }}
+          path: |
+            artifacts/*.deb
+            artifacts/*.rpm
+          if-no-files-found: error
+
+  macos:
+    name: macOS ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-26
+            arch: arm64
+          - runner: macos-26-intel
+            arch: x86_64
+    env:
+      # Release builds are signed with a Developer ID and notarized only when
+      # the Apple Developer secrets are configured (see README 12.1.4); other
+      # builds stay ad-hoc signed and skip those steps. The check lives here
+      # because the "secrets" context is not allowed directly in step-level
+      # "if" conditions, so the steps test this variable instead.
+      SIGN_NOTARIZE: ${{ github.event_name == 'release'
+                         && secrets.MACOS_CERTIFICATE_P12_BASE64 != ''
+                         && secrets.MACOS_CERTIFICATE_PASSWORD != ''
+                         && secrets.MACOS_SIGN_IDENTITY != ''
+                         && secrets.MACOS_NOTARY_APPLE_ID != ''
+                         && secrets.MACOS_NOTARY_TEAM_ID != ''
+                         && secrets.MACOS_NOTARY_PASSWORD != '' }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install dependencies
+        run: brew install boost cfitsio cmake freeimage glew pkg-config wxwidgets libomp lua dylibbundler
+      - name: Import Developer ID certificate
+        if: env.SIGN_NOTARIZE == 'true'
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
+          p12-password: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+      - name: Store notarytool credentials
+        if: env.SIGN_NOTARIZE == 'true'
+        env:
+          NOTARY_APPLE_ID: ${{ secrets.MACOS_NOTARY_APPLE_ID }}
+          NOTARY_TEAM_ID: ${{ secrets.MACOS_NOTARY_TEAM_ID }}
+          NOTARY_PASSWORD: ${{ secrets.MACOS_NOTARY_PASSWORD }}
+        run: |
+          xcrun notarytool store-credentials "imppg-notary" \
+            --apple-id "$NOTARY_APPLE_ID" \
+            --team-id "$NOTARY_TEAM_ID" \
+            --password "$NOTARY_PASSWORD"
+      - name: Build and test
+        env:
+          IMPPG_CODESIGN_IDENTITY: ${{ env.SIGN_NOTARIZE == 'true' && secrets.MACOS_SIGN_IDENTITY || '' }}
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DIMPPG_BUNDLE_DYLIBS=ON
+          cmake --build build --parallel 4
+          ctest --test-dir build --output-on-failure
+      - name: Notarize and staple
+        if: env.SIGN_NOTARIZE == 'true'
+        env:
+          IMPPG_CODESIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
+        run: ./scripts/macos/notarize.sh build
+      - name: Check and collect DMG
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: |
+          set -euxo pipefail
+          # Release assets are named "imppg-<version>-..."; the version comes
+          # from CMakeLists.txt, the same source the Linux packages use.
+          VERSION="$(grep -oE 'set\(IMPPG_VERSION_(MAJOR|MINOR|SUBMINOR) [0-9]+' CMakeLists.txt | grep -oE '[0-9]+' | paste -sd . -)"
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "could not parse version from CMakeLists.txt" >&2; exit 1; }
+          mkdir -p artifacts tmp/dmg-check
+          mv build/imppg-*-macos.dmg "artifacts/imppg-${VERSION}-macos-${ARCH}.dmg"
+          hdiutil attach "artifacts/imppg-${VERSION}-macos-${ARCH}.dmg" -readonly -nobrowse -mountpoint "$PWD/tmp/dmg-check"
+          trap 'hdiutil detach "$PWD/tmp/dmg-check"' EXIT
+          test -x tmp/dmg-check/ImPPG.app/Contents/MacOS/ImPPG
+          test -d tmp/dmg-check/ImPPG.app/Contents/Resources/shaders
+          # Self-contained bundles embed their dylibs: verify none reference
+          # the build machine's Homebrew paths.
+          ! otool -L tmp/dmg-check/ImPPG.app/Contents/MacOS/ImPPG | grep -E '/opt/homebrew|/usr/local/'
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: imppg-macos-${{ matrix.arch }}
+          path: artifacts/*.dmg
+          if-no-files-found: error
+
+  windows:
+    name: Windows x86_64
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: msys2/setup-msys2@v2.33.0
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            base-devel zip
+            mingw-w64-ucrt-x86_64-toolchain
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-boost
+            mingw-w64-ucrt-x86_64-cfitsio
+            mingw-w64-ucrt-x86_64-freeimage
+            mingw-w64-ucrt-x86_64-glew
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-wxwidgets3.3-msw
+            mingw-w64-ucrt-x86_64-lua
+            mingw-w64-ucrt-x86_64-ntldd
+          cache: true
+      - name: Build and test
+        run: |
+          cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel 4
+          ctest --test-dir build --output-on-failure
+      - name: Assemble Windows archive
+        run: |
+          set -euxo pipefail
+          # Release assets are named "imppg-<version>-..."; the version comes
+          # from CMakeLists.txt, the same source the Linux packages use.
+          VERSION="$(grep -oE 'set\(IMPPG_VERSION_(MAJOR|MINOR|SUBMINOR) [0-9]+' CMakeLists.txt | grep -oE '[0-9]+' | paste -sd . -)"
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "could not parse version from CMakeLists.txt" >&2; exit 1; }
+          mkdir -p artifacts tmp/windows/imppg
+          cp build/imppg.exe README.md LICENSE tmp/windows/imppg/
+          cp -R doc images shaders lang tmp/windows/imppg/
+          test -f tmp/windows/imppg/doc/scripting/scripting.md
+          test -f tmp/windows/imppg/doc/scripting/api_reference.md
+          ntldd -R build/imppg.exe > tmp/windows/dependencies.txt
+          # Recursive scans can report Windows API sets and optional system components as missing.
+          if grep -i '=> not found' tmp/windows/dependencies.txt |
+            grep -ivE 'api-ms-|ext-ms-|azureattestmanager\.dll|azureattestnormal\.dll|hvsifiletrust\.dll|pdmutilities\.dll|wpaxholder\.dll|wtdccm\.dll|wtdsensor\.dll'; then
+            echo "Missing Windows runtime dependencies" >&2
+            exit 1
+          fi
+          copied=0
+          while IFS= read -r line; do
+            case "$line" in
+              *" => "*)
+                path="${line#* => }"
+                path="${path% (0x*}"
+                path="$(cygpath -u "$path")"
+                case "$path" in
+                  /ucrt64/bin/*.dll|/ucrt64/bin/*.DLL)
+                    cp -n "$path" tmp/windows/imppg/
+                    copied=$((copied + 1))
+                    ;;
+                esac
+                ;;
+            esac
+          done < tmp/windows/dependencies.txt
+          test "$copied" -gt 0
+          (cd tmp/windows && zip -qr "../../artifacts/imppg-${VERSION}-win64.zip" imppg)
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: imppg-windows-x86_64
+          path: artifacts/*.zip
+          if-no-files-found: error
+
+  publish:
+    name: Attach packages to release
+    if: github.event_name == 'release'
+    needs: [linux, macos, windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8.0.2
+        with:
+          path: artifacts
+          pattern: imppg-*
+          merge-multiple: true
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euxo pipefail
+          gh release upload "$RELEASE_TAG" artifacts/* --clobber
