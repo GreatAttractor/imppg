@@ -220,6 +220,8 @@ c_OpenGLProcessing::c_OpenGLProcessing(unsigned lRCmdBatchSizeMpixIters)
 
 void c_OpenGLProcessing::StartProcessing(ProcessingRequest procRequest)
 {
+    const auto originalRequest = procRequest;
+
     // if the previous processing step(s) did not complete, we have to execute it (them) first
     if (std::holds_alternative<req_type::ToneCurve>(procRequest) && !m_ProcessingOutputValid.unshMask)
     {
@@ -229,6 +231,19 @@ void c_OpenGLProcessing::StartProcessing(ProcessingRequest procRequest)
     if (std::holds_alternative<req_type::UnsharpMasking>(procRequest) && !m_ProcessingOutputValid.sharpening)
     {
         procRequest = req_type::Sharpening{};
+    }
+
+    // If an L-R deconvolution is currently iterating, do not restart it just
+    // because a downstream setting (tone curve or unsharp-mask params) changed.
+    // The L-R loop will chain forward through unsharp masking and tone mapping
+    // when it finishes, picking up the latest m_ProcessingSettings at that
+    // point. Without this guard, rapid curve drags during the iterative L-R
+    // loop would reset and restart it on every drag, preventing completion on
+    // large images.
+    if (m_LRSync.numIterationsLeft > 0
+        && !std::holds_alternative<req_type::Sharpening>(originalRequest))
+    {
+        return;
     }
 
     std::visit(Overload{
