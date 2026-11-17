@@ -136,9 +136,6 @@ jobs:
   windows:
     name: Windows x86_64
     runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: msys2/setup-msys2@v2.33.0
@@ -149,6 +146,7 @@ jobs:
             base-devel zip
             mingw-w64-ucrt-x86_64-toolchain
             mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
             mingw-w64-ucrt-x86_64-boost
             mingw-w64-ucrt-x86_64-cfitsio
             mingw-w64-ucrt-x86_64-freeimage
@@ -158,16 +156,29 @@ jobs:
             mingw-w64-ucrt-x86_64-lua
             mingw-w64-ucrt-x86_64-ntldd
           cache: true
-      - name: Build and test
+      - name: Diagnose MSYS2 environment
+        shell: msys2 {0}
         run: |
-          cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
-          cmake --build build --parallel 4
+          echo "=== PATH ==="
+          echo "$PATH"
+          echo "=== Checking for cmake ==="
+          which cmake
+          echo "=== Checking for gcc ==="
+          which gcc
+          echo "=== Checking for make ==="
+          which make
+          echo "=== Checking for ninja ==="
+          which ninja
+      - name: Build and test
+        shell: msys2 {0}
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build
           ctest --test-dir build --output-on-failure
       - name: Assemble Windows archive
+        shell: msys2 {0}
         run: |
           set -euxo pipefail
-          # Release assets are named "imppg-<version>-..."; the version comes
-          # from CMakeLists.txt, the same source the Linux packages use.
           VERSION="$(grep -oE 'set\(IMPPG_VERSION_(MAJOR|MINOR|SUBMINOR) [0-9]+' CMakeLists.txt | grep -oE '[0-9]+' | paste -sd . -)"
           [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "could not parse version from CMakeLists.txt" >&2; exit 1; }
           mkdir -p artifacts tmp/windows/imppg
@@ -176,7 +187,6 @@ jobs:
           test -f tmp/windows/imppg/doc/scripting/scripting.md
           test -f tmp/windows/imppg/doc/scripting/api_reference.md
           ntldd -R build/imppg.exe > tmp/windows/dependencies.txt
-          # Recursive scans can report Windows API sets and optional system components as missing.
           if grep -i '=> not found' tmp/windows/dependencies.txt |
             grep -ivE 'api-ms-|ext-ms-|azureattestmanager\.dll|azureattestnormal\.dll|hvsifiletrust\.dll|pdmutilities\.dll|wpaxholder\.dll|wtdccm\.dll|wtdsensor\.dll'; then
             echo "Missing Windows runtime dependencies" >&2
