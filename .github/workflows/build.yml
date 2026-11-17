@@ -160,6 +160,9 @@ jobs:
           cache: false
       - name: Build and test
         run: |
+          which cmake
+          which make
+          which gcc
           cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
           cmake --build build --parallel 4
           ctest --test-dir build --output-on-failure
