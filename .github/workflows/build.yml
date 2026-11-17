@@ -157,7 +157,7 @@ jobs:
             mingw-w64-ucrt-x86_64-wxwidgets3.3-msw
             mingw-w64-ucrt-x86_64-lua
             mingw-w64-ucrt-x86_64-ntldd
-          cache: true
+          cache: false
       - name: Build and test
         run: |
           cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
