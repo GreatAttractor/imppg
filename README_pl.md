@@ -398,7 +398,7 @@ W podkatalogu `build` pojawi się plik wykonywalny `imppg.exe`. Można go urucho
 $ build/imppg.exe
 ```
 
-By uruchomić ImPPG z Eksploratora Windows, podkatalogi `images`, `lang` (tylko pliki `*.mo`), `shaders` i wszystkie niezbędne pliki DLL muszą znajdować się w tym samym miejscu, co `imppg.exe`. Przykład: dystrybucja binarna dla MS Windows (`imppg-win64.zip`).
+By uruchomić ImPPG z Eksploratora Windows, podkatalogi `images`, `lang` (tylko pliki `*.mo`), `shaders` i wszystkie niezbędne pliki DLL muszą znajdować się w tym samym miejscu, co `imppg.exe`. Przykład: dystrybucja binarna dla MS Windows (`imppg-<version>-win64.zip`).
 
 
 

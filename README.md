@@ -243,8 +243,33 @@ Solution: change the GTK theme to "Raleigh" (e.g. in Fedora use the "GTK+ Appear
 ----------------------------------------
 ## 11. Downloading
 
-ImPPG source code and binaries (x86-64) for MS Windows and several Linux distributions can be downloaded from:
+ImPPG source code and available binaries can be downloaded from:
     https://github.com/GreatAttractor/imppg/releases
+
+If a macOS DMG is available, download the one for your Mac's architecture.
+The macOS build is unsigned and not notarized. Removing its quarantine
+attribute bypasses macOS's usual Gatekeeper checks, so do this only for a
+download you trust. Before opening the DMG, run the following in Terminal,
+replacing the path with the actual downloaded file:
+
+```bash
+xattr -d com.apple.quarantine ~/Downloads/imppg-<version>-macos-arm64.dmg
+```
+
+Open the DMG and copy `ImPPG.app` to Applications. If the copied application
+is still quarantined, remove the attribute from the app and its contents:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/ImPPG.app
+```
+
+The DMG is self-contained: the application embeds its dependent dynamic
+libraries, so it runs without Homebrew or other libraries installed on the
+target Mac. It is signed ad-hoc, or signed with a Developer ID and notarized
+when the release workflow has Apple Developer credentials configured (see
+[Building for macOS](#1214-building-for-macos)). Unless it is notarized,
+removing its quarantine attribute bypasses macOS's usual Gatekeeper checks,
+so do this only for a download you trust.
 
 
 ----------------------------------------
@@ -320,7 +345,7 @@ git cmake g++ pkgconf-pkg-config boost-devel wxGTK-devel cfitsio-devel glew-deve
 
 After building `imppg`, it can be either installed as in section 12.1, or an RPM package can be created and installed with `dnf` (see 12.1.3).
 
-#### 12.1.3. Packaging (Linux only)
+#### 12.1.3. Packaging on Linux
 
 In order to create a binary package, define `IMPPG_PKG_TYPE` when calling CMake, e.g.:
 ```bash
@@ -334,34 +359,86 @@ Note that building needs to be performed in an environment corresponding to the 
 
 #### 12.1.4. Building for macOS
 
-*Note: macOS build and support is still work-in-progress. If you have Anaconda Python environment activated in your shell it must be deactivated with: `conda deactivate`. Otherwise CMake will detect Anaconda's LLVM toolchain and libraries.*
+*Note: If you have an Anaconda Python environment activated in your shell it must be deactivated with: `conda deactivate`. Otherwise CMake will detect Anaconda's LLVM toolchain and libraries.*
 
-To build ImPPG for macOS you will need Xcode and [Homebrew](https://brew.sh) installed.
+To build ImPPG for macOS you will need Xcode (with the Command Line Tools) and [Homebrew](https://brew.sh) installed.
 
-OpenMP is currently only supported with custom built LLVM toolchain installed with Homebrew. Apple has disabled OpenMP in its LLVM toolchain distributed with Xcode.
-
-As of July 2024 the build method was verified on:
+The build was verified on:
 
   - 2023 MacBook Air M2 (arm64 target) with macOS Sonoma 14.5, Xcode 15.4, Homebrew 4.3.10.
   - 2015 MacBook Pro (x64 target) with macOS Monterey 12.7.5, Xcode 14.2, Homebrew 4.3.10.
+  - Apple Silicon Mac with macOS 26 "Tahoe"/macOS 27, Xcode with Apple Clang 21, Homebrew wxWidgets 3.3.4.
 
-Install following libraries and tools with Homebrew:
+Install the following libraries and tools with Homebrew:
 ```bash
  $ brew update
- $ brew install boost cfitsio cmake freeimage glew mesa pkg-config wxwidgets llvm libomp lua
+ $ brew install boost cfitsio cmake freeimage glew mesa pkg-config wxwidgets libomp lua
 ```
 
-Now follow similar Linux build steps. This will use native Xcode toolchain (no OpenMP) and Homebrew libraries:
+Then build:
 ```bash
 $ mkdir build
 $ cd build
 $ cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
 $ make -j8
-$ make install
-$ imppg
 ```
 
-To enable OpenMP with Homebrew LLVM toolchain invoke `cmake` as follows. Note, Homebrew nowadays is installed under `/opt/homebrew` container directory than as previously at common `/usr/local`. If you have Homebrew installed under the old path, please adjust `$HB_ROOT` accordingly. OpenMP build will also use Homebrew LLVM C++ runtime rather than macOS native C++ runtime.
+OpenMP works out of the box with the native Xcode toolchain: CMake detects
+Homebrew's `libomp` and links it automatically (Apple Clang does not bundle
+the OpenMP runtime, hence the extra `libomp` package above).
+
+On macOS the build produces an application bundle, `ImPPG.app`, in the build
+directory (with the application icon, shaders, images and UI translations in
+`Contents/Resources/`) and an `imppg-<version>-macos.dmg` disk image. Launch
+the application either way:
+
+```bash
+$ open ImPPG.app                     # launch as a desktop application
+$ ./ImPPG.app/Contents/MacOS/ImPPG   # launch from the terminal
+```
+
+To install into a specific prefix (the default `/usr/local` requires `sudo`):
+```bash
+$ cmake -DCMAKE_INSTALL_PREFIX=/some/dir ..
+$ make install
+```
+
+The DMG is generated as part of the default build; to regenerate it separately,
+run `cpack` in the build directory. By default the application links against
+Homebrew shared libraries: the DMG is not self-contained and requires compatible
+libraries on the target machine. It is not signed or notarized.
+
+To make the bundle self-contained instead, configure with
+`-DIMPPG_BUNDLE_DYLIBS=ON` (requires the `dylibbundler` tool,
+`brew install dylibbundler`). After each relink of the application, the build
+embeds the dylibs it links against into `Contents/Frameworks/`, so the DMG
+runs on Macs without compatible libraries installed. The bundle is re-signed
+ad-hoc; to sign it with a Developer ID instead, set
+`IMPPG_CODESIGN_IDENTITY` in the build environment, e.g.:
+
+```bash
+$ export IMPPG_CODESIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)"
+$ make -j8
+```
+
+Notarization is not part of the default build; for distribution, run
+[scripts/macos/notarize.sh](scripts/macos/notarize.sh) after a Developer ID
+build: it submits the application and the regenerated DMG to Apple's notary
+service, waits for approval, staples the notarization tickets, and verifies
+Gatekeeper accepts both artifacts (requires `xcrun notarytool` credentials,
+see the script header). When building for distribution, also set
+`-DCMAKE_OSX_DEPLOYMENT_TARGET=<version>` to the oldest macOS version the
+package should support; otherwise the binaries require the build machine's
+macOS version or later.
+
+The release workflow notarizes automatically: when a release is published, the
+macOS jobs sign the bundles with a Developer ID and notarize them, provided
+the repository has the `MACOS_CERTIFICATE_*`, `MACOS_SIGN_IDENTITY` and
+`MACOS_NOTARY_*` secrets configured (Settings → Secrets and variables →
+Actions); without them, release builds stay ad-hoc signed and the steps are
+skipped.
+
+If you prefer the Homebrew LLVM toolchain (e.g. for its sanitizer/runtime extras), invoke `cmake` as follows. Note, Homebrew nowadays is installed under `/opt/homebrew` container directory than as previously at common `/usr/local`. If you have Homebrew installed under the old path, please adjust `$HB_ROOT` accordingly. This build will also use Homebrew LLVM C++ runtime rather than macOS native C++ runtime.
 ```bash
 HB_ROOT=/opt/homebrew \
 LLVM_ROOT=${HB_ROOT}/opt/llvm \
@@ -405,7 +482,7 @@ You will find `imppg.exe` executable in the `build` folder. It can be run from M
 $ build/imppg.exe
 ```
 
-To run ImPPG from Windows Explorer, the subfolders `images`, `lang` (`*.mo` files only), `shaders` and all the necessary DLLs must be placed at the same location as `imppg.exe`. See the MS Windows binary distribution (`imppg-win64.zip`) for an example.
+To run ImPPG from Windows Explorer, the subfolders `images`, `lang` (`*.mo` files only), `shaders` and all the necessary DLLs must be placed at the same location as `imppg.exe`. See the MS Windows binary distribution (`imppg-<version>-win64.zip`) for an example.
 
 
 ----------------------------------------
@@ -433,6 +510,19 @@ $ msgfmt imppg.po -o imppg.mo
 - adding a `install(FILES lang...` entry in the top-level `CMakeLists.txt`
 
 Binary distribution of ImPPG needs only the MO (binary) language files. Beside the `imppg.mo` file(s), also the wxWidgets translation is needed (for strings like standard menu items, e.g. “Open”; control captions, e.g. “Browse” etc.). Those can be found in `<wxWidgets_source_root>/locale`. On Windows, the wxWidgets file `<language>.mo` has to be available as `<imppg_root_folder>/<language>/wxstd3.mo`. On operating systems with a common location for all `.mo` files (e.g., Linux), it is sufficient to have a wxWidgets installation.
+
+### Continuous integration and releases
+
+GitHub Actions builds and tests Ubuntu 22.04 and 24.04, Fedora 43,
+Windows x86-64, and macOS arm64 and x86-64 on pushes and pull requests.
+The Windows CI build uses MSYS2 UCRT64 and requires Windows 10 or later.
+The DEB, RPM, Windows ZIP and macOS DMG packages are available as workflow
+artifacts. When a release is published, the workflow builds its tag and
+attaches the packages to that release after all builds and tests succeed.
+Re-running the release workflow replaces assets with matching names. The
+macOS DMGs are self-contained (dylibs embedded, see above); on releases they
+are signed with a Developer ID and notarized when the Apple Developer secrets
+are configured, and ad-hoc signed otherwise.
 
 
 ----------------------------------------
